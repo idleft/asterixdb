@@ -48,10 +48,28 @@ public class Datatypes {
         public static final String MESSAGE = "message_text";
 
         public static final String COUNTRY = "country";
+        // Extended Tweet fields
+        public static final String SOURCE = "source";
+        public static final String TRUNCATED = "truncated";
+        public static final String REPLY_TO_STATUS_ID = "in_reply_to_status_id";
+        public static final String REPLY_TO_USER_ID = "in_reply_to_user_id";
+        public static final String REPLY_TO_SCREENNAME = "in_reply_to_screen_name";
+        public static final String FAVORITED = "is_favorited";
+        public static final String RETWEETED = "is_retweeted";
+        public static final String FAVORITED_COUNT = "get_favorite_count";
+        public static final String RETWEET = "is_retweet";
+        // skip get getRetweetedStatus
+        public static final String CONTRIBUTORS = "get_contributors";
+        public static final String RETWEET_COUNT = "get_retweet_count";
+        public static final String RETWEETED_BY_ME = "is_retweeted_by_me";
+        public static final String CURRENT_USER_RETWEET_ID = "get_current_user_retweet_id";
+        public static final String LANGUAGE = "language";
+        // skip below
+
 
         // User fields (for the sub record "user")
         public static final String SCREEN_NAME = "screen_name";
-        public static final String LANGUAGE = "language";
+        public static final String USER_PREFERRED_LANGUAGE = "user_preferred_language";
         public static final String FRIENDS_COUNT = "friends_count";
         public static final String STATUS_COUNT = "status_count";
         public static final String NAME = "name";
