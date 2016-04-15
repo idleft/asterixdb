@@ -42,27 +42,32 @@ public class Datatypes {
     public static class Tweet {
         public static final String ID = "id";
         public static final String USER = "user";
-        public static final String LATITUDE = "latitude";
-        public static final String LONGITUDE = "longitude";
+        public static final String GEOLOCATION = "geolocation";
         public static final String CREATED_AT = "created_at";
-        public static final String MESSAGE = "message_text";
+        public static final String TEXT = "text";
+
+        // consistency consider
+        public static final String MESSAGE = "text_message";
+        public static final String LATITUDE = "latitude";
+        public static final String LONGITUDE = "longititude";
 
         public static final String COUNTRY = "country";
         // Extended Tweet fields
+        public static final String PLACE = "place";
         public static final String SOURCE = "source";
         public static final String TRUNCATED = "truncated";
-        public static final String REPLY_TO_STATUS_ID = "in_reply_to_status_id";
-        public static final String REPLY_TO_USER_ID = "in_reply_to_user_id";
-        public static final String REPLY_TO_SCREENNAME = "in_reply_to_screen_name";
-        public static final String FAVORITED = "is_favorited";
-        public static final String RETWEETED = "is_retweeted";
-        public static final String FAVORITED_COUNT = "get_favorite_count";
-        public static final String RETWEET = "is_retweet";
+        public static final String REPLY_TO_STATUS_ID = "reply_to_status_id";
+        public static final String REPLY_TO_USER_ID = "reply_to_user_id";
+        public static final String REPLY_TO_SCREENNAME = "reply_to_screen_name";
+        public static final String FAVORITED = "favorited";
+        public static final String RETWEETED = "retweeted";
+        public static final String FAVORITE_COUNT = "favorite_count";
+        public static final String RETWEET = "retweet";
         // skip get getRetweetedStatus
-        public static final String CONTRIBUTORS = "get_contributors";
-        public static final String RETWEET_COUNT = "get_retweet_count";
-        public static final String RETWEETED_BY_ME = "is_retweeted_by_me";
-        public static final String CURRENT_USER_RETWEET_ID = "get_current_user_retweet_id";
+        public static final String CONTRIBUTORS = "contributors";
+        public static final String RETWEET_COUNT = "retweet_count";
+        public static final String RETWEETED_BY_ME = "retweeted_by_me";
+        public static final String CURRENT_USER_RETWEET_ID = "current_user_retweet_id";
         public static final String LANGUAGE = "language";
         // skip below
 

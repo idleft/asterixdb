@@ -35,8 +35,8 @@ public class TweetParserTest {
                 BuiltinType.AINT32, BuiltinType.ASTRING, BuiltinType.AINT32};
         ARecordType userType = new ARecordType(userTypeName, userFieldNames, userFieldTypes, true);
         String tweetTypeName = "FullTweets";
-        String[] tweetFieldNames = new String[]{Tweet.ID,Tweet.USER,Tweet.LATITUDE,
-                Tweet.LONGITUDE, Tweet.CREATED_AT, Tweet.MESSAGE};
+        String[] tweetFieldNames = new String[]{Tweet.ID,Tweet.USER,Tweet.GEOLOCATION,
+                Tweet.CREATED_AT, Tweet.TEXT};
         IAType[] tweetFieldTypes = new IAType[]{BuiltinType.ASTRING,userType,BuiltinType.ADOUBLE,
         BuiltinType.ADOUBLE,BuiltinType.ASTRING,BuiltinType.ASTRING};
 
