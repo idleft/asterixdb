@@ -83,6 +83,55 @@ public class Datatypes {
 
     }
 
+    public static final class User{
+        public static final String ID = "id";
+        public static final String NAME = "name";
+        public static final String SCREEN_NAME = "screen_name";
+        public static final String LOCATION = "location";
+        public static final String DESCRIPTION = "description";
+        public static final String CONTRIBUTORS_ENABLED = "contributors_enabled";
+        public static final String PROFILE_IMAGE_URL = "profile_image_url";
+        public static final String BIGGER_PROFILE_IMAGE_URL = "bigger_profile_image_url";
+        public static final String MINI_PROFILE_IMAGE_URL = "mini_profile_image_url";
+        public static final String ORIGINAL_PROFILE_IMAGE_URL = "original_profile_image_url";
+        public static final String DEFAULT_PROFILE_IMAGE = "default_profile_image";
+        public static final String URL = "url";
+        public static final String PROTECTED = "protected";
+        public static final String FOLLOWERS_COUNT = "followers_count";
+        // skip get status as user is from Status.getUser()
+        public static final String PROFILE_BACKGROUND_COLOR = "profile_background_color";
+        public static final String PROFILE_TEXT_COLOR = "profile_text_color";
+        public static final String PROFILE_LINK_COLOR = "profile_link_color";
+        public static final String PROFILE_SIDEBAR_FILL_COLOR = "profile_sidebar_fill_color";
+        public static final String PROFILE_SIDEBAR_BORDER_COLOR = "profile_sidebar_border_color";
+        public static final String PROFILE_USE_BACKGROUND_IMAGE = "profile_use_background_image";
+        public static final String DEFAULT_PROFILE = "default_profile";
+        public static final String SHOW_ALL_INLINE_MEDIA = "show_all_inline_media";
+        public static final String FRIENDS_COUNT = "friends_count";
+        public static final String CREATED_AT = "CREATED_AT";
+        public static final String FAVOURITES_COUNT = "favourites_count";
+        public static final String UTC_OFFSET = "utc_offset";
+        public static final String TIME_ZONE = "time_zone";
+        public static final String PROFILE_BACKGROUND_IMAGE_URL = "profile_background_image_url";
+        public static final String PROFILE_BACKGROUND_IMAGE_URL_HTTPS = "profile_background_image_url_https";
+        public static final String PROFILE_BANNER_URL = "profile_banner_url";
+        public static final String PROFILE_BANNER_RETINA_URL = "profile_banner_retina_url";
+        public static final String PROFILE_BANNER_IPAD_URL = "profile_banner_ipad_url";
+        public static final String PROFILE_BANNER_IPAD_RETINA_URL = "profile_banner_ipad_retina_url";
+        public static final String PROFILE_BANNER_MOBILE_URL = "profile_banner_mobile_url";
+        public static final String PROFILE_BANNER_MOBILE_RETINA_URL = "profile_banner_mobile_retina_url";
+        public static final String PROFILE_BACKGROUND_TILED = "profile_background_tiled";
+        public static final String LANG = "lang";
+        public static final String STATUSES_COUNT = "statuses_count";
+        public static final String GEO_ENABLED = "geo_enabled";
+        public static final String VERIFIED = "verified";
+        public static final String TRANSLATOR = "translator";
+        public static final String LISTED_COUNT = "listed_count";
+        public static final String FOLLOW_REQUEST_SENT = "follow_request_sent";
+        // skip getDescriptionURLEnTITIES & GETURLENTITY
+        public static final String WITHHELD_IN_COUNTRIES = "withheld_in_countries";
+    }
+
     /*
         The following assumes this DDL (but ignoring the field name orders):
         create type ProcessedTweet if not exists as open {
