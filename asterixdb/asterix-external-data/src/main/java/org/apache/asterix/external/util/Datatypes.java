@@ -69,6 +69,7 @@ public class Datatypes {
         public static final String RETWEETED_BY_ME = "retweeted_by_me";
         public static final String CURRENT_USER_RETWEET_ID = "current_user_retweet_id";
         public static final String LANGUAGE = "language";
+        public static final String SENSITIVE = "sensitive";
         // skip below
 
 
