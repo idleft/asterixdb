@@ -20,10 +20,10 @@ package org.apache.asterix.external.parser;
 
 import org.apache.asterix.builders.RecordBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
-import org.apache.asterix.external.api.IDataParser;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.util.Datatypes.Tweet;
+import org.apache.asterix.external.util.Datatypes.Twitter_User_Type;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.om.base.*;
 import org.apache.asterix.om.types.*;
@@ -41,8 +41,9 @@ import java.util.ArrayList;
 public class TweetParser implements IRecordDataParser<Status> {
 
     private ArrayBackedValueStorage fieldValueBuffer;
-    private ArrayBackedValueStorage listItemBuffer;
+    private ArrayBackedValueStorage inFieldValueBuffer;
     private RecordBuilder recBuilder;
+    private RecordBuilder fieldRecBuilder;
     private ARecordType recordType;
     private IAType[] fieldTypes;
     private String[] fieldNames;
@@ -57,13 +58,15 @@ public class TweetParser implements IRecordDataParser<Status> {
     public TweetParser(ARecordType recordType) {
         this.recordType = recordType;
         fieldNames = recordType.getFieldNames();
+        fieldTypes = recordType.getFieldTypes();
         fieldN = recordType.getFieldNames().length;
         recBuilder = new RecordBuilder();
         recBuilder.reset(recordType);
         recBuilder.init();
 
+        fieldRecBuilder = new RecordBuilder();
         fieldValueBuffer = new ArrayBackedValueStorage();
-        listItemBuffer = new ArrayBackedValueStorage();
+        inFieldValueBuffer = new ArrayBackedValueStorage();
         aPoint = new AMutablePoint(-1,-1);
 
         fieldTypeTags = new byte[fieldN];
@@ -149,11 +152,11 @@ public class TweetParser implements IRecordDataParser<Status> {
         unorderedListBuilder.reset(new AUnorderedListType(BuiltinType.AINT64,""));
         byte tagByte = BuiltinType.AINT64.getTypeTag().serialize();
         for (int iter1 = 0; iter1<uolist.length; iter1++){
-            listItemBuffer.reset();
-            final DataOutput listOutput = listItemBuffer.getDataOutput();
+            inFieldValueBuffer.reset();
+            final DataOutput listOutput = inFieldValueBuffer.getDataOutput();
             listOutput.writeByte(tagByte);
             parseInt64(uolist[iter1],listOutput);
-            unorderedListBuilder.addItem(listItemBuffer);
+            unorderedListBuilder.addItem(inFieldValueBuffer);
         }
         unorderedListBuilder.write(output, false);
     }
@@ -165,12 +168,71 @@ public class TweetParser implements IRecordDataParser<Status> {
     @SuppressWarnings("unchecked")
     private void parsePoint(AMutablePoint point, DataOutput output) throws IOException{
         AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(
-                aPoint.getType()).serialize(aPoint,output);
+                point.getType()).serialize(point,output);
     }
 
-    private void writeFieldValue(Status tweet, String fieldName, DataOutput fieldOutput) throws IOException {
+    private Object getUserFieldValue(User user, String fieldName){
+        Object res = null;
+        switch (fieldName){
+            case Twitter_User_Type.ID:
+                res = user.getId();
+                break;
+            case Twitter_User_Type.FOLLOWERS_COUNT:
+                res = user.getFollowersCount();
+                break;
+            case Twitter_User_Type.SCREEN_NAME:
+                res = user.getScreenName();
+                break;
+            case Twitter_User_Type.NAME:
+                res = user.getName();
+                break;
+        }
+        return res;
+    }
+
+    // can be merged once found json obj method
+    private void writeUserFieldValue(User user, String fieldName, IAType fieldType, DataOutput output) throws IOException {
+        Object fieldObj = getUserFieldValue(user, fieldName);
+        switch (fieldType.getTypeTag()) {
+            case INT64:
+            case DATETIME:
+                output.writeLong((long) fieldObj);
+                break;
+            case INT32:
+                output.writeInt((int) fieldObj);
+                break;
+            case STRING:
+                utf8Writer.writeUTF8((String) fieldObj, output);
+                break;
+            case BOOLEAN:
+                output.writeBoolean((boolean) fieldObj);
+                break;
+        }
+    }
+
+    private void parseRecordField(User user, ARecordType recordType, DataOutput fieldOutput) throws IOException {
+        fieldRecBuilder.reset(recordType);
+        fieldRecBuilder.init();
+
+        String[] fieldNameList = recordType.getFieldNames();
+        IAType[] fieldTypeList = recordType.getFieldTypes();
+
+        for (int iter1 = 0; iter1<fieldNameList.length; iter1++){
+            inFieldValueBuffer.reset();
+            DataOutput output = inFieldValueBuffer.getDataOutput();
+            output.write(fieldTypeList[iter1].getTypeTag().serialize());
+            writeUserFieldValue(user, fieldNameList[iter1], fieldTypeList[iter1], output);
+            fieldRecBuilder.addField(iter1,inFieldValueBuffer);
+        }
+        fieldRecBuilder.write(fieldOutput,false);
+    }
+
+    private void writeFieldValue(Status tweet, String fieldName, IAType fieldType, DataOutput fieldOutput) throws IOException {
+        // for Builtin types we can use swtich fieldType.getTag case INT64 to do
         switch (fieldName) {
+//            case A
             case Tweet.USER:
+                parseRecordField(tweet.getUser(), (ARecordType)fieldType,fieldOutput);
                 break;
             case Tweet.PLACE:
                 break;
@@ -227,7 +289,7 @@ public class TweetParser implements IRecordDataParser<Status> {
                 fieldValueBuffer.reset();
                 DataOutput fieldOutput = fieldValueBuffer.getDataOutput();
                 fieldOutput.write(fieldTypeTags[iter1]);
-                writeFieldValue(tweet, fieldNames[iter1], fieldOutput);
+                writeFieldValue(tweet, fieldNames[iter1], fieldTypes[iter1], fieldOutput);
                 recBuilder.addField(iter1, fieldValueBuffer);
             }
             recBuilder.write(out, true);
