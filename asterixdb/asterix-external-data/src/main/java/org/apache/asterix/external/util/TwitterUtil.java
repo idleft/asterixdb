@@ -205,6 +205,7 @@ public class TwitterUtil {
     private static ConfigurationBuilder getAuthConfiguration(Map<String, String> configuration) {
         ConfigurationBuilder cb = new ConfigurationBuilder();
         cb.setDebugEnabled(true);
+        cb.setJSONStoreEnabled(true);
         String oAuthConsumerKey = configuration.get(AuthenticationConstants.OAUTH_CONSUMER_KEY);
         String oAuthConsumerSecret = configuration.get(AuthenticationConstants.OAUTH_CONSUMER_SECRET);
         String oAuthAccessToken = configuration.get(AuthenticationConstants.OAUTH_ACCESS_TOKEN);
