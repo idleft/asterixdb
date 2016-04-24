@@ -133,8 +133,8 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
     }
 
     @Override
-    public Class<? extends Status> getRecordClass() {
-        return Status.class;
+    public Class<? extends String> getRecordClass() {
+        return String.class;
     }
 
     private boolean validateConfiguration(Map<String, String> configuration) {
