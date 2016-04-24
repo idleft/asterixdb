@@ -27,32 +27,28 @@ import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 
-import twitter4j.FilterQuery;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.TwitterStream;
+import twitter4j.*;
 
-public class TwitterPushRecordReader implements IRecordReader<Status> {
-    private LinkedBlockingQueue<Status> inputQ;
+public class TwitterPushRecordReader implements IRecordReader<String> {
+    private LinkedBlockingQueue<String> inputQ;
     private TwitterStream twitterStream;
-    private GenericRecord<Status> record;
+    private GenericRecord<String> record;
     private boolean closed = false;
 
     public TwitterPushRecordReader(TwitterStream twitterStream, FilterQuery query) {
-        record = new GenericRecord<Status>();
-        inputQ = new LinkedBlockingQueue<Status>();
+        record = new GenericRecord<>();
+        inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//TwitterUtil.getTwitterStream(configuration);
-        this.twitterStream.addListener(new TweetListener(inputQ));
+        this.twitterStream.addListener(new TweetStringListener(inputQ));
         this.twitterStream.filter(query);
     }
 
     public TwitterPushRecordReader(TwitterStream twitterStream) {
-        record = new GenericRecord<Status>();
-        inputQ = new LinkedBlockingQueue<Status>();
+        record = new GenericRecord<>();
+        inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//
-        this.twitterStream.addListener(new TweetListener(inputQ));
+//        this.twitterStream.addListener(new TweetListener(inputQ));
+        this.twitterStream.addListener(new TweetStringListener(inputQ));
         twitterStream.sample();
     }
 
@@ -72,8 +68,8 @@ public class TwitterPushRecordReader implements IRecordReader<Status> {
     }
 
     @Override
-    public IRawRecord<Status> next() throws IOException, InterruptedException {
-        Status tweet = inputQ.poll();
+    public IRawRecord<String> next() throws IOException, InterruptedException {
+        String tweet = inputQ.poll();
         if (tweet == null) {
             return null;
         }
@@ -91,40 +87,58 @@ public class TwitterPushRecordReader implements IRecordReader<Status> {
         return true;
     }
 
-    private class TweetListener implements StatusListener {
+    private class TweetStringListener implements RawStreamListener{
 
-        private LinkedBlockingQueue<Status> inputQ;
+        private LinkedBlockingQueue<String> inputQ; //blocking necessary?
 
-        public TweetListener(LinkedBlockingQueue<Status> inputQ) {
-            this.inputQ = inputQ;
+        public TweetStringListener(LinkedBlockingQueue<String> inputQ){this.inputQ = inputQ;}
+
+        @Override
+        public void onMessage(String s) {
+            inputQ.add(s);
         }
 
         @Override
-        public void onStatus(Status tweet) {
-            inputQ.add(tweet);
-        }
+        public void onException(Exception e) {
 
-        @Override
-        public void onException(Exception arg0) {
-
-        }
-
-        @Override
-        public void onDeletionNotice(StatusDeletionNotice arg0) {
-        }
-
-        @Override
-        public void onScrubGeo(long arg0, long arg1) {
-        }
-
-        @Override
-        public void onStallWarning(StallWarning arg0) {
-        }
-
-        @Override
-        public void onTrackLimitationNotice(int arg0) {
         }
     }
+
+//    private class TweetListener implements StatusListener {
+//
+//        private LinkedBlockingQueue<String> inputQ;
+//
+//        public TweetListener(LinkedBlockingQueue<String> inputQ) {
+//            this.inputQ = inputQ;
+//        }
+//
+//        @Override
+//        public void onStatus(Status tweet) {
+//            String jsonTweet = TwitterObjectFactory.getRawJSON(tweet);
+//            inputQ.add(jsonTweet);
+//        }
+//
+//        @Override
+//        public void onException(Exception arg0) {
+//
+//        }
+//
+//        @Override
+//        public void onDeletionNotice(StatusDeletionNotice arg0) {
+//        }
+//
+//        @Override
+//        public void onScrubGeo(long arg0, long arg1) {
+//        }
+//
+//        @Override
+//        public void onStallWarning(StallWarning arg0) {
+//        }
+//
+//        @Override
+//        public void onTrackLimitationNotice(int arg0) {
+//        }
+//    }
 
     @Override
     public void setFeedLogManager(FeedLogManager feedLogManager) {

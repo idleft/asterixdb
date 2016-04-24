@@ -28,13 +28,9 @@ import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
-import twitter4j.Query;
-import twitter4j.QueryResult;
-import twitter4j.Status;
-import twitter4j.Twitter;
-import twitter4j.TwitterException;
+import twitter4j.*;
 
-public class TwitterPullRecordReader implements IRecordReader<Status> {
+public class TwitterPullRecordReader implements IRecordReader<String> {
 
     private Query query;
     private Twitter twitter;
@@ -42,14 +38,14 @@ public class TwitterPullRecordReader implements IRecordReader<Status> {
     private QueryResult result;
     private int nextTweetIndex = 0;
     private long lastTweetIdReceived = 0;
-    private GenericRecord<Status> record;
+    private GenericRecord<String> record;
 
     public TwitterPullRecordReader(Twitter twitter, String keywords, int requestInterval) {
         this.twitter = twitter;
         this.requestInterval = requestInterval;
         this.query = new Query(keywords);
         this.query.setCount(100);
-        this.record = new GenericRecord<Status>();
+        this.record = new GenericRecord<>();
     }
 
     @Override
@@ -62,7 +58,7 @@ public class TwitterPullRecordReader implements IRecordReader<Status> {
     }
 
     @Override
-    public IRawRecord<Status> next() throws IOException, InterruptedException {
+    public IRawRecord<String> next() throws IOException, InterruptedException {
         if (result == null || nextTweetIndex >= result.getTweets().size()) {
             Thread.sleep(1000 * requestInterval);
             query.setSinceId(lastTweetIdReceived);
@@ -79,7 +75,8 @@ public class TwitterPullRecordReader implements IRecordReader<Status> {
             if (lastTweetIdReceived < tweet.getId()) {
                 lastTweetIdReceived = tweet.getId();
             }
-            record.set(tweet);
+            String jsonTweet = TwitterObjectFactory.getRawJSON(tweet); // transform tweet obj to json
+            record.set(jsonTweet);
             return record;
         } else {
             return null;
