@@ -39,7 +39,8 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         record = new GenericRecord<>();
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//TwitterUtil.getTwitterStream(configuration);
-        this.twitterStream.addListener(new TweetStringListener(inputQ));
+//        this.twitterStream.addListener(new TweetStringListener(inputQ));
+        this.twitterStream.addListener(new TweetListener(inputQ));
         this.twitterStream.filter(query);
     }
 
@@ -47,8 +48,8 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         record = new GenericRecord<>();
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//
-//        this.twitterStream.addListener(new TweetListener(inputQ));
-        this.twitterStream.addListener(new TweetStringListener(inputQ));
+        this.twitterStream.addListener(new TweetListener(inputQ));
+//        this.twitterStream.addListener(new TweetStringListener(inputQ));
         twitterStream.sample();
     }
 
@@ -87,58 +88,58 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         return true;
     }
 
-    private class TweetStringListener implements RawStreamListener{
-
-        private LinkedBlockingQueue<String> inputQ; //blocking necessary?
-
-        public TweetStringListener(LinkedBlockingQueue<String> inputQ){this.inputQ = inputQ;}
-
-        @Override
-        public void onMessage(String s) {
-            inputQ.add(s);
-        }
-
-        @Override
-        public void onException(Exception e) {
-
-        }
-    }
-
-//    private class TweetListener implements StatusListener {
+//    private class TweetStringListener implements RawStreamListener{
 //
-//        private LinkedBlockingQueue<String> inputQ;
+//        private LinkedBlockingQueue<String> inputQ; //blocking necessary?
 //
-//        public TweetListener(LinkedBlockingQueue<String> inputQ) {
-//            this.inputQ = inputQ;
+//        public TweetStringListener(LinkedBlockingQueue<String> inputQ){this.inputQ = inputQ;}
+//
+//        @Override
+//        public void onMessage(String s) {
+//            inputQ.add(s);
 //        }
 //
 //        @Override
-//        public void onStatus(Status tweet) {
-//            String jsonTweet = TwitterObjectFactory.getRawJSON(tweet);
-//            inputQ.add(jsonTweet);
-//        }
+//        public void onException(Exception e) {
 //
-//        @Override
-//        public void onException(Exception arg0) {
-//
-//        }
-//
-//        @Override
-//        public void onDeletionNotice(StatusDeletionNotice arg0) {
-//        }
-//
-//        @Override
-//        public void onScrubGeo(long arg0, long arg1) {
-//        }
-//
-//        @Override
-//        public void onStallWarning(StallWarning arg0) {
-//        }
-//
-//        @Override
-//        public void onTrackLimitationNotice(int arg0) {
 //        }
 //    }
+
+    private class TweetListener implements StatusListener {
+
+        private LinkedBlockingQueue<String> inputQ;
+
+        public TweetListener(LinkedBlockingQueue<String> inputQ) {
+            this.inputQ = inputQ;
+        }
+
+        @Override
+        public void onStatus(Status tweet) {
+            String jsonTweet = TwitterObjectFactory.getRawJSON(tweet);
+            inputQ.add(jsonTweet);
+        }
+
+        @Override
+        public void onException(Exception arg0) {
+
+        }
+
+        @Override
+        public void onDeletionNotice(StatusDeletionNotice arg0) {
+        }
+
+        @Override
+        public void onScrubGeo(long arg0, long arg1) {
+        }
+
+        @Override
+        public void onStallWarning(StallWarning arg0) {
+        }
+
+        @Override
+        public void onTrackLimitationNotice(int arg0) {
+        }
+    }
 
     @Override
     public void setFeedLogManager(FeedLogManager feedLogManager) {
