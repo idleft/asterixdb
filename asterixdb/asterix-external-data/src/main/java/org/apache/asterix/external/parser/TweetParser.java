@@ -30,6 +30,7 @@ import org.apache.asterix.om.types.*;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.util.string.UTF8StringWriter;
+import org.json.JSONObject;
 import twitter4j.GeoLocation;
 import twitter4j.Status;
 import twitter4j.User;
@@ -38,7 +39,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 
-public class TweetParser implements IRecordDataParser<Status> {
+public class TweetParser implements IRecordDataParser<String> {
 
     private ArrayBackedValueStorage fieldValueBuffer;
     private ArrayBackedValueStorage inFieldValueBuffer;
@@ -278,10 +279,11 @@ public class TweetParser implements IRecordDataParser<Status> {
     }
 
     @Override
-    public void parse(IRawRecord<? extends Status> record, DataOutput out) throws HyracksDataException {
-        Status tweet = record.get();
-        User user = tweet.getUser();
+    public void parse(IRawRecord<? extends String> record, DataOutput out) throws HyracksDataException {
+//        Status tweet = record.get();
+//        User user = tweet.getUser();
         try {
+            JSONObject tweetJson = new JSONObject(record.get());
             // for field in record,
             recBuilder.reset(recordType);
             recBuilder.init();
@@ -289,7 +291,8 @@ public class TweetParser implements IRecordDataParser<Status> {
                 fieldValueBuffer.reset();
                 DataOutput fieldOutput = fieldValueBuffer.getDataOutput();
                 fieldOutput.write(fieldTypeTags[iter1]);
-                writeFieldValue(tweet, fieldNames[iter1], fieldTypes[iter1], fieldOutput);
+                Object value = tweetJson.get(fieldNames[iter1]);
+//                writeFieldValue(tweet, fieldNames[iter1], fieldTypes[iter1], fieldOutput);
                 recBuilder.addField(iter1, fieldValueBuffer);
             }
             recBuilder.write(out, true);
