@@ -24,6 +24,7 @@ import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.om.base.*;
 import org.apache.asterix.om.types.*;
+import org.apache.avro.data.Json;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.util.string.UTF8StringWriter;
@@ -34,46 +35,35 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
 
-    private ArrayBackedValueStorage fieldValueBuffer;
-    private ArrayBackedValueStorage inFieldValueBuffer;
-    private RecordBuilder recBuilder;
-    private RecordBuilder fieldRecBuilder;
+    private ArrayBackedValueStorage[] fieldValueBuffer;
+//    private ArrayBackedValueStorage[] recordBuffer;
+    private RecordBuilder[] recBuilder;
     private ARecordType recordType;
-    private IAType[] fieldTypes;
-    private String[] fieldNames;
-    private ATypeTag[] fieldTypeTags;
-    private int fieldN;
     private UTF8StringWriter utf8Writer = new UTF8StringWriter();
-    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
-    private AMutablePoint aPoint;
-    private ArrayList<Long> emptyArray = new ArrayList<>();
+//    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
     private SimpleDateFormat tweetSdf;
 
 
     public TweetParser(ARecordType recordType) {
         this.recordType = recordType;
-        fieldNames = recordType.getFieldNames();
-        fieldTypes = recordType.getFieldTypes();
-        fieldN = recordType.getFieldNames().length;
-        recBuilder = new RecordBuilder();
-        recBuilder.reset(recordType);
-        recBuilder.init();
-
-        fieldRecBuilder = new RecordBuilder();
-        fieldValueBuffer = new ArrayBackedValueStorage();
-        inFieldValueBuffer = new ArrayBackedValueStorage();
-        aPoint = new AMutablePoint(-1,-1);
-
-        fieldTypeTags = new ATypeTag[fieldN];
-        for (int iter1 = 0; iter1 < fieldN; iter1++) {
-            fieldTypeTags[iter1] = fieldTypes[iter1].getTypeTag();
-        }
+        int lvl = 2;
+        recBuilder = new RecordBuilder[lvl];
+        fieldValueBuffer = new ArrayBackedValueStorage[lvl];
+//        recordBuffer = new ArrayBackedValueStorage[lvl];
+        bufferInit(lvl);
 
         tweetSdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
+    }
+
+    private void bufferInit(Integer bufferLvl){
+        for (int iter1 = 0; iter1<bufferLvl; iter1++){
+            fieldValueBuffer[iter1] = new ArrayBackedValueStorage();
+//            recordBuffer[iter1] = new ArrayBackedValueStorage();
+            recBuilder[iter1] = new RecordBuilder();
+        }
     }
 
 //    private Object getTweetFieldValue(Status tweet, String fieldName) {
@@ -277,42 +267,57 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 //        }
 //    }
 
-    private void writeField(JSONObject obj, String fieldName, ATypeTag typeTag, DataOutput out)
+    private void writeField(JSONObject obj, String fieldName, IAType fieldType, DataOutput out, Integer curLvl)
             throws IOException, JSONException, ParseException {
-//        ATypeTag typeTag = fieldType.getTypeTag();
+        ATypeTag typeTag = fieldType.getTypeTag();
         switch (typeTag){
             case INT64:
+                out.write(typeTag.serialize());
                 out.writeLong(obj.getLong(fieldName));
                 break;
             case INT32:
+                out.write(typeTag.serialize());
                 out.writeInt(obj.getInt(fieldName));
                 break;
             case STRING:
+                out.write(typeTag.serialize());
                 utf8Writer.writeUTF8(obj.getString(fieldName),out);
                 break;
             case BOOLEAN:
+                out.write(typeTag.serialize());
                 out.writeBoolean(obj.getBoolean(fieldName));
                 break;
             case DATETIME:
+                out.write(typeTag.serialize());
                 out.writeLong(tweetSdf.parse(obj.getString(fieldName)).getTime());
                 break;
+            case RECORD:
+//                String subJStr = obj.getString(fieldName);
+                writeRecord(obj.getString(fieldName), out, curLvl+1, (ARecordType) fieldType);
+                break;
+
         }
+    }
+
+    public void writeRecord(String objStr, DataOutput out, Integer curLvl, ARecordType curRecType) throws IOException, JSONException, ParseException {
+        JSONObject obj = new JSONObject(objStr);
+        IAType[] curTypes = curRecType.getFieldTypes();
+        String[] curFNames = curRecType.getFieldNames();
+        int fieldN = curFNames.length;
+        recBuilder[curLvl].reset(curRecType);
+        recBuilder[curLvl].init();
+        for (int iter1 = 0;iter1<fieldN; iter1++){
+            fieldValueBuffer[curLvl].reset();
+            DataOutput fieldOutput = fieldValueBuffer[curLvl].getDataOutput();
+            writeField(obj,curFNames[iter1],curTypes[iter1], fieldOutput, curLvl);
+            recBuilder[curLvl].addField(iter1, fieldValueBuffer[curLvl]);
+        }
+        recBuilder[curLvl].write(out,true);
     }
     @Override
     public void parse(IRawRecord<? extends String> record, DataOutput out) throws HyracksDataException {
         try {
-            JSONObject tweetJson = new JSONObject(record.get());
-            // for field in record,
-            recBuilder.reset(recordType);
-            recBuilder.init();
-            for (int iter1 = 0; iter1 < fieldN; iter1++) {
-                fieldValueBuffer.reset();
-                DataOutput fieldOutput = fieldValueBuffer.getDataOutput();
-                fieldOutput.write(fieldTypeTags[iter1].serialize());
-                writeField(tweetJson,fieldNames[iter1], fieldTypeTags[iter1], fieldOutput);
-                recBuilder.addField(iter1, fieldValueBuffer);
-            }
-            recBuilder.write(out, true);
+            writeRecord(record.get(), out, 0, recordType);
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
