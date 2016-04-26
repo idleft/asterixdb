@@ -41,7 +41,7 @@ import java.text.SimpleDateFormat;
 import static org.apache.asterix.om.types.ATypeTag.UNION;
 
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
-
+    //TODO Union type on record attribute
     private ArrayBackedValueStorage[] fieldValueBuffer;
     private RecordBuilder[] recBuilder;
     private ARecordType recordType;
@@ -55,7 +55,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 
     public TweetParser(ARecordType recordType) {
         this.recordType = recordType;
-        int lvl = 2;
+        int lvl = 4;
         recBuilder = new RecordBuilder[lvl];
         fieldValueBuffer = new ArrayBackedValueStorage[lvl];
         bufferInit(lvl);
@@ -82,57 +82,62 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             fieldValueBuffer[curLvl].reset();
             final DataOutput listOutput = fieldValueBuffer[curLvl].getDataOutput();
             listOutput.writeByte(tagByte);
-            aMutableString.setValue(jArray.getString(iter1));
-            stringSerde.serialize(aMutableString,listOutput);
+            utf8Writer.writeUTF8(jArray.getString(iter1), listOutput);
             unorderedListBuilder.addItem(fieldValueBuffer[curLvl]);
         }
-        unorderedListBuilder.write(output, false);
+        unorderedListBuilder.write(output, true);
     }
 
     private void writeField(JSONObject obj, String fieldName, IAType fieldType, DataOutput out, Integer curLvl)
-            throws IOException, JSONException, ParseException {
+            throws IOException, ParseException {
         ATypeTag typeTag = fieldType.getTypeTag();
-        String fieldValue = obj.getString(fieldName);
-        if("null" == fieldValue)
+        try {
+            String fieldValue = obj.getString(fieldName);
+            if ("null" == fieldValue)
+                nullSerde.serialize(ANull.NULL, out);
+            else {
+                if (typeTag == UNION) {
+                    // assume all union type used here only has two types
+                    fieldType = ((AUnionType) fieldType).getUnionList().get(1);
+                    typeTag = fieldType.getTypeTag();
+                }
+                switch (typeTag) {
+                    case INT64:
+                        out.writeLong(obj.getLong(fieldName));
+                        break;
+                    case INT32:
+                        out.write(typeTag.serialize());
+                        out.writeInt(obj.getInt(fieldName));
+                        break;
+                    case STRING:
+                        out.write(typeTag.serialize());
+                        utf8Writer.writeUTF8(obj.getString(fieldName), out);
+                        break;
+                    case BOOLEAN:
+                        out.write(typeTag.serialize());
+                        out.writeBoolean(obj.getBoolean(fieldName));
+                        break;
+                    case DATETIME:
+                        out.write(typeTag.serialize());
+                        out.writeLong(tweetSdf.parse(obj.getString(fieldName)).getTime());
+                        break;
+                    case RECORD:
+                        writeRecord(obj.getString(fieldName), out, curLvl + 1, (ARecordType) fieldType);
+                        break;
+                    case POINT:
+                        aPoint.setValue(obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(0),
+                                obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(1));
+                        pointSerde.serialize(aPoint, out);
+                        break;
+                    case UNORDEREDLIST:
+                        parseUnorderedList(obj.getString(fieldName), out, curLvl + 1);
+//                        nullSerde.serialize(ANull.NULL, out);
+                        break;
+                }
+            }
+        }
+        catch(JSONException e){
             nullSerde.serialize(ANull.NULL, out);
-        else{
-            if(typeTag == UNION){
-                // assume all union type used here only has two types
-                typeTag = ((AUnionType) fieldType).getUnionList().get(1).getTypeTag();
-            }
-            switch (typeTag) {
-                case INT64:
-                    out.write(typeTag.serialize());
-                    out.writeLong(obj.getLong(fieldName));
-                    break;
-                case INT32:
-                    out.write(typeTag.serialize());
-                    out.writeInt(obj.getInt(fieldName));
-                    break;
-                case STRING:
-                    out.write(typeTag.serialize());
-                    utf8Writer.writeUTF8(obj.getString(fieldName), out);
-                    break;
-                case BOOLEAN:
-                    out.write(typeTag.serialize());
-                    out.writeBoolean(obj.getBoolean(fieldName));
-                    break;
-                case DATETIME:
-                    out.write(typeTag.serialize());
-                    out.writeLong(tweetSdf.parse(obj.getString(fieldName)).getTime());
-                    break;
-                case RECORD:
-                    writeRecord(obj.getString(fieldName), out, curLvl + 1, (ARecordType) fieldType);
-                    break;
-                case POINT:
-                    aPoint.setValue(obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(0),
-                            obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(1));
-                    pointSerde.serialize(aPoint, out);
-                    break;
-                case UNORDEREDLIST:
-                    parseUnorderedList(obj.getString(fieldName),out,curLvl+1);
-                    break;
-            }
         }
     }
 
