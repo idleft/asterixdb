@@ -19,15 +19,17 @@
 package org.apache.asterix.external.parser;
 
 import org.apache.asterix.builders.RecordBuilder;
+import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.om.base.AMutablePoint;
-import org.apache.asterix.om.types.ARecordType;
-import org.apache.asterix.om.types.ATypeTag;
-import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.om.base.AMutableString;
+import org.apache.asterix.om.base.ANull;
+import org.apache.asterix.om.types.*;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.util.string.UTF8StringWriter;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -36,16 +38,19 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
+import static org.apache.asterix.om.types.ATypeTag.UNION;
+
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
 
     private ArrayBackedValueStorage[] fieldValueBuffer;
     private RecordBuilder[] recBuilder;
     private ARecordType recordType;
     private UTF8StringWriter utf8Writer = new UTF8StringWriter();
-    //    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
+    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
     private SimpleDateFormat tweetSdf;
 
     private AMutablePoint aPoint;
+    private AMutableString aMutableString;
 
 
     public TweetParser(ARecordType recordType) {
@@ -53,10 +58,10 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         int lvl = 2;
         recBuilder = new RecordBuilder[lvl];
         fieldValueBuffer = new ArrayBackedValueStorage[lvl];
-//        recordBuffer = new ArrayBackedValueStorage[lvl];
         bufferInit(lvl);
 
         aPoint = new AMutablePoint(0, 0);
+        aMutableString = new AMutableString("");
         tweetSdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
     }
 
@@ -67,59 +72,67 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         }
     }
 
-//    private void parseUnorderedList(long[] uolist, DataOutput output) throws IOException {
-//        if(uolist.length>0)
-//            System.out.println("hello!");
-//        unorderedListBuilder.reset(new AUnorderedListType(BuiltinType.AINT64,""));
-//        byte tagByte = BuiltinType.AINT64.getTypeTag().serialize();
-//        for (int iter1 = 0; iter1<uolist.length; iter1++){
-//            inFieldValueBuffer.reset();
-//            final DataOutput listOutput = inFieldValueBuffer.getDataOutput();
-//            listOutput.writeByte(tagByte);
-//            parseInt64(uolist[iter1],listOutput);
-//            unorderedListBuilder.addItem(inFieldValueBuffer);
-//        }
-//        unorderedListBuilder.write(output, false);
-//    }
+    private void parseUnorderedList(String jStr, DataOutput output,Integer curLvl) throws IOException, JSONException {
+
+        JSONArray jArray = new JSONArray(jStr);
+
+        unorderedListBuilder.reset(new AUnorderedListType(BuiltinType.ASTRING,""));
+        byte tagByte = BuiltinType.ASTRING.getTypeTag().serialize();
+        for (int iter1 = 0; iter1<jArray.length(); iter1++){
+            fieldValueBuffer[curLvl].reset();
+            final DataOutput listOutput = fieldValueBuffer[curLvl].getDataOutput();
+            listOutput.writeByte(tagByte);
+            aMutableString.setValue(jArray.getString(iter1));
+            stringSerde.serialize(aMutableString,listOutput);
+            unorderedListBuilder.addItem(fieldValueBuffer[curLvl]);
+        }
+        unorderedListBuilder.write(output, false);
+    }
 
     private void writeField(JSONObject obj, String fieldName, IAType fieldType, DataOutput out, Integer curLvl)
             throws IOException, JSONException, ParseException {
         ATypeTag typeTag = fieldType.getTypeTag();
-        switch (typeTag) {
-            case INT64:
-                out.write(typeTag.serialize());
-                out.writeLong(obj.getLong(fieldName));
-                break;
-            case INT32:
-                out.write(typeTag.serialize());
-                out.writeInt(obj.getInt(fieldName));
-                break;
-            case STRING:
-                out.write(typeTag.serialize());
-                utf8Writer.writeUTF8(obj.getString(fieldName), out);
-                break;
-            case BOOLEAN:
-                out.write(typeTag.serialize());
-                out.writeBoolean(obj.getBoolean(fieldName));
-                break;
-            case DATETIME:
-                out.write(typeTag.serialize());
-                out.writeLong(tweetSdf.parse(obj.getString(fieldName)).getTime());
-                break;
-            case RECORD:
-//                String subJStr = obj.getString(fieldName);
-                writeRecord(obj.getString(fieldName), out, curLvl + 1, (ARecordType) fieldType);
-                break;
-            case POINT:
-                String pointField = obj.getString(fieldName);
-                if ("null" != pointField) {
+        String fieldValue = obj.getString(fieldName);
+        if("null" == fieldValue)
+            nullSerde.serialize(ANull.NULL, out);
+        else{
+            if(typeTag == UNION){
+                // assume all union type used here only has two types
+                typeTag = ((AUnionType) fieldType).getUnionList().get(1).getTypeTag();
+            }
+            switch (typeTag) {
+                case INT64:
+                    out.write(typeTag.serialize());
+                    out.writeLong(obj.getLong(fieldName));
+                    break;
+                case INT32:
+                    out.write(typeTag.serialize());
+                    out.writeInt(obj.getInt(fieldName));
+                    break;
+                case STRING:
+                    out.write(typeTag.serialize());
+                    utf8Writer.writeUTF8(obj.getString(fieldName), out);
+                    break;
+                case BOOLEAN:
+                    out.write(typeTag.serialize());
+                    out.writeBoolean(obj.getBoolean(fieldName));
+                    break;
+                case DATETIME:
+                    out.write(typeTag.serialize());
+                    out.writeLong(tweetSdf.parse(obj.getString(fieldName)).getTime());
+                    break;
+                case RECORD:
+                    writeRecord(obj.getString(fieldName), out, curLvl + 1, (ARecordType) fieldType);
+                    break;
+                case POINT:
                     aPoint.setValue(obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(0),
                             obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(1));
                     pointSerde.serialize(aPoint, out);
-                }
-                break;
-            case UNORDEREDLIST:
-                break;
+                    break;
+                case UNORDEREDLIST:
+                    parseUnorderedList(obj.getString(fieldName),out,curLvl+1);
+                    break;
+            }
         }
     }
 
