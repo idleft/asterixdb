@@ -19,12 +19,12 @@
 package org.apache.asterix.external.parser;
 
 import org.apache.asterix.builders.RecordBuilder;
-import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
-import org.apache.asterix.om.base.*;
-import org.apache.asterix.om.types.*;
-import org.apache.avro.data.Json;
+import org.apache.asterix.om.base.AMutablePoint;
+import org.apache.asterix.om.types.ARecordType;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.util.string.UTF8StringWriter;
@@ -39,12 +39,13 @@ import java.text.SimpleDateFormat;
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
 
     private ArrayBackedValueStorage[] fieldValueBuffer;
-//    private ArrayBackedValueStorage[] recordBuffer;
     private RecordBuilder[] recBuilder;
     private ARecordType recordType;
     private UTF8StringWriter utf8Writer = new UTF8StringWriter();
-//    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
+    //    private UnorderedListBuilder unorderedListBuilder = new UnorderedListBuilder();
     private SimpleDateFormat tweetSdf;
+
+    private AMutablePoint aPoint;
 
 
     public TweetParser(ARecordType recordType) {
@@ -55,87 +56,17 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 //        recordBuffer = new ArrayBackedValueStorage[lvl];
         bufferInit(lvl);
 
+        aPoint = new AMutablePoint(0, 0);
         tweetSdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss ZZZZZ yyyy");
     }
 
-    private void bufferInit(Integer bufferLvl){
-        for (int iter1 = 0; iter1<bufferLvl; iter1++){
+    private void bufferInit(Integer bufferLvl) {
+        for (int iter1 = 0; iter1 < bufferLvl; iter1++) {
             fieldValueBuffer[iter1] = new ArrayBackedValueStorage();
-//            recordBuffer[iter1] = new ArrayBackedValueStorage();
             recBuilder[iter1] = new RecordBuilder();
         }
     }
 
-//    private Object getTweetFieldValue(Status tweet, String fieldName) {
-//        Object res = null;
-//        switch (fieldName) {
-//            case Tweet.ID:
-//                res = tweet.getId();
-//                break;
-//            case Tweet.TEXT:
-//                res = tweet.getText();
-//                break;
-//            case Tweet.CREATED_AT:
-//                res = tweet.getCreatedAt().getTime();
-//                break;
-//            case Tweet.SOURCE:
-//                res = tweet.getSource();
-//                break;
-//            case Tweet.REPLY_TO_STATUS_ID:
-//                res = tweet.getInReplyToStatusId();
-//                break;
-//            case Tweet.REPLY_TO_USER_ID:
-//                res = tweet.getInReplyToUserId();
-//                break;
-//            case Tweet.REPLY_TO_SCREENNAME:
-//                res = tweet.getInReplyToScreenName();
-//                break;
-////            case Tweet.GEOLOCATION:
-////                ((AMutablePoint) mutableTweetFields[iter1]).setValue(tweet.getGeoLocation().getLongitude(),
-////                        tweet.getGeoLocation().getLatitude());
-////                break;
-//            case Tweet.FAVORITE_COUNT:
-//                res = tweet.getFavoriteCount();
-//                break;
-//            case Tweet.RETWEET_COUNT:
-//                res = tweet.getRetweetCount();
-//                break;
-//            case Tweet.CURRENT_USER_RETWEET_ID:
-//                res = tweet.getCurrentUserRetweetId();
-//                break;
-//            case Tweet.LANGUAGE:
-//                res = tweet.getLang();
-//                break;
-//            case Tweet.TRUNCATED:
-//                res = tweet.isTruncated();
-//                break;
-//            case Tweet.FAVORITED:
-//                res = tweet.isFavorited();
-//                break;
-//            case Tweet.RETWEETED:
-//                res = tweet.isRetweeted();
-//                break;
-//            case Tweet.RETWEET:
-//                res = tweet.isRetweet();
-//                break;
-//            case Tweet.RETWEETED_BY_ME:
-//                res = tweet.isRetweetedByMe();
-//                break;
-//            case Tweet.SENSITIVE:
-//                res = tweet.isPossiblySensitive();
-//                break;
-//            case Tweet.GEOLOCATION:
-//                aPoint.setValue(-1,-1);
-//                GeoLocation location = tweet.getGeoLocation();
-//                if(location!=null)
-//                    aPoint.setValue(tweet.getGeoLocation().getLongitude(),tweet.getGeoLocation().getLatitude());
-//                res = aPoint;
-//                break;
-//        }
-//        return res;
-//
-//    }
-//
 //    private void parseUnorderedList(long[] uolist, DataOutput output) throws IOException {
 //        if(uolist.length>0)
 //            System.out.println("hello!");
@@ -150,127 +81,11 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 //        }
 //        unorderedListBuilder.write(output, false);
 //    }
-//
-//    private void parseInt64(long value, DataOutput output) throws IOException{
-//        output.writeLong(value);
-//    }
-//
-//    @SuppressWarnings("unchecked")
-//    private void parsePoint(AMutablePoint point, DataOutput output) throws IOException{
-//        AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(
-//                point.getType()).serialize(point,output);
-//    }
-//
-//    private Object getUserFieldValue(User user, String fieldName){
-//        Object res = null;
-//        switch (fieldName){
-//            case Twitter_User_Type.ID:
-//                res = user.getId();
-//                break;
-//            case Twitter_User_Type.FOLLOWERS_COUNT:
-//                res = user.getFollowersCount();
-//                break;
-//            case Twitter_User_Type.SCREEN_NAME:
-//                res = user.getScreenName();
-//                break;
-//            case Twitter_User_Type.NAME:
-//                res = user.getName();
-//                break;
-//        }
-//        return res;
-//    }
-//
-//    // can be merged once found json obj method
-//    private void writeUserFieldValue(User user, String fieldName, IAType fieldType, DataOutput output) throws IOException {
-//        Object fieldObj = getUserFieldValue(user, fieldName);
-//        switch (fieldType.getTypeTag()) {
-//            case INT64:
-//            case DATETIME:
-//                output.writeLong((long) fieldObj);
-//                break;
-//            case INT32:
-//                output.writeInt((int) fieldObj);
-//                break;
-//            case STRING:
-//                utf8Writer.writeUTF8((String) fieldObj, output);
-//                break;
-//            case BOOLEAN:
-//                output.writeBoolean((boolean) fieldObj);
-//                break;
-//        }
-//    }
-//
-//    private void parseRecordField(User user, ARecordType recordType, DataOutput fieldOutput) throws IOException {
-//        fieldRecBuilder.reset(recordType);
-//        fieldRecBuilder.init();
-//
-//        String[] fieldNameList = recordType.getFieldNames();
-//        IAType[] fieldTypeList = recordType.getFieldTypes();
-//
-//        for (int iter1 = 0; iter1<fieldNameList.length; iter1++){
-//            inFieldValueBuffer.reset();
-//            DataOutput output = inFieldValueBuffer.getDataOutput();
-//            output.write(fieldTypeList[iter1].getTypeTag().serialize());
-//            writeUserFieldValue(user, fieldNameList[iter1], fieldTypeList[iter1], output);
-//            fieldRecBuilder.addField(iter1,inFieldValueBuffer);
-//        }
-//        fieldRecBuilder.write(fieldOutput,false);
-//    }
-//
-//    private void writeFieldValue(Status tweet, String fieldName, IAType fieldType, DataOutput fieldOutput) throws IOException {
-//        // for Builtin types we can use swtich fieldType.getTag case INT64 to do
-//        switch (fieldName) {
-////            case A
-//            case Tweet.USER:
-//                parseRecordField(tweet.getUser(), (ARecordType)fieldType,fieldOutput);
-//                break;
-//            case Tweet.PLACE:
-//                break;
-//            case Tweet.GEOLOCATION:
-//                parsePoint((AMutablePoint) getTweetFieldValue(tweet,fieldName),fieldOutput);
-//                break;
-//            // int64 attrs
-//            case Tweet.ID:
-//            case Tweet.REPLY_TO_STATUS_ID:
-//            case Tweet.REPLY_TO_USER_ID:
-//            case Tweet.CURRENT_USER_RETWEET_ID:
-//            case Tweet.CREATED_AT: // datetime is treated as long
-////                fieldOutput.writeLong((long) getTweetFieldValue(tweet, fieldName));
-//                parseInt64((long) getTweetFieldValue(tweet, fieldName), fieldOutput);
-//                break;
-//            // String attrs
-//            case Tweet.TEXT:
-//            case Tweet.SOURCE:
-//            case Tweet.REPLY_TO_SCREENNAME:
-//            case Tweet.LANGUAGE:
-//                utf8Writer.writeUTF8((String) getTweetFieldValue(tweet, fieldName),fieldOutput);
-////                fieldOutput.write(((String)getTweetFieldValue(tweet, fieldName)).getBytes());
-//                break;
-//            // int32 attrs
-//            case Tweet.FAVORITE_COUNT:
-//            case Tweet.RETWEET_COUNT:
-//                fieldOutput.writeInt((Integer) getTweetFieldValue(tweet, fieldName));
-//                break;
-//            // boolean attrs
-//            case Tweet.TRUNCATED:
-//            case Tweet.FAVORITED:
-//            case Tweet.RETWEETED:
-//            case Tweet.RETWEET:
-//            case Tweet.RETWEETED_BY_ME:
-//            case Tweet.SENSITIVE:
-//                fieldOutput.writeBoolean((boolean) getTweetFieldValue(tweet, fieldName));
-//                break;
-//            // unordered List
-//            case Tweet.CONTRIBUTORS:
-//                parseUnorderedList(tweet.getContributors(), fieldOutput);
-//                break;
-//        }
-//    }
 
     private void writeField(JSONObject obj, String fieldName, IAType fieldType, DataOutput out, Integer curLvl)
             throws IOException, JSONException, ParseException {
         ATypeTag typeTag = fieldType.getTypeTag();
-        switch (typeTag){
+        switch (typeTag) {
             case INT64:
                 out.write(typeTag.serialize());
                 out.writeLong(obj.getLong(fieldName));
@@ -281,7 +96,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
                 break;
             case STRING:
                 out.write(typeTag.serialize());
-                utf8Writer.writeUTF8(obj.getString(fieldName),out);
+                utf8Writer.writeUTF8(obj.getString(fieldName), out);
                 break;
             case BOOLEAN:
                 out.write(typeTag.serialize());
@@ -293,9 +108,18 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
                 break;
             case RECORD:
 //                String subJStr = obj.getString(fieldName);
-                writeRecord(obj.getString(fieldName), out, curLvl+1, (ARecordType) fieldType);
+                writeRecord(obj.getString(fieldName), out, curLvl + 1, (ARecordType) fieldType);
                 break;
-
+            case POINT:
+                String pointField = obj.getString(fieldName);
+                if ("null" != pointField) {
+                    aPoint.setValue(obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(0),
+                            obj.getJSONObject(fieldName).getJSONArray("coordinates").getDouble(1));
+                    pointSerde.serialize(aPoint, out);
+                }
+                break;
+            case UNORDEREDLIST:
+                break;
         }
     }
 
@@ -306,14 +130,15 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         int fieldN = curFNames.length;
         recBuilder[curLvl].reset(curRecType);
         recBuilder[curLvl].init();
-        for (int iter1 = 0;iter1<fieldN; iter1++){
+        for (int iter1 = 0; iter1 < fieldN; iter1++) {
             fieldValueBuffer[curLvl].reset();
             DataOutput fieldOutput = fieldValueBuffer[curLvl].getDataOutput();
-            writeField(obj,curFNames[iter1],curTypes[iter1], fieldOutput, curLvl);
+            writeField(obj, curFNames[iter1], curTypes[iter1], fieldOutput, curLvl);
             recBuilder[curLvl].addField(iter1, fieldValueBuffer[curLvl]);
         }
-        recBuilder[curLvl].write(out,true);
+        recBuilder[curLvl].write(out, true);
     }
+
     @Override
     public void parse(IRawRecord<? extends String> record, DataOutput out) throws HyracksDataException {
         try {
