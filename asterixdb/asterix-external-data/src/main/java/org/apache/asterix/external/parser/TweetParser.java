@@ -57,7 +57,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 
     public TweetParser(ARecordType recordType) {
         this.recordType = recordType;
-        int lvl = 10;
+        int lvl = 30;
         recBuilder = new RecordBuilder[lvl];
         fieldValueBuffer = new ArrayBackedValueStorage[lvl];
         attrNameBuffer = new ArrayBackedValueStorage[lvl];
@@ -75,26 +75,30 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         }
     }
 
-    private void parseUnorderedList(JSONArray jArray, DataOutput output, Integer curLvl) throws IOException, JSONException {
+    private void parseUnorderedList(JSONArray jArray, DataOutput output, Integer curLvl) throws IOException, JSONException, ParseException {
 
-        unorderedListBuilder.reset(new AUnorderedListType(null,""));
-        byte tagByte = BuiltinType.ASTRING.getTypeTag().serialize();
+        unorderedListBuilder.reset(new AUnorderedListType(BuiltinType.ANY,""));
         for (int iter1 = 0; iter1 < jArray.length(); iter1++) {
-            writeField(jArray.get())
-//            fieldValueBuffer[curLvl].reset();
-//            final DataOutput listOutput = fieldValueBuffer[curLvl].getDataOutput();
+            fieldValueBuffer[curLvl].reset();
+            final DataOutput listOutput = fieldValueBuffer[curLvl].getDataOutput();
 //            listOutput.writeByte(tagByte);
 //            utf8Writer.writeUTF8(jArray.getString(iter1), listOutput);
-//            unorderedListBuilder.addItem(fieldValueBuffer[curLvl]);
+            if(writeField(jArray.get(iter1),null,listOutput,curLvl+1))
+                unorderedListBuilder.addItem(fieldValueBuffer[curLvl]);
         }
-        unorderedListBuilder.write(output, true);
+        try {
+            unorderedListBuilder.write(output, true);
+        }
+        catch(ArrayIndexOutOfBoundsException e){
+            e.printStackTrace();
+        }
+
     }
 
-    private boolean writeField(JSONObject obj, String fieldName, IAType fieldType, DataOutput out, Integer curLvl, boolean writeHead)
+    private boolean writeField(Object fieldObj, IAType fieldType, DataOutput out, Integer curLvl)
             throws IOException, ParseException {
         // save fieldType for closed type check
         try {
-            Object fieldObj = obj.get(fieldName);
             if(fieldObj instanceof Integer){
                 // process integer
                 out.write(BuiltinType.AINT32.getTypeTag().serialize());
@@ -121,11 +125,11 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             }
             else if (fieldObj instanceof JSONArray){
                 // process array list
-                return false;
-//                if(((JSONArray) fieldObj).length() == 0)
-//                    return false;
-//                else
-//                    parseUnorderedList((JSONArray) fieldObj, out, curLvl+1);
+//                return false;
+                if(((JSONArray) fieldObj).length() == 0)
+                    return false;
+                else
+                    parseUnorderedList((JSONArray) fieldObj, out, curLvl);
             }
             else if (fieldObj instanceof JSONObject){
                 // process sub record
@@ -176,7 +180,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
                 fieldValueBuffer[curLvl].reset();
                 attrNameBuffer[curLvl].reset();
                 DataOutput fieldOutput = fieldValueBuffer[curLvl].getDataOutput();
-                if (writeField(obj, attrName, null, fieldOutput, curLvl+1,false)) {
+                if (writeField(obj.get(attrName), null, fieldOutput, curLvl+1)) {
                     if(attrIdx == -1){
                         aString.setValue(attrName);
                         stringSerde.serialize(aString, attrNameBuffer[curLvl].getDataOutput());
@@ -195,7 +199,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             for (int iter1 = 0; iter1 < fieldN; iter1++) {
                 fieldValueBuffer[curLvl].reset();
                 DataOutput fieldOutput = fieldValueBuffer[curLvl].getDataOutput();
-                if (writeField(obj, curFNames[iter1], curTypes[iter1], fieldOutput, curLvl+1,true)) {
+                if (writeField(obj.get(curFNames[iter1]), curTypes[iter1], fieldOutput, curLvl+1)) {
                     recBuilder[curLvl].addField(iter1, fieldValueBuffer[curLvl]);
                 }
             }
