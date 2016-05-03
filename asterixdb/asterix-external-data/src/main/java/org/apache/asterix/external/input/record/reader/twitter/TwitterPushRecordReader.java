@@ -88,23 +88,6 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         return true;
     }
 
-//    private class TweetStringListener implements RawStreamListener{
-//
-//        private LinkedBlockingQueue<String> inputQ; //blocking necessary?
-//
-//        public TweetStringListener(LinkedBlockingQueue<String> inputQ){this.inputQ = inputQ;}
-//
-//        @Override
-//        public void onMessage(String s) {
-//            inputQ.add(s);
-//        }
-//
-//        @Override
-//        public void onException(Exception e) {
-//
-//        }
-//    }
-
     private class TweetListener implements StatusListener {
 
         private LinkedBlockingQueue<String> inputQ;
