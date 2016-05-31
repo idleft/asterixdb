@@ -120,7 +120,6 @@ public class ExternalDataConstants {
      * Builtin record readers
      */
     public static final String READER_HDFS = "hdfs";
-    public static final String READER_KV = "key-value";
     public static final String READER_TWITTER_PUSH = "twitter_push";
     public static final String READER_PUSH_TWITTER = "push_twitter";
     public static final String READER_TWITTER_PULL = "twitter_pull";
@@ -206,7 +205,7 @@ public class ExternalDataConstants {
      * Size default values
      */
     public static final int DEFAULT_BUFFER_SIZE = 4096;
-    public static final int DEFAULT_BUFFER_INCREMENT = 2048;
+    public static final float DEFAULT_BUFFER_INCREMENT_FACTOR = 1.5F;
     public static final int DEFAULT_QUEUE_SIZE = 64;
     public static final int MAX_RECORD_SIZE = 32000000;
 
@@ -227,6 +226,5 @@ public class ExternalDataConstants {
     public static final String FORMAT_CSV = "csv";
     public static final String TEST_RECORD_WITH_PK = "test-record-with-pk";
 
-    public static final String ERROR_LARGE_RECORD = "Record is too large";
     public static final String ERROR_PARSE_RECORD = "Parser failed to parse record";
 }

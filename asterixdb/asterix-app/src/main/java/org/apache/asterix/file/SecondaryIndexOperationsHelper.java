@@ -53,7 +53,7 @@ import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.util.AsterixAppContextInfo;
 import org.apache.asterix.runtime.evaluators.functions.AndDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.CastRecordDescriptor;
-import org.apache.asterix.runtime.evaluators.functions.IsNullDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.IsUnknownDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NotDescriptor;
 import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.transaction.management.opcallbacks.PrimaryIndexInstantSearchOperationCallbackFactory;
@@ -153,7 +153,7 @@ public abstract class SecondaryIndexOperationsHelper {
             String datasetName, String indexName, List<List<String>> secondaryKeyFields, List<IAType> secondaryKeyTypes,
             boolean isEnforced, int gramLength, AqlMetadataProvider metadataProvider,
             PhysicalOptimizationConfig physOptConf, ARecordType recType, ARecordType enforcedType)
-                    throws AsterixException, AlgebricksException {
+            throws AsterixException, AlgebricksException {
         IAsterixPropertiesProvider asterixPropertiesProvider = AsterixAppContextInfo.getInstance();
         SecondaryIndexOperationsHelper indexOperationsHelper = null;
         switch (indexType) {
@@ -346,7 +346,8 @@ public abstract class SecondaryIndexOperationsHelper {
     }
 
     protected AlgebricksMetaOperatorDescriptor createAssignOp(JobSpecification spec,
-            AbstractOperatorDescriptor primaryScanOp, int numSecondaryKeyFields) throws AlgebricksException {
+            AbstractOperatorDescriptor primaryScanOp, int numSecondaryKeyFields, RecordDescriptor secondaryRecDesc)
+            throws AlgebricksException {
         int[] outColumns = new int[numSecondaryKeyFields + numFilterFields];
         int[] projectionList = new int[numSecondaryKeyFields + numPrimaryKeys + numFilterFields];
         for (int i = 0; i < numSecondaryKeyFields + numFilterFields; i++) {
@@ -419,12 +420,8 @@ public abstract class SecondaryIndexOperationsHelper {
     }
 
     protected TreeIndexBulkLoadOperatorDescriptor createTreeIndexBulkLoadOp(JobSpecification spec,
-            int numSecondaryKeyFields, IIndexDataflowHelperFactory dataflowHelperFactory, float fillFactor)
-                    throws MetadataException, AlgebricksException {
-        int[] fieldPermutation = new int[numSecondaryKeyFields + numPrimaryKeys + numFilterFields];
-        for (int i = 0; i < fieldPermutation.length; i++) {
-            fieldPermutation[i] = i;
-        }
+            int[] fieldPermutation, IIndexDataflowHelperFactory dataflowHelperFactory, float fillFactor)
+            throws MetadataException, AlgebricksException {
         TreeIndexBulkLoadOperatorDescriptor treeIndexBulkLoadOp = new TreeIndexBulkLoadOperatorDescriptor(spec,
                 secondaryRecDesc, AsterixRuntimeComponentsProvider.RUNTIME_PROVIDER,
                 AsterixRuntimeComponentsProvider.RUNTIME_PROVIDER, secondaryFileSplitProvider,
@@ -435,15 +432,15 @@ public abstract class SecondaryIndexOperationsHelper {
         return treeIndexBulkLoadOp;
     }
 
-    public AlgebricksMetaOperatorDescriptor createFilterNullsSelectOp(JobSpecification spec, int numSecondaryKeyFields)
-            throws AlgebricksException {
+    public AlgebricksMetaOperatorDescriptor createFilterNullsSelectOp(JobSpecification spec, int numSecondaryKeyFields,
+            RecordDescriptor secondaryRecDesc) throws AlgebricksException {
         IScalarEvaluatorFactory[] andArgsEvalFactories = new IScalarEvaluatorFactory[numSecondaryKeyFields];
         NotDescriptor notDesc = new NotDescriptor();
-        IsNullDescriptor isNullDesc = new IsNullDescriptor();
+        IsUnknownDescriptor isUnknownDesc = new IsUnknownDescriptor();
         for (int i = 0; i < numSecondaryKeyFields; i++) {
             // Access column i, and apply 'is not null'.
             ColumnAccessEvalFactory columnAccessEvalFactory = new ColumnAccessEvalFactory(i);
-            IScalarEvaluatorFactory isNullEvalFactory = isNullDesc
+            IScalarEvaluatorFactory isNullEvalFactory = isUnknownDesc
                     .createEvaluatorFactory(new IScalarEvaluatorFactory[] { columnAccessEvalFactory });
             IScalarEvaluatorFactory notEvalFactory = notDesc
                     .createEvaluatorFactory(new IScalarEvaluatorFactory[] { isNullEvalFactory });
@@ -500,8 +497,8 @@ public abstract class SecondaryIndexOperationsHelper {
         return indexingOpAndConstraints.first;
     }
 
-    protected AlgebricksMetaOperatorDescriptor createExternalAssignOp(JobSpecification spec, int numSecondaryKeys)
-            throws AlgebricksException {
+    protected AlgebricksMetaOperatorDescriptor createExternalAssignOp(JobSpecification spec, int numSecondaryKeys,
+            RecordDescriptor secondaryRecDesc) throws AlgebricksException {
         int[] outColumns = new int[numSecondaryKeys];
         int[] projectionList = new int[numSecondaryKeys + numPrimaryKeys];
         for (int i = 0; i < numSecondaryKeys; i++) {
@@ -525,12 +522,8 @@ public abstract class SecondaryIndexOperationsHelper {
     }
 
     protected ExternalIndexBulkModifyOperatorDescriptor createExternalIndexBulkModifyOp(JobSpecification spec,
-            int numSecondaryKeyFields, IIndexDataflowHelperFactory dataflowHelperFactory, float fillFactor)
-                    throws MetadataException, AlgebricksException {
-        int[] fieldPermutation = new int[numSecondaryKeyFields + numPrimaryKeys];
-        for (int i = 0; i < numSecondaryKeyFields + numPrimaryKeys; i++) {
-            fieldPermutation[i] = i;
-        }
+            int[] fieldPermutation, IIndexDataflowHelperFactory dataflowHelperFactory, float fillFactor)
+            throws MetadataException, AlgebricksException {
         // create a list of file ids
         int numOfDeletedFiles = 0;
         for (ExternalFile file : externalFiles) {
