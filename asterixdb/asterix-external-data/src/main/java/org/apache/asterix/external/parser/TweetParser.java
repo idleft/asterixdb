@@ -74,7 +74,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             if(writeField(jArray.get(iter1),null,itemBuffer.getDataOutput(),curLvl+1))
                 unorderedListBuilder.addItem(itemBuffer);
         }
-            unorderedListBuilder.write(output, true);
+        unorderedListBuilder.write(output, true);
     }
 
     private boolean writeField(Object fieldObj, IAType fieldType, DataOutput out, Integer curLvl)
@@ -181,6 +181,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             }
 
         }
+        // can use this to skip store null attr value
         recBuilder.write(out, true);
     }
 
