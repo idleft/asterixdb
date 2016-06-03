@@ -21,6 +21,14 @@
   <libraryFunctions>
     <libraryFunction>
       <function_type>SCALAR</function_type>
+      <name>typedTweet</name>
+      <arguments>Tweet</arguments>
+      <return_type>TypedTweet</return_type>
+      <definition>org.apache.asterix.external.library.TypedTweetFactory
+      </definition>
+    </libraryFunction>
+    <libraryFunction>
+      <function_type>SCALAR</function_type>
       <name>parseTweet</name>
       <arguments>TweetInputType</arguments>
       <return_type>TweetOutputType</return_type>
