@@ -85,7 +85,6 @@ public class [LEXER_NAME] {
         this.buffer = buffer;
         tokenBegin = bufpos = 0;
         containsEscapes = false;
-        line++;
         tokenBegin = -1;
     }
 
@@ -93,7 +92,7 @@ public class [LEXER_NAME] {
         bufsize        = Integer.MAX_VALUE;
         endOf_UNUSED_Buffer = bufsize;
         endOf_USED_Buffer = bufsize;
-        line           = 0;
+        line           = 1;
         prevCharIsCR   = false;
         prevCharIsLF   = false;
         tokenBegin     = -1;
