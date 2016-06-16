@@ -70,23 +70,12 @@ import org.apache.asterix.external.library.java.JObjects.JRectangle;
 import org.apache.asterix.external.library.java.JObjects.JString;
 import org.apache.asterix.external.library.java.JObjects.JTime;
 import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
-import org.apache.asterix.om.base.ACircle;
-import org.apache.asterix.om.base.ADuration;
-import org.apache.asterix.om.base.ALine;
-import org.apache.asterix.om.base.APoint;
-import org.apache.asterix.om.base.APoint3D;
-import org.apache.asterix.om.base.APolygon;
-import org.apache.asterix.om.base.ARectangle;
+import org.apache.asterix.om.base.*;
 import org.apache.asterix.om.pointables.AFlatValuePointable;
 import org.apache.asterix.om.pointables.AListVisitablePointable;
 import org.apache.asterix.om.pointables.ARecordVisitablePointable;
 import org.apache.asterix.om.pointables.base.IVisitablePointable;
-import org.apache.asterix.om.types.ARecordType;
-import org.apache.asterix.om.types.ATypeTag;
-import org.apache.asterix.om.types.AbstractCollectionType;
-import org.apache.asterix.om.types.BuiltinType;
-import org.apache.asterix.om.types.EnumDeserializer;
-import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.om.types.*;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.util.string.UTF8StringReader;
@@ -471,9 +460,14 @@ public class JObjectAccessors {
                 for (IVisitablePointable fieldPointable : fieldPointables) {
                     closedPart = index < recordType.getFieldTypes().length;
                     IVisitablePointable tt = fieldTypeTags.get(index);
-                    IAType fieldType = closedPart ? recordType.getFieldTypes()[index] : null;
                     ATypeTag typeTag = EnumDeserializer.ATYPETAGDESERIALIZER
                             .deserialize(tt.getByteArray()[tt.getStartOffset()]);
+                    IAType fieldType = null;
+                    if(closedPart){
+                        fieldType = recordType.getFieldTypes()[index];
+                    }
+                    else
+                        fieldType = ATypeMachine(typeTag);
                     IVisitablePointable fieldName = fieldNames.get(index);
                     typeInfo.reset(fieldType, typeTag);
                     switch (typeTag) {
@@ -539,12 +533,13 @@ public class JObjectAccessors {
             IJObject listItem = null;
             int index = 0;
             try {
-
                 for (IVisitablePointable itemPointable : items) {
                     IVisitablePointable itemTagPointable = itemTags.get(index);
                     ATypeTag itemTypeTag = EnumDeserializer.ATYPETAGDESERIALIZER
                             .deserialize(itemTagPointable.getByteArray()[itemTagPointable.getStartOffset()]);
-                    typeInfo.reset(listType.getType(), listType.getTypeTag());
+                    IAType fieldType = null;
+                    fieldType = ATypeMachine(itemTypeTag);
+                    typeInfo.reset(fieldType, itemTypeTag);
                     switch (itemTypeTag) {
                         case RECORD:
                             listItem = pointableVisitor.visit((ARecordVisitablePointable) itemPointable, typeInfo);
@@ -557,10 +552,7 @@ public class JObjectAccessors {
                             throw new IllegalArgumentException(
                                     "Cannot parse list item of type " + listType.getTypeTag());
                         default:
-                            IAType itemType = ((AbstractCollectionType) listType).getItemType();
-                            typeInfo.reset(itemType, itemType.getTypeTag());
                             listItem = pointableVisitor.visit((AFlatValuePointable) itemPointable, typeInfo);
-
                     }
                     list.add(listItem);
                 }
@@ -579,5 +571,66 @@ public class JObjectAccessors {
             return null;
         }
 
+    }
+
+    public static IAType ATypeMachine(ATypeTag typeTag){
+        IAType aType = null;
+        switch (typeTag){
+            case BOOLEAN:
+                aType = BuiltinType.ABOOLEAN;
+                break;
+            case INT8:
+                aType = BuiltinType.AINT8;
+                break;
+            case INT16:
+                aType = BuiltinType.AINT16;
+                break;
+            case INT32:
+                aType = BuiltinType.AINT32;
+                break;
+            case INT64:
+                aType = BuiltinType.AINT64;
+                break;
+            case FLOAT:
+                aType = BuiltinType.AFLOAT;
+                break;
+            case DOUBLE:
+                aType = BuiltinType.ADOUBLE;
+                break;
+            case STRING:
+                aType = BuiltinType.ASTRING;
+                break;
+            case POINT:
+                aType = BuiltinType.APOINT;
+                break;
+            case POINT3D:
+                aType = BuiltinType.APOINT3D;
+                break;
+            case LINE:
+                aType = BuiltinType.ALINE;
+                break;
+            case DATE:
+                aType = BuiltinType.ADATE;
+                break;
+            case DATETIME:
+                aType = BuiltinType.ADATETIME;
+                break;
+            case DURATION:
+                aType = BuiltinType.ADURATION;
+                break;
+            case RECORD:
+                aType = ARecordType.FULLY_OPEN_RECORD_TYPE;
+                break;
+            case UNORDEREDLIST:
+                aType = AUnorderedListType.FULLY_OPEN_UNORDEREDLIST_TYPE;
+                break;
+            case ORDEREDLIST:
+                aType = AOrderedListType.FULL_OPEN_ORDEREDLIST_TYPE;
+                break;
+            default:
+                aType = BuiltinType.ANY;
+                break;
+        }
+        return aType;
     }
 }

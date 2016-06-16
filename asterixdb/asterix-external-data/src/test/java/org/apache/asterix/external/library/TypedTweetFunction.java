@@ -22,32 +22,33 @@ package org.apache.asterix.external.library;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.JObjects.JString;
+import org.apache.asterix.external.library.java.JObjects;
 import org.apache.asterix.external.library.java.JObjects.JRecord;
 
 public class TypedTweetFunction implements IExternalScalarFunction {
 
-
     @Override
-    public void deinitialize(){
-        //do nothing
+    public void initialize(IFunctionHelper functionHelper) {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception{
+    public void deinitialize() {
+    }
+
+    @Override
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        JString sid = (JString) inputRecord.getValueByName("id");
-        JString desc = new JString(sid+"New");
+
+        JObjects.JLong id = (JObjects.JLong) inputRecord.getValueByName("id");
+        JObjects.JString text = (JObjects.JString) inputRecord.getValueByName("text");
+        JObjects.JString created_at_str = (JObjects.JString) inputRecord.getValueByName("timestamp_ms");
+        JObjects.JDateTime created_at = new JObjects.JDateTime(Long.valueOf(created_at_str.getValue()));
+
 
         JRecord result = (JRecord) functionHelper.getResultObject();
-        result.setField("id",sid);
-        result.setField("desc", desc);
-
+        result.setField("id", id);
+        result.setField("text", text);
+        result.setField("created_at",created_at);
         functionHelper.setResult(result);
-    }
-
-    @Override
-    public void initialize(IFunctionHelper functionHelper){
-
     }
 }

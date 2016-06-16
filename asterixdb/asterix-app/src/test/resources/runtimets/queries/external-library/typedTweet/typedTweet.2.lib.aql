@@ -16,4 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
- install externallibtest testlib src/test/resources/externallib/testlib-zip-binary-assembly.zip
+install feeds testlib src/test/resources/externallib/testlib-zip-binary-assembly.zip

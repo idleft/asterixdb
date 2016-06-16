@@ -16,6 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse feeds;
-create secondary feed ProcessedTwitterFeed from feed TwitterFeed
-apply function testlib#typedTweet
+drop dataverse externallibtest if exists;

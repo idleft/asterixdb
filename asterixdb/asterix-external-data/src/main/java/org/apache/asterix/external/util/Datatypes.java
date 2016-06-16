@@ -160,10 +160,5 @@ public class Datatypes {
         public static final String NOTE = "notes";
     }
 
-    public static final class TypedTweet {
-        public static final String ID = "id";
-        public static final String DESC = "desc";
-
-    }
 
 }

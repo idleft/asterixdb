@@ -47,6 +47,7 @@ import static org.apache.asterix.om.types.ATypeTag.UNION;
 
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
     //TODO Union type on record attribute
+    // KNOWN Problem: null attribute cannot be eliminated by not(is-null($rec.geo))
     //NOTE: indicate non-optional, string can go through, but read will have problem
     // indicate non-optional, record with null field(not string) will not go through
     // define notnull, assign null value, sometimes can read
@@ -81,7 +82,10 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             throws IOException, ParseException {
         // save fieldType for closed type check
         try {
-            if(fieldObj instanceof Integer){
+            if(fieldObj == JSONObject.NULL){
+                nullSerde.serialize(ANull.NULL,out);
+            }
+            else if(fieldObj instanceof Integer){
                 out.write(BuiltinType.AINT32.getTypeTag().serialize());
                 out.writeInt((Integer) fieldObj);
             }

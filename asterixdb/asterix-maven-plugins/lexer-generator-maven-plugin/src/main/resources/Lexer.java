@@ -85,7 +85,7 @@ public class [LEXER_NAME] {
         this.buffer = buffer;
         tokenBegin = bufpos = 0;
         containsEscapes = false;
-        line++;
+//        line++;
         tokenBegin = -1;
     }
 
