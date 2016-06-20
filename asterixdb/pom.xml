@@ -24,12 +24,12 @@
   <version>0.8.9-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>16</version>
-    <relativePath/>
-  </parent>
+  <!--<parent>-->
+    <!--<groupId>org.apache</groupId>-->
+    <!--<artifactId>apache</artifactId>-->
+    <!--<version>16</version>-->
+    <!--<relativePath/>-->
+  <!--</parent>-->
 
   <licenses>
     <license>
@@ -268,13 +268,13 @@
     </pluginManagement>
   </build>
 
-  <scm>
-    <connection>scm:git:https://github.com/apache/incubator-asterixdb</connection>
-    <developerConnection>scm:git:ssh://asterix-gerrit.ics.uci.edu:29418/asterixdb</developerConnection>
-    <url>https://github.com/apache/incubator-asterixdb</url>
+  <!--<scm>-->
+    <!--<connection>scm:git:https://github.com/apache/incubator-asterixdb</connection>-->
+    <!--<developerConnection>scm:git:ssh://asterix-gerrit.ics.uci.edu:29418/asterixdb</developerConnection>-->
+    <!--<url>https://github.com/apache/incubator-asterixdb</url>-->
 
-    <tag>HEAD</tag>
-  </scm>
+    <!--<tag>HEAD</tag>-->
+  <!--</scm>-->
 
   <profiles>
     <profile>
@@ -700,4 +700,18 @@
       </dependency>
     </dependencies>
   </dependencyManagement>
+
+
+  <distributionManagement>
+    <repository>
+      <id>nexus</id>
+      <name>Releases</name>
+      <url>http://localhost:8081/repository/maven-releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>nexus</id>
+      <name>Snapshot</name>
+      <url>http://localhost:8081/repository/maven-snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>

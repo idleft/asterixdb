@@ -25,12 +25,12 @@
   <packaging>pom</packaging>
   <name>hyracks-ecosystem-full-stack</name>
 
-  <parent>
-    <groupId>org.apache</groupId>
-    <artifactId>apache</artifactId>
-    <version>LATEST</version>
-    <relativePath/>
-  </parent>
+  <!--<parent>-->
+    <!--<groupId>org.apache</groupId>-->
+    <!--<artifactId>apache</artifactId>-->
+    <!--<version>LATEST</version>-->
+    <!--<relativePath/>-->
+  <!--</parent>-->
 
   <licenses>
     <license>
@@ -313,12 +313,12 @@
     </pluginManagement>
   </build>
 
-  <scm>
-    <connection>scm:git:https://github.com/apache/incubator-asterixdb-hyracks</connection>
-    <developerConnection>scm:git:ssh://fulliautomatix.ics.uci.edu:29418/hyracks</developerConnection>
-    <url>https://github.com/apache/incubator-asterixdb-hyracks</url>
-    <tag>HEAD</tag>
-  </scm>
+  <!--<scm>-->
+    <!--<connection>scm:git:https://github.com/apache/incubator-asterixdb-hyracks</connection>-->
+    <!--<developerConnection>scm:git:ssh://fulliautomatix.ics.uci.edu:29418/hyracks</developerConnection>-->
+    <!--<url>https://github.com/apache/incubator-asterixdb-hyracks</url>-->
+    <!--<tag>HEAD</tag>-->
+  <!--</scm>-->
 
   <profiles>
     <profile>
@@ -455,4 +455,17 @@
     <module>hyracks</module>
     <module>algebricks</module>
   </modules>
+
+  <distributionManagement>
+    <repository>
+      <id>nexus</id>
+      <name>Releases</name>
+      <url>http://localhost:8081/repository/maven-releases</url>
+    </repository>
+    <snapshotRepository>
+      <id>nexus</id>
+      <name>Snapshot</name>
+      <url>http://localhost:8081/repository/maven-snapshots</url>
+    </snapshotRepository>
+  </distributionManagement>
 </project>
