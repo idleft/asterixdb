@@ -16,27 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-drop dataverse feeds if exists;
-create dataverse feeds;
-use dataverse feeds;
-
-
-create type Tweet as open
-{
-  id: string
-}
-
-create type ProcessedTweet as open
-{
-    id: string
-}
-
-create feed TwitterFeed
-using localfs
-(("type-name"="Tweet"),
-("path"="asterix_nc1://data/twitter/obamatweets.adm"),
-("format"="adm")) apply function testlib#parseTweet;
-
-
-create dataset ProcessedTweets(ProcessedTweet)
-primary key id;
+drop dataverse externallibtest if exists;

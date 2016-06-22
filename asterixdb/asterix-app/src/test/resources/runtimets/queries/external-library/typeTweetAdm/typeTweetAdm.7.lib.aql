@@ -16,4 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-install feeds testlib src/test/resources/externallib/testlib-zip-binary-assembly.zip
+uninstall externallibtest testlib
