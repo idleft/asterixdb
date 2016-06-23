@@ -133,6 +133,11 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
         }
     }
 
+    @Override
+    public boolean validate(IRawRecord<? extends Writable> record){
+        return true;
+    }
+
     private void parseItem(IAType itemType, Object value, ObjectInspector foi, DataOutput dataOutput,
             boolean primitiveOnly) throws IOException {
         switch (itemType.getTypeTag()) {

@@ -61,7 +61,6 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 
     public TweetParser(ARecordType recordType) {
         this.recordType = recordType;
-        aPoint = new AMutablePoint(0, 0);
     }
 
     private void parseUnorderedList(JSONArray jArray, DataOutput output) throws IOException, JSONException {
@@ -155,6 +154,12 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         return -1;
     }
 
+    @Override
+    public boolean validate(IRawRecord<? extends String> record){
+        return true;
+    }
+
+
     public void writeRecord(JSONObject obj, DataOutput out, ARecordType curRecType) throws IOException, JSONException {
         IAType[] curTypes = null;
         String[] curFNames = null;
@@ -166,7 +171,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
         int fieldN;
         int attrIdx;
 
-        if(curRecType!=null){
+        if (curRecType != null) {
             curTypes = curRecType.getFieldTypes();
             curFNames = curRecType.getFieldNames();
         }
@@ -213,7 +218,6 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             if(curRecType!=null && closedFieldCount<curFNames.length)
                 throw new HyracksDataException("Non-null field is null");
         }
-
         // can use this to skip store null attr value
         recBuilder.write(out, true);
     }

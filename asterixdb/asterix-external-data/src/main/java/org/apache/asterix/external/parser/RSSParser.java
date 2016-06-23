@@ -49,6 +49,14 @@ public class RSSParser implements IRecordDataParser<SyndEntryImpl> {
     }
 
     @Override
+    public boolean validate(IRawRecord<? extends SyndEntryImpl> record){
+        SyndEntryImpl entry = record.get();
+        if(entry.getTitle()==null||entry.getDescription()==null||entry.getLink()==null)
+            return false;
+        return true;
+    }
+
+    @Override
     public void parse(IRawRecord<? extends SyndEntryImpl> record, DataOutput out) throws IOException {
         SyndEntryImpl entry = record.get();
         tupleFieldValues[0] = idPrefix + ":" + id;

@@ -45,6 +45,11 @@ public class RecordWithPKDataParser<T> implements IRecordWithPKDataParser<T> {
     }
 
     @Override
+    public boolean validate (IRawRecord<? extends T> record){
+        return true;
+    }
+
+    @Override
     public void appendKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
     }
 }

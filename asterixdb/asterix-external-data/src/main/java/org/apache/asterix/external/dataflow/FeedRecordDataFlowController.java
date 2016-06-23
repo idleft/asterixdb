@@ -67,7 +67,8 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
                     continue;
                 }
                 tb.reset();
-                parseAndForward(record);
+                if(parseAndForward(record,tb))
+                    tupleForwarder.addTuple(tb);
             }
         } catch (InterruptedException e) {
             //TODO: Find out what could cause an interrupted exception beside termination of a job/feed
@@ -96,20 +97,23 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         }
     }
 
-    private void parseAndForward(IRawRecord<? extends T> record) throws IOException {
+    private boolean parseAndForward(IRawRecord<? extends T> record, ArrayTupleBuilder tb) throws IOException {
         synchronized (dataParser) {
             try {
-                dataParser.parse(record, tb.getDataOutput());
+                if(dataParser.validate(record))
+                    dataParser.parse(record, tb.getDataOutput());
+                else
+                    return false;
             } catch (Exception e) {
                 LOGGER.warn(ExternalDataConstants.ERROR_PARSE_RECORD, e);
                 feedLogManager.logRecord(record.toString(), ExternalDataConstants.ERROR_PARSE_RECORD);
                 // continue the outer loop
-                return;
+                return false;
             }
             tb.addFieldEndOffset();
             addMetaPart(tb, record);
             addPrimaryKeys(tb, record);
-            tupleForwarder.addTuple(tb);
+            return true;
         }
     }
 

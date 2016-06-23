@@ -56,6 +56,12 @@
     <invalid.tests>**/DmlTest.java</invalid.tests>
     <global.test.includes>**/*TestSuite.java,**/*Test.java,${execution.tests}</global.test.includes>
     <global.test.excludes>${optimizer.tests},${metadata.tests},${invalid.tests},${repeated.tests}</global.test.excludes>
+
+    <failsafe.test.excludes>**/DmlRecoveryIT.java</failsafe.test.excludes>
+    <cluster.test.excludes>**/AsterixClusterLifeCycleIT.java</cluster.test.excludes>
+    <cluster.extest.excludes>**/ClusterExecutionIT.java</cluster.extest.excludes>
+    <replication.test.excludes>**/ReplicationIT.java</replication.test.excludes>
+
     <!-- Versions under dependencymanagement or used in many projects via properties -->
     <algebricks.version>0.2.18-SNAPSHOT</algebricks.version>
     <hyracks.version>0.2.18-SNAPSHOT</hyracks.version>
@@ -98,6 +104,30 @@
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-failsafe-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <runOrder>alphabetical</runOrder>
+          <forkMode>pertest</forkMode>
+          <argLine>${coverageArgLine}</argLine>
+          <excludes>
+            <exclude>${failsafe.test.excludes}</exclude>
+            <exclude>${cluster.test.excludes}</exclude>
+            <exclude>${cluster.extest.excludes}</exclude>
+            <exclude>${replication.test.excludes}</exclude>
+          </excludes>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>integration-test</goal>
+              <goal>verify</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.rat</groupId>
         <artifactId>apache-rat-plugin</artifactId>
         <version>0.11</version>
@@ -136,6 +166,8 @@
           <excludes>
             <exclude>**/*.adm</exclude>
             <exclude>**/*.aql</exclude>
+            <exclude>**/*.dgen</exclude>
+            <exclude>**/*.dqgen</exclude>
             <exclude>**/*.ast</exclude>
             <exclude>**/*.csv</exclude>
             <exclude>**/*.ddl</exclude>
@@ -184,6 +216,51 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-resources-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <version>2.17</version>
+        <executions>
+          <execution>
+            <id>verify-style</id>
+            <phase>process-classes</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <logViolationsToConsole>true</logViolationsToConsole>
+          <checkstyleRules>
+            <module name="Checker">
+              <!-- Checks for whitespace                               -->
+              <!-- See http://checkstyle.sf.net/config_whitespace.html -->
+              <module name="FileTabCharacter"/>
+            </module>
+          </checkstyleRules>
+          <sourceDirectories>${project.build.sourceDirectory},${project.build.testSourceDirectory}</sourceDirectories>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+        <version>1.4.1</version>
+        <executions>
+          <execution>
+            <id>enforce-versions</id>
+            <goals>
+              <goal>enforce</goal>
+            </goals>
+            <configuration>
+              <rules>
+                <requireMavenVersion>
+                  <version>[3.3.9,)</version>
+                </requireMavenVersion>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -199,7 +276,7 @@
                   <pluginExecutionFilter>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-plugin-plugin</artifactId>
-                    <versionRange>[3.4,)</versionRange>
+                    <versionRange>[3.3,)</versionRange>
                     <goals>
                       <goal>descriptor</goal>
                     </goals>

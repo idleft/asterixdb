@@ -91,10 +91,12 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
     private ARecordType recordType;
     private IObjectPool<IARecordBuilder, ATypeTag> recordBuilderPool = new ListObjectPool<IARecordBuilder, ATypeTag>(
             new RecordBuilderFactory());
-    private IObjectPool<IAsterixListBuilder, ATypeTag> listBuilderPool = new ListObjectPool<IAsterixListBuilder, ATypeTag>(
-            new ListBuilderFactory());
-    private IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool = new ListObjectPool<IMutableValueStorage, ATypeTag>(
-            new AbvsBuilderFactory());
+    private IObjectPool<IAsterixListBuilder, ATypeTag> listBuilderPool =
+            new ListObjectPool<IAsterixListBuilder, ATypeTag>(
+                    new ListBuilderFactory());
+    private IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool =
+            new ListObjectPool<IMutableValueStorage, ATypeTag>(
+                    new AbvsBuilderFactory());
     private final ClassAd rootAd;
     private String exprPrefix = "expr=";
     private String exprSuffix = "";
@@ -352,10 +354,10 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
         }
 
         if (recType != null) {
-            int nullableFieldId = checkNullConstraints(recType, nulls);
-            if (nullableFieldId != -1) {
+            int optionalFieldId = checkOptionalConstraints(recType, nulls);
+            if (optionalFieldId != -1) {
                 throw new HyracksDataException(
-                        "Field: " + recType.getFieldNames()[nullableFieldId] + " can not be null");
+                        "Field: " + recType.getFieldNames()[optionalFieldId] + " can not be optional");
             }
         }
         recBuilder.write(out, true);
@@ -621,7 +623,7 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
         return objectPool.bitSetPool.get();
     }
 
-    public static int checkNullConstraints(ARecordType recType, BitSet nulls) {
+    public static int checkOptionalConstraints(ARecordType recType, BitSet nulls) {
         for (int i = 0; i < recType.getFieldTypes().length; i++) {
             if (nulls.get(i) == false) {
                 IAType type = recType.getFieldTypes()[i];
@@ -631,7 +633,7 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
 
                 if (type.getTypeTag() == ATypeTag.UNION) { // union
                     AUnionType unionType = (AUnionType) type;
-                    if (!unionType.isNullableType()) {
+                    if (!unionType.isUnknownableType()) {
                         return i;
                     }
                 }
@@ -789,6 +791,7 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
     }
 
     public boolean parseNext(ClassAd classad) throws IOException {
+        resetPools();
         return parseClassAd(currentSource, classad, false);
     }
 
@@ -1348,7 +1351,7 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
                     if (!parseArgumentList(argList)) {
                         tree.setInnerTree(null);
                         return false;
-                    } ;
+                    };
                     // special case function-calls should be converted
                     // into a literal expression if the argument is a
                     // string literal
@@ -1396,7 +1399,7 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
                 tree.setInnerTree(Operation.createOperation(Operation.OpKind_PARENTHESES_OP, treeL, objectPool));
                 return (tree.size() != 0);
             }
-            // constants
+                // constants
             case LEX_OPEN_BOX: {
                 isExpr = true;
                 ClassAd newAd = objectPool.classAdPool.get();
@@ -1574,7 +1577,6 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
             }
 
             isExpr = false;
-            // parse the expression
             parseExpression(tree);
             if (tree.getInnerTree() == null) {
                 throw new HyracksDataException("parse expression returned empty tree");
@@ -1739,6 +1741,11 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
 
     public void setLexerSource(LexerSource lexerSource) {
         this.currentSource = lexerSource;
+    }
+
+    @Override
+    public boolean validate(IRawRecord<? extends char[]> record){
+        return true;
     }
 
     @Override
