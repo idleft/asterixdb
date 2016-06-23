@@ -1151,6 +1151,11 @@ public class ADMDataParser extends AbstractDataParser implements IStreamDataPars
     }
 
     @Override
+    public boolean validate(IRawRecord<?extends char[]> record){
+        return true;
+    }
+
+    @Override
     public boolean reset(InputStream in) throws IOException {
         admLexer.reInit(new InputStreamReader(in));
         return true;

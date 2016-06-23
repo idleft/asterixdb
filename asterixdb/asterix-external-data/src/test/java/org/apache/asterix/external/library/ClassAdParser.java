@@ -1744,6 +1744,11 @@ public class ClassAdParser extends AbstractDataParser implements IRecordDataPars
     }
 
     @Override
+    public boolean validate(IRawRecord<? extends char[]> record){
+        return true;
+    }
+
+    @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
         try {
             resetPools();
