@@ -297,6 +297,10 @@ public class ExternalDataUtils {
         return Boolean.parseBoolean(configuration.get(ExternalDataConstants.KEY_IS_CHANGE_FEED));
     }
 
+    public static boolean getForceDataType(Map<String, String> configuration){
+        return Boolean.parseBoolean((configuration.get(ExternalDataConstants.FORCE_DATATYPE)));
+    }
+
     public static int getNumberOfKeys(Map<String, String> configuration) throws AsterixException {
         String keyIndexes = configuration.get(ExternalDataConstants.KEY_KEY_INDEXES);
         if (keyIndexes == null) {

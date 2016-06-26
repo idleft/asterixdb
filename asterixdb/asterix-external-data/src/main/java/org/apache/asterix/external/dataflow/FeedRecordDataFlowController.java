@@ -42,13 +42,15 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected final long interval = 1000;
     protected boolean failed = false;
+    protected boolean forceDatatype = false;
 
     public FeedRecordDataFlowController(IHyracksTaskContext ctx, FeedTupleForwarder tupleForwarder,
             @Nonnull FeedLogManager feedLogManager, int numOfOutputFields, @Nonnull IRecordDataParser<T> dataParser,
-            @Nonnull IRecordReader<T> recordReader) throws HyracksDataException {
+            @Nonnull IRecordReader<T> recordReader, boolean forceDataType) throws HyracksDataException {
         super(ctx, tupleForwarder, feedLogManager, numOfOutputFields);
         this.dataParser = dataParser;
         this.recordReader = recordReader;
+        this.forceDatatype = forceDataType;
         recordReader.setFeedLogManager(feedLogManager);
         recordReader.setController(this);
     }
@@ -102,8 +104,14 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             try {
                 if(dataParser.validate(record))
                     dataParser.parse(record, tb.getDataOutput());
-                else
+                else{
+                    if (!forceDatatype) {
+                        LOGGER.warn(ExternalDataConstants.ERROR_PARSE_RECORD);
+                        feedLogManager.logRecord(record.toString(), ExternalDataConstants.ERROR_PARSE_RECORD);
+                    }
                     return false;
+                }
+
             } catch (Exception e) {
                 LOGGER.warn(ExternalDataConstants.ERROR_PARSE_RECORD, e);
                 feedLogManager.logRecord(record.toString(), ExternalDataConstants.ERROR_PARSE_RECORD);

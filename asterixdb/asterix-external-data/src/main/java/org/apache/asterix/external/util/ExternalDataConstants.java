@@ -99,6 +99,7 @@ public class ExternalDataConstants {
     public static final String KEY_RECORD_FORMAT = "record-format";
     public static final String KEY_META_TYPE_NAME = "meta-type-name";
     public static final String READER_STREAM = "stream";
+    public static final String FORCE_DATATYPE = "force-datatype";
     /**
      * HDFS class names
      */
