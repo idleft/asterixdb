@@ -155,7 +155,14 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
     }
 
     @Override
-    public boolean validate(IRawRecord<? extends String> record){
+    public boolean validate(IRawRecord<? extends String> record) throws JSONException {
+        //TODO check nested fields
+        JSONObject jsObj = new JSONObject(record.get());
+        for (String fn : recordType.getFieldNames()){
+//            IAType fieldType = recordType.getFieldType(fn);
+            if(jsObj.isNull(fn)||jsObj.getString(fn).length() == 0)
+                return false;
+        }
         return true;
     }
 
@@ -197,13 +204,16 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             }
         } else{
                 int closedFieldCount = 0;
+                IAType curFieldType = null;
                 for (String attrName : JSONObject.getNames(obj)){
                     if(obj.isNull(attrName)||obj.length()==0) continue;
                     attrIdx = checkAttrNameIdx(curFNames, attrName);
+                    if(curRecType!=null)
+                        curFieldType = curRecType.getFieldType(attrName);
                     fieldValueBuffer.reset();
                     fieldNameBuffer.reset();
                     DataOutput fieldOutput = fieldValueBuffer.getDataOutput();
-                    if (writeField(obj.get(attrName), null, fieldOutput)) {
+                    if (writeField(obj.get(attrName), curFieldType, fieldOutput)) {
                         if(attrIdx == -1){
                             aString.setValue(attrName);
                             stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
