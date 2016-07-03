@@ -77,7 +77,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
     }
 
     private boolean writeField(Object fieldObj, IAType fieldType, DataOutput out)
-            throws IOException {
+            throws IOException, JSONException {
         // save fieldType for closed type check
         String nstt;
         boolean writeResult = true;
@@ -102,7 +102,9 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
                 out.write(BuiltinType.ABOOLEAN.getTypeTag().serialize());
                 out.writeBoolean((Boolean) fieldObj);
             }
-
+            else if(fieldType.getTypeTag() ==  ARecordType.FULLY_OPEN_RECORD_TYPE.getTypeTag()){
+                writeRecord((JSONObject)fieldObj, out,null);
+            }
             else
                 writeResult = false;
         }
