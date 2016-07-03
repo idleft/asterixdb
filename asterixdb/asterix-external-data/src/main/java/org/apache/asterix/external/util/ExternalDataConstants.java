@@ -150,6 +150,7 @@ public class ExternalDataConstants {
     public static final String FORMAT_LINE_SEPARATED = "line-separated";
     public static final String FORMAT_HDFS_WRITABLE = "hdfs-writable";
     public static final String FORMAT_KV = "kv";
+    public static final String FORMAT_XML = "xml";
 
     /**
      * input streams
@@ -224,6 +225,7 @@ public class ExternalDataConstants {
     public static final String KEY_READER_FACTORY = "reader-factory";
     public static final String READER_RSS = "rss_feed";
     public static final String FORMAT_CSV = "csv";
+    public static final String XML_FILE = "xml_file";
 
     public static final String ERROR_PARSE_RECORD = "Parser failed to parse record";
 }

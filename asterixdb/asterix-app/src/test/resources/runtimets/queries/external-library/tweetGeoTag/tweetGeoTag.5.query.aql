@@ -27,6 +27,6 @@
  */
 use dataverse externallibtest;
 
-for $x in dataset TweetsFeedIngest
+for $x in dataset ProcessedTweets
 order by $x.id
 return $x

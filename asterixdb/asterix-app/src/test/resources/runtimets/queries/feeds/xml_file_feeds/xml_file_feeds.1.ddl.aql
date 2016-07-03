@@ -1,0 +1,13 @@
+drop dataverse xml_feeds if exists;
+create dataverse xml_feeds;
+use dataverse xml_feeds;
+
+create type XML_Alert as open{
+    id: string
+}
+
+create dataset XML_Alerts(XML_Alert)
+primary key id;
+
+create feed XML_Alert_Feeds using localfs
+(("path"="asterix_nc1://data/xml/"),("format"="xml"),("type-name"="XML_Alert"));
