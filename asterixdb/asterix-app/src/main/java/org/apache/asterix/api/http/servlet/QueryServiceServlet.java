@@ -68,8 +68,7 @@ public class QueryServiceServlet extends HttpServlet {
     }
 
     public enum Header {
-        Accept("Accept"),
-        ContentLength("Content-Length");
+        Accept("Accept");
 
         private final String str;
 
@@ -124,6 +123,34 @@ public class QueryServiceServlet extends HttpServlet {
         executionTime,
         resultCount,
         resultSize
+    }
+
+    public enum TimeUnit {
+        SEC("s", 9),
+        MILLI("ms", 6),
+        MICRO("µs", 3),
+        NANO("ns", 0);
+
+        String unit;
+        int nanoDigits;
+
+        TimeUnit(String unit, int nanoDigits) {
+            this.unit = unit;
+            this.nanoDigits = nanoDigits;
+        }
+
+        static String formatNanos(long nanoTime) {
+            final String strTime = String.valueOf(nanoTime);
+            final int len = strTime.length();
+            for (TimeUnit tu : TimeUnit.values()) {
+                if (len > tu.nanoDigits) {
+                    final String integer = strTime.substring(0, len - tu.nanoDigits);
+                    final String fractional = strTime.substring(len - tu.nanoDigits);
+                    return integer + (fractional.length() > 0 ? "." + fractional : "") + tu.unit;
+                }
+            }
+            return "illegal string value: " + strTime;
+        }
     }
 
     private final ILangCompilationProvider compilationProvider = new SqlppCompilationProvider();
@@ -247,9 +274,9 @@ public class QueryServiceServlet extends HttpServlet {
         pw.print(ResultFields.metrics.name());
         pw.print("\": {\n");
         pw.print("\t");
-        printField(pw, Metrics.elapsedTime.name(), String.valueOf(elapsedTime));
+        printField(pw, Metrics.elapsedTime.name(), TimeUnit.formatNanos(elapsedTime));
         pw.print("\t");
-        printField(pw, Metrics.executionTime.name(), String.valueOf(executionTime));
+        printField(pw, Metrics.executionTime.name(), TimeUnit.formatNanos(executionTime));
         pw.print("\t");
         printField(pw, Metrics.resultCount.name(), String.valueOf(resultCount));
         pw.print("\t");
@@ -325,8 +352,7 @@ public class QueryServiceServlet extends HttpServlet {
             printStatus(resultWriter, ResultStatus.fatal);
             respCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         }
-        printMetrics(resultWriter, (System.nanoTime() - elapsedStart) / 1000, (execEnd - execStart) / 1000, stats.count,
-                stats.size);
+        printMetrics(resultWriter, System.nanoTime() - elapsedStart, execEnd - execStart, stats.count, stats.size);
         resultWriter.print("}\n");
         resultWriter.flush();
         String result = stringWriter.toString();
@@ -334,7 +360,6 @@ public class QueryServiceServlet extends HttpServlet {
         GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, result);
         //result = JSONUtil.indent(result);
 
-        response.setIntHeader(Header.ContentLength.str(), result.length());
         response.getWriter().print(result);
         if (response.getWriter().checkError()) {
             LOGGER.warning("Error flushing output writer");
