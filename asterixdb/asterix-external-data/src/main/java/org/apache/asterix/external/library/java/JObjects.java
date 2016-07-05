@@ -1010,9 +1010,10 @@ public class JObjects {
             } else {
                 // check open part
                 IJObject fieldValue = openFields.get(fieldName);
-                if (fieldValue == null) {
-                    throw new AsterixException("unknown field: " + fieldName);
-                }
+                // allow external function handle null case
+//                if (fieldValue == null) {
+//                    throw new AsterixException("unknown field: " + fieldName);
+//                }
                 return fieldValue;
             }
         }
@@ -1075,7 +1076,7 @@ public class JObjects {
             }
         }
 
-        public int getFieldPosByName(String fieldName) {
+        private int getFieldPosByName(String fieldName) {
             int index = 0;
             String[] fieldNames = recordType.getFieldNames();
             for (String name : fieldNames) {
