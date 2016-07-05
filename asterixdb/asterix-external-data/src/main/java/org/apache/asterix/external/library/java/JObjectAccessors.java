@@ -435,14 +435,12 @@ public class JObjectAccessors {
         private final TypeInfo typeInfo;
         private final JRecord jRecord;
         private final IJObject[] jObjects;
-        private final LinkedHashMap<String, IJObject> openFields;
         private final UTF8StringReader reader = new UTF8StringReader();
 
         public JRecordAccessor(ARecordType recordType, IObjectPool<IJObject, IAType> objectPool) {
             this.typeInfo = new TypeInfo(objectPool, null, null);
             this.jObjects = new IJObject[recordType.getFieldNames().length];
             this.jRecord = new JRecord(recordType, jObjects);
-            this.openFields = new LinkedHashMap<String, IJObject>();
         }
 
         @Override
@@ -496,7 +494,7 @@ public class JObjectAccessors {
                         int s = fieldName.getStartOffset();
                         int l = fieldName.getLength();
                         String v = reader.readUTF(new DataInputStream(new ByteArrayInputStream(b, s + 1, l - 1)));
-                        openFields.put(v, fieldObject);
+                        jRecord.addField(v,fieldObject);
                     }
                     index++;
                     fieldObject = null;
@@ -511,7 +509,6 @@ public class JObjectAccessors {
 
         public void reset() throws HyracksDataException {
             jRecord.reset();
-            openFields.clear();
         }
 
     }

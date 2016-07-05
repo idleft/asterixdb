@@ -21,6 +21,8 @@ package org.apache.asterix.external.library;
 import org.apache.asterix.external.api.IExternalFunction;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
+import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.external.library.java.JObjects;
 import org.apache.asterix.om.functions.IExternalFunctionInfo;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;

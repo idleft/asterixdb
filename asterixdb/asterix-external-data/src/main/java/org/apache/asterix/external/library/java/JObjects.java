@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import jdk.nashorn.internal.scripts.JD;
 import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.RecordBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
@@ -1014,6 +1015,42 @@ public class JObjects {
                 }
                 return fieldValue;
             }
+        }
+
+        public JString getStringByName(String fieldName) throws IOException, AsterixException {
+            return (JString) getValueByName(fieldName);
+        }
+
+        public JInt getIntByName(String fieldN) throws IOException, AsterixException {
+            return (JInt) getValueByName(fieldN);
+        }
+
+        public JBoolean getBooleanByName(String fieldN) throws IOException, AsterixException {
+            return (JBoolean) getValueByName(fieldN);
+        }
+
+        public JRecord getRecordByName(String fieldN) throws IOException, AsterixException {
+            return (JRecord) getValueByName(fieldN);
+        }
+
+        public JDouble getDoubleByName(String fieldN) throws IOException, AsterixException {
+            return (JDouble) getValueByName(fieldN);
+        }
+
+        public JFloat getFloatByName(String fieldN) throws IOException, AsterixException {
+            return (JFloat) getValueByName(fieldN);
+        }
+
+        public JList getJListByName(String fieldN) throws IOException, AsterixException {
+            return (JList) getValueByName(fieldN);
+        }
+
+        public JUnorderedList getUnorderedListByName(String fieldN) throws IOException, AsterixException {
+            return (JUnorderedList) getValueByName(fieldN);
+        }
+
+        public JOrderedList getOrderedListByName(String fieldN) throws IOException, AsterixException {
+            return (JOrderedList) getValueByName(fieldN);
         }
 
         public void setValueAtPos(int pos, IJObject jObject) {
