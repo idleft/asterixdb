@@ -22,7 +22,11 @@ import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.external.api.AsterixInputStream;
-import org.apache.asterix.external.input.record.reader.stream.*;
+import org.apache.asterix.external.input.record.reader.stream.EmptyLineSeparatedRecordReader;
+import org.apache.asterix.external.input.record.reader.stream.LineRecordReader;
+import org.apache.asterix.external.input.record.reader.stream.QuotedLineRecordReader;
+import org.apache.asterix.external.input.record.reader.stream.SemiStructuredRecordReader;
+import org.apache.asterix.external.input.record.reader.stream.StreamRecordReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -31,8 +35,7 @@ public class StreamRecordReaderProvider {
     public enum Format {
         SEMISTRUCTURED,
         CSV,
-        LINE_SEPARATED,
-        XML_FILE
+        LINE_SEPARATED
     }
 
     public static Format getReaderFormat(Map<String, String> configuration) throws AsterixException {
@@ -48,8 +51,6 @@ public class StreamRecordReaderProvider {
                 case ExternalDataConstants.FORMAT_DELIMITED_TEXT:
                 case ExternalDataConstants.FORMAT_CSV:
                     return Format.CSV;
-                case ExternalDataConstants.FORMAT_XML:
-                    return Format.XML_FILE;
             }
             throw new AsterixException("Unknown format: " + format);
         }
@@ -73,8 +74,6 @@ public class StreamRecordReaderProvider {
                 return new SemiStructuredRecordReader(inputStream,
                         configuration.get(ExternalDataConstants.KEY_RECORD_START),
                         configuration.get(ExternalDataConstants.KEY_RECORD_END));
-            case XML_FILE:
-                return new XMLFileRecordReader(inputStream);
             default:
                 throw new HyracksDataException("Unknown format: " + format);
         }

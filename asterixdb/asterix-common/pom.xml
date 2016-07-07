@@ -235,7 +235,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-core</artifactId>
+<<<<<<< HEAD
       <version>2.0.0</version>
+=======
+      <version>2.2.0</version>
+>>>>>>> parent of ff55def... before change external function
     </dependency>
     <dependency>
       <groupId>org.codehaus.jackson</groupId>

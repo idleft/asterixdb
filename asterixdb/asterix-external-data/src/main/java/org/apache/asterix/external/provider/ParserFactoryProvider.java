@@ -24,7 +24,12 @@ import javax.annotation.Nonnull;
 
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.external.api.IDataParserFactory;
-import org.apache.asterix.external.parser.factory.*;
+import org.apache.asterix.external.parser.factory.ADMDataParserFactory;
+import org.apache.asterix.external.parser.factory.DelimitedDataParserFactory;
+import org.apache.asterix.external.parser.factory.HiveDataParserFactory;
+import org.apache.asterix.external.parser.factory.RSSParserFactory;
+import org.apache.asterix.external.parser.factory.RecordWithMetadataParserFactory;
+import org.apache.asterix.external.parser.factory.TweetParserFactory;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 
@@ -68,8 +73,6 @@ public class ParserFactoryProvider {
                 return new RSSParserFactory();
             case ExternalDataConstants.FORMAT_RECORD_WITH_METADATA:
                 return new RecordWithMetadataParserFactory();
-            case ExternalDataConstants.FORMAT_XML:
-                return new XMLFileParserFactory();
             default:
                 try {
                     return (IDataParserFactory) Class.forName(parser).newInstance();
