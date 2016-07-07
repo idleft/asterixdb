@@ -134,7 +134,7 @@ public class JTypeObjectFactory implements IObjectFactory<IJObject, IAType> {
                 AUnionType unionType = (AUnionType) type;
                 IJObject itemObject = null;
                 if (unionType.isMissableType()) {
-                    itemObject = create(unionType);
+                    itemObject = create(unionType.getActualType());
                 }
                 retValue = itemObject;
                 break;
