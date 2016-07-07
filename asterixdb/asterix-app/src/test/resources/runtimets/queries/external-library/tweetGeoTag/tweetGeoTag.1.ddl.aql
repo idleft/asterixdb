@@ -30,13 +30,22 @@ drop dataverse externallibtest if exists;
 create dataverse externallibtest;
 use dataverse externallibtest;
 
+create type typeGeoTag if not exists as open {
+stateID: int32,
+stateName: string,
+countyID: int32,
+countyName: string,
+cityID: int32?,
+cityName: string?
+}
+
 create type TweetInputType as open {
   id: int64
 }
 
 create type TweetOutputType as open {
   id: int64,
-  geoTag: string
+  geoTag: typeGeoTag
 }
 
 create feed TweetFeed
