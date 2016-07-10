@@ -688,18 +688,24 @@ CreateFeedStatement FeedSpecification() throws ParseException:
 }
 {
   (
-    "secondary" "feed"  nameComponents = QualifiedName() ifNotExists = IfNotExists()
-      <FROM> "feed" sourceNameComponents = QualifiedName() (appliedFunction = ApplyFunction())?
-      {
-        cfs = new CreateSecondaryFeedStatement(nameComponents,
-                                   sourceNameComponents, appliedFunction, ifNotExists);
-      }
-     |
-     ("primary")? "feed" nameComponents = QualifiedName() ifNotExists = IfNotExists()
-      "using" adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?  
+//    "secondary" "feed"  nameComponents = QualifiedName() ifNotExists = IfNotExists()
+//      <FROM> "feed" sourceNameComponents = QualifiedName() (appliedFunction = ApplyFunction())?
+//      {
+//        cfs = new CreateSecondaryFeedStatement(nameComponents,
+//                                   sourceNameComponents, appliedFunction, ifNotExists);
+//      }
+//     |
+//     ("primary")? "feed" nameComponents = QualifiedName() ifNotExists = IfNotExists()
+//      "using" adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?
+//       {
+//        cfs = new CreatePrimaryFeedStatement(nameComponents,
+//                                    adapterName, properties, appliedFunction, ifNotExists);
+//       }
+      "feed" nameComponents = QualifiedName() ifNotExists = IfNotExists()
+      "using" adapterName = AdapterName() properties = Configuration()
        {
-        cfs = new CreatePrimaryFeedStatement(nameComponents,
-                                    adapterName, properties, appliedFunction, ifNotExists);
+        cfs = new CreateFeedStatementNew(nameComponents,
+                                    adapterName, properties, ifNotExists);
        }
   )
     {
