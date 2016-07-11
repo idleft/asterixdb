@@ -67,7 +67,7 @@ public class CreateFeedStatementNew implements Statement{
     }
 
     public Statement.Kind getKind() {
-        return Statement.Kind.CREATE_PRIMARY_FEED;
+        return Kind.CREATE_FEED;
     }
 
     public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {

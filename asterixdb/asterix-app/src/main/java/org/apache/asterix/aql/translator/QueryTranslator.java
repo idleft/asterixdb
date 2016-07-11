@@ -80,40 +80,7 @@ import org.apache.asterix.lang.common.base.IRewriterFactory;
 import org.apache.asterix.lang.common.base.IStatementRewriter;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.expression.TypeExpression;
-import org.apache.asterix.lang.common.statement.CompactStatement;
-import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
-import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
-import org.apache.asterix.lang.common.statement.CreateFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
-import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
-import org.apache.asterix.lang.common.statement.DatasetDecl;
-import org.apache.asterix.lang.common.statement.DataverseDecl;
-import org.apache.asterix.lang.common.statement.DataverseDropStatement;
-import org.apache.asterix.lang.common.statement.DeleteStatement;
-import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
-import org.apache.asterix.lang.common.statement.DropStatement;
-import org.apache.asterix.lang.common.statement.ExternalDetailsDecl;
-import org.apache.asterix.lang.common.statement.FeedDropStatement;
-import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
-import org.apache.asterix.lang.common.statement.FunctionDecl;
-import org.apache.asterix.lang.common.statement.FunctionDropStatement;
-import org.apache.asterix.lang.common.statement.IDatasetDetailsDecl;
-import org.apache.asterix.lang.common.statement.IndexDropStatement;
-import org.apache.asterix.lang.common.statement.InsertStatement;
-import org.apache.asterix.lang.common.statement.InternalDetailsDecl;
-import org.apache.asterix.lang.common.statement.LoadStatement;
-import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
-import org.apache.asterix.lang.common.statement.NodegroupDecl;
-import org.apache.asterix.lang.common.statement.Query;
-import org.apache.asterix.lang.common.statement.RefreshExternalDatasetStatement;
-import org.apache.asterix.lang.common.statement.RunStatement;
-import org.apache.asterix.lang.common.statement.SetStatement;
-import org.apache.asterix.lang.common.statement.TypeDecl;
-import org.apache.asterix.lang.common.statement.TypeDropStatement;
-import org.apache.asterix.lang.common.statement.WriteStatement;
+import org.apache.asterix.lang.common.statement.*;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.util.FunctionUtil;
 import org.apache.asterix.metadata.IDatasetDetails;
@@ -346,6 +313,7 @@ public class QueryTranslator extends AbstractLangTranslator {
                     break;
                 }
 
+                case CREATE_FEED:
                 case CREATE_PRIMARY_FEED:
                 case CREATE_SECONDARY_FEED: {
                     handleCreateFeedStatement(metadataProvider, stmt, hcc);
@@ -1969,9 +1937,54 @@ public class QueryTranslator extends AbstractLangTranslator {
 
     }
 
+//    private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+//            IHyracksClientConnection hcc) throws Exception {
+//        CreateFeedStatement cfs = (CreateFeedStatement) stmt;
+//        String dataverseName = getActiveDataverse(cfs.getDataverseName());
+//        String feedName = cfs.getFeedName().getValue();
+//        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
+//        metadataProvider.setMetadataTxnContext(mdTxnCtx);
+//        MetadataLockManager.INSTANCE.createFeedBegin(dataverseName, dataverseName + "." + feedName);
+//        Feed feed = null;
+//        try {
+//            feed = MetadataManager.INSTANCE.getFeed(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
+//            if (feed != null) {
+//                if (cfs.getIfNotExists()) {
+//                    MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
+//                    return;
+//                } else {
+//                    throw new AlgebricksException("A feed with this name " + feedName + " already exists.");
+//                }
+//            }
+//
+//            switch (stmt.getKind()) {
+//                case CREATE_PRIMARY_FEED:
+//                    CreatePrimaryFeedStatement cpfs = (CreatePrimaryFeedStatement) stmt;
+//                    String adaptorName = cpfs.getAdaptorName();
+//                    feed = new Feed(dataverseName, feedName, cfs.getAppliedFunction(), FeedType.PRIMARY, feedName,
+//                            adaptorName, cpfs.getAdaptorConfiguration());
+//                    break;
+//                case CREATE_SECONDARY_FEED:
+//                    CreateSecondaryFeedStatement csfs = (CreateSecondaryFeedStatement) stmt;
+//                    feed = new Feed(dataverseName, feedName, csfs.getAppliedFunction(), FeedType.SECONDARY,
+//                            csfs.getSourceFeedName(), null, null);
+//                    break;
+//                default:
+//                    throw new IllegalStateException();
+//            }
+//            FeedMetadataUtil.validateFeed(feed, mdTxnCtx);
+//            MetadataManager.INSTANCE.addFeed(metadataProvider.getMetadataTxnContext(), feed);
+//            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
+//        } catch (Exception e) {
+//            abort(e, e, mdTxnCtx);
+//            throw e;
+//        } finally {
+//            MetadataLockManager.INSTANCE.createFeedEnd(dataverseName, dataverseName + "." + feedName);
+//        }
+//    }
     private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        CreateFeedStatement cfs = (CreateFeedStatement) stmt;
+        CreateFeedStatementNew cfs = (CreateFeedStatementNew) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName().getValue();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
@@ -1988,22 +2001,10 @@ public class QueryTranslator extends AbstractLangTranslator {
                     throw new AlgebricksException("A feed with this name " + feedName + " already exists.");
                 }
             }
-
-            switch (stmt.getKind()) {
-                case CREATE_PRIMARY_FEED:
-                    CreatePrimaryFeedStatement cpfs = (CreatePrimaryFeedStatement) stmt;
-                    String adaptorName = cpfs.getAdaptorName();
-                    feed = new Feed(dataverseName, feedName, cfs.getAppliedFunction(), FeedType.PRIMARY, feedName,
-                            adaptorName, cpfs.getAdaptorConfiguration());
-                    break;
-                case CREATE_SECONDARY_FEED:
-                    CreateSecondaryFeedStatement csfs = (CreateSecondaryFeedStatement) stmt;
-                    feed = new Feed(dataverseName, feedName, csfs.getAppliedFunction(), FeedType.SECONDARY,
-                            csfs.getSourceFeedName(), null, null);
-                    break;
-                default:
-                    throw new IllegalStateException();
-            }
+            String adaptorName = cfs.getAdaptorName();
+            // Q: Where should the function reside, feed side or some where else?
+            feed = new Feed(dataverseName, feedName, null, FeedType.PRIMARY, feedName,
+                    adaptorName, cfs.getAdaptorConfiguration());
             FeedMetadataUtil.validateFeed(feed, mdTxnCtx);
             MetadataManager.INSTANCE.addFeed(metadataProvider.getMetadataTxnContext(), feed);
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);

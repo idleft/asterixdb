@@ -44,6 +44,7 @@ public interface Statement extends ILangExpression {
         INDEX_DROP,
         CREATE_PRIMARY_FEED,
         CREATE_SECONDARY_FEED,
+        CREATE_FEED,
         DROP_FEED,
         CONNECT_FEED,
         DISCONNECT_FEED,
