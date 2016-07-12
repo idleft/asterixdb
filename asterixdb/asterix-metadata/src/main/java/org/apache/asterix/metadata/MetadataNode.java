@@ -1392,6 +1392,12 @@ public class MetadataNode implements IMetadataNode {
     }
 
     @Override
+    public void updateFeed(JobId jobId, Feed feed) throws MetadataException, RemoteException {
+        dropFeed(jobId, feed.getDataverseName(), feed.getFeedName());
+        addFeed(jobId, feed);
+    }
+
+    @Override
     public void dropFeedPolicy(JobId jobId, String dataverseName, String policyName)
             throws MetadataException, RemoteException {
         try {

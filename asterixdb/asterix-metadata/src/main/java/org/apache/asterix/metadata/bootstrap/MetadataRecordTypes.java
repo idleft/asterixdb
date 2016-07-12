@@ -21,6 +21,7 @@ package org.apache.asterix.metadata.bootstrap;
 
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.metadata.MetadataException;
+import org.apache.asterix.om.base.AOrderedList;
 import org.apache.asterix.om.types.AOrderedListType;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.AUnionType;
@@ -37,7 +38,7 @@ public final class MetadataRecordTypes {
     public static ARecordType DATASET_RECORDTYPE;
     public static ARecordType INTERNAL_DETAILS_RECORDTYPE;
     public static ARecordType EXTERNAL_DETAILS_RECORDTYPE;
-    public static ARecordType FEED_DETAILS_RECORDTYPE;
+//    public static ARecordType FEED_DETAILS_RECORDTYPE;
     public static ARecordType DATASET_HINTS_RECORDTYPE;
     public static ARecordType COMPACTION_POLICY_PROPERTIES_RECORDTYPE;
     public static ARecordType DATASOURCE_ADAPTER_PROPERTIES_RECORDTYPE;
@@ -51,8 +52,7 @@ public final class MetadataRecordTypes {
     public static ARecordType FUNCTION_RECORDTYPE;
     public static ARecordType DATASOURCE_ADAPTER_RECORDTYPE;
     public static ARecordType FEED_RECORDTYPE;
-    public static ARecordType PRIMARY_FEED_DETAILS_RECORDTYPE;
-    public static ARecordType SECONDARY_FEED_DETAILS_RECORDTYPE;
+    public static ARecordType FEED_CONN_RECORDTYPE;
     public static ARecordType FEED_ADAPTER_CONFIGURATION_RECORDTYPE;
     public static ARecordType FEED_POLICY_RECORDTYPE;
     public static ARecordType POLICY_PARAMS_RECORDTYPE;
@@ -75,9 +75,9 @@ public final class MetadataRecordTypes {
             COMPACTION_POLICY_PROPERTIES_RECORDTYPE = createPropertiesRecordType();
             INTERNAL_DETAILS_RECORDTYPE = createInternalDetailsRecordType();
             EXTERNAL_DETAILS_RECORDTYPE = createExternalDetailsRecordType();
-            FEED_DETAILS_RECORDTYPE = createFeedDetailsRecordType();
             DATASET_HINTS_RECORDTYPE = createPropertiesRecordType();
             DATASET_RECORDTYPE = createDatasetRecordType();
+            FEED_CONN_RECORDTYPE = createPropertiesRecordType();
 
             // Starting another dependency chain.
             FIELD_RECORDTYPE = createFieldRecordType();
@@ -93,9 +93,7 @@ public final class MetadataRecordTypes {
             FUNCTION_RECORDTYPE = createFunctionRecordType();
             DATASOURCE_ADAPTER_RECORDTYPE = createDatasourceAdapterRecordType();
 
-            FEED_ADAPTER_CONFIGURATION_RECORDTYPE = createPropertiesRecordType();
-            PRIMARY_FEED_DETAILS_RECORDTYPE = createPrimaryFeedDetailsRecordType();
-            SECONDARY_FEED_DETAILS_RECORDTYPE = createSecondaryFeedDetailsRecordType();
+            FEED_ADAPTER_CONFIGURATION_RECORDTYPE = createFeedAdaptorConfigRecordType();
             FEED_RECORDTYPE = createFeedRecordType();
             FEED_POLICY_RECORDTYPE = createFeedPolicyRecordType();
             LIBRARY_RECORDTYPE = createLibraryRecordType();
@@ -114,12 +112,11 @@ public final class MetadataRecordTypes {
             FUNCTION_RECORDTYPE.generateNestedDerivedTypeNames();
             DATASOURCE_ADAPTER_RECORDTYPE.generateNestedDerivedTypeNames();
             FEED_RECORDTYPE.generateNestedDerivedTypeNames();
-            PRIMARY_FEED_DETAILS_RECORDTYPE.generateNestedDerivedTypeNames();
-            SECONDARY_FEED_DETAILS_RECORDTYPE.generateNestedDerivedTypeNames();
             FEED_POLICY_RECORDTYPE.generateNestedDerivedTypeNames();
             LIBRARY_RECORDTYPE.generateNestedDerivedTypeNames();
             COMPACTION_POLICY_RECORDTYPE.generateNestedDerivedTypeNames();
             EXTERNAL_FILE_RECORDTYPE.generateNestedDerivedTypeNames();
+            FEED_ADAPTER_CONFIGURATION_RECORDTYPE.generateNestedDerivedTypeNames();
         } catch (AsterixException e) {
             throw new MetadataException(e);
         }
@@ -203,36 +200,6 @@ public final class MetadataRecordTypes {
         String[] fieldNames = { "DataverseName", "CompactionPolicy", "Classname" };
         IAType[] fieldTypes = { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING };
         return new ARecordType("CompactionPolicyRecordType", fieldNames, fieldTypes, true);
-    }
-
-    public static final int FEED_DETAILS_ARECORD_FILESTRUCTURE_FIELD_INDEX = 0;
-    public static final int FEED_DETAILS_ARECORD_PARTITIONSTRATEGY_FIELD_INDEX = 1;
-    public static final int FEED_DETAILS_ARECORD_PARTITIONKEY_FIELD_INDEX = 2;
-    public static final int FEED_DETAILS_ARECORD_PRIMARYKEY_FIELD_INDEX = 3;
-    public static final int FEED_DETAILS_ARECORD_GROUPNAME_FIELD_INDEX = 4;
-    public static final int FEED_DETAILS_ARECORD_DATASOURCE_ADAPTER_FIELD_INDEX = 5;
-    public static final int FEED_DETAILS_ARECORD_PROPERTIES_FIELD_INDEX = 6;
-    public static final int FEED_DETAILS_ARECORD_FUNCTION_FIELD_INDEX = 7;
-    public static final int FEED_DETAILS_ARECORD_STATE_FIELD_INDEX = 8;
-    public static final int FEED_DETAILS_ARECORD_COMPACTION_POLICY_FIELD_INDEX = 9;
-    public static final int FEED_DETAILS_ARECORD_COMPACTION_POLICY_PROPERTIES_FIELD_INDEX = 10;
-
-    private static final ARecordType createFeedDetailsRecordType() throws AsterixException {
-        AOrderedListType orderedListType = new AOrderedListType(BuiltinType.ASTRING, null);
-        AOrderedListType orderedListOfPropertiesType = new AOrderedListType(DATASOURCE_ADAPTER_PROPERTIES_RECORDTYPE,
-                null);
-        AOrderedListType compactionPolicyPropertyListType = new AOrderedListType(
-                COMPACTION_POLICY_PROPERTIES_RECORDTYPE, null);
-        String[] fieldNames = { "FileStructure", "PartitioningStrategy", "PartitioningKey", "PrimaryKey", "GroupName",
-                "DatasourceAdapter", "Properties", "Function", "Status", "CompactionPolicy",
-                "CompactionPolicyProperties" };
-
-        IAType feedFunctionUnion = AUnionType.createUnknownableType(BuiltinType.ASTRING);
-
-        IAType[] fieldTypes = { BuiltinType.ASTRING, BuiltinType.ASTRING, orderedListType, orderedListType,
-                BuiltinType.ASTRING, BuiltinType.ASTRING, orderedListOfPropertiesType, feedFunctionUnion,
-                BuiltinType.ASTRING, BuiltinType.ASTRING, compactionPolicyPropertyListType };
-        return new ARecordType(null, fieldNames, fieldTypes, true);
     }
 
     public static final int DATASET_ARECORD_DATAVERSENAME_FIELD_INDEX = 0;
@@ -422,50 +389,32 @@ public final class MetadataRecordTypes {
 
     public static final int FEED_ARECORD_DATAVERSE_NAME_FIELD_INDEX = 0;
     public static final int FEED_ARECORD_FEED_NAME_FIELD_INDEX = 1;
-    public static final int FEED_ARECORD_FUNCTION_FIELD_INDEX = 2;
-    public static final int FEED_ARECORD_FEED_TYPE_FIELD_INDEX = 3;
-    public static final int FEED_ARECORD_PRIMARY_TYPE_DETAILS_FIELD_INDEX = 4;
-    public static final int FEED_ARECORD_SECONDARY_TYPE_DETAILS_FIELD_INDEX = 5;
-    public static final int FEED_ARECORD_TIMESTAMP_FIELD_INDEX = 6;
+    public static final int FEED_ARECORD_CONNS_FIELD_INDEX = 2;
+    public static final int FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX = 3;
+    public static final int FEED_ARECORD_TIMESTAMP_FIELD_INDEX = 4;
 
-    public static final int FEED_ARECORD_PRIMARY_FIELD_DETAILS_ADAPTOR_NAME_FIELD_INDEX = 0;
-    public static final int FEED_ARECORD_PRIMARY_FIELD_DETAILS_ADAPTOR_CONFIGURATION_FIELD_INDEX = 1;
-
-    public static final int FEED_ARECORD_SECONDARY_FIELD_DETAILS_SOURCE_FEED_NAME_FIELD_INDEX = 0;
+    public static final int FEED_ADAPTER_NAME_FIELD_INDEX = 0;
+    public static final int FEED_ADAPTER_CONFIGURATION_FIELD_INDEX = 1;
 
     private static ARecordType createFeedRecordType() throws AsterixException, HyracksDataException {
 
-        IAType feedFunctionUnion = AUnionType.createUnknownableType(BuiltinType.ASTRING);
-        IAType primaryRecordUnion = AUnionType.createUnknownableType(PRIMARY_FEED_DETAILS_RECORDTYPE);
-        IAType secondaryRecordUnion = AUnionType.createUnknownableType(SECONDARY_FEED_DETAILS_RECORDTYPE);
+        AOrderedListType orderedFeedConnectionListType = new AOrderedListType(
+                FEED_CONN_RECORDTYPE, null);
 
-        String[] fieldNames = { "DataverseName", "FeedName", "Function", "FeedType", "PrimaryTypeDetails",
-                "SecondaryTypeDetails", "Timestamp" };
-        IAType[] fieldTypes = { BuiltinType.ASTRING, BuiltinType.ASTRING, feedFunctionUnion, BuiltinType.ASTRING,
-                primaryRecordUnion, secondaryRecordUnion, BuiltinType.ASTRING };
+        IAType feedAdaptorConfigRecordUnion = AUnionType.createUnknownableType(FEED_ADAPTER_CONFIGURATION_RECORDTYPE);
+        IAType feedConnsUnion = AUnionType.createUnknownableType(orderedFeedConnectionListType);
 
+        IAType[] fieldTypes = { BuiltinType.ASTRING, BuiltinType.ASTRING, feedConnsUnion,feedAdaptorConfigRecordUnion,
+                BuiltinType.ASTRING };
+        String[] fieldNames = { "DataverseName", "FeedName", "FeedConns", "FeedAdaptorConfig", "Timestamp" };
         return new ARecordType("FeedRecordType", fieldNames, fieldTypes, true);
     }
 
-    public static final int FEED_TYPE_PRIMARY_ARECORD_ADAPTER_NAME_FIELD_INDEX = 0;
-    public static final int FEED_TYPE_PRIMARY_ARECORD_ADAPTER_CONFIGURATION_FIELD_INDEX = 1;
-
-    private static final ARecordType createPrimaryFeedDetailsRecordType()
-            throws AsterixException, HyracksDataException {
+    private static final ARecordType createFeedAdaptorConfigRecordType(){
         AUnorderedListType unorderedAdaptorPropertyListType = new AUnorderedListType(
                 DATASOURCE_ADAPTER_PROPERTIES_RECORDTYPE, null);
-
         String[] fieldNames = { "AdapterName", "AdapterConfiguration" };
         IAType[] fieldTypes = { BuiltinType.ASTRING, unorderedAdaptorPropertyListType };
-        return new ARecordType(null, fieldNames, fieldTypes, true);
-    }
-
-    public static final int FEED_TYPE_SECONDARY_ARECORD_SOURCE_FEED_NAME_FIELD_INDEX = 0;
-
-    private static final ARecordType createSecondaryFeedDetailsRecordType()
-            throws AsterixException, HyracksDataException {
-        String[] fieldNames = { "SourceFeedName" };
-        IAType[] fieldTypes = { BuiltinType.ASTRING };
         return new ARecordType(null, fieldNames, fieldTypes, true);
     }
 

@@ -19,6 +19,7 @@
 package org.apache.asterix.external.feed.api;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.apache.asterix.common.functions.FunctionSignature;
@@ -26,21 +27,9 @@ import org.apache.asterix.external.feed.management.FeedId;
 
 public interface IFeed extends Serializable {
 
-    public enum FeedType {
-        /**
-         * A feed that derives its data from an external source.
-         */
-        PRIMARY,
+    public Map<String, ArrayList<FunctionSignature>> getFeedConns();
 
-        /**
-         * A feed that derives its data from another primary or secondary feed.
-         */
-        SECONDARY
-    }
-
-    public FeedType getFeedType();
-
-    public FunctionSignature getAppliedFunction();
+    public void setFeedConns(Map<String, ArrayList<FunctionSignature>> feedConns);
 
     public String getFeedName();
 
@@ -51,5 +40,6 @@ public interface IFeed extends Serializable {
     public Map<String, String> getAdapterConfiguration();
 
     public String getAdapterName();
+
 
 }

@@ -1096,6 +1096,7 @@ Statement FeedStatement() throws ParseException:
 {
   Pair<Identifier,Identifier> feedNameComponents = null;
   Pair<Identifier,Identifier> datasetNameComponents = null;
+  ArrayList<FunctionSignature> appliedFunctions = new ArrayList<FunctionSignature>();
 
   Map<String,String> configuration = null;
   Statement stmt = null;
@@ -1103,8 +1104,9 @@ Statement FeedStatement() throws ParseException:
 }
 {
   (
-    "connect" "feed" feedNameComponents = QualifiedName() "to" <DATASET> datasetNameComponents = QualifiedName() (policy = GetPolicy())?
+    "connect" "feed" feedNameComponents = QualifiedName() "to" <DATASET> datasetNameComponents = QualifiedName() (appliedFunction = ApplyFunction())? (policy = GetPolicy())?
       {
+        appliedFunctions.add(appliedFunction);
         stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
       }
     | "disconnect" "feed" feedNameComponents = QualifiedName() <FROM> <DATASET> datasetNameComponents = QualifiedName()

@@ -19,11 +19,14 @@
 package org.apache.asterix.lang.common.statement;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 import org.apache.hyracks.algebricks.common.utils.Pair;
+
+import java.util.ArrayList;
 
 public class ConnectFeedStatement implements Statement {
 
@@ -34,6 +37,7 @@ public class ConnectFeedStatement implements Statement {
     private Query query;
     private int varCounter;
     private boolean forceConnect = false;
+    private final ArrayList<FunctionSignature> appliedFunctions;
 
     public static final String WAIT_FOR_COMPLETION = "wait-for-completion-feed";
 
@@ -49,15 +53,18 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
+        // not sure this function use?
+        this.appliedFunctions = null;
     }
 
-    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName, String policy,
-            int varCounter) {
+    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName,
+                                ArrayList<FunctionSignature> appliedFunctions, String policy,int varCounter) {
         this.dataverseName = dataverseName;
         this.datasetName = datasetName;
         this.feedName = feedName.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
+        this.appliedFunctions = appliedFunctions;
     }
 
     public Identifier getDataverseName() {
@@ -102,4 +109,7 @@ public class ConnectFeedStatement implements Statement {
         return feedName;
     }
 
+    public ArrayList<FunctionSignature> getAppliedFunctions() {
+        return appliedFunctions;
+    }
 }

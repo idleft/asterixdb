@@ -832,6 +832,16 @@ public class MetadataManager implements IMetadataManager {
         ctx.addFeed(feed);
     }
 
+    @Override
+    public void updateFeed(MetadataTransactionContext ctx, Feed feed) throws MetadataException {
+        try{
+            metadataNode.updateFeed(ctx.getJobId(), feed);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
+        ctx.updateFeed(feed);
+    }
+
     public List<DatasourceAdapter> getDataverseAdapters(MetadataTransactionContext mdTxnCtx, String dataverse)
             throws MetadataException {
         List<DatasourceAdapter> dataverseAdapters;

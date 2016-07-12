@@ -57,7 +57,6 @@ import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.feed.api.IFeed;
-import org.apache.asterix.external.feed.api.IFeed.FeedType;
 import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.api.IFeedJoint.FeedJointType;
 import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber;
@@ -313,9 +312,7 @@ public class QueryTranslator extends AbstractLangTranslator {
                     break;
                 }
 
-                case CREATE_FEED:
-                case CREATE_PRIMARY_FEED:
-                case CREATE_SECONDARY_FEED: {
+                case CREATE_FEED: {
                     handleCreateFeedStatement(metadataProvider, stmt, hcc);
                     break;
                 }
@@ -1937,51 +1934,6 @@ public class QueryTranslator extends AbstractLangTranslator {
 
     }
 
-//    private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
-//            IHyracksClientConnection hcc) throws Exception {
-//        CreateFeedStatement cfs = (CreateFeedStatement) stmt;
-//        String dataverseName = getActiveDataverse(cfs.getDataverseName());
-//        String feedName = cfs.getFeedName().getValue();
-//        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
-//        metadataProvider.setMetadataTxnContext(mdTxnCtx);
-//        MetadataLockManager.INSTANCE.createFeedBegin(dataverseName, dataverseName + "." + feedName);
-//        Feed feed = null;
-//        try {
-//            feed = MetadataManager.INSTANCE.getFeed(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
-//            if (feed != null) {
-//                if (cfs.getIfNotExists()) {
-//                    MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
-//                    return;
-//                } else {
-//                    throw new AlgebricksException("A feed with this name " + feedName + " already exists.");
-//                }
-//            }
-//
-//            switch (stmt.getKind()) {
-//                case CREATE_PRIMARY_FEED:
-//                    CreatePrimaryFeedStatement cpfs = (CreatePrimaryFeedStatement) stmt;
-//                    String adaptorName = cpfs.getAdaptorName();
-//                    feed = new Feed(dataverseName, feedName, cfs.getAppliedFunction(), FeedType.PRIMARY, feedName,
-//                            adaptorName, cpfs.getAdaptorConfiguration());
-//                    break;
-//                case CREATE_SECONDARY_FEED:
-//                    CreateSecondaryFeedStatement csfs = (CreateSecondaryFeedStatement) stmt;
-//                    feed = new Feed(dataverseName, feedName, csfs.getAppliedFunction(), FeedType.SECONDARY,
-//                            csfs.getSourceFeedName(), null, null);
-//                    break;
-//                default:
-//                    throw new IllegalStateException();
-//            }
-//            FeedMetadataUtil.validateFeed(feed, mdTxnCtx);
-//            MetadataManager.INSTANCE.addFeed(metadataProvider.getMetadataTxnContext(), feed);
-//            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
-//        } catch (Exception e) {
-//            abort(e, e, mdTxnCtx);
-//            throw e;
-//        } finally {
-//            MetadataLockManager.INSTANCE.createFeedEnd(dataverseName, dataverseName + "." + feedName);
-//        }
-//    }
     private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
         CreateFeedStatementNew cfs = (CreateFeedStatementNew) stmt;
@@ -2003,7 +1955,7 @@ public class QueryTranslator extends AbstractLangTranslator {
             }
             String adaptorName = cfs.getAdaptorName();
             // Q: Where should the function reside, feed side or some where else?
-            feed = new Feed(dataverseName, feedName, null, FeedType.PRIMARY, feedName,
+            feed = new Feed(dataverseName, feedName,feedName,
                     adaptorName, cfs.getAdaptorConfiguration());
             FeedMetadataUtil.validateFeed(feed, mdTxnCtx);
             MetadataManager.INSTANCE.addFeed(metadataProvider.getMetadataTxnContext(), feed);
@@ -2162,6 +2114,7 @@ public class QueryTranslator extends AbstractLangTranslator {
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName();
         String datasetName = cfs.getDatasetName().getValue();
+        ArrayList<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
 
         boolean bActiveTxn = true;
 
@@ -2184,6 +2137,14 @@ public class QueryTranslator extends AbstractLangTranslator {
 
             Feed feed = FeedMetadataUtil.validateIfFeedExists(dataverseName, cfs.getFeedName(),
                     metadataProvider.getMetadataTxnContext());
+
+            if(feed.getFeedConns()==null)
+                feed.setFeedConns(new HashMap<>());
+            if(!feed.getFeedConns().containsKey(dataverseName))
+                feed.getFeedConns().put(dataverseName, new ArrayList<>());
+            // preserve order?
+            feed.getFeedConns().get(dataverseName).addAll(appliedFunctions);
+            MetadataManager.INSTANCE.updateFeed(mdTxnCtx, feed);
 
             feedConnId = new FeedConnectionId(dataverseName, cfs.getFeedName(), cfs.getDatasetName().getValue());
 

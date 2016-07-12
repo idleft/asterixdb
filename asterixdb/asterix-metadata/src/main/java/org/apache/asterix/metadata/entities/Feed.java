@@ -19,6 +19,7 @@
 
 package org.apache.asterix.metadata.entities;
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import org.apache.asterix.common.functions.FunctionSignature;
@@ -36,9 +37,7 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     /** A unique identifier for the feed */
     private FeedId feedId;
     /** The function that is to be applied on each incoming feed tuple **/
-    private FunctionSignature appliedFunction;
-    /** The type {@code FeedType} associated with the feed. **/
-    private IFeed.FeedType feedType;
+    private Map<String, ArrayList<FunctionSignature>> feedConns;
     /** A string representation of the instance **/
     private String displayName;
     /** A string representation of the adapter name **/
@@ -48,12 +47,10 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     /** Source primary feed */
     private String sourceFeedName;
 
-    public Feed(String dataverseName, String feedName, FunctionSignature appliedFunction, IFeed.FeedType feedType,
+    public Feed(String dataverseName, String feedName,
             String sourceFeedName, String adapterName, Map<String, String> configuration) {
         this.feedId = new FeedId(dataverseName, feedName);
-        this.appliedFunction = appliedFunction;
-        this.feedType = feedType;
-        this.displayName = feedType + "(" + feedId + ")";
+        this.displayName = feedId.toString();
         this.adapterName = adapterName;
         this.adapterConfiguration = configuration;
         this.sourceFeedName = sourceFeedName;
@@ -75,13 +72,13 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     }
 
     @Override
-    public FunctionSignature getAppliedFunction() {
-        return appliedFunction;
+    public Map<String, ArrayList<FunctionSignature>> getFeedConns() {
+        return feedConns;
     }
 
     @Override
-    public IFeed.FeedType getFeedType() {
-        return feedType;
+    public void setFeedConns(Map<String, ArrayList<FunctionSignature>> feedConns){
+        this.feedConns = feedConns;
     }
 
     @Override
@@ -103,7 +100,7 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
 
     @Override
     public String toString() {
-        return feedType + "(" + feedId + ")";
+        return feedId.toString();
     }
 
     @Override

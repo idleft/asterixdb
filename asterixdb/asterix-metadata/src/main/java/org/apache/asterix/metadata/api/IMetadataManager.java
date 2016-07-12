@@ -457,6 +457,8 @@ public interface IMetadataManager {
      */
     public Feed getFeed(MetadataTransactionContext ctx, String dataverse, String feedName) throws MetadataException;
 
+    public void updateFeed(MetadataTransactionContext ctx, Feed feed) throws MetadataException;
+
     /**
      * @param ctx
      * @param dataverse
