@@ -110,25 +110,6 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
         }
         feed = new Feed(dataverseName, feedName, feedName, adapterName,
                 adaptorConfiguration);
-
-        // restore conns with function
-        Object o = feedRecord.getValueByPos(MetadataRecordTypes.FEED_ARECORD_CONNS_FIELD_INDEX);
-        if (!(o instanceof ANull) && !(o instanceof AMissing)) {
-            Map<String, ArrayList<FunctionSignature>> feedConns = new HashMap<>();
-            cursor = ((AOrderedList) feedRecord.getValueByPos(
-                    MetadataRecordTypes.FEED_ARECORD_CONNS_FIELD_INDEX)).getCursor();
-            while(cursor.next()){
-                dn = ((AString)((ARecord)cursor.get()).getValueByPos(MetadataRecordTypes.PROPERTIES_NAME_FIELD_INDEX))
-                        .getStringValue();
-                fn = ((AString)((ARecord)cursor.get()).getValueByPos(MetadataRecordTypes.PROPERTIES_VALUE_FIELD_INDEX))
-                        .getStringValue();
-                if(!feedConns.containsKey(dn))
-                    feedConns.put(dn, new ArrayList<>());
-                feedConns.get(dn).add(new FunctionSignature(dataverseName, fn,1));
-            }
-            feed.setFeedConns(feedConns);
-        }
-
         return feed;
     }
 
@@ -158,15 +139,11 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
         stringSerde.serialize(aString, fieldValue.getDataOutput());
         recordBuilder.addField(MetadataRecordTypes.FEED_ARECORD_FEED_NAME_FIELD_INDEX, fieldValue);
 
-        // write feedConns, 2
-        fieldValue.reset();
-        writeFeedConnsField(recordBuilder, feed, fieldValue);
-
-        // write adaptor configuration, 3
+        // write adaptor configuration, 2
         fieldValue.reset();
         writeFeedAdaptorField(recordBuilder, feed, fieldValue);
 
-        // write timestampe, 4
+        // write timestampe, 3
         fieldValue.reset();
         aString.setValue(Calendar.getInstance().getTime().toString());
         stringSerde.serialize(aString, fieldValue.getDataOutput());
@@ -178,24 +155,6 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
 
         tuple.reset(tupleBuilder.getFieldEndOffsets(), tupleBuilder.getByteArray());
         return tuple;
-    }
-
-    private void writeFeedConnsField(IARecordBuilder rb, Feed feed, ArrayBackedValueStorage vb) throws HyracksDataException {
-        ArrayBackedValueStorage listEleBuffer = new ArrayBackedValueStorage();
-        OrderedListBuilder orderedListBuilder = new OrderedListBuilder();
-
-        if(feed.getFeedConns()!=null){
-            Map<String, ArrayList<FunctionSignature>> feedConns = feed.getFeedConns();
-            for(String dn: feedConns.keySet()){
-                for(FunctionSignature fs: feedConns.get(dn)){
-                    listEleBuffer.reset();
-                    writePropertyTypeRecord(dn, fs.getName(), listEleBuffer.getDataOutput());
-                    orderedListBuilder.addItem(listEleBuffer);
-                }
-            }
-            orderedListBuilder.write(vb.getDataOutput(),true);
-            rb.addField(MetadataRecordTypes.FEED_ARECORD_CONNS_FIELD_INDEX, vb);
-        }
     }
 
     private void writeFeedAdaptorField(IARecordBuilder recordBuilder, Feed feed, ArrayBackedValueStorage fieldValueBuffer)

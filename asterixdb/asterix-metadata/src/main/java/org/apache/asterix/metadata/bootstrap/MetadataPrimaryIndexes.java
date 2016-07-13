@@ -45,6 +45,7 @@ public class MetadataPrimaryIndexes {
     public static IMetadataIndex FEED_POLICY_DATASET;
     public static IMetadataIndex COMPACTION_POLICY_DATASET;
     public static IMetadataIndex EXTERNAL_FILE_DATASET;
+    public static IMetadataIndex FEED_CONN_DATASET;
 
     /**
      * Create all metadata primary index descriptors. MetadataRecordTypes must
@@ -102,6 +103,12 @@ public class MetadataPrimaryIndexes {
                 new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING },
                 (Arrays.asList(Arrays.asList("DataverseName"), Arrays.asList("FeedName"))), 0,
                 MetadataRecordTypes.FEED_RECORDTYPE, true, new int[] { 0, 1 });
+
+        FEED_CONN_DATASET = new MetadataIndex(MetadataIndexImmutableProperties.FEED_CONN,3,
+                new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING},
+                (Arrays.asList(Arrays.asList("DataverseName"), Arrays.asList("FeedId"),
+                        Arrays.asList("DatasetName"))),0,MetadataRecordTypes.FEED_CONN_RECORDTYPE,
+                true, new int[] {0,1,2});
 
         LIBRARY_DATASET = new MetadataIndex(MetadataIndexImmutableProperties.LIBRARY, 3,
                 new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING },

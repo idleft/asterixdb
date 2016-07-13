@@ -16,26 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.asterix.external.feed.api;
+
+import org.apache.asterix.common.functions.FunctionSignature;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Map;
 
-import org.apache.asterix.common.functions.FunctionSignature;
-import org.apache.asterix.external.feed.management.FeedId;
+/**
+ * Created by Xikui on 7/11/16.
+ */
+public interface IFeedConnection extends Serializable {
 
-public interface IFeed extends Serializable {
+    public ArrayList<FunctionSignature> getAppliedFunctions();
 
-    public String getFeedName();
-
-    public String getDataverseName();
-
-    public FeedId getFeedId();
-
-    public Map<String, String> getAdapterConfiguration();
-
-    public String getAdapterName();
-
+    public void setAppliedFunctions(ArrayList<FunctionSignature> appliedFunctions);
 
 }

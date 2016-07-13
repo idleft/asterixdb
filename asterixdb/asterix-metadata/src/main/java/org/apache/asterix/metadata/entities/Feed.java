@@ -36,8 +36,6 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
 
     /** A unique identifier for the feed */
     private FeedId feedId;
-    /** The function that is to be applied on each incoming feed tuple **/
-    private Map<String, ArrayList<FunctionSignature>> feedConns;
     /** A string representation of the instance **/
     private String displayName;
     /** A string representation of the adapter name **/
@@ -69,16 +67,6 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     @Override
     public String getFeedName() {
         return feedId.getFeedName();
-    }
-
-    @Override
-    public Map<String, ArrayList<FunctionSignature>> getFeedConns() {
-        return feedConns;
-    }
-
-    @Override
-    public void setFeedConns(Map<String, ArrayList<FunctionSignature>> feedConns){
-        this.feedConns = feedConns;
     }
 
     @Override

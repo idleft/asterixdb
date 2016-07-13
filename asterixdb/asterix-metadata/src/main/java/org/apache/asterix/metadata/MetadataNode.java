@@ -46,32 +46,8 @@ import org.apache.asterix.metadata.api.IMetadataNode;
 import org.apache.asterix.metadata.api.IValueExtractor;
 import org.apache.asterix.metadata.bootstrap.MetadataIndexImmutableProperties;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
-import org.apache.asterix.metadata.entities.CompactionPolicy;
-import org.apache.asterix.metadata.entities.Dataset;
-import org.apache.asterix.metadata.entities.DatasourceAdapter;
-import org.apache.asterix.metadata.entities.Datatype;
-import org.apache.asterix.metadata.entities.Dataverse;
-import org.apache.asterix.metadata.entities.Feed;
-import org.apache.asterix.metadata.entities.FeedPolicyEntity;
-import org.apache.asterix.metadata.entities.Function;
-import org.apache.asterix.metadata.entities.Index;
-import org.apache.asterix.metadata.entities.InternalDatasetDetails;
-import org.apache.asterix.metadata.entities.Library;
-import org.apache.asterix.metadata.entities.Node;
-import org.apache.asterix.metadata.entities.NodeGroup;
-import org.apache.asterix.metadata.entitytupletranslators.CompactionPolicyTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.DatasetTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.DatasourceAdapterTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.DatatypeTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.DataverseTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.ExternalFileTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.FeedPolicyTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.FeedTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.FunctionTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.IndexTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.LibraryTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.NodeGroupTupleTranslator;
-import org.apache.asterix.metadata.entitytupletranslators.NodeTupleTranslator;
+import org.apache.asterix.metadata.entities.*;
+import org.apache.asterix.metadata.entitytupletranslators.*;
 import org.apache.asterix.metadata.valueextractors.MetadataEntityValueExtractor;
 import org.apache.asterix.metadata.valueextractors.TupleCopyValueExtractor;
 import org.apache.asterix.om.base.AInt32;
@@ -1342,14 +1318,54 @@ public class MetadataNode implements IMetadataNode {
     }
 
     @Override
+    public void addFeedConnection(JobId jobId, FeedConnection feedConnection) throws MetadataException {
+        try{
+            FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(true);
+            ITupleReference feedConnTuple = tupleReaderWriter.getTupleFromMetadataEntity(feedConnection);
+            insertTupleIntoIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, feedConnTuple);
+        } catch (IndexException|ACIDException|IOException e) {
+            throw new MetadataException(e);
+        }
+    }
+
+    @Override
+    public FeedConnection getFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
+            throws MetadataException {
+        try{
+            ITupleReference searchKey = createTuple(dataverseName, feedName, datasetName);
+            FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(false);
+            List<FeedConnection> results = new ArrayList<>();
+            IValueExtractor<FeedConnection> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
+            searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey, valueExtractor, results);
+            if(!results.isEmpty())
+                return results.get(0);
+            return null;
+        } catch (IndexException |IOException e) {
+            throw new MetadataException(e);
+        }
+    }
+
+    @Override
+    public void dropFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
+            throws MetadataException {
+        try{
+            ITupleReference searchKey = createTuple(dataverseName, feedName, datasetName);
+            ITupleReference tuple = getTupleToBeDeleted(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey);
+            deleteTupleFromIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, tuple);
+        } catch (IndexException| IOException |ACIDException e){
+            throw new MetadataException(e);
+        }
+    }
+
+    @Override
     public void addFeed(JobId jobId, Feed feed) throws MetadataException, RemoteException {
         try {
             // Insert into the 'Feed' dataset.
             FeedTupleTranslator tupleReaderWriter = new FeedTupleTranslator(true);
             ITupleReference feedTuple = tupleReaderWriter.getTupleFromMetadataEntity(feed);
             insertTupleIntoIndex(jobId, MetadataPrimaryIndexes.FEED_DATASET, feedTuple);
-
         } catch (TreeIndexException e) {
+            //TODO: no longer has TreeIndexException, need investigation, No Remote Exception too
             throw new MetadataException("A feed with this name " + feed.getFeedName() + " already exists in dataverse '"
                     + feed.getDataverseName() + "'.", e);
         } catch (ACIDException | IndexException | IOException e) {
@@ -1389,12 +1405,6 @@ public class MetadataNode implements IMetadataNode {
         } catch (ACIDException | IndexException | IOException e) {
             throw new MetadataException(e);
         }
-    }
-
-    @Override
-    public void updateFeed(JobId jobId, Feed feed) throws MetadataException, RemoteException {
-        dropFeed(jobId, feed.getDataverseName(), feed.getFeedName());
-        addFeed(jobId, feed);
     }
 
     @Override

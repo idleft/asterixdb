@@ -35,7 +35,8 @@ public enum MetadataIndexImmutableProperties {
     FEED_ACTIVITY_DATASET_ID("FeedActivity", 11, 11),
     FEED_POLICY("FeedPolicy", 12, 12),
     COMPACTION_POLICY("CompactionPolicy", 13, 13),
-    EXTERNAL_FILE("ExternalFile", 14, 14);
+    EXTERNAL_FILE("ExternalFile", 14, 14),
+    FEED_CONN("FeedConnection",15,15);
 
     private final String indexName;
     private final int datasetId;
