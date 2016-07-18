@@ -2114,7 +2114,6 @@ public class QueryTranslator extends AbstractLangTranslator {
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName();
         String datasetName = cfs.getDatasetName().getValue();
-        ArrayList<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
 
         boolean bActiveTxn = true;
 
@@ -2129,6 +2128,7 @@ public class QueryTranslator extends AbstractLangTranslator {
         try {
             metadataProvider.setWriteTransaction(true);
 
+            // why we need a compiled conn feed statement? add more attributes?
             CompiledConnectFeedStatement cbfs = new CompiledConnectFeedStatement(dataverseName, cfs.getFeedName(),
                     cfs.getDatasetName().getValue(), cfs.getPolicy(), cfs.getQuery(), cfs.getVarCounter());
 
@@ -2137,14 +2137,6 @@ public class QueryTranslator extends AbstractLangTranslator {
 
             Feed feed = FeedMetadataUtil.validateIfFeedExists(dataverseName, cfs.getFeedName(),
                     metadataProvider.getMetadataTxnContext());
-
-            if(feed.getFeedConns()==null)
-                feed.setFeedConns(new HashMap<>());
-            if(!feed.getFeedConns().containsKey(dataverseName))
-                feed.getFeedConns().put(dataverseName, new ArrayList<>());
-            // preserve order?
-            feed.getFeedConns().get(dataverseName).addAll(appliedFunctions);
-            MetadataManager.INSTANCE.updateFeed(mdTxnCtx, feed);
 
             feedConnId = new FeedConnectionId(dataverseName, cfs.getFeedName(), cfs.getDatasetName().getValue());
 
