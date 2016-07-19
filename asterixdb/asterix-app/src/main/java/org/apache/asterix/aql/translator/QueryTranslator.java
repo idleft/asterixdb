@@ -1799,7 +1799,7 @@ public class QueryTranslator extends AbstractLangTranslator {
             // for cfs, assign null to init_para for now.
             Function function = new Function(dataverse, functionName, cfs.getaAterixFunction().getArity(),
                     cfs.getParamList(), Function.RETURNTYPE_VOID, cfs.getFunctionBody(), Function.LANGUAGE_AQL,
-                    FunctionKind.SCALAR.toString(), null);
+                    FunctionKind.SCALAR.toString(), "");
             MetadataManager.INSTANCE.addFunction(mdTxnCtx, function);
 
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
