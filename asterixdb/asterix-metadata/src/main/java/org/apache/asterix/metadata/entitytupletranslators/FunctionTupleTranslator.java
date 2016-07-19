@@ -37,6 +37,7 @@ import org.apache.asterix.om.base.ARecord;
 import org.apache.asterix.om.base.AString;
 import org.apache.asterix.om.base.IACursor;
 import org.apache.asterix.om.types.AOrderedListType;
+import org.apache.hadoop.hive.ql.io.orc.Metadata;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.dataflow.common.data.accessors.ITupleReference;
@@ -101,8 +102,12 @@ public class FunctionTupleTranslator extends AbstractTupleTranslator<Function> {
 
         String functionKind = ((AString) functionRecord
                 .getValueByPos(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_KIND_FIELD_INDEX)).getStringValue();
+
+        String functionInitParameters = ((AString) functionRecord.getValueByPos(MetadataRecordTypes
+                .FUNCTION_ARECORD_FUNCTION_INIT_PARAMETERS_INDEX)).getStringValue();
+
         return new Function(dataverseName, functionName, Integer.parseInt(arity), params, returnType, definition,
-                language, functionKind);
+                language, functionKind, functionInitParameters);
 
     }
 
@@ -180,6 +185,12 @@ public class FunctionTupleTranslator extends AbstractTupleTranslator<Function> {
         aString.setValue(function.getKind());
         stringSerde.serialize(aString, fieldValue.getDataOutput());
         recordBuilder.addField(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_KIND_FIELD_INDEX, fieldValue);
+
+        // write field 8, Init Parameter
+        fieldValue.reset();
+        aString.setValue(function.getInitParameters());
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_INIT_PARAMETERS_INDEX, fieldValue);
 
         // write record
         recordBuilder.write(tupleBuilder.getDataOutput(), true);
