@@ -40,4 +40,6 @@ public interface IExternalFunctionInfo extends IFunctionInfo, Serializable {
 
     public FunctionKind getKind();
 
+    public String getInitParameters();
+
 }

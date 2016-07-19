@@ -387,13 +387,14 @@ public final class MetadataRecordTypes {
     public static final int FUNCTION_ARECORD_FUNCTION_DEFINITION_FIELD_INDEX = 5;
     public static final int FUNCTION_ARECORD_FUNCTION_LANGUAGE_FIELD_INDEX = 6;
     public static final int FUNCTION_ARECORD_FUNCTION_KIND_FIELD_INDEX = 7;
+    public static final int FUNCTION_ARECORD_FUNCTION_INIT_PARAMETERS_INDEX = 8;
 
     private static final ARecordType createFunctionRecordType() throws AsterixException {
         String[] fieldNames = { "DataverseName", "Name", "Arity", "Params", "ReturnType", "Definition", "Language",
-                "Kind" };
+                "Kind", "InitParameters" };
         IAType[] fieldTypes = { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
                 createFunctionParamsRecordType(), BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
-                BuiltinType.ASTRING };
+                BuiltinType.ASTRING, BuiltinType.ASTRING };
         return new ARecordType("FunctionRecordType", fieldNames, fieldTypes, true);
     }
 

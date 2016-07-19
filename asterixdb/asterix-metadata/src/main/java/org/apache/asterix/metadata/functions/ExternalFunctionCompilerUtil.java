@@ -85,7 +85,7 @@ public class ExternalFunctionCompilerUtil {
 
         AsterixExternalScalarFunctionInfo scalarFunctionInfo = new AsterixExternalScalarFunctionInfo(fid.getNamespace(),
                 new AsterixFunction(fid.getName(), fid.getArity()), returnType, function.getFunctionBody(),
-                function.getLanguage(), arguments, typeComputer);
+                function.getLanguage(), arguments, function.getInitParameters(), typeComputer);
         return scalarFunctionInfo;
     }
 

@@ -32,6 +32,7 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
     private final List<IAType> argumentTypes;
     private final String body;
     private final String language;
+    private final String initParameters;
     private final FunctionKind kind;
     private final IAType returnType;
 
@@ -43,11 +44,12 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
         language = null;
         kind = null;
         returnType = null;
-
+        initParameters = null;
     }
 
     public AsterixExternalFunctionInfo(String namespace, AsterixFunction asterixFunction, FunctionKind kind,
-            List<IAType> argumentTypes, IAType returnType, IResultTypeComputer rtc, String body, String language) {
+            List<IAType> argumentTypes, IAType returnType, IResultTypeComputer rtc, String body, String language,
+                                       String initParas) {
         super(namespace, asterixFunction, true);
         this.rtc = rtc;
         this.argumentTypes = argumentTypes;
@@ -55,6 +57,7 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
         this.language = language;
         this.kind = kind;
         this.returnType = returnType;
+        this.initParameters = initParas;
     }
 
     public IResultTypeComputer getResultTypeComputer() {
@@ -90,4 +93,8 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
         return returnType;
     }
 
+    @Override
+    public String getInitParameters() {
+        return initParameters;
+    }
 }

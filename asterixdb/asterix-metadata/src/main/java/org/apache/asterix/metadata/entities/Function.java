@@ -39,9 +39,10 @@ public class Function implements IMetadataEntity<Function> {
     private final String returnType;
     private final String language;
     private final String kind;
+    private final String initParameters;
 
     public Function(String dataverseName, String functionName, int arity, List<String> params, String returnType,
-            String functionBody, String language, String functionKind) {
+            String functionBody, String language, String functionKind, String initParameters) {
         this.dataverse = dataverseName;
         this.name = functionName;
         this.params = params;
@@ -50,6 +51,7 @@ public class Function implements IMetadataEntity<Function> {
         this.language = language;
         this.kind = functionKind;
         this.arity = arity;
+        this.initParameters = initParameters;
     }
 
     public String getDataverseName() {
@@ -94,4 +96,7 @@ public class Function implements IMetadataEntity<Function> {
         return cache.dropFunction(this);
     }
 
+    public String getInitParameters() {
+        return initParameters;
+    }
 }
