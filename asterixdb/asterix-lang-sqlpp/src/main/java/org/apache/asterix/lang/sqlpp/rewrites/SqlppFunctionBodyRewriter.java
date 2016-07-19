@@ -37,6 +37,12 @@ class SqlppFunctionBodyRewriter extends SqlppQueryRewriter {
         // Inlines column aliases.
         inlineColumnAlias();
 
+        // Generates column names.
+        generateColumnNames();
+
+        // Substitutes group-by key expressions.
+        substituteGroupbyKeyExpression();
+
         // Inlines WITH expressions.
         inlineWithExpressions();
 
@@ -45,6 +51,9 @@ class SqlppFunctionBodyRewriter extends SqlppQueryRewriter {
 
         // Group-by core/sugar rewrites.
         rewriteGroupBys();
+
+        // Rewrites like/not-like expressions.
+        rewriteOperatorExpression();
 
         // Generates ids for variables (considering scopes) but DOES NOT replace unbounded variable access with the dataset function.
         // An unbounded variable within a function could be a bounded variable in the top-level query.

@@ -107,7 +107,9 @@ public class AbstractSqlppSimpleExpressionVisitor
 
     @Override
     public Expression visit(Projection projection, ILangExpression arg) throws AsterixException {
-        projection.setExpression(projection.getExpression().accept(this, arg));
+        if (!projection.star()) {
+            projection.setExpression(projection.getExpression().accept(this, arg));
+        }
         return null;
     }
 
@@ -248,9 +250,7 @@ public class AbstractSqlppSimpleExpressionVisitor
 
         // visit order by
         if (selectExpression.hasOrderby()) {
-            for (Expression orderExpr : selectExpression.getOrderbyClause().getOrderbyList()) {
-                orderExpr.accept(this, selectExpression);
-            }
+            selectExpression.getOrderbyClause().accept(this, selectExpression);
         }
 
         // visit limit

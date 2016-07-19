@@ -60,8 +60,8 @@ import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 
 public class AbstractSqlppExpressionScopingVisitor extends AbstractSqlppSimpleExpressionVisitor {
 
-    protected final FunctionSignature resolveFunction = new FunctionSignature(MetadataConstants.METADATA_DATAVERSE_NAME,
-            "resolve", FunctionIdentifier.VARARGS);
+    protected final FunctionSignature resolveFunction =
+            new FunctionSignature(MetadataConstants.METADATA_DATAVERSE_NAME, "resolve", FunctionIdentifier.VARARGS);
     protected final ScopeChecker scopeChecker = new ScopeChecker();
     protected final LangRewritingContext context;
 
@@ -274,7 +274,7 @@ public class AbstractSqlppExpressionScopingVisitor extends AbstractSqlppSimpleEx
         // variables defined in the parent scope.
         Scope scope = new Scope(scopeChecker, scopeChecker.getCurrentScope(), true);
         scopeChecker.pushExistingScope(scope);
-        independentSubquery.getExpr().accept(this, arg);
+        independentSubquery.setExpr(independentSubquery.getExpr().accept(this, arg));
         scopeChecker.removeCurrentScope();
         return independentSubquery;
     }
