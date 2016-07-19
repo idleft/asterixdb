@@ -32,7 +32,8 @@ public class AsterixExternalScalarFunctionInfo extends AsterixExternalFunctionIn
 
     public AsterixExternalScalarFunctionInfo(String namespace, AsterixFunction asterixFunction, IAType returnType,
             String body, String language, List<IAType> argumentTypes,String initParas, IResultTypeComputer rtc) {
-        super(namespace, asterixFunction, FunctionKind.SCALAR, argumentTypes, returnType, rtc, body, language, initParas);
+        super(namespace, asterixFunction, FunctionKind.SCALAR, argumentTypes, returnType, rtc, body, language,
+                initParas);
     }
 
     public AsterixExternalScalarFunctionInfo() {
