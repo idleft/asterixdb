@@ -26,8 +26,31 @@ import org.apache.hyracks.algebricks.core.algebra.base.EquivalenceClass;
 import org.apache.hyracks.algebricks.core.algebra.base.LogicalVariable;
 
 public interface IPartitioningProperty extends IStructuralProperty {
-    enum PartitioningType {
-        UNPARTITIONED, RANDOM, BROADCAST, UNORDERED_PARTITIONED, ORDERED_PARTITIONED
+    /**
+     * The Partitioning Types define the method data is transfered between partitions and/or properties of the data.
+     */
+    public enum PartitioningType {
+        /**
+         * Data is not partitioned.
+         */
+        UNPARTITIONED,
+        /**
+         * Data is partitioned without a repeatable method.
+         */
+        RANDOM,
+        /**
+         * Data is replicated to all partitions.
+         */
+        BROADCAST,
+        /**
+         * Data is hash partitioned.
+         */
+        UNORDERED_PARTITIONED,
+        /**
+         * Data is range partitioned (only used on data that has a total order).
+         * The partitions are order based on the data range.
+         */
+        ORDERED_PARTITIONED
     }
 
     INodeDomain DOMAIN_FOR_UNPARTITIONED_DATA = new INodeDomain() {
@@ -50,8 +73,9 @@ public interface IPartitioningProperty extends IStructuralProperty {
         }
 
         @Override
-        public void normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses, List<FunctionalDependency> fds) {
-            // do nothing
+        public IPartitioningProperty normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses,
+                List<FunctionalDependency> fds) {
+            return UNPARTITIONED;
         }
 
         @Override
@@ -80,7 +104,7 @@ public interface IPartitioningProperty extends IStructuralProperty {
 
     PartitioningType getPartitioningType();
 
-    void normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses,
+    IPartitioningProperty normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses,
             List<FunctionalDependency> fds);
 
     INodeDomain getNodeDomain();
