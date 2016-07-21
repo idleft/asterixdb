@@ -49,7 +49,7 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
 
     public AsterixExternalFunctionInfo(String namespace, AsterixFunction asterixFunction, FunctionKind kind,
             List<IAType> argumentTypes, IAType returnType, IResultTypeComputer rtc, String body, String language,
-                                       String initParas) {
+                                       String initParams) {
         super(namespace, asterixFunction, true);
         this.rtc = rtc;
         this.argumentTypes = argumentTypes;
@@ -57,7 +57,7 @@ public class AsterixExternalFunctionInfo extends AsterixFunctionInfo implements 
         this.language = language;
         this.kind = kind;
         this.returnType = returnType;
-        this.initParameters = initParas;
+        this.initParameters = initParams;
     }
 
     public IResultTypeComputer getResultTypeComputer() {
