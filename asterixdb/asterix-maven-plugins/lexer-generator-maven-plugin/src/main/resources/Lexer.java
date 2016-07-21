@@ -92,7 +92,7 @@ public class [LEXER_NAME] {
         bufsize        = Integer.MAX_VALUE;
         endOf_UNUSED_Buffer = bufsize;
         endOf_USED_Buffer = bufsize;
-        line           = 1;
+        line           = 0;
         prevCharIsCR   = false;
         prevCharIsLF   = false;
         tokenBegin     = -1;
