@@ -17,10 +17,9 @@
  * under the License.
  */
 /*
- * Description     : Use fully qualified name to create dataset, type and index
- *                 : and to access dataset
+ * Description     : Detect ids with different settings. First name in list1. Last name in list2
  * Expected Result : Success
- * Date            : 29th August 2012
+ * Date            : 21th July 2016
  */
 
 drop dataverse test if exists;
