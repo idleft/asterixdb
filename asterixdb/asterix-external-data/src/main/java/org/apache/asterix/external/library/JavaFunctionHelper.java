@@ -181,6 +181,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
         objectPool.reset();
     }
 
+    @Override
     public String getInitParameters() {
         return initParameters;
     }

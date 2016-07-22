@@ -16,24 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
-
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-
-public interface IFunctionHelper {
-
-    public IJObject getArgument(int index);
-
-    public IJObject getResultObject();
-
-    public void setResult(IJObject result) throws HyracksDataException;
-
-    public boolean isValidResult();
-
-    public IJObject getObject(JTypeTag jtypeTag);
-
-    public void reset();
-
-    public String getInitParameters();
-}
+/*
+ * Description     : Use fully qualified name to create dataset, type and index
+ *                 : and to access dataset
+ * Expected Result : Success
+ * Date            : 29th August 2012
+ */
+install test testlib src/test/resources/externallib/testlib-zip-binary-assembly.zip

@@ -16,24 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
+/*
+ * Description     : Use fully qualified name to create dataset, type and index
+ *                 : and to access dataset
+ * Expected Result : Success
+ * Date            : 29th August 2012
+ */
 
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+drop dataverse test if exists;
+create dataverse test;
+use dataverse test;
 
-public interface IFunctionHelper {
-
-    public IJObject getArgument(int index);
-
-    public IJObject getResultObject();
-
-    public void setResult(IJObject result) throws HyracksDataException;
-
-    public boolean isValidResult();
-
-    public IJObject getObject(JTypeTag jtypeTag);
-
-    public void reset();
-
-    public String getInitParameters();
+create type InputRecordType as closed {
+id:int64,
+fname:string,
+lname:string,
+age:int64,
+dept:string
 }
+
+create type DetectResultType as open{
+id:int64,
+sensitive: boolean
+}
+
+create dataset EmpDataset(InputRecordType) primary key id;
+create dataset Res1(DetectResultType) primary key id;
+create dataset Res2(DetectResultType) primary key id;

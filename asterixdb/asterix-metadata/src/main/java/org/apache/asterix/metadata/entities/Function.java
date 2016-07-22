@@ -51,7 +51,7 @@ public class Function implements IMetadataEntity<Function> {
         this.language = language;
         this.kind = functionKind;
         this.arity = arity;
-        this.initParameters = initParameters;
+        this.initParameters = initParameters == null ? "" : initParameters;
     }
 
     public String getDataverseName() {
