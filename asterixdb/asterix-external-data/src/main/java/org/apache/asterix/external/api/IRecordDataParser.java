@@ -18,8 +18,6 @@
  */
 package org.apache.asterix.external.api;
 
-import org.json.JSONException;
-
 import java.io.DataOutput;
 import java.io.IOException;
 
@@ -31,7 +29,4 @@ public interface IRecordDataParser<T> extends IDataParser {
      * @throws Exception
      */
     public void parse(IRawRecord<? extends T> record, DataOutput out) throws IOException;
-
-
-    public boolean validate(IRawRecord<? extends T> record) throws JSONException;
 }

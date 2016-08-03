@@ -112,12 +112,6 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
         return false;
     }
 
-    @Override
-    public boolean validate(IRawRecord<?extends char[]> record){
-        return true;
-    }
-
-
     private void parseRecord(DataOutput out) throws IOException {
         recBuilder.reset(recordType);
         recBuilder.init();

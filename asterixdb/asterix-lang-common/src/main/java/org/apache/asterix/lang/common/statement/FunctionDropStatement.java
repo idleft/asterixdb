@@ -34,8 +34,8 @@ public class FunctionDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.FUNCTION_DROP;
+    public byte getKind() {
+        return Statement.Kind.FUNCTION_DROP;
     }
 
     public FunctionSignature getFunctionSignature() {

@@ -40,7 +40,6 @@ import org.apache.asterix.lang.aql.parser.TokenMgrError;
 import org.apache.asterix.lang.common.base.IParser;
 import org.apache.asterix.lang.common.base.IParserFactory;
 import org.apache.asterix.lang.common.base.Statement;
-import org.apache.asterix.lang.common.base.Statement.Kind;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.result.ResultReader;
 import org.apache.asterix.result.ResultUtils;
@@ -50,12 +49,11 @@ import org.apache.hyracks.api.dataset.IHyracksDataset;
 import org.apache.hyracks.client.dataset.HyracksDataset;
 import org.json.JSONObject;
 
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_CONNECTION_ATTR;
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_DATASET_ATTR;
+
 abstract class RESTAPIServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    public static final String HYRACKS_CONNECTION_ATTR = "org.apache.asterix.HYRACKS_CONNECTION";
-
-    public static final String HYRACKS_DATASET_ATTR = "org.apache.asterix.HYRACKS_DATASET";
 
     private final ILangCompilationProvider compilationProvider;
     private final IParserFactory parserFactory;
@@ -197,8 +195,8 @@ abstract class RESTAPIServlet extends HttpServlet {
         } catch (AsterixException | TokenMgrError | org.apache.asterix.aqlplus.parser.TokenMgrError pe) {
             GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, pe.getMessage(), pe);
             String errorMessage = ResultUtils.buildParseExceptionMessage(pe, query);
-            JSONObject errorResp = ResultUtils.getErrorResponse(2, errorMessage, "",
-                    ResultUtils.extractFullStackTrace(pe));
+            JSONObject errorResp =
+                    ResultUtils.getErrorResponse(2, errorMessage, "", ResultUtils.extractFullStackTrace(pe));
             sessionConfig.out().write(errorResp.toString());
             response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
@@ -231,7 +229,7 @@ abstract class RESTAPIServlet extends HttpServlet {
 
     protected abstract String getQueryParameter(HttpServletRequest request);
 
-    protected abstract List<Kind> getAllowedStatements();
+    protected abstract List<Byte> getAllowedStatements();
 
     protected abstract String getErrorMessage();
 }

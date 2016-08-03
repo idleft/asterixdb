@@ -54,8 +54,8 @@ public class NodegroupDecl implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.NODEGROUP_DECL;
+    public byte getKind() {
+        return Statement.Kind.NODEGROUP_DECL;
     }
 
     @Override

@@ -36,8 +36,8 @@ public class FeedPolicyDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.DROP_FEED_POLICY;
+    public byte getKind() {
+        return Statement.Kind.DROP_FEED_POLICY;
     }
 
     public Identifier getDataverseName() {

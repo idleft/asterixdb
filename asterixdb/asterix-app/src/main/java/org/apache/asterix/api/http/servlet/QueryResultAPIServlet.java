@@ -38,12 +38,11 @@ import org.apache.hyracks.client.dataset.HyracksDataset;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_CONNECTION_ATTR;
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_DATASET_ATTR;
+
 public class QueryResultAPIServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
-
-    private static final String HYRACKS_CONNECTION_ATTR = "org.apache.asterix.HYRACKS_CONNECTION";
-
-    private static final String HYRACKS_DATASET_ATTR = "org.apache.asterix.HYRACKS_DATASET";
 
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -88,7 +87,7 @@ public class QueryResultAPIServlet extends HttpServlet {
             // originally determined there. Need to save this value on
             // some object that we can obtain here.
             SessionConfig sessionConfig = RESTAPIServlet.initResponse(request, response);
-            ResultUtils.displayResults(resultReader, sessionConfig, new ResultUtils.Stats());
+            ResultUtils.displayResults(resultReader, sessionConfig, new ResultUtils.Stats(), null);
 
         } catch (Exception e) {
             out.println(e.getMessage());

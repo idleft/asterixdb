@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -76,7 +77,6 @@ import org.apache.asterix.lang.common.expression.RecordTypeDefinition;
 import org.apache.asterix.lang.common.expression.TypeExpression;
 import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnaryExpr;
-import org.apache.asterix.lang.common.expression.UnaryExpr.Sign;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.VariableExpr;
 import org.apache.asterix.lang.common.literal.DoubleLiteral;
@@ -105,6 +105,7 @@ import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
 import org.apache.asterix.lang.common.statement.DropStatement;
 import org.apache.asterix.lang.common.statement.ExternalDetailsDecl;
 import org.apache.asterix.lang.common.statement.FeedDropStatement;
+import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
 import org.apache.asterix.lang.common.statement.FunctionDecl;
 import org.apache.asterix.lang.common.statement.FunctionDropStatement;
 import org.apache.asterix.lang.common.statement.IndexDropStatement;
@@ -129,7 +130,6 @@ import org.apache.asterix.lang.sqlpp.clause.FromClause;
 import org.apache.asterix.lang.sqlpp.clause.FromTerm;
 import org.apache.asterix.lang.sqlpp.clause.HavingClause;
 import org.apache.asterix.lang.sqlpp.clause.JoinClause;
-import org.apache.asterix.lang.sqlpp.clause.NestClause;
 import org.apache.asterix.lang.sqlpp.clause.Projection;
 import org.apache.asterix.lang.sqlpp.clause.SelectBlock;
 import org.apache.asterix.lang.sqlpp.clause.SelectClause;
@@ -137,11 +137,13 @@ import org.apache.asterix.lang.sqlpp.clause.SelectElement;
 import org.apache.asterix.lang.sqlpp.clause.SelectRegular;
 import org.apache.asterix.lang.sqlpp.clause.SelectSetOperation;
 import org.apache.asterix.lang.sqlpp.clause.UnnestClause;
+import org.apache.asterix.lang.sqlpp.expression.CaseExpression;
 import org.apache.asterix.lang.sqlpp.expression.SelectExpression;
 import org.apache.asterix.lang.sqlpp.optype.JoinType;
 import org.apache.asterix.lang.sqlpp.optype.SetOpType;
 import org.apache.asterix.lang.sqlpp.struct.SetOperationInput;
 import org.apache.asterix.lang.sqlpp.struct.SetOperationRight;
+import org.apache.asterix.lang.sqlpp.util.ExpressionToVariableUtil;
 import org.apache.asterix.lang.sqlpp.util.SqlppVariableUtil;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.common.utils.Triple;
@@ -314,7 +316,8 @@ Statement SingleStatement() throws ParseException:
     | stmt = UpdateStatement()
     | stmt = FeedStatement()
     | stmt = CompactStatement()
-    | stmt = Query() <SEMICOLON>
+    | stmt = ExplainStatement()
+    | stmt = Query(false) <SEMICOLON>
     | stmt = RefreshExternalDatasetStatement()
     | stmt = RunStatement()
   )
@@ -695,7 +698,7 @@ CreateFeedStatement FeedSpecification() throws ParseException:
   FunctionSignature appliedFunction = null;
   CreateFeedStatement cfs = null;
   Pair<Identifier,Identifier> sourceNameComponents = null;
-  
+
 }
 {
   (
@@ -707,7 +710,7 @@ CreateFeedStatement FeedSpecification() throws ParseException:
       }
      |
      (<PRIMARY>)? <FEED> nameComponents = QualifiedName() ifNotExists = IfNotExists()
-      <USING> adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?  
+      <USING> adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?
        {
         cfs = new CreatePrimaryFeedStatement(nameComponents,
                                     adapterName, properties, appliedFunction, ifNotExists);
@@ -720,8 +723,8 @@ CreateFeedStatement FeedSpecification() throws ParseException:
 
 CreateFeedPolicyStatement FeedPolicySpecification() throws ParseException:
 {
-  String policyName = null;  
-  String basePolicyName = null; 
+  String policyName = null;
+  String basePolicyName = null;
   String sourcePolicyFile = null;
   String definition = null;
   boolean ifNotExists = false;
@@ -737,7 +740,7 @@ CreateFeedPolicyStatement FeedPolicySpecification() throws ParseException:
         cfps = new CreateFeedPolicyStatement(policyName,
                                    basePolicyName, properties, definition, ifNotExists);
       }
-     | <PATH> sourcePolicyFile = Identifier() (<DEFINITION> definition = ConstantString())?
+     | <PATH> sourcePolicyFile = ConstantString() (<DEFINITION> definition = ConstantString())?
        {
         cfps = new CreateFeedPolicyStatement(policyName, sourcePolicyFile, definition, ifNotExists);
        }
@@ -776,7 +779,7 @@ boolean IfNotExists() throws ParseException:
 {
 }
 {
-  ( LOOKAHEAD(1) <IF> ("not exists"|"NOT EXISTS")
+  ( LOOKAHEAD(1) <IF> <NOT> <EXISTS>
     {
       return true;
     }
@@ -893,6 +896,10 @@ Statement DropStatement() throws ParseException:
       {
         stmt = new FeedDropStatement(pairId.first, pairId.second, ifExists);
       }
+    | <INGESTION> <POLICY> pairId = QualifiedName() ifExists = IfExists()
+      {
+        stmt = new FeedPolicyDropStatement(pairId.first, pairId.second, ifExists);
+      }
   )
   {
     return stmt;
@@ -919,7 +926,7 @@ InsertStatement InsertStatement() throws ParseException:
   Query query;
 }
 {
-  <INSERT> <INTO> nameComponents = QualifiedName() query = Query()
+  <INSERT> <INTO> nameComponents = QualifiedName() query = Query(false)
     {
       query.setTopLevel(true);
       return new InsertStatement(nameComponents.first, nameComponents.second, query, getVarCounter());
@@ -928,7 +935,7 @@ InsertStatement InsertStatement() throws ParseException:
 
 DeleteStatement DeleteStatement() throws ParseException:
 {
-  VariableExpr var = null;
+  VariableExpr varExpr = null;
   Expression condition = null;
   Pair<Identifier, Identifier> nameComponents;
   // This is related to the new metadata lock management
@@ -937,19 +944,26 @@ DeleteStatement DeleteStatement() throws ParseException:
 
 }
 {
-  <DELETE> var = Variable()
+  <DELETE>
   <FROM> nameComponents  = QualifiedName()
+         ((<AS>)? varExpr = Variable())?
   (<WHERE> condition = Expression())?
-    {
+  {
       // First we get the dataverses and datasets that we want to lock
       List<String> dataverses = getDataverses();
       List<String> datasets = getDatasets();
       // we remove the pointer to the dataverses and datasets
       setDataverses(null);
       setDatasets(null);
-      return new DeleteStatement(var, nameComponents.first, nameComponents.second,
+
+      if(varExpr == null){
+        varExpr = new VariableExpr();
+        VarIdentifier var = SqlppVariableUtil.toInternalVariableIdentifier(nameComponents.second.getValue());
+        varExpr.setVar(var);
+      }
+      return new DeleteStatement(varExpr, nameComponents.first, nameComponents.second,
           condition, getVarCounter(), dataverses, datasets);
-    }
+  }
 }
 
 UpdateStatement UpdateStatement() throws ParseException:
@@ -1322,11 +1336,11 @@ FunctionName FunctionName() throws ParseException:
   boolean secondAfterDot = false;
 }
 {
-  first = Identifier() 
+  first = Identifier()
   {
     FunctionName result = new FunctionName();
     result.hint = getHint(token);
-  } 
+  }
   ( <DOT> second = Identifier()
     {
       secondAfterDot = true;
@@ -1549,10 +1563,20 @@ FunctionDecl FunctionDeclaration() throws ParseException:
     }
 }
 
-
-Query Query() throws ParseException:
+Query ExplainStatement() throws ParseException:
 {
-  Query query = new Query();
+  Query query;
+}
+{
+  "explain" query = Query(true)
+  {
+    return query;
+  }
+}
+
+Query Query(boolean explain) throws ParseException:
+{
+  Query query = new Query(explain);
   // we set the pointers to the dataverses and datasets lists to fill them with entities to be locked
   setDataverses(query.getDataverses());
   setDatasets(query.getDatasets());
@@ -1584,7 +1608,7 @@ Expression Expression():
 (
     LOOKAHEAD(2)
     expr = OperatorExpr()
-    | expr = IfThenElse()
+    | expr = CaseExpr()
     | expr = QuantifiedExpression()
 )
     {
@@ -1610,7 +1634,11 @@ Expression OperatorExpr()throws ParseException:
           op.addOperand(operand);
         op.setCurrentop(true);
         }
-      op.addOperator(token.image.toLowerCase());
+        try{
+            op.addOperator(token.image.toLowerCase());
+        } catch (Exception e){
+            throw new ParseException(e.getMessage());
+        }
     }
 
     operand = AndExpr()
@@ -1631,7 +1659,7 @@ Expression AndExpr()throws ParseException:
   Expression operand = null;
 }
 {
-    operand = RelExpr()
+    operand = NotExpr()
     (
 
       <AND>
@@ -1639,12 +1667,16 @@ Expression AndExpr()throws ParseException:
         if (op == null) {
           op = new OperatorExpr();
           op.addOperand(operand);
-        op.setCurrentop(true);
+          op.setCurrentop(true);
         }
-      op.addOperator(token.image.toLowerCase());
+        try{
+           op.addOperator(token.image.toLowerCase());
+        } catch (AsterixException e){
+           throw new ParseException(e.getMessage());
+        }
     }
 
-    operand = RelExpr()
+    operand = NotExpr()
     {
       op.addOperand(operand);
     }
@@ -1656,17 +1688,33 @@ Expression AndExpr()throws ParseException:
     }
 }
 
-
+Expression NotExpr()throws ParseException:
+{
+   Expression inputExpr;
+   boolean not = false;
+}
+{
+  (<NOT> { not = true; } )? inputExpr = RelExpr()
+  {
+    if(not){
+        FunctionSignature signature = new FunctionSignature(null, "not", 1);
+        return new CallExpr(signature, new ArrayList<Expression>(Collections.singletonList(inputExpr)));
+    } else {
+        return inputExpr;
+    }
+  }
+}
 
 Expression RelExpr()throws ParseException:
 {
+  boolean not = false;
   OperatorExpr op = null;
   Expression operand = null;
   boolean broadcast = false;
   IExpressionAnnotation annotation = null;
 }
 {
-    operand = AddExpr()
+    operand = IsExpr()
     {
       if (operand instanceof VariableExpr) {
         String hint = getHint(token);
@@ -1677,26 +1725,34 @@ Expression RelExpr()throws ParseException:
     }
 
     (
-      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> |<SIMILAR>)
+      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> |<SIMILAR> | (<NOT> { not = true; })? (<LIKE>|<IN>))
         {
           String mhint = getHint(token);
           if (mhint != null) {
             if (mhint.equals(INDEXED_NESTED_LOOP_JOIN_HINT)) {
-            annotation = IndexedNLJoinExpressionAnnotation.INSTANCE;
-          } else if (mhint.equals(SKIP_SECONDARY_INDEX_SEARCH_HINT)) {
-            annotation = SkipSecondaryIndexSearchExpressionAnnotation.INSTANCE;
+                annotation = IndexedNLJoinExpressionAnnotation.INSTANCE;
+            } else if (mhint.equals(SKIP_SECONDARY_INDEX_SEARCH_HINT)) {
+                annotation = SkipSecondaryIndexSearchExpressionAnnotation.INSTANCE;
+            }
           }
-        }
+          String operator = token.image.toLowerCase();
+          if(not){
+            operator = "not_" + operator;
+          }
           if (op == null) {
             op = new OperatorExpr();
             op.addOperand(operand, broadcast);
-          op.setCurrentop(true);
-          broadcast = false;
+            op.setCurrentop(true);
+            broadcast = false;
           }
-        op.addOperator(token.image);
-      }
+          try{
+            op.addOperator(operator);
+          } catch (AsterixException e){
+            throw new ParseException(e.getMessage());
+          }
+        }
 
-       operand = AddExpr()
+       operand = IsExpr()
       {
          broadcast = false;
          if (operand instanceof VariableExpr) {
@@ -1717,6 +1773,31 @@ Expression RelExpr()throws ParseException:
      }
 }
 
+Expression IsExpr() throws ParseException:
+{
+    Expression expr = null;
+    Expression operand = null;
+    boolean not = false;
+}
+{
+    operand = AddExpr()
+    ( <IS> (<NOT> { not = true; })? (<NULL> | <MISSING> | <UNKOWN>)
+      {
+        String functionName = "is-" + token.image.toLowerCase();
+        FunctionSignature signature = new FunctionSignature(null, functionName, 1);
+        expr = new CallExpr(signature, new ArrayList<Expression>(Collections.singletonList(operand)));
+        if(not) {
+           FunctionSignature notSignature = new FunctionSignature(null, "not", 1);
+           expr = new CallExpr(notSignature, new ArrayList<Expression>(Collections.singletonList(expr)));
+        }
+      }
+    )?
+    {
+        return expr = expr==null? operand : expr;
+    }
+}
+
+
 Expression AddExpr()throws ParseException:
 {
   OperatorExpr op = null;
@@ -1724,7 +1805,7 @@ Expression AddExpr()throws ParseException:
 }
 {
     operand = MultExpr()
-    ( 
+    (
        LOOKAHEAD(1)
       (<PLUS> | <MINUS>)
       {
@@ -1733,7 +1814,11 @@ Expression AddExpr()throws ParseException:
         op.addOperand(operand);
         op.setCurrentop(true);
         }
-      ((OperatorExpr)op).addOperator(token.image);
+        try{
+            ((OperatorExpr)op).addOperator(token.image);
+        } catch (Exception e){
+            throw new ParseException(e.getMessage());
+        }
     }
 
     operand = MultExpr()
@@ -1753,18 +1838,22 @@ Expression MultExpr()throws ParseException:
   Expression operand = null;
 }
 {
-    operand = UnaryExpr()
+    operand = ExponentExpr()
 
-    (( <MUL> | <DIV> | <MOD> | <CARET> | <IDIV>)
+    (( <MUL> | <DIV> | <MOD> | <IDIV>)
       {
         if (op == null) {
           op = new OperatorExpr();
-        op.addOperand(operand);
-        op.setCurrentop(true);
+          op.addOperand(operand);
+          op.setCurrentop(true);
         }
-      op.addOperator(token.image);
+        try{
+            op.addOperator(token.image);
+        } catch (Exception e){
+            throw new ParseException(e.getMessage());
+        }
     }
-    operand = UnaryExpr()
+    operand = ExponentExpr()
     {
        op.addOperand(operand);
     }
@@ -1775,33 +1864,65 @@ Expression MultExpr()throws ParseException:
      }
 }
 
+Expression ExponentExpr()throws ParseException:
+{
+  OperatorExpr op = null;
+  Expression operand = null;
+}
+{
+    operand = UnaryExpr()
+    (<CARET>
+    {
+        if (op == null) {
+          op = new OperatorExpr();
+          op.addOperand(operand);
+          op.setCurrentop(true);
+        }
+        try{
+            op.addOperator(token.image);
+        } catch (Exception e){
+            throw new ParseException(e.getMessage());
+        }
+    }
+    operand = UnaryExpr()
+    {
+       op.addOperand(operand);
+    }
+    )?
+    {
+       return op==null?operand:op;
+    }
+}
+
 Expression UnaryExpr() throws ParseException:
 {
-    Expression uexpr = null;
+    boolean not = false;
+    UnaryExpr uexpr = null;
     Expression expr = null;
 }
-{   
-    ( (<PLUS> | <MINUS>)
+{
+    ( (<PLUS> | <MINUS> | (<NOT> { not = true; } )? <EXISTS> )
     {
+        String exprType = token.image.toLowerCase();
+        if(not){
+           exprType = "not_" + exprType;
+        }
         uexpr = new UnaryExpr();
-        if("+".equals(token.image))
-            ((UnaryExpr)uexpr).setSign(Sign.POSITIVE);
-        else if("-".equals(token.image))
-            ((UnaryExpr)uexpr).setSign(Sign.NEGATIVE);
-        else
-            throw new ParseException();
+        try{
+            uexpr.setExprType(exprType);
+        } catch (AsterixException e){
+            throw new ParseException(e.getMessage());
+        }
     }
     )?
 
     expr = ValueExpr()
     {
-        if(uexpr!=null){
-            ((UnaryExpr)uexpr).setExpr(expr);
-            return uexpr;
-        }
-        else{
+       if(uexpr==null){
             return expr;
-        }
+       }
+       uexpr.setExpr(expr);
+       return uexpr;
     }
 }
 
@@ -2138,22 +2259,34 @@ Expression ParenthesizedExpression() throws ParseException:
     }
 }
 
-Expression IfThenElse() throws ParseException:
+
+Expression CaseExpr() throws ParseException:
 {
-  Expression condExpr;
-  Expression thenExpr;
-  Expression elseExpr;
-  IfExpr ifExpr = new IfExpr();
+   Expression conditionExpr = new LiteralExpr(TrueLiteral.INSTANCE);
+   List<Expression> whenExprs = new ArrayList<Expression>();
+   List<Expression> thenExprs = new ArrayList<Expression>();
+   Expression elseExpr = null;
+   
+   Expression whenExpr = null;
+   Expression thenExpr = null;
 }
 {
-    <IF> <LEFTPAREN> condExpr = Expression() <RIGHTPAREN> <THEN> thenExpr = Expression() <ELSE> elseExpr = Expression()
-
-    {
-      ifExpr.setCondExpr(condExpr);
-      ifExpr.setThenExpr(thenExpr);
-      ifExpr.setElseExpr(elseExpr);
-      return ifExpr;
-    }
+   <CASE> (  conditionExpr = Expression() )?
+   (
+     <WHEN> whenExpr = Expression()
+     {
+        whenExprs.add(whenExpr);
+     }
+     <THEN> thenExpr = Expression()
+     {
+        thenExprs.add(thenExpr);
+     }
+   )*
+   (<ELSE> elseExpr = Expression() )?
+   <END>
+   {
+     return new CaseExpression(conditionExpr, whenExprs, thenExprs, elseExpr);
+   }
 }
 
 SelectExpression SelectExpression(boolean subquery) throws ParseException: {
@@ -2270,28 +2403,34 @@ SelectClause SelectClause() throws ParseException: {
   boolean distinct = false;
 }
 {
-  <SELECT> (<ALL>|<DISTINCT> {distinct = true; } )? 
+  <SELECT> (<ALL>|<DISTINCT> {distinct = true; } )?
   (
     selectRegular = SelectRegular()
-    | 
+    |
     selectElement = SelectElement()
-  )
+  )?
   {
+    if(selectRegular == null && selectElement == null){
+        Projection projection = new Projection(null, null, true, false);
+        List<Projection> projections = new ArrayList<Projection>();
+        projections.add(projection);
+        selectRegular = new SelectRegular(projections);
+    }
     return new SelectClause(selectElement, selectRegular, distinct);
   }
 }
 
 SelectRegular SelectRegular() throws ParseException: {
-  List<Projection> projections = new ArrayList<Projection>(); 
+  List<Projection> projections = new ArrayList<Projection>();
 }
 {
    {
       Projection projection = null;
    }
-   projection = Projection() { projections.add(projection); } 
-   ( LOOKAHEAD(2) <COMMA> 
-      projection = Projection() {projections.add(projection);}
-   )*
+   projection = Projection() { projections.add(projection); }
+    ( LOOKAHEAD(2) <COMMA>
+       projection = Projection() {projections.add(projection);}
+    )*
   {
     return new SelectRegular(projections);
   }
@@ -2318,11 +2457,17 @@ Projection Projection() throws ParseException: {
 {
   (
     LOOKAHEAD(2)
-    expr= Expression() (<AS>)? name = Identifier()
+    expr = Expression() ((<AS>)? name = Identifier())?
     | expr = Expression() <DOT> <MUL> {exprStar = true; }
     | <MUL> {star = true; }
   )
   {
+    if(!star && name == null){
+       String generatedColumnIdentifier = ExpressionToVariableUtil.getGeneratedIdentifier(expr, false);
+       if(generatedColumnIdentifier != null){
+            name = SqlppVariableUtil.toUserDefinedName(generatedColumnIdentifier);
+       }
+    }
     return new Projection(expr, name, star, exprStar);
   }
 }
@@ -2336,7 +2481,7 @@ FromClause FromClause() throws ParseException :
   {
     FromTerm fromTerm = null;
   }
-    <FROM> fromTerm = FromTerm() { fromTerms.add(fromTerm); } 
+    <FROM> fromTerm = FromTerm() { fromTerms.add(fromTerm); }
     (LOOKAHEAD(2) <COMMA> fromTerm = FromTerm() { fromTerms.add(fromTerm); } )*
   {
     return new FromClause(fromTerms);
@@ -2346,12 +2491,12 @@ FromClause FromClause() throws ParseException :
 FromTerm FromTerm() throws ParseException :
 {
   Expression leftExpr = null;
-  VariableExpr leftVar = null; 
+  VariableExpr leftVar = null;
   VariableExpr posVar = null;
   List<AbstractBinaryCorrelateClause> correlateClauses = new ArrayList<AbstractBinaryCorrelateClause>();
 }
 {
-  leftExpr = Expression() (<AS>)? leftVar = Variable() (<AT> posVar = Variable())?
+  leftExpr = Expression() ((<AS>)? leftVar = Variable())? (<AT> posVar = Variable())?
   (
      {JoinType joinType = JoinType.INNER; }
      (joinType = JoinType())?
@@ -2359,16 +2504,16 @@ FromTerm FromTerm() throws ParseException :
        AbstractBinaryCorrelateClause correlateClause = null;
      }
      (correlateClause = JoinClause(joinType)
-      |
-      correlateClause = NestClause(joinType)
-      |
-      correlateClause = UnnestClause(joinType)
+      | correlateClause = UnnestClause(joinType)
      )
      {
         correlateClauses.add(correlateClause);
      }
   )*
   {
+    if(leftVar==null){
+        leftVar = ExpressionToVariableUtil.getGeneratedVariable(leftExpr, true);
+    }
     return new FromTerm(leftExpr, leftVar, posVar, correlateClauses);
   }
 }
@@ -2381,23 +2526,12 @@ JoinClause JoinClause(JoinType joinType) throws ParseException :
     Expression conditionExpr = null;
 }
 {
-  <JOIN> rightExpr = Expression() (<AS>)? rightVar = Variable() (<AT> posVar = Variable())? <ON> conditionExpr = Expression()
+  <JOIN> rightExpr = Expression() ((<AS>)? rightVar = Variable())? (<AT> posVar = Variable())? <ON> conditionExpr = Expression()
   {
+    if(rightVar==null){
+        rightVar = ExpressionToVariableUtil.getGeneratedVariable(rightExpr, true);
+    }
     return new JoinClause(joinType, rightExpr, rightVar, posVar, conditionExpr);
-  }
-}
-
-NestClause NestClause(JoinType joinType) throws ParseException :
-{
-    Expression rightExpr = null;
-    VariableExpr rightVar = null;
-    VariableExpr posVar = null;
-    Expression conditionExpr = null;
-}
-{
-  <NEST> rightExpr = Expression() (<AS>)? rightVar = Variable() (<AT> posVar = Variable())?  <ON> conditionExpr = Expression()
-  {
-    return new NestClause(joinType, rightExpr, rightVar, posVar, conditionExpr);
   }
 }
 
@@ -2408,8 +2542,11 @@ UnnestClause UnnestClause(JoinType joinType) throws ParseException :
     VariableExpr posVar = null;
 }
 {
-  (<UNNEST>|<CORRELATE>|<FLATTEN>) rightExpr = Expression() (<AS>)? rightVar = Variable() (<AT> posVar = Variable())?
+  (<UNNEST>|<CORRELATE>|<FLATTEN>) rightExpr = Expression() ((<AS>)? rightVar = Variable()) (<AT> posVar = Variable())?
   {
+    if(rightVar==null){
+        rightVar = ExpressionToVariableUtil.getGeneratedVariable(rightExpr, true);
+    }
     return new UnnestClause(joinType, rightExpr, rightVar, posVar);
   }
 }
@@ -2538,15 +2675,24 @@ GroupbyClause GroupbyClause()throws ParseException :
         var = Variable()
         )?
         {
+            if(var==null){
+                var = ExpressionToVariableUtil.getGeneratedVariable(expr, false);
+            }
             GbyVariableExpressionPair pair1 = new GbyVariableExpressionPair(var, expr);
             vePairList.add(pair1);
         }
        ( LOOKAHEAD(1) <COMMA>
+         {
+            var = null;
+         }
          expr = Expression()
          (LOOKAHEAD(1)  (<AS>)?
          var = Variable()
          )?
          {
+             if(var==null){
+                var = ExpressionToVariableUtil.getGeneratedVariable(expr, false);
+             }
              GbyVariableExpressionPair pair2 = new GbyVariableExpressionPair(var, expr);
              vePairList.add(pair2);
          }
@@ -2624,8 +2770,8 @@ QuantifiedExpression QuantifiedExpression()throws ParseException:
     createNewScope();
   }
 
-   (      (<SOME>  {  qc.setQuantifier(QuantifiedExpression.Quantifier.SOME);	})
-        | (<EVERY> {  qc.setQuantifier(QuantifiedExpression.Quantifier.EVERY);	}))
+   (      (<SOME>  {  qc.setQuantifier(QuantifiedExpression.Quantifier.SOME);    })
+        | (<EVERY> {  qc.setQuantifier(QuantifiedExpression.Quantifier.EVERY);    }))
     var = Variable() <IN> inExpr = Expression()
     {
       pair = new QuantifiedPair(var, inExpr);
@@ -2711,6 +2857,7 @@ TOKEN [IGNORE_CASE]:
   | <ASC : "asc">
   | <AT : "at">
   | <AUTOGENERATED : "autogenerated">
+  | <BETWEEN : "between">
   | <BTREE : "btree">
   | <BY : "by">
   | <CASE : "case">
@@ -2733,6 +2880,7 @@ TOKEN [IGNORE_CASE]:
   | <ELEMENT : "element">
   | <ELSE : "else">
   | <ENFORCED : "enforced">
+  | <END : "end">
   | <EVERY : "every">
   | <EXCEPT : "except">
   | <EXISTS : "exists">
@@ -2757,17 +2905,19 @@ TOKEN [IGNORE_CASE]:
   | <INSERT : "insert">
   | <INTERNAL : "internal">
   | <INTERSECT : "intersect">
+  | <IS : "is">
   | <JOIN : "join">
   | <KEYWORD : "keyword">
   | <KEY : "key">
   | <LEFT : "left">
   | <LETTING : "letting">
   | <LET : "let">
+  | <LIKE : "like">
   | <LIMIT : "limit">
   | <LOAD : "load">
-  | <NEST : "nest">
   | <NODEGROUP : "nodegroup">
   | <NGRAM : "ngram">
+  | <NOT : "not">
   | <OFFSET : "offset">
   | <ON : "on">
   | <OPEN : "open">
@@ -2794,15 +2944,16 @@ TOKEN [IGNORE_CASE]:
   | <TYPE : "type">
   | <TO : "to">
   | <UNION : "union">
+  | <UNKOWN : "unknown">
   | <UNNEST : "unnest">
+  | <UPDATE : "update">
+  | <USE : "use">
+  | <USING : "using">
   | <VALUE : "value">
   | <WHEN : "when">
   | <WHERE : "where">
   | <WITH : "with">
   | <WRITE : "write">
-  | <UPDATE : "update">
-  | <USE : "use">
-  | <USING : "using">
 }
 
 <DEFAULT,IN_DBL_BRACE>

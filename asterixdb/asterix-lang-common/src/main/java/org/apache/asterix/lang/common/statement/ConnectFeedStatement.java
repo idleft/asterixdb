@@ -77,8 +77,8 @@ public class ConnectFeedStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.CONNECT_FEED;
+    public byte getKind() {
+        return Statement.Kind.CONNECT_FEED;
     }
 
     public String getPolicy() {

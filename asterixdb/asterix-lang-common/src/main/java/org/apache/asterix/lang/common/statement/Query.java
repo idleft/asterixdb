@@ -25,19 +25,23 @@ import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.lang.common.base.Expression;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
+import org.apache.commons.lang3.ObjectUtils;
 
 public class Query implements Statement {
+    private final boolean explain;
     private boolean topLevel = true;
     private Expression body;
     private int varCounter;
-    private List<String> dataverses = new ArrayList<String>();
-    private List<String> datasets = new ArrayList<String>();
+    private List<String> dataverses = new ArrayList<>();
+    private List<String> datasets = new ArrayList<>();
 
-    public Query() {
-
+    public Query(boolean explain) {
+        this.explain = explain;
     }
 
-    public Query(boolean topLevel, Expression body, int varCounter, List<String> dataverses, List<String> datasets) {
+    public Query(boolean explain, boolean topLevel, Expression body, int varCounter, List<String> dataverses,
+            List<String> datasets) {
+        this.explain = explain;
         this.topLevel = topLevel;
         this.body = body;
         this.varCounter = varCounter;
@@ -69,9 +73,13 @@ public class Query implements Statement {
         return topLevel;
     }
 
+    public boolean isExplain() {
+        return explain;
+    }
+
     @Override
-    public Kind getKind() {
-        return Kind.QUERY;
+    public byte getKind() {
+        return Statement.Kind.QUERY;
     }
 
     @Override
@@ -93,5 +101,24 @@ public class Query implements Statement {
 
     public List<String> getDatasets() {
         return datasets;
+    }
+
+    @Override
+    public int hashCode() {
+        return ObjectUtils.hashCodeMulti(body, datasets, dataverses, topLevel, explain);
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (this == object) {
+            return true;
+        }
+        if (!(object instanceof Query)) {
+            return false;
+        }
+        Query target = (Query) object;
+        return explain == target.explain && ObjectUtils.equals(body, target.body)
+                && ObjectUtils.equals(datasets, target.datasets) && ObjectUtils.equals(dataverses, target.dataverses)
+                && topLevel == target.topLevel;
     }
 }

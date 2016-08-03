@@ -19,16 +19,21 @@
 package org.apache.asterix.api.http.servlet;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.lang.common.base.Statement;
-import org.apache.asterix.lang.common.base.Statement.Kind;
 
 public class UpdateAPIServlet extends RESTAPIServlet {
     private static final long serialVersionUID = 1L;
+    private static final List<Byte> allowedStatements = Collections.unmodifiableList(Arrays.asList(
+            Statement.Kind.DATAVERSE_DECL, Statement.Kind.DELETE, Statement.Kind.INSERT,
+            Statement.Kind.UPSERT, Statement.Kind.UPDATE, Statement.Kind.DML_CMD_LIST, Statement.Kind.LOAD,
+            Statement.Kind.CONNECT_FEED, Statement.Kind.DISCONNECT_FEED, Statement.Kind.SET,
+            Statement.Kind.COMPACT, Statement.Kind.EXTERNAL_DATASET_REFRESH, Statement.Kind.RUN));
 
     public UpdateAPIServlet(ILangCompilationProvider compilationProvider) {
         super(compilationProvider);
@@ -40,11 +45,8 @@ public class UpdateAPIServlet extends RESTAPIServlet {
     }
 
     @Override
-    protected List<Statement.Kind> getAllowedStatements() {
-        Kind[] statementsArray = { Kind.DATAVERSE_DECL, Kind.DELETE, Kind.INSERT, Kind.UPSERT, Kind.UPDATE,
-                Kind.DML_CMD_LIST, Kind.LOAD, Kind.CONNECT_FEED, Kind.DISCONNECT_FEED, Kind.SET, Kind.COMPACT,
-                Kind.EXTERNAL_DATASET_REFRESH, Kind.RUN };
-        return Arrays.asList(statementsArray);
+    protected List<Byte> getAllowedStatements() {
+        return allowedStatements;
     }
 
     @Override

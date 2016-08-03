@@ -26,7 +26,7 @@ import org.apache.hyracks.util.MathUtil;
 import org.apache.hyracks.storage.am.common.api.IMetaDataPageManager;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexFrame;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexMetaDataFrame;
-import org.apache.hyracks.storage.am.common.ophelpers.IntArrayList;
+import org.apache.hyracks.storage.common.arraylist.IntArrayList;
 import org.apache.hyracks.storage.common.buffercache.IBufferCache;
 import org.apache.hyracks.storage.common.buffercache.ICachedPage;
 import org.apache.hyracks.storage.common.file.BufferedFileHandle;
@@ -35,7 +35,7 @@ public class TreeIndexBufferCacheWarmup {
     private final IBufferCache bufferCache;
     private final IMetaDataPageManager freePageManager;
     private final int fileId;
-    private final ArrayList<IntArrayList> pagesByLevel = new ArrayList<IntArrayList>();
+    private final ArrayList<IntArrayList> pagesByLevel = new ArrayList<>();
     private final Random rnd = new Random();
 
     public TreeIndexBufferCacheWarmup(IBufferCache bufferCache,
@@ -62,7 +62,6 @@ public class TreeIndexBufferCacheWarmup {
                     pagesByLevel.add(new IntArrayList(100, 100));
                 }
                 if (level >= 0) {
-                    // System.out.println("ADDING: " + level + " " + pageId);
                     pagesByLevel.get(level).add(pageId);
                 }
             } finally {

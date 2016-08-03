@@ -24,7 +24,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
@@ -32,25 +31,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.asterix.api.common.SessionConfig;
-import org.apache.asterix.api.common.SessionConfig.OutputFormat;
 import org.apache.asterix.api.http.servlet.APIServlet;
-import org.apache.asterix.api.http.servlet.JSONUtil;
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.http.ParseException;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
-import org.apache.hyracks.api.comm.IFrame;
-import org.apache.hyracks.api.comm.IFrameTupleAccessor;
-import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.control.nc.resources.memory.FrameManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 public class ResultUtils {
-    private static final Charset UTF_8 = Charset.forName("UTF-8");
-
     static Map<Character, String> HTML_ENTITIES = new HashMap<Character, String>();
 
     static {
@@ -74,115 +64,14 @@ public class ResultUtils {
         return s;
     }
 
-    public static void displayCSVHeader(ARecordType recordType, SessionConfig conf) throws AsterixException {
-        if (recordType == null) {
-            throw new AsterixException("Cannot output CSV with header without specifying output-record-type");
-        }
-        // If HTML-ifying, we have to output this here before the header -
-        // pretty ugly
-        if (conf.is(SessionConfig.FORMAT_HTML)) {
-            conf.out().println("<h4>Results:</h4>");
-            conf.out().println("<pre>");
-        }
-
-        String[] fieldNames = recordType.getFieldNames();
-        boolean notfirst = false;
-        for (String name : fieldNames) {
-            if (notfirst) {
-                conf.out().print(',');
-            }
-            notfirst = true;
-            conf.out().print('"');
-            conf.out().print(name.replace("\"", "\"\""));
-            conf.out().print('"');
-        }
-        conf.out().print("\r\n");
+    public static void displayResults(ResultReader resultReader, SessionConfig conf, Stats stats,
+            ARecordType recordType) throws HyracksDataException {
+        new ResultPrinter(conf, stats, recordType).print(resultReader);
     }
 
-    public static FrameManager resultDisplayFrameMgr = new FrameManager(ResultReader.FRAME_SIZE);
-
-    public static void displayResults(ResultReader resultReader, SessionConfig conf, Stats stats)
+    public static void displayResults(String record, SessionConfig conf, Stats stats, ARecordType recordType)
             throws HyracksDataException {
-        // Whether we are wrapping the output sequence in an array
-        boolean wrap_array = false;
-        // Whether this is the first instance being output
-        boolean notfirst = false;
-
-        // If we're outputting CSV with a header, the HTML header was already
-        // output by displayCSVHeader(), so skip it here
-        if (conf.is(SessionConfig.FORMAT_HTML)
-                && !(conf.fmt() == OutputFormat.CSV && conf.is(SessionConfig.FORMAT_CSV_HEADER))) {
-            conf.out().println("<h4>Results:</h4>");
-            conf.out().println("<pre>");
-        }
-
-        conf.resultPrefix(conf.out());
-
-        switch (conf.fmt()) {
-            case LOSSLESS_JSON:
-            case CLEAN_JSON:
-            case ADM:
-                if (conf.is(SessionConfig.FORMAT_WRAPPER_ARRAY)) {
-                    // Conveniently, LOSSLESS_JSON and ADM have the same syntax for an
-                    // "ordered list", and our representation of the result of a
-                    // statement is an ordered list of instances.
-                    conf.out().print("[ ");
-                    wrap_array = true;
-                }
-                break;
-            default:
-                break;
-        }
-
-        final boolean indentJSON = conf.is(SessionConfig.INDENT_JSON);
-
-        final IFrameTupleAccessor fta = resultReader.getFrameTupleAccessor();
-        final IFrame frame = new VSizeFrame(resultDisplayFrameMgr);
-
-        while (resultReader.read(frame) > 0) {
-            final ByteBuffer frameBuffer = frame.getBuffer();
-            final byte[] frameBytes = frameBuffer.array();
-            fta.reset(frameBuffer);
-            final int last = fta.getTupleCount();
-            for (int tIndex = 0; tIndex < last; tIndex++) {
-                final int start = fta.getTupleStartOffset(tIndex);
-                int length = fta.getTupleEndOffset(tIndex) - start;
-                if (conf.fmt() == OutputFormat.CSV) {
-                    if ((length > 0) && (frameBytes[start + length - 1] == '\n')) {
-                        length--;
-                    }
-                }
-                String result = new String(frameBytes, start, length, UTF_8);
-                if (wrap_array && notfirst) {
-                    conf.out().print(", ");
-                }
-                notfirst = true;
-                if (indentJSON) {
-                    // TODO(tillw): this is inefficient - do this during result generation
-                    result = JSONUtil.indent(result, 2);
-                }
-                conf.out().print(result);
-                if (conf.fmt() == OutputFormat.CSV) {
-                    conf.out().print("\r\n");
-                }
-                ++stats.count;
-                // TODO(tillw) fix this approximation
-                stats.size += result.length();
-            }
-            frameBuffer.clear();
-        }
-
-        conf.out().flush();
-
-        if (wrap_array) {
-            conf.out().println(" ]");
-        }
-
-        conf.resultPostfix(conf.out());
-
-        if (conf.is(SessionConfig.FORMAT_HTML)) {
-            conf.out().println("</pre>");
-        }
+        new ResultPrinter(conf, stats, recordType).print(record);
     }
 
     public static JSONObject getErrorResponse(int errorCode, String errorMessage, String errorSummary,
@@ -193,7 +82,7 @@ public class ResultUtils {
         errorArray.put(errorMessage);
         try {
             errorResp.put("error-code", errorArray);
-            if (! "".equals(errorSummary)) {
+            if (!"".equals(errorSummary)) {
                 errorResp.put("summary", errorSummary);
             } else {
                 //parse exception

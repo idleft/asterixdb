@@ -36,8 +36,8 @@ public class TypeDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.TYPE_DROP;
+    public byte getKind() {
+        return Statement.Kind.TYPE_DROP;
     }
 
     public Identifier getDataverseName() {

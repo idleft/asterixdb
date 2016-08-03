@@ -34,8 +34,8 @@ public class CompactStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.COMPACT;
+    public byte getKind() {
+        return Statement.Kind.COMPACT;
     }
 
     public Identifier getDataverseName() {

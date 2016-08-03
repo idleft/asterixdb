@@ -32,8 +32,8 @@ public class FeedWithMetaDataFlowController<T> extends FeedRecordDataFlowControl
 
     public FeedWithMetaDataFlowController(IHyracksTaskContext ctx, FeedTupleForwarder tupleForwarder,
             FeedLogManager feedLogManager, int numOfOutputFields, IRecordWithMetadataParser<T> dataParser,
-            IRecordReader<T> recordReader, boolean forceDatatype) throws HyracksDataException {
-        super(ctx, tupleForwarder, feedLogManager, numOfOutputFields, dataParser, recordReader, forceDatatype);
+            IRecordReader<T> recordReader, boolean sendMarker) throws HyracksDataException {
+        super(ctx, tupleForwarder, feedLogManager, numOfOutputFields, dataParser, recordReader, sendMarker);
     }
 
     @Override

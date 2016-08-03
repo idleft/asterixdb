@@ -59,7 +59,7 @@ public class DataflowControllerProvider {
     public static IDataFlowController getDataflowController(ARecordType recordType, IHyracksTaskContext ctx,
             int partition, IExternalDataSourceFactory dataSourceFactory, IDataParserFactory dataParserFactory,
             Map<String, String> configuration, boolean indexingOp, boolean isFeed, FeedLogManager feedLogManager)
-                    throws HyracksDataException {
+            throws HyracksDataException {
         try {
             switch (dataSourceFactory.getDataSourceType()) {
                 case RECORDS:
@@ -67,6 +67,7 @@ public class DataflowControllerProvider {
                     IRecordReader<?> recordReader = recordReaderFactory.createRecordReader(ctx, partition);
                     IRecordDataParserFactory<?> recordParserFactory = (IRecordDataParserFactory<?>) dataParserFactory;
                     IRecordDataParser<?> dataParser = recordParserFactory.createRecordParser(ctx);
+                    boolean sendMarker = ExternalDataUtils.isSendMarker(configuration);
                     if (indexingOp) {
                         return new IndexingDataFlowController(ctx,
                                 DataflowUtils.getTupleForwarder(configuration, feedLogManager), dataParser,
@@ -74,25 +75,25 @@ public class DataflowControllerProvider {
                     } else if (isFeed) {
                         FeedTupleForwarder tupleForwarder =
                                 (FeedTupleForwarder) DataflowUtils.getTupleForwarder(configuration, feedLogManager);
-                        boolean forceDataType = ExternalDataUtils.getForceDataType(configuration);
                         boolean isChangeFeed = ExternalDataUtils.isChangeFeed(configuration);
                         boolean isRecordWithMeta = ExternalDataUtils.isRecordWithMeta(configuration);
                         if (isRecordWithMeta) {
                             if (isChangeFeed) {
                                 int numOfKeys = ExternalDataUtils.getNumberOfKeys(configuration);
                                 return new ChangeFeedWithMetaDataFlowController(ctx, tupleForwarder, feedLogManager,
-                                        numOfKeys + 2, (IRecordWithMetadataParser) dataParser, recordReader, forceDataType);
+                                        numOfKeys + 2, (IRecordWithMetadataParser) dataParser, recordReader,
+                                        sendMarker);
                             } else {
                                 return new FeedWithMetaDataFlowController(ctx, tupleForwarder, feedLogManager, 2,
-                                        (IRecordWithMetadataParser) dataParser, recordReader, forceDataType);
+                                        (IRecordWithMetadataParser) dataParser, recordReader, sendMarker);
                             }
                         } else if (isChangeFeed) {
                             int numOfKeys = ExternalDataUtils.getNumberOfKeys(configuration);
                             return new ChangeFeedDataFlowController(ctx, tupleForwarder, feedLogManager, numOfKeys + 1,
-                                    (IRecordWithPKDataParser) dataParser, recordReader, forceDataType);
+                                    (IRecordWithPKDataParser) dataParser, recordReader, sendMarker);
                         } else {
                             return new FeedRecordDataFlowController(ctx, tupleForwarder, feedLogManager, 1, dataParser,
-                                    recordReader, forceDataType);
+                                    recordReader, sendMarker);
                         }
                     } else {
                         return new RecordDataFlowController(ctx,

@@ -73,8 +73,8 @@ public class FunctionDecl implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.FUNCTION_DECL;
+    public byte getKind() {
+        return Statement.Kind.FUNCTION_DECL;
     }
 
     @Override

@@ -111,9 +111,4 @@ public class RecordWithMetadataParser<T, O> implements IRecordWithMetadataParser
     public void appendLastParsedPrimaryKeyToTuple(ArrayTupleBuilder tb) throws IOException {
         rwm.appendPrimaryKeyToTuple(tb);
     }
-
-    @Override
-    public boolean validate(IRawRecord<? extends T> record){
-        return true;
-    }
 }

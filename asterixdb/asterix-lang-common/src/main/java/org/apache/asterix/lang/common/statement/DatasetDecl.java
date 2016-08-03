@@ -141,8 +141,8 @@ public class DatasetDecl implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.DATASET_DECL;
+    public byte getKind() {
+        return Statement.Kind.DATASET_DECL;
     }
 
     public IDatasetDetailsDecl getDatasetDetailsDecl() {

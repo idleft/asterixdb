@@ -21,7 +21,6 @@ package org.apache.asterix.external.parser;
 import java.io.DataOutput;
 
 import org.apache.asterix.external.api.IDataParser;
-import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.om.base.ABinary;
 import org.apache.asterix.om.base.ABoolean;
@@ -358,5 +357,4 @@ public abstract class AbstractDataParser implements IDataParser {
 
         return ATimeParserFactory.parseTimePart(interval, startOffset, endOffset - startOffset + 1);
     }
-
 }

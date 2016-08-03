@@ -30,8 +30,8 @@ public class StructuralPropertiesVector implements IPhysicalPropertiesVector {
     private List<ILocalStructuralProperty> propsLocal;
     private IPartitioningProperty propPartitioning;
 
-    public static final StructuralPropertiesVector EMPTY_PROPERTIES_VECTOR = new StructuralPropertiesVector(null,
-            new ArrayList<ILocalStructuralProperty>());
+    public static final StructuralPropertiesVector EMPTY_PROPERTIES_VECTOR =
+            new StructuralPropertiesVector(null, new ArrayList<ILocalStructuralProperty>());
 
     public StructuralPropertiesVector(IPartitioningProperty propPartitioning,
             List<ILocalStructuralProperty> propsLocal) {
@@ -56,7 +56,7 @@ public class StructuralPropertiesVector implements IPhysicalPropertiesVector {
 
     @Override
     public IPhysicalPropertiesVector clone() {
-        List<ILocalStructuralProperty> propsCopy = new LinkedList<ILocalStructuralProperty>();
+        List<ILocalStructuralProperty> propsCopy = new LinkedList<>();
         if (propsLocal != null) {
             propsCopy.addAll(propsLocal);
         }
@@ -75,22 +75,19 @@ public class StructuralPropertiesVector implements IPhysicalPropertiesVector {
             List<FunctionalDependency> fds) {
         List<ILocalStructuralProperty> plist = reqd.getLocalProperties();
         List<ILocalStructuralProperty> diffLocals = null;
-        if (plist != null && !plist.isEmpty()) {
-            if (!PropertiesUtil.matchLocalProperties(plist, propsLocal, equivalenceClasses, fds)) {
-                diffLocals = plist;
-            }
+        if (plist != null && !plist.isEmpty()
+                && !PropertiesUtil.matchLocalProperties(plist, propsLocal, equivalenceClasses, fds)) {
+            diffLocals = plist;
         }
 
         IPartitioningProperty diffPart = null;
         IPartitioningProperty reqdPart = reqd.getPartitioningProperty();
+
         if (reqdPart != null) {
-            if (mayExpandProperties) {
-                reqdPart.normalize(equivalenceClasses, fds);
-            } else {
-                reqdPart.normalize(equivalenceClasses, null);
-            }
-            propPartitioning.normalize(equivalenceClasses, fds);
-            if (!PropertiesUtil.matchPartitioningProps(reqdPart, propPartitioning, mayExpandProperties)) {
+            IPartitioningProperty normalizedReqPart =
+                    reqdPart.normalize(equivalenceClasses, mayExpandProperties ? fds : null);
+            IPartitioningProperty normalizedPropPart = propPartitioning.normalize(equivalenceClasses, fds);
+            if (!PropertiesUtil.matchPartitioningProps(normalizedReqPart, normalizedPropPart, mayExpandProperties)) {
                 diffPart = reqdPart;
             }
         }

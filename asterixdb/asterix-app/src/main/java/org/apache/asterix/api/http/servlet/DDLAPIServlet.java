@@ -19,34 +19,41 @@
 package org.apache.asterix.api.http.servlet;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.lang.common.base.Statement;
-import org.apache.asterix.lang.common.base.Statement.Kind;
 
 public class DDLAPIServlet extends RESTAPIServlet {
     private static final long serialVersionUID = 1L;
+
+    private static final List<Byte> allowedStatements = Collections.unmodifiableList(Arrays.asList(
+            Statement.Kind.DATAVERSE_DECL, Statement.Kind.DATAVERSE_DROP, Statement.Kind.DATASET_DECL,
+            Statement.Kind.NODEGROUP_DECL, Statement.Kind.NODEGROUP_DROP, Statement.Kind.TYPE_DECL,
+            Statement.Kind.TYPE_DROP, Statement.Kind.CREATE_INDEX, Statement.Kind.INDEX_DECL,
+            Statement.Kind.CREATE_DATAVERSE, Statement.Kind.DATASET_DROP, Statement.Kind.INDEX_DROP,
+            Statement.Kind.CREATE_FUNCTION, Statement.Kind.FUNCTION_DROP, Statement.Kind.CREATE_PRIMARY_FEED,
+            Statement.Kind.CREATE_SECONDARY_FEED, Statement.Kind.DROP_FEED, Statement.Kind.CREATE_FEED_POLICY,
+            Statement.Kind.DROP_FEED_POLICY));
 
     public DDLAPIServlet(ILangCompilationProvider compilationProvider) {
         super(compilationProvider);
     }
 
+    @Override
     protected String getQueryParameter(HttpServletRequest request) {
         return request.getParameter("ddl");
     }
 
-    protected List<Statement.Kind> getAllowedStatements() {
-        Kind[] statementsArray = { Kind.DATAVERSE_DECL, Kind.DATAVERSE_DROP, Kind.DATASET_DECL, Kind.NODEGROUP_DECL,
-                Kind.NODEGROUP_DROP, Kind.TYPE_DECL, Kind.TYPE_DROP, Kind.CREATE_INDEX, Kind.INDEX_DECL,
-                Kind.CREATE_DATAVERSE, Kind.DATASET_DROP, Kind.INDEX_DROP, Kind.CREATE_FUNCTION, Kind.FUNCTION_DROP,
-                Kind.CREATE_PRIMARY_FEED, Kind.CREATE_SECONDARY_FEED, Kind.DROP_FEED, Kind.CREATE_FEED_POLICY,
-                Kind.DROP_FEED_POLICY };
-        return Arrays.asList(statementsArray);
+    @Override
+    protected List<Byte> getAllowedStatements() {
+        return allowedStatements;
     }
 
+    @Override
     protected String getErrorMessage() {
         return "Invalid statement: Non-DDL statement %s to the DDL API.";
     }

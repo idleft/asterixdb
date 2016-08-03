@@ -41,8 +41,8 @@ public class SetStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.SET;
+    public byte getKind() {
+        return Statement.Kind.SET;
     }
 
     @Override

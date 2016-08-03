@@ -74,8 +74,8 @@ public class RunStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.RUN;
+    public byte getKind() {
+        return Statement.Kind.RUN;
     }
 
 }

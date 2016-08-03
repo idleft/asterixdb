@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.common.api.AsterixThreadExecutor;
 import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
 import org.apache.asterix.common.api.IDatasetLifecycleManager;
@@ -43,6 +44,7 @@ import org.apache.asterix.common.context.AsterixFileMapManager;
 import org.apache.asterix.common.context.DatasetLifecycleManager;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.common.replication.IRemoteRecoveryManager;
 import org.apache.asterix.common.replication.IReplicaResourcesManager;
 import org.apache.asterix.common.replication.IReplicationChannel;
@@ -51,7 +53,7 @@ import org.apache.asterix.common.transactions.IAsterixAppRuntimeContextProvider;
 import org.apache.asterix.common.transactions.IRecoveryManager;
 import org.apache.asterix.common.transactions.IRecoveryManager.SystemState;
 import org.apache.asterix.common.transactions.ITransactionSubsystem;
-import org.apache.asterix.external.feed.management.FeedManager;
+import org.apache.asterix.external.library.ExternalLibraryManager;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.metadata.MetadataNode;
 import org.apache.asterix.metadata.api.IAsterixStateProxy;
@@ -119,13 +121,15 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
     private IIOManager ioManager;
     private boolean isShuttingdown;
 
-    private FeedManager feedManager;
+    private ActiveManager activeManager;
 
     private IReplicationChannel replicationChannel;
     private IReplicationManager replicationManager;
     private IRemoteRecoveryManager remoteRecoveryManager;
     private IReplicaResourcesManager replicaResourcesManager;
     private final int metadataRmiPort;
+
+    private ILibraryManager libraryManager;
 
     public AsterixAppRuntimeContext(INCApplicationContext ncApplicationContext, int metadataRmiPort)
             throws AsterixException {
@@ -147,13 +151,13 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
         txnProperties = new AsterixTransactionProperties(propertiesAccessor);
         feedProperties = new AsterixFeedProperties(propertiesAccessor);
         buildProperties = new AsterixBuildProperties(propertiesAccessor);
-        replicationProperties = new AsterixReplicationProperties(propertiesAccessor,
-                AsterixClusterProperties.INSTANCE.getCluster());
+        replicationProperties =
+                new AsterixReplicationProperties(propertiesAccessor, AsterixClusterProperties.INSTANCE.getCluster());
         this.metadataRmiPort = metadataRmiPort;
     }
 
     @Override
-    public void initialize(boolean initialRun) throws IOException, ACIDException, AsterixException {
+    public void initialize(boolean initialRun) throws IOException, ACIDException {
         Logger.getLogger("org.apache").setLevel(externalProperties.getLogLevel());
 
         threadExecutor = new AsterixThreadExecutor(ncApplicationContext.getThreadFactory());
@@ -169,14 +173,15 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
 
         metadataMergePolicyFactory = new PrefixMergePolicyFactory();
 
-        ILocalResourceRepositoryFactory persistentLocalResourceRepositoryFactory = new PersistentLocalResourceRepositoryFactory(
-                ioManager, ncApplicationContext.getNodeId(), metadataProperties);
+        ILocalResourceRepositoryFactory persistentLocalResourceRepositoryFactory =
+                new PersistentLocalResourceRepositoryFactory(ioManager, ncApplicationContext.getNodeId(),
+                        metadataProperties);
 
-        localResourceRepository = (PersistentLocalResourceRepository) persistentLocalResourceRepositoryFactory
-                .createRepository();
+        localResourceRepository =
+                (PersistentLocalResourceRepository) persistentLocalResourceRepositoryFactory.createRepository();
 
-        IAsterixAppRuntimeContextProvider asterixAppRuntimeContextProvider = new AsterixAppRuntimeContextProviderForRecovery(
-                this);
+        IAsterixAppRuntimeContextProvider asterixAppRuntimeContextProvider =
+                new AsterixAppRuntimeContextProviderForRecovery(this);
         txnSubsystem = new TransactionSubsystem(ncApplicationContext.getNodeId(), asterixAppRuntimeContextProvider,
                 txnProperties);
 
@@ -194,8 +199,8 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
 
         isShuttingdown = false;
 
-        feedManager = new FeedManager(ncApplicationContext.getNodeId(), feedProperties,
-                compilerProperties.getFrameSize());
+        activeManager = new ActiveManager(ncApplicationContext.getNodeId(),
+                feedProperties.getMemoryComponentGlobalBudget(), compilerProperties.getFrameSize());
 
         if (replicationProperties.isReplicationEnabled()) {
             String nodeId = ncApplicationContext.getNodeId();
@@ -234,9 +239,9 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
 
             remoteRecoveryManager = new RemoteRecoveryManager(replicationManager, this, replicationProperties);
 
-            bufferCache = new BufferCache(ioManager, prs, pcp, fileMapManager,
-                    storageProperties.getBufferCacheMaxOpenFiles(), ncApplicationContext.getThreadFactory(),
-                    replicationManager);
+            bufferCache =
+                    new BufferCache(ioManager, prs, pcp, fileMapManager, storageProperties.getBufferCacheMaxOpenFiles(),
+                            ncApplicationContext.getThreadFactory(), replicationManager);
         } else {
             bufferCache = new BufferCache(ioManager, prs, pcp, fileMapManager,
                     storageProperties.getBufferCacheMaxOpenFiles(), ncApplicationContext.getThreadFactory());
@@ -265,6 +270,11 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
         lccm.register((ILifeCycleComponent) datasetLifecycleManager);
         lccm.register((ILifeCycleComponent) txnSubsystem.getTransactionManager());
         lccm.register((ILifeCycleComponent) txnSubsystem.getLockManager());
+
+        /**
+         * Initializes the library manager.
+         */
+        libraryManager = new ExternalLibraryManager();
     }
 
     @Override
@@ -377,8 +387,8 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
     }
 
     @Override
-    public FeedManager getFeedManager() {
-        return feedManager;
+    public ActiveManager getFeedManager() {
+        return activeManager;
     }
 
     @Override
@@ -407,13 +417,18 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
     }
 
     @Override
+    public ILibraryManager getLibraryManager() {
+        return libraryManager;
+    }
+
+    @Override
     public void initializeResourceIdFactory() throws HyracksDataException {
         resourceIdFactory = new GlobalResourceIdFactoryProvider(ncApplicationContext).createResourceIdFactory();
     }
 
     @Override
     public void initializeMetadata(boolean newUniverse) throws Exception {
-        IAsterixStateProxy proxy = null;
+        IAsterixStateProxy proxy;
         if (LOGGER.isLoggable(Level.INFO)) {
             LOGGER.info("Bootstrapping metadata");
         }
@@ -446,4 +461,5 @@ public class AsterixAppRuntimeContext implements IAsterixAppRuntimeContext, IAst
     public void unexportMetadataNodeStub() throws RemoteException {
         UnicastRemoteObject.unexportObject(MetadataNode.INSTANCE, false);
     }
+
 }

@@ -48,8 +48,8 @@ public class WriteStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.WRITE;
+    public byte getKind() {
+        return Statement.Kind.WRITE;
     }
 
     @Override

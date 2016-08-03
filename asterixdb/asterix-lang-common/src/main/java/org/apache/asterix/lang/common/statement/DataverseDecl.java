@@ -36,8 +36,8 @@ public class DataverseDecl implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.DATAVERSE_DECL;
+    public byte getKind() {
+        return Statement.Kind.DATAVERSE_DECL;
     }
 
     @Override
