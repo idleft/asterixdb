@@ -109,11 +109,6 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
     }
 
     @Override
-    public boolean validate(IRawRecord<? extends char[]> record) throws JSONException {
-        return false;
-    }
-
-    @Override
     public void setInputStream(InputStream in) throws IOException {
 
     }

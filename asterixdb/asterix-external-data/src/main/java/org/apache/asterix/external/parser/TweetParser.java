@@ -18,31 +18,31 @@
  */
 package org.apache.asterix.external.parser;
 
-import org.apache.asterix.builders.*;
+import org.apache.asterix.builders.AbvsBuilderFactory;
+import org.apache.asterix.builders.IARecordBuilder;
+import org.apache.asterix.builders.IAsterixListBuilder;
+import org.apache.asterix.builders.ListBuilderFactory;
+import org.apache.asterix.builders.RecordBuilderFactory;
+import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
-import org.apache.asterix.om.base.AMutablePoint;
-import org.apache.asterix.om.base.AMutableString;
 import org.apache.asterix.om.base.ANull;
-import org.apache.asterix.om.types.*;
+import org.apache.asterix.om.types.ARecordType;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.asterix.om.util.container.ListObjectPool;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IMutableValueStorage;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
-import org.apache.hyracks.storage.am.common.ophelpers.LongArrayList;
 import org.apache.hyracks.util.string.UTF8StringWriter;
-import org.eclipse.jetty.util.ajax.JSON;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.DataOutput;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-
-import static org.apache.asterix.om.types.ATypeTag.UNION;
 
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
     //TODO Union type on record attribute
@@ -155,19 +155,6 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
             }
         return -1;
     }
-
-    @Override
-    public boolean validate(IRawRecord<? extends String> record) throws JSONException {
-        //TODO check nested fields
-        JSONObject jsObj = new JSONObject(record.get());
-        for (String fn : recordType.getFieldNames()){
-//            IAType fieldType = recordType.getFieldType(fn);
-            if(jsObj.isNull(fn)||jsObj.getString(fn).length() == 0)
-                return false;
-        }
-        return true;
-    }
-
 
     public void writeRecord(JSONObject obj, DataOutput out, ARecordType curRecType) throws IOException, JSONException {
         IAType[] curTypes = null;
