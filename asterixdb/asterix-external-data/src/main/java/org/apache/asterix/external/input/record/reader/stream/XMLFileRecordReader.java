@@ -40,15 +40,15 @@ public class XMLFileRecordReader extends StreamRecordReader {
     public boolean hasNext() throws IOException {
         newRecordFormed = false;
         record.reset();
+        startPosn = 0;
+        prevCharLF = false;
         while (!newRecordFormed){
             if(done)
                 return false;
 
-            startPosn = 0;
-            prevCharLF = false;
-
             if(bufferPosn >= bufferLength){
                 // load new buffer
+                startPosn = bufferPosn = 0;
                 bufferLength = reader.read(inputBuffer);
                 if(bufferLength <= 0) {
                     if (record.size() > 0){
@@ -71,10 +71,14 @@ public class XMLFileRecordReader extends StreamRecordReader {
                     else
                         prevCharLF = true;
                 }
+                else
+                    prevCharLF = false;
                 bufferPosn++;
             }
-            if(bufferPosn>startPosn)
+            if(bufferPosn>startPosn) {
                 record.append(inputBuffer, startPosn, bufferPosn - startPosn);
+                startPosn = bufferPosn;
+            }
         }
         return newRecordFormed;
     }
