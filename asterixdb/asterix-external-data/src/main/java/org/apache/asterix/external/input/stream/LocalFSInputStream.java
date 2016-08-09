@@ -35,7 +35,6 @@ public class LocalFSInputStream extends AsterixInputStream {
     private static final Logger LOGGER = Logger.getLogger(LocalFSInputStream.class.getName());
     private final FileSystemWatcher watcher;
     private FileInputStream in;
-    private byte lastByte;
     private File currentFile;
 
     public LocalFSInputStream(FileSystemWatcher watcher) {
@@ -123,22 +122,24 @@ public class LocalFSInputStream extends AsterixInputStream {
                 return -1;
             }
         }
-        int result = in.read(b, off, len);
-        while ((result < 0) && advance()) {
-            // return a new line at the end of every file <--Might create problems for some cases
-            // depending on the parser implementation-->
-            if ((lastByte != ExternalDataConstants.BYTE_LF) && (lastByte != ExternalDataConstants.BYTE_LF)) {
-                lastByte = ExternalDataConstants.BYTE_LF;
-                b[off] = ExternalDataConstants.BYTE_LF;
-                return 1;
+        int curLen = -1;
+
+        do{
+            curLen = in.read(b, off, len-2);
+            if(curLen<0){
+                advance();
+                continue;
             }
-            // recursive call
-            result = in.read(b, off, len);
-        }
-        if (result > 0) {
-            lastByte = b[(off + result) - 1];
-        }
-        return result;
+            if(in.available()<=0){
+                if(b[off+curLen-1]==ExternalDataConstants.BYTE_LF){
+                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+                } else{
+                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+                }
+            }
+        } while(curLen<0);
+        return curLen;
     }
 
     @Override

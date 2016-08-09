@@ -30,53 +30,52 @@ import java.io.IOException;
 public class XMLFileRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;
-    protected int startPosn;
-    protected boolean prevCharLF;
+    protected int startPosn = 0;
+    protected boolean prevCharLF = false;
+
     public XMLFileRecordReader(AsterixInputStream inputStream) {
         super(inputStream);
     }
 
-    @Override
-    public boolean hasNext() throws IOException {
+    @Override public boolean hasNext() throws IOException {
         newRecordFormed = false;
         record.reset();
-        startPosn = 0;
+        //        startPosn = 0;
         prevCharLF = false;
-        while (!newRecordFormed){
-            if(done)
+        while (!newRecordFormed) {
+            if (done)
                 return false;
 
-            if(bufferPosn >= bufferLength){
+            if (bufferPosn >= bufferLength) {
                 // load new buffer
                 startPosn = bufferPosn = 0;
                 bufferLength = reader.read(inputBuffer);
-                if(bufferLength <= 0) {
-                    if (record.size() > 0){
+                if (bufferLength <= 0) {
+                    if (record.size() > 0) {
                         record.endRecord();
                         return true;
-                    }
-                    else {
+                    } else {
                         close();
                         return false;
                     }
                 }
             }
 
-            while(bufferPosn < bufferLength){
-                if(inputBuffer[bufferPosn] == ExternalDataConstants.LF){
-                    if(prevCharLF){
+            // using empty line as new record
+            while (bufferPosn < bufferLength) {
+                if (inputBuffer[bufferPosn] == ExternalDataConstants.LF) {
+                    if (prevCharLF) {
+                        bufferPosn++;
                         newRecordFormed = true;
                         break;
-                    }
-                    else
+                    } else
                         prevCharLF = true;
-                }
-                else
+                } else
                     prevCharLF = false;
                 bufferPosn++;
             }
-            if(bufferPosn>startPosn) {
-                record.append(inputBuffer, startPosn, bufferPosn - startPosn);
+            if (bufferPosn > startPosn) {
+                record.append(inputBuffer, startPosn, bufferPosn - startPosn - 2);
                 startPosn = bufferPosn;
             }
         }

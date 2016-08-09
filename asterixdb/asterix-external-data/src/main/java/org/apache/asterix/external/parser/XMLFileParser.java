@@ -50,14 +50,13 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
     private ARecordType recordType;
     private XMLReader xmlReader;
     private IARecordBuilder rb;
-    private final IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool =
-            new ListObjectPool<>(new AbvsBuilderFactory());
-
+    private final IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool = new ListObjectPool<>(
+            new AbvsBuilderFactory());
 
     private boolean writeField(ATypeTag typeTag, DataOutput fieldOut, Object fieldValue) throws HyracksDataException {
-        switch (typeTag){
+        switch (typeTag) {
             case INT64:
-                aInt64.setValue((long)fieldValue);
+                aInt64.setValue((long) fieldValue);
                 int64Serde.serialize(aInt64, fieldOut);
                 break;
             case STRING:
@@ -66,7 +65,7 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
                 break;
             case DOUBLE:
                 aDouble.setValue((double) fieldValue);
-                doubleSerde.serialize(aDouble,fieldOut);
+                doubleSerde.serialize(aDouble, fieldOut);
         }
         return true;
     }
@@ -74,22 +73,20 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
     private boolean parseRecord(ARecordType recordType, XMLReader xmlReader, DataOutput out) throws Exception {
         ArrayBackedValueStorage fieldBuffer = getTempBuffer();
         String[] attrNames = recordType.getFieldNames();
-
+        // use saxparser
         rb.reset(recordType);
         rb.init();
-        for(int iter1 = 0; iter1<attrNames.length; iter1++){
+        for (int iter1 = 0; iter1 < attrNames.length; iter1++) {
             fieldBuffer.reset();
             writeField(recordType.getFieldType(attrNames[iter1]).getTypeTag(), fieldBuffer.getDataOutput(),
                     xmlReader.getProperty(attrNames[iter1]));
-//            reco
             rb.addField(iter1, fieldBuffer);
         }
-        rb.write(out,true);
+        rb.write(out, true);
         return true;
     }
 
-    @Override
-    public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
+    @Override public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
         char[] rawRecord = record.get();
         resetPools();
         try {
@@ -99,7 +96,6 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
             throw new IOException(e.getMessage());
         }
 
-
     }
 
     public XMLFileParser(ARecordType recordType) throws SAXException {
@@ -108,27 +104,23 @@ public class XMLFileParser extends AbstractDataParser implements IStreamDataPars
         rb = new RecordBuilder();
     }
 
-    @Override
-    public void setInputStream(InputStream in) throws IOException {
+    @Override public void setInputStream(InputStream in) throws IOException {
 
     }
 
-    @Override
-    public boolean parse(DataOutput out) throws IOException {
+    @Override public boolean parse(DataOutput out) throws IOException {
         return false;
     }
 
-    @Override
-    public boolean reset(InputStream in) throws IOException {
+    @Override public boolean reset(InputStream in) throws IOException {
         return false;
     }
 
-
-    private ArrayBackedValueStorage getTempBuffer(){
-        return (ArrayBackedValueStorage)abvsBuilderPool.allocate(ATypeTag.BINARY);
+    private ArrayBackedValueStorage getTempBuffer() {
+        return (ArrayBackedValueStorage) abvsBuilderPool.allocate(ATypeTag.BINARY);
     }
 
-    private void resetPools(){
+    private void resetPools() {
         abvsBuilderPool.reset();
     }
 }
