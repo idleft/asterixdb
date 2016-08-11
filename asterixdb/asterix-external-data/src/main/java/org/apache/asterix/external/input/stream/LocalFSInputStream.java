@@ -36,6 +36,7 @@ public class LocalFSInputStream extends AsterixInputStream {
     private final FileSystemWatcher watcher;
     private FileInputStream in;
     private File currentFile;
+    private byte lastByte;
 
     public LocalFSInputStream(FileSystemWatcher watcher) {
         this.watcher = watcher;
@@ -122,25 +123,50 @@ public class LocalFSInputStream extends AsterixInputStream {
                 return -1;
             }
         }
-        int curLen = -1;
-
-        do{
-            curLen = in.read(b, off, len-2);
-            if(curLen<0){
-                advance();
-                continue;
+        int result = in.read(b, off, len);
+        while ((result < 0) && advance()) {
+            // return a new line at the end of every file <--Might create problems for some cases
+            // depending on the parser implementation-->
+            if ((lastByte != ExternalDataConstants.BYTE_LF) && (lastByte != ExternalDataConstants.BYTE_LF)) {
+                lastByte = ExternalDataConstants.BYTE_LF;
+                b[off] = ExternalDataConstants.BYTE_LF;
+                return 1;
             }
-            if(in.available()<=0){
-                if(b[off+curLen-1]==ExternalDataConstants.BYTE_LF){
-                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-                } else{
-                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-                }
-            }
-        } while(curLen<0);
-        return curLen;
+            // recursive call
+            result = in.read(b, off, len);
+        }
+        if (result > 0) {
+            lastByte = b[(off + result) - 1];
+        }
+        return result;
     }
+
+//    @Override
+//    public int read(byte[] b, int off, int len) throws IOException {
+//        if (in == null) {
+//            if (!advance()) {
+//                return -1;
+//            }
+//        }
+//        int curLen = -1;
+//
+//        do{
+//            curLen = in.read(b, off, len-2);
+//            if(curLen<0){
+//                advance();
+//                continue;
+//            }
+//            if(in.available()<=0){
+//                if(b[off+curLen-1]==ExternalDataConstants.BYTE_LF){
+//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+//                } else{
+//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
+//                }
+//            }
+//        } while(curLen<0);
+//        return curLen;
+//    }
 
     @Override
     public boolean stop() throws Exception {

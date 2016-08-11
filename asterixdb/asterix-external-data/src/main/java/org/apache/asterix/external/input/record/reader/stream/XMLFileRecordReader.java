@@ -62,22 +62,23 @@ public class XMLFileRecordReader extends StreamRecordReader {
             }
 
             // using empty line as new record
-            while (bufferPosn < bufferLength) {
-                if (inputBuffer[bufferPosn] == ExternalDataConstants.LF) {
-                    if (prevCharLF) {
-                        bufferPosn++;
-                        newRecordFormed = true;
-                        break;
-                    } else
-                        prevCharLF = true;
-                } else
-                    prevCharLF = false;
-                bufferPosn++;
-            }
-            if (bufferPosn > startPosn) {
-                record.append(inputBuffer, startPosn, bufferPosn - startPosn - 2);
-                startPosn = bufferPosn;
-            }
+            newRecordFormed = true;
+//            while (bufferPosn < bufferLength) {
+//                if (inputBuffer[bufferPosn] == ExternalDataConstants.LF) {
+//                    if (prevCharLF) {
+//                        bufferPosn++;
+//                        newRecordFormed = true;
+//                        break;
+//                    } else
+//                        prevCharLF = true;
+//                } else
+//                    prevCharLF = false;
+//                bufferPosn++;
+//            }
+//            if (bufferPosn > startPosn) {
+                record.append(inputBuffer, startPosn, bufferLength);
+//                startPosn = bufferPosn;
+//            }
         }
         return newRecordFormed;
     }

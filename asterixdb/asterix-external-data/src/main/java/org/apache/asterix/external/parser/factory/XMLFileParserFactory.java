@@ -20,6 +20,7 @@
 package org.apache.asterix.external.parser.factory;
 
 import org.apache.asterix.external.api.IRecordDataParser;
+import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.api.IStreamDataParser;
 import org.apache.asterix.external.parser.XMLFileParser;
 import org.apache.asterix.om.types.ARecordType;
@@ -27,20 +28,36 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.util.Map;
+
 /**
  * Created by Xikui on 6/28/16.
  */
-public class XMLFileParserFactory extends AbstractRecordStreamParserFactory<char[]> {
+public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
+
+    private ARecordType recordType;
+
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
         return createParser();
     }
 
+    @Override
+    public void configure(Map<String, String> configuration) {
+        // Nothing to be configured.
+    }
+
+    @Override public void setRecordType(ARecordType recordType) {
+        this.recordType = recordType;
+    }
+
     private XMLFileParser createParser() throws HyracksDataException{
         try {
             return new XMLFileParser(recordType);
-        } catch (SAXException e) {
-            throw new HyracksDataException(e.getMessage());
+        } catch (ParserConfigurationException|SAXException e) {
+            throw new HyracksDataException(e);
         }
     }
 
@@ -49,10 +66,6 @@ public class XMLFileParserFactory extends AbstractRecordStreamParserFactory<char
         return char[].class;
     }
 
-    @Override
-    public IStreamDataParser createInputStreamParser(IHyracksTaskContext ctx, int partition) throws HyracksDataException {
-        return createParser();
-    }
 
     @Override
     public void setMetaType(ARecordType metaType) {
