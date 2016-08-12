@@ -21,7 +21,7 @@
  * with minor changes. The updated record will not cause duplicate
  * key exception and the data will be updated.
  * Expected Res : Success
- * Date         : 13rd Aug 2016
+ * Date         : 13th Aug 2016
  */
 use dataverse experiments;
 set wait-for-completion-feed "false";
