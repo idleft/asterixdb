@@ -45,6 +45,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -100,15 +101,22 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
     private DefaultHandler handler = new DefaultHandler() {
 
         String curEleName;
+        int curLvl = 0;
 
+        @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
             curEleName = qName;
+            curLvl ++;
         }
 
+        @Override
         public void characters(char ch[], int start, int length) throws SAXException {
             // no op
-            String curEleVal = new String(ch, start, length);
+            String curEleVal = new String(ch, start, length).trim();
+            if(curLvl!=2||curEleVal.length()==0){
+                return;
+            }
             try {
                 writeField(getAttrNameIdx(curEleName), curEleName, curEleVal);
             } catch (HyracksDataException e) {
@@ -116,38 +124,25 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
             }
         }
 
+        @Override
+        public void endElement (String uri, String localName, String qName)
+                throws SAXException
+        {
+            //do nothing
+            String qn = qName;
+            curLvl--;
+        }
+
     };
 
-    //    private boolean parseRecord(ARecordType recordType, XMLReader xmlReader, DataOutput out) throws Exception {
-    //        ArrayBackedValueStorage fieldBuffer = getTempBuffer();
-    //        String[] attrNames = recordType.getFieldNames();
-    //        // use saxparser
-    //        rb.reset(recordType);
-    //        rb.init();
-    //        for (int iter1 = 0; iter1 < attrNames.length; iter1++) {
-    //            fieldBuffer.reset();
-    //            writeField(recordType.getFieldType(attrNames[iter1]).getTypeTag(), fieldBuffer.getDataOutput(),
-    //                    xmlReader.getProperty(attrNames[iter1]));
-    //            rb.addField(iter1, fieldBuffer);
-    //        }
-    //        rb.write(out, true);
-    //        return true;
-    //    }
-
     @Override public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
-        char[] rawRecord = record.get();
-        String filePath = "/Volumes/Storage/Users/Xikui/Projects/asterixdb/asterixdb/asterix-app/data/xml/res.xml";
+        String strRecord = record.toString();
         resetPools();
 
         try {
             rb.reset(recordType);
             rb.init();
-            BufferedWriter bw = new BufferedWriter(new FileWriter(new File(filePath)));
-            bw.write(rawRecord);
-            bw.close();
-//            xmlParser.parse(new InputSource(new ByteArrayInputStream(
-//                    new String(rawRecord).getBytes(StandardCharsets.UTF_8))), handler);
-            xmlParser.parse(new InputSource(new CharArrayReader(rawRecord)), handler);
+            xmlParser.parse(new InputSource(new StringReader(strRecord)), handler);
             rb.write(out, true);
         } catch (SAXException e) {
             e.printStackTrace();

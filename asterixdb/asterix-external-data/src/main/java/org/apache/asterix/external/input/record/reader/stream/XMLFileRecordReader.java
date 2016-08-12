@@ -30,7 +30,6 @@ import java.io.IOException;
 public class XMLFileRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;
-    protected int startPosn = 0;
     protected boolean prevCharLF = false;
 
     public XMLFileRecordReader(AsterixInputStream inputStream) {
@@ -40,46 +39,19 @@ public class XMLFileRecordReader extends StreamRecordReader {
     @Override public boolean hasNext() throws IOException {
         newRecordFormed = false;
         record.reset();
-        //        startPosn = 0;
         prevCharLF = false;
         while (!newRecordFormed) {
             if (done)
                 return false;
 
-            if (bufferPosn >= bufferLength) {
-                // load new buffer
-                startPosn = bufferPosn = 0;
-                bufferLength = reader.read(inputBuffer);
-                if (bufferLength <= 0) {
-                    if (record.size() > 0) {
-                        record.endRecord();
-                        return true;
-                    } else {
-                        close();
-                        return false;
-                    }
-                }
-            }
+            bufferLength = reader.read(inputBuffer);
 
-            // using empty line as new record
-            newRecordFormed = true;
-//            while (bufferPosn < bufferLength) {
-//                if (inputBuffer[bufferPosn] == ExternalDataConstants.LF) {
-//                    if (prevCharLF) {
-//                        bufferPosn++;
-//                        newRecordFormed = true;
-//                        break;
-//                    } else
-//                        prevCharLF = true;
-//                } else
-//                    prevCharLF = false;
-//                bufferPosn++;
-//            }
-//            if (bufferPosn > startPosn) {
-            record.append(inputBuffer, startPosn, bufferLength);
-            bufferPosn = bufferLength;
-//                startPosn = bufferPosn;
-//            }
+            if(bufferLength == 1 && inputBuffer[0]==ExternalDataConstants.BYTE_LF){
+                newRecordFormed = true;
+//                record.endRecord();
+            } else{
+                record.append(inputBuffer, 0, bufferLength);
+            }
         }
         return newRecordFormed;
     }
