@@ -210,7 +210,7 @@ public class CCApplicationEntryPoint implements ICCApplicationEntryPoint {
         addServlet(context, createServlet(key), key.getPath());
     }
 
-    private Servlet createServlet(Servlets key) {
+    protected Servlet createServlet(Servlets key) {
         switch (key) {
             case AQL:
                 return new AQLAPIServlet(new AqlCompilationProvider());
@@ -233,7 +233,7 @@ public class CCApplicationEntryPoint implements ICCApplicationEntryPoint {
             case QUERY_RESULT:
                 return new QueryResultAPIServlet();
             case QUERY_SERVICE:
-                return new QueryServiceServlet();
+                return new QueryServiceServlet(new SqlppCompilationProvider());
             case CONNECTOR:
                 return new ConnectorAPIServlet();
             case SHUTDOWN:

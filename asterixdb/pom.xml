@@ -28,7 +28,7 @@
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
     <version>16</version>
-    <relativePath/>
+    <relativePath />
   </parent>
 
   <licenses>
@@ -42,7 +42,7 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jvm.extraargs/>
+    <jvm.extraargs />
     <jdk.version>1.8</jdk.version>
     <runSlowAQLTests>false</runSlowAQLTests>
     <appendedResourcesDirectory>${basedir}/src/main/appended-resources</appendedResourcesDirectory>
@@ -68,7 +68,7 @@
     <hadoop.version>2.2.0</hadoop.version>
     <junit.version>4.11</junit.version>
     <commons.io.version>2.4</commons.io.version>
-    <servlet.api.version>2.5</servlet.api.version>
+    <servlet.api.version>3.1.0</servlet.api.version>
     <json.version>20090211</json.version>
     <jacoco.version>0.7.6.201602180812</jacoco.version>
   </properties>
@@ -234,7 +234,7 @@
             <module name="Checker">
               <!-- Checks for whitespace                               -->
               <!-- See http://checkstyle.sf.net/config_whitespace.html -->
-              <module name="FileTabCharacter"/>
+              <module name="FileTabCharacter" />
             </module>
           </checkstyleRules>
           <includes>**/*.java,**/*.jj</includes>
@@ -262,6 +262,11 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -283,7 +288,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -296,7 +301,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -309,7 +314,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -322,7 +327,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -335,7 +340,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
                 <pluginExecution>
@@ -348,7 +353,7 @@
                     </goals>
                   </pluginExecutionFilter>
                   <action>
-                    <ignore></ignore>
+                    <ignore />
                   </action>
                 </pluginExecution>
               </pluginExecutions>
@@ -387,25 +392,25 @@
     <profile>
       <id>optimizer-tests</id>
       <properties>
-        <optimizer.tests/>
+        <optimizer.tests />
       </properties>
     </profile>
     <profile>
       <id>metadata-tests</id>
       <properties>
-        <metadata.tests/>
+        <metadata.tests />
       </properties>
     </profile>
     <profile>
       <id>execution-tests</id>
       <properties>
-        <execution.tests/>
+        <execution.tests />
       </properties>
     </profile>
     <profile>
       <id>invalid-tests</id>
       <properties>
-        <invalid.tests/>
+        <invalid.tests />
       </properties>
     </profile>
     <profile>
@@ -516,7 +521,7 @@
         </plugins>
       </build>
       <properties>
-        <coverage/>
+        <coverage />
       </properties>
     </profile>
     <profile>
@@ -527,7 +532,7 @@
         </property>
       </activation>
       <properties>
-        <coverageArgLine/>
+        <coverageArgLine />
       </properties>
     </profile>
     <profile>
@@ -586,7 +591,7 @@
         <checksumPolicy>warn</checksumPolicy>
       </releases>
       <snapshots>
-        <enabled>true</enabled>
+        <enabled>false</enabled>
         <updatePolicy>always</updatePolicy>
         <checksumPolicy>fail</checksumPolicy>
       </snapshots>
@@ -733,6 +738,22 @@
         <version>${hyracks.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-hdfs-core</artifactId>
+        <version>${hyracks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-test-support</artifactId>
+        <version>${hyracks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-api</artifactId>
+        <version>${hyracks.version}</version>
+        <type>test-jar</type>
+      </dependency>
+      <dependency>
         <groupId>org.json</groupId>
         <artifactId>json</artifactId>
         <version>${json.version}</version>
@@ -740,7 +761,7 @@
       </dependency>
       <dependency>
         <groupId>javax.servlet</groupId>
-        <artifactId>servlet-api</artifactId>
+        <artifactId>javax.servlet-api</artifactId>
         <version>${servlet.api.version}</version>
         <type>jar</type>
       </dependency>

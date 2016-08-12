@@ -39,11 +39,11 @@ DIRNAME=$(dirname $0)
 }
 
 CLUSTERDIR=$(cd $DIRNAME/..; echo $PWD)
-CBASDIR=$(cd $CLUSTERDIR/../..; echo $PWD)
+INSTALLDIR=$(cd $CLUSTERDIR/../..; echo $PWD)
 LOGSDIR=$CLUSTERDIR/logs
 
 echo "CLUSTERDIR=$CLUSTERDIR"
-echo "CBASDIR=$CBASDIR"
+echo "INSTALLDIR=$INSTALLDIR"
 
 cd $CLUSTERDIR
 mkdir -p $LOGSDIR
@@ -54,13 +54,13 @@ mkdir -p $LOGSDIR
   echo "--------------------------"
 ) | tee -a $LOGSDIR/blue-service.log | tee -a $LOGSDIR/red-service.log >> $LOGSDIR/cc.log
 
-$CBASDIR/bin/asterixncservice -logdir - -config-file $CLUSTERDIR/conf/blue.conf >> $LOGSDIR/blue-service.log 2>&1 &
-$CBASDIR/bin/asterixncservice -logdir - >> $LOGSDIR/red-service.log 2>&1 &
-$CBASDIR/bin/asterixcc -config-file $CLUSTERDIR/conf/cc.conf >> $LOGSDIR/cc.log 2>&1 &
+$INSTALLDIR/bin/${NC_SERVICE_COMMAND} -logdir - -config-file $CLUSTERDIR/conf/blue.conf >> $LOGSDIR/blue-service.log 2>&1 &
+$INSTALLDIR/bin/${NC_SERVICE_COMMAND} -logdir - >> $LOGSDIR/red-service.log 2>&1 &
+$INSTALLDIR/bin/${CC_COMMAND} -config-file $CLUSTERDIR/conf/cc.conf >> $LOGSDIR/cc.log 2>&1 &
 
 echo -n "Waiting for cluster to start."
 while [ 1 ]; do
-  curl -s -o /dev/null http://localhost:19002 && break
+  curl -s -o /dev/null http://localhost:${LISTEN_PORT} && break
   echo -n "."
   sleep 1s
 done

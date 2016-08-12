@@ -343,6 +343,11 @@
         <output-dir compare="Text">query-issue550</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="flwor">
+      <compilation-unit name="query-ASTERIXDB-883">
+        <output-dir compare="Text">query-ASTERIXDB-883</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="union">
     <test-case FilePath="union">
@@ -378,6 +383,11 @@
     <test-case FilePath="union">
       <compilation-unit name="query-ASTERIXDB-1047">
         <output-dir compare="Text">query-ASTERIXDB-1047</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="union">
+      <compilation-unit name="query-ASTERIXDB-1354">
+        <output-dir compare="Text">query-ASTERIXDB-1354</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
@@ -1927,6 +1937,16 @@
     <test-case FilePath="dml">
       <compilation-unit name="delete-multi-statement">
         <output-dir compare="Text">delete-multi-statement</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="dml">
+      <compilation-unit name="query-ASTERIXDB-867">
+        <output-dir compare="Text">query-ASTERIXDB-867</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="dml">
+      <compilation-unit name="query-ASTERIXDB-1406">
+        <output-dir compare="Text">query-ASTERIXDB-1406</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
@@ -5406,6 +5426,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="string">
+      <compilation-unit name="string-equal-public">
+        <output-dir compare="Text">string-equal-public</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="string">
       <compilation-unit name="string-join1">
         <output-dir compare="Text">string-join1</output-dir>
       </compilation-unit>
@@ -5763,6 +5788,11 @@
     </test-case>
     <test-case FilePath="tpch">
       <compilation-unit name="q01_pricing_summary_report_nt">
+        <output-dir compare="Text">q01_pricing_summary_report_nt</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="tpch">
+      <compilation-unit name="q01-ASTERIXDB-830">
         <output-dir compare="Text">q01_pricing_summary_report_nt</output-dir>
       </compilation-unit>
     </test-case>

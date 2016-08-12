@@ -148,8 +148,11 @@
         <executions>
           <execution>
             <configuration>
+              <filters>
+                <filter>${project.basedir}/src/main/assembly/filter.properties</filter>
+              </filters>
               <descriptors>
-                <descriptor>src/main/assembly/binary-assembly.xml</descriptor>
+                <descriptor>${project.basedir}/src/main/assembly/binary-assembly.xml</descriptor>
               </descriptors>
             </configuration>
             <phase>package</phase>
@@ -207,26 +210,26 @@
     <dependency>
       <groupId>org.apache.asterix</groupId>
       <artifactId>asterix-app</artifactId>
-      <version>0.8.9-SNAPSHOT</version>
+      <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.asterix</groupId>
       <artifactId>asterix-app</artifactId>
-      <version>0.8.9-SNAPSHOT</version>
+      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.asterix</groupId>
       <artifactId>asterix-common</artifactId>
-      <version>0.8.9-SNAPSHOT</version>
+      <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.asterix</groupId>
       <artifactId>asterix-test-framework</artifactId>
-      <version>0.8.9-SNAPSHOT</version>
+      <version>${project.version}</version>
       <scope>test</scope>
     </dependency>
     <dependency>

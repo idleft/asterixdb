@@ -61,7 +61,7 @@ public class QueryServiceServlet extends HttpServlet {
 
     private static final Logger LOGGER = Logger.getLogger(QueryServiceServlet.class.getName());
 
-    private transient final ILangCompilationProvider compilationProvider = new SqlppCompilationProvider();
+    private transient final ILangCompilationProvider compilationProvider;
 
     public enum Parameter {
         // Standard
@@ -210,7 +210,14 @@ public class QueryServiceServlet extends HttpServlet {
         }
     }
 
+    public QueryServiceServlet(final ILangCompilationProvider compilationProvider) {
+        this.compilationProvider = compilationProvider;
+    }
+
     private static String getParameterValue(String content, String attribute) {
+        if (content == null || attribute == null) {
+            return null;
+        }
         int sc = content.indexOf(';');
         if (sc < 0) {
             return null;
@@ -223,6 +230,10 @@ public class QueryServiceServlet extends HttpServlet {
             return content.substring(eq + 1).trim().toLowerCase();
         }
         return null;
+    }
+
+    private static String toLower(String s) {
+        return s != null ? s.toLowerCase() : s;
     }
 
     private static SessionConfig.OutputFormat getFormat(String format) {
@@ -258,7 +269,7 @@ public class QueryServiceServlet extends HttpServlet {
             return app;
         };
 
-        String formatstr = request.getParameter(Parameter.FORMAT.str()).toLowerCase();
+        final String formatstr = toLower(request.getParameter(Parameter.FORMAT.str()));
         SessionConfig.OutputFormat format = getFormat(formatstr);
         SessionConfig sessionConfig = new SessionConfig(resultWriter, format, resultPrefix, resultPostfix);
         sessionConfig.set(SessionConfig.FORMAT_WRAPPER_ARRAY, true);
