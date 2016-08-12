@@ -513,13 +513,11 @@ class LangExpressionToPlanTranslator
                 feedModificationOp.getInputs().add(assign.getInputs().get(0));
             }
         } else {
-            if (isUpsertFeed) {
-                feedModificationOp = new InsertDeleteUpsertOperator(targetDatasource, varRef, varRefsForLoading,
-                        metaExpSingletonList, InsertDeleteUpsertOperator.Kind.UPSERT, false);
-            } else {
-                feedModificationOp = new InsertDeleteUpsertOperator(targetDatasource, varRef, varRefsForLoading,
-                        metaExpSingletonList, InsertDeleteUpsertOperator.Kind.INSERT, false);
-            }
+            final InsertDeleteUpsertOperator.Kind opKind = isUpsertFeed ?
+                    InsertDeleteUpsertOperator.Kind.UPSERT :
+                    InsertDeleteUpsertOperator.Kind.INSERT;
+            feedModificationOp = new InsertDeleteUpsertOperator(targetDatasource, varRef, varRefsForLoading,
+                    metaExpSingletonList, opKind, false);
             feedModificationOp.getInputs().add(new MutableObject<>(assign));
         }
         if (targetDatasource.getDataset().hasMetaPart() || isChangeFeed) {
