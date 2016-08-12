@@ -50,7 +50,6 @@ import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.metadata.MetadataTransactionContext;
-import org.apache.asterix.metadata.declared.AqlMetadataProvider;
 import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.DatasourceAdapter;
 import org.apache.asterix.metadata.entities.Datatype;
@@ -565,13 +564,4 @@ public class FeedMetadataUtil {
         }
         return outputType;
     }
-
-    public static boolean isChangeFeed(Feed feed, String dataverse, String feedName) throws AlgebricksException {
-        return ExternalDataUtils.isChangeFeed(feed.getAdapterConfiguration());
-    }
-
-    public static boolean isUpsertFeed(Feed feed, String dataverse, String feedName) throws AlgebricksException {
-        return ExternalDataUtils.isUpsertFeed(feed.getAdapterConfiguration());
-    }
-
 }
