@@ -122,6 +122,7 @@ public class FeedMetadataUtil {
         if (feedPolicy == null) {
             feedPolicy = MetadataManager.INSTANCE.getFeedPolicy(ctx, MetadataConstants.METADATA_DATAVERSE_NAME,
                     policyName);
+
             if (feedPolicy == null) {
                 throw new AsterixException("Unknown feed policy" + policyName);
             }
@@ -162,11 +163,11 @@ public class FeedMetadataUtil {
                 boolean enableSubscriptionMode;
                 OperatorDescriptorId opId = null;
                 if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-                    IPushRuntimeFactory[] runtimeFactories = ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
-                            .getRuntimeFactories();
+                    IPushRuntimeFactory[] runtimeFactories =
+                            ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline().getRuntimeFactories();
                     if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-                        IConnectorDescriptor connectorDesc = spec.getOperatorInputMap().get(opDesc.getOperatorId())
-                                .get(0);
+                        IConnectorDescriptor connectorDesc =
+                                spec.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
                         IOperatorDescriptor sourceOp = spec.getProducer(connectorDesc);
                         if (sourceOp instanceof FeedCollectOperatorDescriptor) {
                             runtimeType = FeedRuntimeType.COMPUTE;
@@ -207,10 +208,10 @@ public class FeedMetadataUtil {
             Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
             Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
 
-            IOperatorDescriptor leftOpDesc = altered.getOperatorMap()
-                    .get(oldNewOID.get(leftOp.getLeft().getOperatorId()));
-            IOperatorDescriptor rightOpDesc = altered.getOperatorMap()
-                    .get(oldNewOID.get(rightOp.getLeft().getOperatorId()));
+            IOperatorDescriptor leftOpDesc =
+                    altered.getOperatorMap().get(oldNewOID.get(leftOp.getLeft().getOperatorId()));
+            IOperatorDescriptor rightOpDesc =
+                    altered.getOperatorMap().get(oldNewOID.get(rightOp.getLeft().getOperatorId()));
 
             altered.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
         }
@@ -297,8 +298,8 @@ public class FeedMetadataUtil {
         try {
             MetadataManager.INSTANCE.acquireReadLatch();
             ctx = MetadataManager.INSTANCE.beginTransaction();
-            feed = MetadataManager.INSTANCE
-                    .getFeed(ctx, connectionId.getFeedId().getDataverse(), connectionId.getFeedId().getEntityName());
+            feed = MetadataManager.INSTANCE.getFeed(ctx, connectionId.getFeedId().getDataverse(),
+                    connectionId.getFeedId().getEntityName());
             preProcessingRequired = feed.getAppliedFunction() != null;
             MetadataManager.INSTANCE.commitTransaction(ctx);
         } catch (Exception e) {
@@ -326,8 +327,8 @@ public class FeedMetadataUtil {
             ExternalDataUtils.prepareFeed(configuration, feed.getDataverseName(), feed.getFeedName());
             ExternalDataUtils.prepareFeed(configuration, feed.getDataverseName(), feed.getFeedName());
             // Get adapter from metadata dataset <Metadata dataverse>
-            DatasourceAdapter adapterEntity = MetadataManager.INSTANCE
-                    .getAdapter(mdTxnCtx, MetadataConstants.METADATA_DATAVERSE_NAME, adapterName);
+            DatasourceAdapter adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx,
+                    MetadataConstants.METADATA_DATAVERSE_NAME, adapterName);
             // Get adapter from metadata dataset <The feed dataverse>
             if (adapterEntity == null) {
                 adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx, feed.getDataverseName(), adapterName);
@@ -354,14 +355,14 @@ public class FeedMetadataUtil {
                 adapterFactory.setMetaType(metaType);
                 adapterFactory.configure(null, configuration);
             } else {
-                AdapterFactoryProvider
-                        .getAdapterFactory(libraryManager, adapterName, configuration, adapterOutputType, metaType);
+                AdapterFactoryProvider.getAdapterFactory(libraryManager, adapterName, configuration, adapterOutputType,
+                        metaType);
             }
             if (metaType == null && configuration.containsKey(ExternalDataConstants.KEY_META_TYPE_NAME)) {
                 metaType = getOutputType(feed, configuration, ExternalDataConstants.KEY_META_TYPE_NAME);
                 if (metaType == null) {
-                    throw new AsterixException("Unknown specified feed meta output data type " + configuration
-                            .get(ExternalDataConstants.KEY_META_TYPE_NAME));
+                    throw new AsterixException("Unknown specified feed meta output data type "
+                            + configuration.get(ExternalDataConstants.KEY_META_TYPE_NAME));
                 }
             }
             if (adapterOutputType == null) {
@@ -370,8 +371,8 @@ public class FeedMetadataUtil {
                 }
                 adapterOutputType = getOutputType(feed, configuration, ExternalDataConstants.KEY_TYPE_NAME);
                 if (adapterOutputType == null) {
-                    throw new AsterixException("Unknown specified feed output data type " + configuration
-                            .get(ExternalDataConstants.KEY_TYPE_NAME));
+                    throw new AsterixException("Unknown specified feed output data type "
+                            + configuration.get(ExternalDataConstants.KEY_TYPE_NAME));
                 }
             }
         } catch (Exception e) {
@@ -379,9 +380,10 @@ public class FeedMetadataUtil {
         }
     }
 
-    @SuppressWarnings("rawtypes") public static Triple<IAdapterFactory, RecordDescriptor, AdapterType> getPrimaryFeedFactoryAndOutput(
-            Feed feed, FeedPolicyAccessor policyAccessor, MetadataTransactionContext mdTxnCtx,
-            ILibraryManager libraryManager) throws AlgebricksException {
+    @SuppressWarnings("rawtypes")
+    public static Triple<IAdapterFactory, RecordDescriptor, AdapterType> getPrimaryFeedFactoryAndOutput(Feed feed,
+            FeedPolicyAccessor policyAccessor, MetadataTransactionContext mdTxnCtx, ILibraryManager libraryManager)
+            throws AlgebricksException {
         // This method needs to be re-visited
         String adapterName = null;
         DatasourceAdapter adapterEntity = null;
@@ -399,8 +401,8 @@ public class FeedMetadataUtil {
             metaType = getOutputType(feed, configuration, ExternalDataConstants.KEY_META_TYPE_NAME);
             ExternalDataUtils.prepareFeed(configuration, feed.getDataverseName(), feed.getFeedName());
             // Get adapter from metadata dataset <Metadata dataverse>
-            adapterEntity = MetadataManager.INSTANCE
-                    .getAdapter(mdTxnCtx, MetadataConstants.METADATA_DATAVERSE_NAME, adapterName);
+            adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx, MetadataConstants.METADATA_DATAVERSE_NAME,
+                    adapterName);
             // Get adapter from metadata dataset <The feed dataverse>
             if (adapterEntity == null) {
                 adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx, feed.getDataverseName(), adapterName);
@@ -425,8 +427,8 @@ public class FeedMetadataUtil {
                 adapterFactory.setMetaType(metaType);
                 adapterFactory.configure(null, configuration);
             } else {
-                adapterFactory = AdapterFactoryProvider
-                        .getAdapterFactory(libraryManager, adapterName, configuration, adapterOutputType, metaType);
+                adapterFactory = AdapterFactoryProvider.getAdapterFactory(libraryManager, adapterName, configuration,
+                        adapterOutputType, metaType);
                 adapterType = IDataSourceAdapter.AdapterType.INTERNAL;
             }
             if (metaType == null) {
@@ -462,9 +464,9 @@ public class FeedMetadataUtil {
         return feedProps;
     }
 
-    @SuppressWarnings("rawtypes") private static void getSerdesForPKs(ISerializerDeserializer[] serdes,
-            Map<String, String> configuration, ARecordType metaType, ARecordType adapterOutputType, int index)
-            throws AlgebricksException {
+    @SuppressWarnings("rawtypes")
+    private static void getSerdesForPKs(ISerializerDeserializer[] serdes, Map<String, String> configuration,
+            ARecordType metaType, ARecordType adapterOutputType, int index) throws AlgebricksException {
         int[] pkIndexes = ExternalDataUtils.getPKIndexes(configuration);
         if (metaType != null) {
             int[] pkIndicators = ExternalDataUtils.getPKSourceIndicators(configuration);
