@@ -76,7 +76,8 @@ public class XMLFileRecordReader extends StreamRecordReader {
 //                bufferPosn++;
 //            }
 //            if (bufferPosn > startPosn) {
-                record.append(inputBuffer, startPosn, bufferLength);
+            record.append(inputBuffer, startPosn, bufferLength);
+            bufferPosn = bufferLength;
 //                startPosn = bufferPosn;
 //            }
         }

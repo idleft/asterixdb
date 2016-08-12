@@ -35,8 +35,8 @@ public class LocalFSInputStream extends AsterixInputStream {
     private static final Logger LOGGER = Logger.getLogger(LocalFSInputStream.class.getName());
     private final FileSystemWatcher watcher;
     private FileInputStream in;
-    private File currentFile;
     private byte lastByte;
+    private File currentFile;
 
     public LocalFSInputStream(FileSystemWatcher watcher) {
         this.watcher = watcher;
@@ -140,33 +140,6 @@ public class LocalFSInputStream extends AsterixInputStream {
         }
         return result;
     }
-
-//    @Override
-//    public int read(byte[] b, int off, int len) throws IOException {
-//        if (in == null) {
-//            if (!advance()) {
-//                return -1;
-//            }
-//        }
-//        int curLen = -1;
-//
-//        do{
-//            curLen = in.read(b, off, len-2);
-//            if(curLen<0){
-//                advance();
-//                continue;
-//            }
-//            if(in.available()<=0){
-//                if(b[off+curLen-1]==ExternalDataConstants.BYTE_LF){
-//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-//                } else{
-//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-//                    b[off + curLen++] = ExternalDataConstants.BYTE_LF;
-//                }
-//            }
-//        } while(curLen<0);
-//        return curLen;
-//    }
 
     @Override
     public boolean stop() throws Exception {
