@@ -88,7 +88,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
         fieldValueBuffer.reset();
         aString.setValue(fieldValue);
         stringSerde.serialize(aString, fieldValueBuffer.getDataOutput());
-        if (idx > 0) {
+        if (idx >= 0) {
             rb.addField(idx, fieldValueBuffer);
         } else {
             aString.setValue(fieldName);

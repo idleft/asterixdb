@@ -1,3 +1,0 @@
-
-use dataverse xml_feeds;
-connect feed XML_Alert_Feeds to dataset XML_Alerts;

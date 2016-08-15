@@ -40,6 +40,7 @@ public class LocalFSInputStream extends AsterixInputStream {
 
     public LocalFSInputStream(FileSystemWatcher watcher) {
         this.watcher = watcher;
+        lastByte = 0;
     }
 
     @Override
@@ -98,7 +99,7 @@ public class LocalFSInputStream extends AsterixInputStream {
             if (controller != null) {
                 controller.flush();
             }
-            currentFile = watcher.take();
+            currentFile = watcher.take(); // the last file will always waiting
         }
         if (currentFile != null) {
             in = new FileInputStream(currentFile);
@@ -124,20 +125,19 @@ public class LocalFSInputStream extends AsterixInputStream {
             }
         }
         int result = in.read(b, off, len);
-        while ((result < 0) && advance()) {
-            // return a new line at the end of every file <--Might create problems for some cases
-            // depending on the parser implementation-->
-            if ((lastByte != ExternalDataConstants.BYTE_LF) && (lastByte != ExternalDataConstants.BYTE_LF)) {
-                lastByte = ExternalDataConstants.BYTE_LF;
+
+        if(result <0){
+            if(lastByte!=0){
                 b[off] = ExternalDataConstants.BYTE_LF;
+                lastByte = 0;
                 return 1;
+            } else {
+                while(result<0 && advance()){
+                    result = in.read(b, off, len);
+                }
             }
-            // recursive call
-            result = in.read(b, off, len);
         }
-        if (result > 0) {
-            lastByte = b[(off + result) - 1];
-        }
+        lastByte = b[(off + result) - 1];
         return result;
     }
 
@@ -174,5 +174,9 @@ public class LocalFSInputStream extends AsterixInputStream {
         }
         LOGGER.warn("Failed to recover from failure", th);
         return false;
+    }
+
+    public int available() throws IOException {
+        return in.available();
     }
 }

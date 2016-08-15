@@ -20,8 +20,8 @@
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
     <test-case FilePath="external-library">
-      <compilation-unit name="tweetGeoTag">
-        <output-dir compare="Text">tweetGeoTag</output-dir>
+      <compilation-unit name="classad-parser-new">
+        <output-dir compare="Text">classad-parser-new</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
