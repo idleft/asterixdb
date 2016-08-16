@@ -19,9 +19,9 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="external-library">
-      <compilation-unit name="classad-parser-new">
-        <output-dir compare="Text">classad-parser-new</output-dir>
+    <test-case FilePath="feeds">
+      <compilation-unit name="xml-adaptor">
+        <output-dir compare="Text">xml-adaptor</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

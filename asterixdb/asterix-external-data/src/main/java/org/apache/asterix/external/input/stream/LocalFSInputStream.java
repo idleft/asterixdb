@@ -137,7 +137,9 @@ public class LocalFSInputStream extends AsterixInputStream {
                 }
             }
         }
-        lastByte = b[(off + result) - 1];
+        if(result > -1){
+            lastByte = b[(off + result) - 1];
+        }
         return result;
     }
 

@@ -45,11 +45,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 public class TweetParser extends AbstractDataParser implements IRecordDataParser<String> {
-    //TODO Union type on record attribute
-    // KNOWN Problem: null attribute cannot be eliminated by not(is-null($rec.geo))
-    //NOTE: indicate non-optional, string can go through, but read will have problem
-    // indicate non-optional, record with null field(not string) will not go through
-    // define notnull, assign null value, sometimes can read
     private final IObjectPool<IARecordBuilder, ATypeTag> recordBuilderPool = new ListObjectPool<IARecordBuilder, ATypeTag>(
             new RecordBuilderFactory());
     private final IObjectPool<IAsterixListBuilder, ATypeTag> listBuilderPool = new ListObjectPool<IAsterixListBuilder, ATypeTag>(
