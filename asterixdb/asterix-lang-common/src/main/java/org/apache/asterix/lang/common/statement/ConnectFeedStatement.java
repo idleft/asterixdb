@@ -53,19 +53,18 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
-        // not sure this function use?
         this.appliedFunctions = null;
     }
 
-    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName,
-                                ArrayList<FunctionSignature> appliedFunctions, String policy,int varCounter) {
-        this.dataverseName = dataverseName;
-        this.datasetName = datasetName;
-        this.feedName = feedName.getValue();
-        this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
-        this.varCounter = varCounter;
-        this.appliedFunctions = appliedFunctions;
-    }
+//    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName,
+//                                ArrayList<FunctionSignature> appliedFunctions, String policy,int varCounter) {
+//        this.dataverseName = dataverseName;
+//        this.datasetName = datasetName;
+//        this.feedName = feedName.getValue();
+//        this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
+//        this.varCounter = varCounter;
+//        this.appliedFunctions = appliedFunctions;
+//    }
 
     public Identifier getDataverseName() {
         return dataverseName;

@@ -147,7 +147,7 @@ public class FeedMetadataUtil {
 
         JobSpecification altered = new JobSpecification(spec.getFrameSize());
         Map<OperatorDescriptorId, IOperatorDescriptor> operatorMap = spec.getOperatorMap();
-        boolean preProcessingRequired = preProcessingRequired(feedConnectionId);
+//        boolean preProcessingRequired = preProcessingRequired(feedConnectionId);
         // copy operators
         String operandId = null;
         Map<OperatorDescriptorId, OperatorDescriptorId> oldNewOID =
@@ -182,7 +182,7 @@ public class FeedMetadataUtil {
                         IOperatorDescriptor sourceOp = spec.getProducer(connectorDesc);
                         if (sourceOp instanceof FeedCollectOperatorDescriptor) {
                             runtimeType = FeedRuntimeType.COMPUTE;
-                            enableSubscriptionMode = preProcessingRequired;
+//                            enableSubscriptionMode = preProcessingRequired;
                             metaOp = new FeedMetaOperatorDescriptor(altered, feedConnectionId, opDesc,
                                     feedPolicyProperties, runtimeType, enableSubscriptionMode, operandId);
                             opId = metaOp.getOperatorId();
@@ -428,31 +428,31 @@ public class FeedMetadataUtil {
         return result;
     }
 
-    private static boolean preProcessingRequired(FeedConnectionId connectionId) {
-        MetadataTransactionContext ctx = null;
-        Feed feed = null;
-        boolean preProcessingRequired = false;
-        try {
-            MetadataManager.INSTANCE.acquireReadLatch();
-            ctx = MetadataManager.INSTANCE.beginTransaction();
-            feed = MetadataManager.INSTANCE.getFeed(ctx, connectionId.getFeedId().getDataverse(),
-                    connectionId.getFeedId().getFeedName());
-            preProcessingRequired = feed.getAppliedFunction() != null;
-            MetadataManager.INSTANCE.commitTransaction(ctx);
-        } catch (Exception e) {
-            if (ctx != null) {
-                try {
-                    MetadataManager.INSTANCE.abortTransaction(ctx);
-                } catch (Exception abortException) {
-                    e.addSuppressed(abortException);
-                    throw new IllegalStateException(e);
-                }
-            }
-        } finally {
-            MetadataManager.INSTANCE.releaseReadLatch();
-        }
-        return preProcessingRequired;
-    }
+//    private static boolean preProcessingRequired(FeedConnectionId connectionId) {
+//        MetadataTransactionContext ctx = null;
+//        Feed feed = null;
+//        boolean preProcessingRequired = false;
+//        try {
+//            MetadataManager.INSTANCE.acquireReadLatch();
+//            ctx = MetadataManager.INSTANCE.beginTransaction();
+//            feed = MetadataManager.INSTANCE.getFeed(ctx, connectionId.getFeedId().getDataverse(),
+//                    connectionId.getFeedId().getFeedName());
+//            preProcessingRequired = feed.getAppliedFunction() != null;
+//            MetadataManager.INSTANCE.commitTransaction(ctx);
+//        } catch (Exception e) {
+//            if (ctx != null) {
+//                try {
+//                    MetadataManager.INSTANCE.abortTransaction(ctx);
+//                } catch (Exception abortException) {
+//                    e.addSuppressed(abortException);
+//                    throw new IllegalStateException(e);
+//                }
+//            }
+//        } finally {
+//            MetadataManager.INSTANCE.releaseReadLatch();
+//        }
+//        return preProcessingRequired;
+//    }
 
     public static void validateFeed(Feed feed, MetadataTransactionContext mdTxnCtx)
             throws AsterixException {
@@ -678,32 +678,32 @@ public class FeedMetadataUtil {
         return outputType;
     }
 
-    public static String getSecondaryFeedOutput(Feed feed, FeedPolicyAccessor policyAccessor,
-            MetadataTransactionContext mdTxnCtx)
-                    throws AlgebricksException, MetadataException, RemoteException, ACIDException {
-        String outputType = null;
-        String primaryFeedName = feed.getSourceFeedName();
-        Feed primaryFeed = MetadataManager.INSTANCE.getFeed(mdTxnCtx, feed.getDataverseName(), primaryFeedName);
-        FunctionSignature appliedFunction = primaryFeed.getAppliedFunction();
-        if (appliedFunction == null) {
-            outputType = getOutputType(feed, feed.getAdapterConfiguration(), ExternalDataConstants.KEY_TYPE_NAME)
-                    .getDisplayName();
-        } else {
-            Function function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, appliedFunction);
-            if (function != null) {
-                if (function.getLanguage().equals(Function.LANGUAGE_AQL)) {
-                    throw new NotImplementedException(
-                            "Secondary feeds derived from a source feed that has an applied AQL function are not supported yet.");
-                } else {
-                    outputType = function.getReturnType();
-                }
-            } else {
-                throw new IllegalArgumentException(
-                        "Function " + appliedFunction + " associated with source feed not found in Metadata.");
-            }
-        }
-        return outputType;
-    }
+//    public static String getSecondaryFeedOutput(Feed feed, FeedPolicyAccessor policyAccessor,
+//            MetadataTransactionContext mdTxnCtx)
+//                    throws AlgebricksException, MetadataException, RemoteException, ACIDException {
+//        String outputType = null;
+//        String primaryFeedName = feed.getSourceFeedName();
+//        Feed primaryFeed = MetadataManager.INSTANCE.getFeed(mdTxnCtx, feed.getDataverseName(), primaryFeedName);
+//        FunctionSignature appliedFunction = primaryFeed.getAppliedFunction();
+//        if (appliedFunction == null) {
+//            outputType = getOutputType(feed, feed.getAdapterConfiguration(), ExternalDataConstants.KEY_TYPE_NAME)
+//                    .getDisplayName();
+//        } else {
+//            Function function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, appliedFunction);
+//            if (function != null) {
+//                if (function.getLanguage().equals(Function.LANGUAGE_AQL)) {
+//                    throw new NotImplementedException(
+//                            "Secondary feeds derived from a source feed that has an applied AQL function are not supported yet.");
+//                } else {
+//                    outputType = function.getReturnType();
+//                }
+//            } else {
+//                throw new IllegalArgumentException(
+//                        "Function " + appliedFunction + " associated with source feed not found in Metadata.");
+//            }
+//        }
+//        return outputType;
+//    }
 
     public static boolean isChangeFeed(AqlMetadataProvider mdProvider, String dataverse, String feedName)
             throws AlgebricksException {

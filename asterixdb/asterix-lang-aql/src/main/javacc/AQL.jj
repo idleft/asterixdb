@@ -100,7 +100,6 @@ import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreateFeedStatementNew;
 import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
@@ -676,36 +675,23 @@ CreateFunctionStatement FunctionSpecification() throws ParseException:
     }
 }
 
-CreateFeedStatementNew FeedSpecification() throws ParseException:
+CreateFeedStatement FeedSpecification() throws ParseException:
 {
   Pair<Identifier,Identifier> nameComponents = null;
   boolean ifNotExists = false;
   String adapterName = null;
   Map<String,String> properties = null;
   FunctionSignature appliedFunction = null;
-  CreateFeedStatementNew cfs = null;
+  CreateDirectFeedStatement cfs = null;
   Pair<Identifier,Identifier> sourceNameComponents = null;
   
 }
 {
   (
-//    "secondary" "feed"  nameComponents = QualifiedName() ifNotExists = IfNotExists()
-//      <FROM> "feed" sourceNameComponents = QualifiedName() (appliedFunction = ApplyFunction())?
-//      {
-//        cfs = new CreateSecondaryFeedStatement(nameComponents,
-//                                   sourceNameComponents, appliedFunction, ifNotExists);
-//      }
-//     |
-//     ("primary")? "feed" nameComponents = QualifiedName() ifNotExists = IfNotExists()
-//      "using" adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?
-//       {
-//        cfs = new CreatePrimaryFeedStatement(nameComponents,
-//                                    adapterName, properties, appliedFunction, ifNotExists);
-//       }
       "feed" nameComponents = QualifiedName() ifNotExists = IfNotExists()
       "using" adapterName = AdapterName() properties = Configuration()
        {
-        cfs = new CreateFeedStatementNew(nameComponents,
+        cfs = new CreateDirectFeedStatement(nameComponents,
                                     adapterName, properties, ifNotExists);
        }
   )
@@ -1104,9 +1090,9 @@ Statement FeedStatement() throws ParseException:
 }
 {
   (
-    "connect" "feed" feedNameComponents = QualifiedName() "to" <DATASET> datasetNameComponents = QualifiedName() (appliedFunction = ApplyFunction())? (policy = GetPolicy())?
+    "connect" "feed" feedNameComponents = QualifiedName() "to" <DATASET> datasetNameComponents = QualifiedName()
+     (appliedFunction = ApplyFunction())? (policy = GetPolicy())?
       {
-        appliedFunctions.add(appliedFunction);
         stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
       }
     | "disconnect" "feed" feedNameComponents = QualifiedName() <FROM> <DATASET> datasetNameComponents = QualifiedName()

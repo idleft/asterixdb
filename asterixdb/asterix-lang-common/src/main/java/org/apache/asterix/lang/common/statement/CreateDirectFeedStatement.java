@@ -31,15 +31,15 @@ import java.util.Map;
 /**
  * Created by Xikui on 7/10/16.
  */
-public class CreateFeedStatementNew implements Statement{
+public class CreateDirectFeedStatement implements Statement {
 
     private final Pair<Identifier, Identifier> qName;
     private final boolean ifNotExists;
     private final String adaptorName;
     private final Map<String, String> adaptorConfiguration;
 
-    public CreateFeedStatementNew(Pair<Identifier, Identifier> qName, String adaptorName,
-                                      Map<String, String> adaptorConfiguration, boolean ifNotExists) {
+    public CreateDirectFeedStatement(Pair<Identifier, Identifier> qName, String adaptorName,
+            Map<String, String> adaptorConfiguration, boolean ifNotExists) {
         this.qName = qName;
         this.ifNotExists = ifNotExists;
         this.adaptorName = adaptorName;
@@ -66,7 +66,7 @@ public class CreateFeedStatementNew implements Statement{
         return adaptorConfiguration;
     }
 
-    public Statement.Kind getKind() {
+    @Override public byte getKind() {
         return Kind.CREATE_FEED;
     }
 

@@ -1427,7 +1427,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedStatementNew cfs, Mutable<ILogicalOperator> arg) throws AsterixException {
+    public Pair<ILogicalOperator, LogicalVariable> visit(CreateDirectFeedStatement cfs, Mutable<ILogicalOperator> arg) throws AsterixException {
         return null;
     }
 

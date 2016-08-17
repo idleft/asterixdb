@@ -703,7 +703,7 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
     }
 
     @Override
-    public Void visit(CreateFeedStatementNew cfs, Integer step) throws AsterixException{
+    public Void visit(CreateDirectFeedStatement cfs, Integer step) throws AsterixException{
         out.print(skip(step) + CREATE + " feed ");
         out.print(generateFullName(cfs.getDataverseName(), cfs.getFeedName()));
         out.print(generateIfNotExists(cfs.getIfNotExists()));

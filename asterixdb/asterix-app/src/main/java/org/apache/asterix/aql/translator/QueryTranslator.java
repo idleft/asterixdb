@@ -1936,7 +1936,7 @@ public class QueryTranslator extends AbstractLangTranslator {
 
     private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        CreateFeedStatementNew cfs = (CreateFeedStatementNew) stmt;
+        CreateDirectFeedStatement cfs = (CreateDirectFeedStatement) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName().getValue();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
@@ -2105,6 +2105,12 @@ public class QueryTranslator extends AbstractLangTranslator {
         } finally {
             MetadataLockManager.INSTANCE.dropFeedPolicyEnd(dataverseName, dataverseName + "." + policyName);
         }
+    }
+
+    private void handleNewConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+            IHyracksClientConnection hcc) throws Exception {
+
+
     }
 
     private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
