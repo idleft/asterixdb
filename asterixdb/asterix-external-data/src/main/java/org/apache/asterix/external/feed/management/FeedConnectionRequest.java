@@ -18,16 +18,20 @@
  */
 package org.apache.asterix.external.feed.management;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.asterix.external.feed.api.IFeedRuntime.FeedRuntimeType;
+import org.apache.asterix.active.EntityId;
+import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.commons.lang3.StringUtils;
 
 /**
  * A request for connecting a feed to a dataset.
  */
-public class FeedConnectionRequest {
+public class FeedConnectionRequest implements Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     public enum ConnectionStatus {
         /** initial state upon creating a connection request **/
@@ -64,11 +68,27 @@ public class FeedConnectionRequest {
     /** Target dataset associated with the connection request **/
     private final String targetDataset;
 
-    private final FeedId receivingFeedId;
+    private final EntityId receivingFeedId;
+
+    private final List<String> targetDatasets;
+
+
+    public FeedConnectionRequest(FeedJointKey feedJointKey, FeedRuntimeType connectionLocation,
+            List<String> targetDatasets){
+        // simplified request, function&policy skipped
+        this.feedJointKey = feedJointKey;
+        this.connectionLocation = connectionLocation;
+        this.targetDatasets = targetDatasets;
+        this.functionsToApply = null;
+        this.policy = null;
+        this.policyParameters = null;
+        this.targetDataset = null;
+        this.receivingFeedId = null;
+    }
 
     public FeedConnectionRequest(FeedJointKey feedPointKey, FeedRuntimeType connectionLocation,
             List<String> functionsToApply, String targetDataset, String policy, Map<String, String> policyParameters,
-            FeedId receivingFeedId) {
+            EntityId receivingFeedId) {
         this.feedJointKey = feedPointKey;
         this.connectionLocation = connectionLocation;
         this.functionsToApply = functionsToApply;
@@ -77,6 +97,7 @@ public class FeedConnectionRequest {
         this.policyParameters = policyParameters;
         this.receivingFeedId = receivingFeedId;
         this.connectionStatus = ConnectionStatus.INITIALIZED;
+        this.targetDatasets = null;
     }
 
     public FeedJointKey getFeedJointKey() {
@@ -103,7 +124,7 @@ public class FeedConnectionRequest {
         return connectionLocation;
     }
 
-    public FeedId getReceivingFeedId() {
+    public EntityId getReceivingFeedId() {
         return receivingFeedId;
     }
 

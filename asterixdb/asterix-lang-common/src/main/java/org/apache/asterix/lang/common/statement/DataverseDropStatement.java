@@ -34,8 +34,8 @@ public class DataverseDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.DATAVERSE_DROP;
+    public byte getKind() {
+        return Statement.Kind.DATAVERSE_DROP;
     }
 
     public Identifier getDataverseName() {

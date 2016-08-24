@@ -34,8 +34,8 @@ public class NodeGroupDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.NODEGROUP_DROP;
+    public byte getKind() {
+        return Statement.Kind.NODEGROUP_DROP;
     }
 
     public Identifier getNodeGroupName() {

@@ -87,13 +87,13 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
         String feedName = ((AString) feedRecord.getValueByPos(MetadataRecordTypes.FEED_ARECORD_FEED_NAME_FIELD_INDEX))
                 .getStringValue();
 
-        ARecord feedConfig = (ARecord) feedRecord.getValueByPos(MetadataRecordTypes.FEED_ADAPTER_CONFIGURATION_FIELD_INDEX);
+        ARecord feedConfig = (ARecord) feedRecord.getValueByPos(MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX);
         String adapterName = ((AString) feedConfig
-                .getValueByPos(MetadataRecordTypes.FEED_ADAPTER_NAME_FIELD_INDEX))
+                .getValueByPos(MetadataRecordTypes.FEED_ARECORD_ADAPTOR_NAME_FIELD_INDEX))
                 .getStringValue();
 
         IACursor cursor = ((AUnorderedList) feedConfig.getValueByPos(
-                MetadataRecordTypes.FEED_ADAPTER_CONFIGURATION_FIELD_INDEX))
+                MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX))
                 .getCursor();
 
         // restore configurations
@@ -168,7 +168,7 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
 
         aString.setValue(feed.getAdapterName());
         stringSerde.serialize(aString, nestedFieldBuffer.getDataOutput());
-        fieldRecordBuilder.addField(MetadataRecordTypes.FEED_ADAPTER_NAME_FIELD_INDEX, nestedFieldBuffer);
+        fieldRecordBuilder.addField(MetadataRecordTypes.FEED_ARECORD_ADAPTOR_NAME_FIELD_INDEX, nestedFieldBuffer);
 
         listBuilder.reset((AUnorderedListType)MetadataRecordTypes.FEED_RECORDTYPE
                 .getFieldTypes()[MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX]);
@@ -181,7 +181,7 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
         }
         nestedFieldBuffer.reset();
         listBuilder.write(nestedFieldBuffer.getDataOutput(), true);
-        fieldRecordBuilder.addField(MetadataRecordTypes.FEED_ADAPTER_CONFIGURATION_FIELD_INDEX, nestedFieldBuffer);
+        fieldRecordBuilder.addField(MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX, nestedFieldBuffer);
 
         fieldRecordBuilder.write(fieldValueBuffer.getDataOutput(),true);
         recordBuilder.addField(MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_FIELD_INDEX, fieldValueBuffer);

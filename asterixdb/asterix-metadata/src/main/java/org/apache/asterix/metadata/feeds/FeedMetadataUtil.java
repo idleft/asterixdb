@@ -21,7 +21,6 @@ package org.apache.asterix.metadata.feeds;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,20 +35,19 @@ import org.apache.asterix.common.dataflow.AsterixLSMTreeInsertDeleteOperatorDesc
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.api.IDataSourceAdapter;
 import org.apache.asterix.external.api.IDataSourceAdapter.AdapterType;
 import org.apache.asterix.external.feed.api.IFeed;
-import org.apache.asterix.external.feed.api.IFeedRuntime.FeedRuntimeType;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.feed.runtime.FeedRuntimeId;
-import org.apache.asterix.external.library.ExternalLibraryManager;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.provider.AdapterFactoryProvider;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
+import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.MetadataManager;
@@ -118,7 +116,7 @@ public class FeedMetadataUtil {
     }
 
     public static Feed validateIfFeedExists(String dataverse, String feedName, MetadataTransactionContext ctx)
-            throws MetadataException, AsterixException {
+            throws AsterixException {
         Feed feed = MetadataManager.INSTANCE.getFeed(ctx, dataverse, feedName);
         if (feed == null) {
             throw new AsterixException("Unknown source feed: " + feedName);
@@ -149,12 +147,10 @@ public class FeedMetadataUtil {
         Map<OperatorDescriptorId, IOperatorDescriptor> operatorMap = spec.getOperatorMap();
 //        boolean preProcessingRequired = preProcessingRequired(feedConnectionId);
         // copy operators
-        String operandId = null;
-        Map<OperatorDescriptorId, OperatorDescriptorId> oldNewOID =
-                new HashMap<OperatorDescriptorId, OperatorDescriptorId>();
-        FeedMetaOperatorDescriptor metaOp = null;
+        Map<OperatorDescriptorId, OperatorDescriptorId> oldNewOID = new HashMap<>();
+        FeedMetaOperatorDescriptor metaOp;
         for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorMap.entrySet()) {
-            operandId = FeedRuntimeId.DEFAULT_TARGET_ID;
+            String operandId = null;
             IOperatorDescriptor opDesc = entry.getValue();
             if (opDesc instanceof FeedCollectOperatorDescriptor) {
                 FeedCollectOperatorDescriptor orig = (FeedCollectOperatorDescriptor) opDesc;
@@ -167,11 +163,11 @@ public class FeedMetadataUtil {
                 // only introduce store before primary index
                 operandId = ((AsterixLSMTreeInsertDeleteOperatorDescriptor) opDesc).getIndexName();
                 metaOp = new FeedMetaOperatorDescriptor(altered, feedConnectionId, opDesc, feedPolicyProperties,
-                        FeedRuntimeType.STORE, false, operandId);
+                        FeedRuntimeType.STORE, operandId);
                 oldNewOID.put(opDesc.getOperatorId(), metaOp.getOperatorId());
             } else {
-                FeedRuntimeType runtimeType = null;
-                boolean enableSubscriptionMode = false;
+                FeedRuntimeType runtimeType;
+                boolean enableSubscriptionMode;
                 OperatorDescriptorId opId = null;
                 if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
                     IPushRuntimeFactory[] runtimeFactories =
@@ -184,7 +180,7 @@ public class FeedMetadataUtil {
                             runtimeType = FeedRuntimeType.COMPUTE;
 //                            enableSubscriptionMode = preProcessingRequired;
                             metaOp = new FeedMetaOperatorDescriptor(altered, feedConnectionId, opDesc,
-                                    feedPolicyProperties, runtimeType, enableSubscriptionMode, operandId);
+                                    feedPolicyProperties, runtimeType, operandId);
                             opId = metaOp.getOperatorId();
                         }
                     }
@@ -197,8 +193,7 @@ public class FeedMetadataUtil {
         }
 
         // copy connectors
-        Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorMapping =
-                new HashMap<ConnectorDescriptorId, ConnectorDescriptorId>();
+        Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorMapping = new HashMap<>();
         for (Entry<ConnectorDescriptorId, IConnectorDescriptor> entry : spec.getConnectorMap().entrySet()) {
             IConnectorDescriptor connDesc = entry.getValue();
             ConnectorDescriptorId newConnId;
@@ -214,8 +209,8 @@ public class FeedMetadataUtil {
         }
 
         // make connections between operators
-        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : spec
-                .getConnectorOperatorMap().entrySet()) {
+        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>>
+        entry : spec.getConnectorOperatorMap().entrySet()) {
             IConnectorDescriptor connDesc = altered.getConnectorMap().get(connectorMapping.get(entry.getKey()));
             Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
             Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
@@ -229,9 +224,8 @@ public class FeedMetadataUtil {
         }
 
         // prepare for setting partition constraints
-        Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations =
-                new HashMap<OperatorDescriptorId, List<LocationConstraint>>();
-        Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<OperatorDescriptorId, Integer>();
+        Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
+        Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
 
         for (Constraint constraint : spec.getUserConstraints()) {
             LValueConstraintExpression lexpr = constraint.getLValue();
@@ -265,12 +259,8 @@ public class FeedMetadataUtil {
         // set absolute location constraints
         for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
             IOperatorDescriptor opDesc = altered.getOperatorMap().get(oldNewOID.get(entry.getKey()));
-            Collections.sort(entry.getValue(), new Comparator<LocationConstraint>() {
-
-                @Override
-                public int compare(LocationConstraint o1, LocationConstraint o2) {
-                    return o1.partition - o2.partition;
-                }
+            Collections.sort(entry.getValue(), (LocationConstraint o1, LocationConstraint o2) -> {
+                return o1.partition - o2.partition;
             });
             String[] locations = new String[entry.getValue().size()];
             for (int i = 0; i < locations.length; ++i) {
@@ -324,23 +314,23 @@ public class FeedMetadataUtil {
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, changingOpDesc, chosenLocations);
     }
 
-    private static IOperatorDescriptor alterJobSpecForComputeCardinality(JobSpecification spec, int requiredCardinality)
-            throws AsterixException {
+    private static IOperatorDescriptor alterJobSpecForComputeCardinality(
+            JobSpecification spec, int requiredCardinality) throws AsterixException {
         Map<ConnectorDescriptorId, IConnectorDescriptor> connectors = spec.getConnectorMap();
-        Map<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> connectorOpMap =
-                spec.getConnectorOperatorMap();
-
+        Map<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> 
+        connectorOpMap = spec.getConnectorOperatorMap();
         IOperatorDescriptor sourceOp = null;
         IOperatorDescriptor targetOp = null;
         IConnectorDescriptor connDesc = null;
-        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : connectorOpMap
-                .entrySet()) {
+        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>>
+        entry : connectorOpMap.entrySet()) {
             ConnectorDescriptorId cid = entry.getKey();
             sourceOp = entry.getValue().getKey().getKey();
             if (sourceOp instanceof FeedCollectOperatorDescriptor) {
                 targetOp = entry.getValue().getValue().getKey();
                 if ((targetOp instanceof FeedMetaOperatorDescriptor)
-                        && (((FeedMetaOperatorDescriptor) targetOp).getRuntimeType().equals(FeedRuntimeType.COMPUTE))) {
+                        && (((FeedMetaOperatorDescriptor) targetOp).getRuntimeType()
+                                .equals(FeedRuntimeType.COMPUTE))) {
                     connDesc = connectors.get(cid);
                     break;
                 } else {
@@ -436,7 +426,7 @@ public class FeedMetadataUtil {
 //            MetadataManager.INSTANCE.acquireReadLatch();
 //            ctx = MetadataManager.INSTANCE.beginTransaction();
 //            feed = MetadataManager.INSTANCE.getFeed(ctx, connectionId.getFeedId().getDataverse(),
-//                    connectionId.getFeedId().getFeedName());
+//                    connectionId.getFeedId().getEntityName());
 //            preProcessingRequired = feed.getAppliedFunction() != null;
 //            MetadataManager.INSTANCE.commitTransaction(ctx);
 //        } catch (Exception e) {
@@ -454,7 +444,7 @@ public class FeedMetadataUtil {
 //        return preProcessingRequired;
 //    }
 
-    public static void validateFeed(Feed feed, MetadataTransactionContext mdTxnCtx)
+    public static void validateFeed(Feed feed, MetadataTransactionContext mdTxnCtx, ILibraryManager libraryManager)
             throws AsterixException {
         try {
             String adapterName = feed.getAdapterName();
@@ -463,9 +453,8 @@ public class FeedMetadataUtil {
             ARecordType metaType = getOutputType(feed, configuration, ExternalDataConstants.KEY_META_TYPE_NAME);
             ExternalDataUtils.prepareFeed(configuration, feed.getDataverseName(), feed.getFeedName());
             // Get adapter from metadata dataset <Metadata dataverse>
-            DatasourceAdapter adapterEntity =
-                    MetadataManager.INSTANCE.getAdapter(mdTxnCtx, MetadataConstants.METADATA_DATAVERSE_NAME,
-                            adapterName);
+            DatasourceAdapter adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx,
+                    MetadataConstants.METADATA_DATAVERSE_NAME, adapterName);
             // Get adapter from metadata dataset <The feed dataverse>
             if (adapterEntity == null) {
                 adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx, feed.getDataverseName(), adapterName);
@@ -482,8 +471,7 @@ public class FeedMetadataUtil {
                     case EXTERNAL:
                         String[] anameComponents = adapterName.split("#");
                         String libraryName = anameComponents[0];
-                        ClassLoader cl =
-                                ExternalLibraryManager.getLibraryClassLoader(feed.getDataverseName(), libraryName);
+                        ClassLoader cl = libraryManager.getLibraryClassLoader(feed.getDataverseName(), libraryName);
                         adapterFactory = (IAdapterFactory) cl.loadClass(adapterFactoryClassname).newInstance();
                         break;
                     default:
@@ -491,9 +479,9 @@ public class FeedMetadataUtil {
                 }
                 adapterFactory.setOutputType(adapterOutputType);
                 adapterFactory.setMetaType(metaType);
-                adapterFactory.configure(configuration);
+                adapterFactory.configure(null, configuration);
             } else {
-                AdapterFactoryProvider.getAdapterFactory(adapterName, configuration, adapterOutputType,
+                AdapterFactoryProvider.getAdapterFactory(libraryManager, adapterName, configuration, adapterOutputType,
                         metaType);
             }
             if (metaType == null && configuration.containsKey(ExternalDataConstants.KEY_META_TYPE_NAME)) {
@@ -519,9 +507,9 @@ public class FeedMetadataUtil {
     }
 
     @SuppressWarnings("rawtypes")
-    public static Triple<IAdapterFactory, RecordDescriptor, IDataSourceAdapter.AdapterType>
-            getPrimaryFeedFactoryAndOutput(Feed feed, FeedPolicyAccessor policyAccessor,
-                    MetadataTransactionContext mdTxnCtx) throws AlgebricksException {
+    public static Triple<IAdapterFactory, RecordDescriptor, AdapterType> getPrimaryFeedFactoryAndOutput(Feed feed,
+            FeedPolicyAccessor policyAccessor, MetadataTransactionContext mdTxnCtx, ILibraryManager libraryManager)
+            throws AlgebricksException {
         // This method needs to be re-visited
         String adapterName = null;
         DatasourceAdapter adapterEntity = null;
@@ -555,8 +543,7 @@ public class FeedMetadataUtil {
                     case EXTERNAL:
                         String[] anameComponents = adapterName.split("#");
                         String libraryName = anameComponents[0];
-                        ClassLoader cl =
-                                ExternalLibraryManager.getLibraryClassLoader(feed.getDataverseName(), libraryName);
+                        ClassLoader cl = libraryManager.getLibraryClassLoader(feed.getDataverseName(), libraryName);
                         adapterFactory = (IAdapterFactory) cl.loadClass(adapterFactoryClassname).newInstance();
                         break;
                     default:
@@ -564,10 +551,10 @@ public class FeedMetadataUtil {
                 }
                 adapterFactory.setOutputType(adapterOutputType);
                 adapterFactory.setMetaType(metaType);
-                adapterFactory.configure(configuration);
+                adapterFactory.configure(null, configuration);
             } else {
-                adapterFactory = AdapterFactoryProvider.getAdapterFactory(adapterName, configuration, adapterOutputType,
-                        metaType);
+                adapterFactory = AdapterFactoryProvider.getAdapterFactory(libraryManager, adapterName, configuration,
+                        adapterOutputType, metaType);
                 adapterType = IDataSourceAdapter.AdapterType.INTERNAL;
             }
             if (metaType == null) {
@@ -680,7 +667,7 @@ public class FeedMetadataUtil {
 
 //    public static String getSecondaryFeedOutput(Feed feed, FeedPolicyAccessor policyAccessor,
 //            MetadataTransactionContext mdTxnCtx)
-//                    throws AlgebricksException, MetadataException, RemoteException, ACIDException {
+//            throws AlgebricksException, MetadataException, RemoteException, ACIDException {
 //        String outputType = null;
 //        String primaryFeedName = feed.getSourceFeedName();
 //        Feed primaryFeed = MetadataManager.INSTANCE.getFeed(mdTxnCtx, feed.getDataverseName(), primaryFeedName);
@@ -693,7 +680,8 @@ public class FeedMetadataUtil {
 //            if (function != null) {
 //                if (function.getLanguage().equals(Function.LANGUAGE_AQL)) {
 //                    throw new NotImplementedException(
-//                            "Secondary feeds derived from a source feed that has an applied AQL function are not supported yet.");
+//                            "Secondary feeds derived from a source feed that has an applied AQL function"
+//                                    + " are not supported yet.");
 //                } else {
 //                    outputType = function.getReturnType();
 //                }

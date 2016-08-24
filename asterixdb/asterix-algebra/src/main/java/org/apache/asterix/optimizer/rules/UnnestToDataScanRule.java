@@ -18,14 +18,16 @@
  */
 package org.apache.asterix.optimizer.rules;
 
+import static org.apache.asterix.algebra.util.ConstantExpressionUtil.getStringArgument;
+
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
-import org.apache.asterix.external.feed.api.IFeedRuntime.FeedRuntimeType;
 import org.apache.asterix.external.feed.watch.FeedActivity.FeedActivityDetails;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.external.util.FeedUtils;
+import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.metadata.declared.AqlDataSource;
 import org.apache.asterix.metadata.declared.AqlMetadataProvider;
 import org.apache.asterix.metadata.declared.AqlSourceId;
@@ -296,24 +298,5 @@ public class UnnestToDataScanRule implements IAlgebraicRewriteRule {
             datasetName = datasetNameComponents[1];
         }
         return new Pair<String, String>(dataverseName, datasetName);
-    }
-
-    private String getStringArgument(AbstractFunctionCallExpression f, int index) {
-
-        ILogicalExpression expr = f.getArguments().get(index).getValue();
-        if (expr.getExpressionTag() != LogicalExpressionTag.CONSTANT) {
-            return null;
-        }
-        ConstantExpression ce = (ConstantExpression) expr;
-        IAlgebricksConstantValue acv = ce.getValue();
-        if (!(acv instanceof AsterixConstantValue)) {
-            return null;
-        }
-        AsterixConstantValue acv2 = (AsterixConstantValue) acv;
-        if (acv2.getObject().getType().getTypeTag() != ATypeTag.STRING) {
-            return null;
-        }
-        String argument = ((AString) acv2.getObject()).getStringValue();
-        return argument;
     }
 }

@@ -58,7 +58,7 @@ public class CreateFeedPolicyStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
+    public byte getKind() {
         return Statement.Kind.CREATE_FEED_POLICY;
     }
 

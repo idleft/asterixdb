@@ -41,8 +41,11 @@ public final class UnorderedPartitionedProperty extends AbstractGroupingProperty
     }
 
     @Override
-    public void normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses, List<FunctionalDependency> fds) {
-        normalizeGroupingColumns(equivalenceClasses, fds);
+    public IPartitioningProperty normalize(Map<LogicalVariable, EquivalenceClass> equivalenceClasses,
+            List<FunctionalDependency> fds) {
+        Set<LogicalVariable> normalizedColumnSet =
+                normalizeAndReduceGroupingColumns(columnSet, equivalenceClasses, fds);
+        return new UnorderedPartitionedProperty(normalizedColumnSet, domain);
     }
 
     @Override

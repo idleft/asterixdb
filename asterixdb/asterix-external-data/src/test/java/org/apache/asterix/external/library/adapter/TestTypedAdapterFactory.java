@@ -25,6 +25,7 @@ import java.util.Map;
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.config.IAsterixPropertiesProvider;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.api.IDataSourceAdapter;
 import org.apache.asterix.external.api.IExternalDataSourceFactory;
@@ -77,25 +78,17 @@ public class TestTypedAdapterFactory implements IAdapterFactory {
                 ADMDataParser parser;
                 ITupleForwarder forwarder;
                 ArrayTupleBuilder tb;
-                IAsterixPropertiesProvider propertiesProvider =
-                        (IAsterixPropertiesProvider) ((NodeControllerService) ctx
-                                .getJobletContext().getApplicationContext().getControllerService())
-                                        .getApplicationContext()
-                                        .getApplicationObject();
+                IAsterixPropertiesProvider propertiesProvider = (IAsterixPropertiesProvider) ((NodeControllerService) ctx
+                        .getJobletContext().getApplicationContext().getControllerService()).getApplicationContext()
+                                .getApplicationObject();
                 ClusterPartition nodePartition = propertiesProvider.getMetadataProperties().getNodePartitions()
                         .get(nodeId)[0];
-                try {
-                    parser = new ADMDataParser(outputType, true);
-                    forwarder = DataflowUtils
-                            .getTupleForwarder(configuration,
-                                    FeedUtils.getFeedLogManager(ctx,
-                                            FeedUtils.splitsForAdapter(ExternalDataUtils.getDataverse(configuration),
-                                                    ExternalDataUtils.getFeedName(configuration), nodeId,
-                                                    nodePartition)));
-                    tb = new ArrayTupleBuilder(1);
-                } catch (Exception e) {
-                    throw new HyracksDataException(e);
-                }
+                parser = new ADMDataParser(outputType, true);
+                forwarder = DataflowUtils.getTupleForwarder(configuration,
+                        FeedUtils.getFeedLogManager(ctx,
+                                FeedUtils.splitsForAdapter(ExternalDataUtils.getDataverse(configuration),
+                                        ExternalDataUtils.getFeedName(configuration), nodeId, nodePartition)));
+                tb = new ArrayTupleBuilder(1);
                 return new ITupleParser() {
 
                     @Override
@@ -127,7 +120,7 @@ public class TestTypedAdapterFactory implements IAdapterFactory {
     }
 
     @Override
-    public void configure(Map<String, String> configuration) {
+    public void configure(ILibraryManager context, Map<String, String> configuration) {
         this.configuration = configuration;
     }
 

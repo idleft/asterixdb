@@ -2,18 +2,12 @@ Query:
 SELECT [
 FunctionCall null.SQRT@1[
   OperatorExpr [
-    FieldAccessor [
-      FunctionCall Metadata.dataset@1[
-        LiteralExpr [STRING] [t]
-      ]
-      Field=a
+    FunctionCall Metadata.dataset@1[
+      LiteralExpr [STRING] [t.a]
     ]
     *
-    FieldAccessor [
-      FunctionCall Metadata.dataset@1[
-        LiteralExpr [STRING] [t]
-      ]
-      Field=b
+    FunctionCall Metadata.dataset@1[
+      LiteralExpr [STRING] [t.b]
     ]
   ]
 ]
@@ -25,13 +19,13 @@ FROM [  FunctionCall Metadata.dataset@1[
   AS Variable [ Name=$root ]
 ]
 Groupby
-  Variable [ Name=#1 ]
+  Variable [ Name=$id ]
   :=
   FieldAccessor [
     Variable [ Name=$root ]
     Field=id
   ]
-  GROUP AS Variable [ Name=#2 ]
+  GROUP AS Variable [ Name=#1 ]
   (
     root:=Variable [ Name=$root ]
   )

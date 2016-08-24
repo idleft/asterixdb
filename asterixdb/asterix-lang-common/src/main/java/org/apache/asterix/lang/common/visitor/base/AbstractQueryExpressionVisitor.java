@@ -174,6 +174,11 @@ public abstract class AbstractQueryExpressionVisitor<R, T> implements ILangVisit
     }
 
     @Override
+    public R visit(ControlFeedStatement ssfs, T arg) throws AsterixException{
+        return null;
+    }
+
+    @Override
     public R visit(FeedDropStatement del, T arg) throws AsterixException {
         return null;
     }

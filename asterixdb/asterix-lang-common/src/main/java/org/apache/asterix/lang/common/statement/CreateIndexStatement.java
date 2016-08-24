@@ -119,8 +119,8 @@ public class CreateIndexStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.CREATE_INDEX;
+    public byte getKind() {
+        return Statement.Kind.CREATE_INDEX;
     }
 
     public boolean hasMetaField() {

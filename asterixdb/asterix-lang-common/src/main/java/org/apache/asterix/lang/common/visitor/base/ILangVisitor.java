@@ -124,6 +124,8 @@ public interface ILangVisitor<R, T> {
 
     R visit(ConnectFeedStatement del, T arg) throws AsterixException;
 
+    R visit(StartStopFeedStatement sfs, T arg) throws AsterixException;
+
     R visit(CreateDirectFeedStatement cfs, T arg) throws AsterixException;
 
     R visit(CreatePrimaryFeedStatement cpfs, T arg) throws AsterixException;

@@ -36,8 +36,8 @@ public class DropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.DATASET_DROP;
+    public byte getKind() {
+        return Statement.Kind.DATASET_DROP;
     }
 
     public Identifier getDataverseName() {

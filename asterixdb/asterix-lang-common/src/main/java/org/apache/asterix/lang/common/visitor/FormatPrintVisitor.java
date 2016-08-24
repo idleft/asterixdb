@@ -25,6 +25,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
@@ -58,13 +59,13 @@ import org.apache.asterix.lang.common.expression.RecordTypeDefinition.RecordKind
 import org.apache.asterix.lang.common.expression.TypeExpression;
 import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnaryExpr;
-import org.apache.asterix.lang.common.expression.UnaryExpr.Sign;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.VariableExpr;
 import org.apache.asterix.lang.common.statement.*;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.struct.OperatorType;
 import org.apache.asterix.lang.common.struct.QuantifiedPair;
+import org.apache.asterix.lang.common.struct.UnaryExprType;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionAnnotation;
@@ -297,9 +298,23 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
             out.print(" decor ");
             printDelimitedGbyExpressions(gc.getDecorPairList(), step + 2);
         }
-        if (gc.hasWithList()) {
+        if (gc.hasWithMap()) {
             out.print(" with ");
-            this.printDelimitedExpressions(gc.getWithVarList(), COMMA, step + 2);
+            Map<Expression, VariableExpr> withVarMap = gc.getWithVarMap();
+            int index = 0;
+            int size = withVarMap.size();
+            for (Entry<Expression, VariableExpr> entry : withVarMap.entrySet()) {
+                Expression key = entry.getKey();
+                VariableExpr value = entry.getValue();
+                key.accept(this, step + 2);
+                if (!key.equals(value)) {
+                    out.print(" as ");
+                    value.accept(this, step + 2);
+                }
+                if (++index < size) {
+                    out.print(COMMA);
+                }
+            }
         }
         out.println();
         return null;
@@ -333,7 +348,7 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
 
     @Override
     public Void visit(UnaryExpr u, Integer step) throws AsterixException {
-        out.print(u.getSign() == Sign.NEGATIVE ? "-" : "");
+        out.print(u.getExprType() == UnaryExprType.NEGATIVE ? "-" : "");
         u.getExpr().accept(this, 0);
         return null;
     }

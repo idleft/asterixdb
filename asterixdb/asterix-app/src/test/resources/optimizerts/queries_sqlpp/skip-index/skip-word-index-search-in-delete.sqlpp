@@ -22,8 +22,8 @@
  * Date         : 21th December 2013
  */
 
-drop  database test if exists;
-create  database test;
+drop  dataverse test if exists;
+create  dataverse test;
 
 use test;
 
@@ -37,9 +37,9 @@ create type test.DBLPType as
   misc : string
 }
 
-create  table DBLP(DBLPType) primary key id;
+create  dataset DBLP(DBLPType) primary key id;
 
 create  index keyword_index  on DBLP (title) type keyword;
 
-delete o from DBLP
- where ( /*+ skip-index */ test.`similarity-jaccard`(test.`word-tokens`(o.title),test.`word-tokens`('Transactions for Cooperative Environments')) >= 0.500000f);
+delete from DBLP
+ where  /*+ skip-index */ `similarity-jaccard`(`word-tokens`(title), `word-tokens`('Transactions for Cooperative Environments')) >= 0.500000f;

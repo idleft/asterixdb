@@ -107,7 +107,7 @@ public class MetadataPrimaryIndexes {
         FEED_CONN_DATASET = new MetadataIndex(MetadataIndexImmutableProperties.FEED_CONN,3,
                 new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING},
                 (Arrays.asList(Arrays.asList("DataverseName"), Arrays.asList("FeedId"),
-                        Arrays.asList("DatasetName"))),0,MetadataRecordTypes.FEED_CONN_RECORDTYPE,
+                        Arrays.asList("DatasetName"))),0,MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE,
                 true, new int[] {0,1,2});
 
         LIBRARY_DATASET = new MetadataIndex(MetadataIndexImmutableProperties.LIBRARY, 3,

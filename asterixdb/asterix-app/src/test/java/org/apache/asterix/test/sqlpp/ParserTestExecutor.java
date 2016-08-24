@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.test.sqlpp;
 
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -35,7 +36,6 @@ import org.apache.asterix.lang.common.base.IParserFactory;
 import org.apache.asterix.lang.common.base.IQueryRewriter;
 import org.apache.asterix.lang.common.base.IRewriterFactory;
 import org.apache.asterix.lang.common.base.Statement;
-import org.apache.asterix.lang.common.base.Statement.Kind;
 import org.apache.asterix.lang.common.rewrites.LangRewritingContext;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.FunctionDecl;
@@ -44,12 +44,15 @@ import org.apache.asterix.lang.common.util.FunctionUtil;
 import org.apache.asterix.lang.sqlpp.parser.SqlppParserFactory;
 import org.apache.asterix.lang.sqlpp.rewrites.SqlppRewriterFactory;
 import org.apache.asterix.lang.sqlpp.util.SqlppAstPrintUtil;
+import org.apache.asterix.lang.sqlpp.util.SqlppRewriteUtil;
 import org.apache.asterix.metadata.declared.AqlMetadataProvider;
+import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.test.aql.TestExecutor;
 import org.apache.asterix.testframework.context.TestCaseContext;
 import org.apache.asterix.testframework.context.TestFileContext;
 import org.apache.asterix.testframework.xml.TestCase.CompilationUnit;
 import org.apache.asterix.testframework.xml.TestGroup;
+import org.junit.Assert;
 
 import junit.extensions.PA;
 
@@ -78,8 +81,8 @@ public class ParserTestExecutor extends TestExecutor {
 
                     // Runs the test query.
                     File expectedResultFile = expectedResultFileCtxs.get(queryCount).getFile();
-                    File actualResultFile = testCaseCtx.getActualResultFile(cUnit, expectedResultFile,
-                            new File(actualPath));
+                    File actualResultFile =
+                            testCaseCtx.getActualResultFile(cUnit, expectedResultFile, new File(actualPath));
                     testSQLPPParser(testFile, actualResultFile, expectedResultFile);
 
                     LOGGER.info(
@@ -122,13 +125,19 @@ public class ParserTestExecutor extends TestExecutor {
             when(aqlMetadataProvider.getDefaultDataverseName()).thenReturn(dvName);
             when(aqlMetadataProvider.getConfig()).thenReturn(config);
             when(config.get(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS)).thenReturn("true");
+            when(aqlMetadataProvider.findDataset(anyString(), anyString())).thenReturn(mock(Dataset.class));
 
             for (Statement st : statements) {
-                if (st.getKind() == Kind.QUERY) {
+                if (st.getKind() == Statement.Kind.QUERY) {
                     Query query = (Query) st;
                     IQueryRewriter rewriter = sqlppRewriterFactory.createQueryRewriter();
                     rewrite(rewriter, functions, query, aqlMetadataProvider,
                             new LangRewritingContext(query.getVarCounter()));
+
+                    // Tests deep copy and deep equality.
+                    Query copiedQuery = (Query) SqlppRewriteUtil.deepCopy(query);
+                    Assert.assertEquals(query.hashCode(), copiedQuery.hashCode());
+                    Assert.assertEquals(query, copiedQuery);
                 }
                 SqlppAstPrintUtil.print(st, writer);
             }
@@ -147,7 +156,7 @@ public class ParserTestExecutor extends TestExecutor {
     private List<FunctionDecl> getDeclaredFunctions(List<Statement> statements) {
         List<FunctionDecl> functionDecls = new ArrayList<FunctionDecl>();
         for (Statement st : statements) {
-            if (st.getKind().equals(Statement.Kind.FUNCTION_DECL)) {
+            if (st.getKind() == Statement.Kind.FUNCTION_DECL) {
                 functionDecls.add((FunctionDecl) st);
             }
         }
@@ -157,7 +166,7 @@ public class ParserTestExecutor extends TestExecutor {
     // Gets the default dataverse for the input statements.
     private String getDefaultDataverse(List<Statement> statements) {
         for (Statement st : statements) {
-            if (st.getKind().equals(Statement.Kind.DATAVERSE_DECL)) {
+            if (st.getKind() == Statement.Kind.DATAVERSE_DECL) {
                 DataverseDecl dv = (DataverseDecl) st;
                 return dv.getDataverseName().getValue();
             }

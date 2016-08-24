@@ -71,6 +71,8 @@ public interface Statement extends ILangExpression {
         public static final byte EXTERNAL_DATASET_REFRESH = 0x21;
         public static final byte RUN = 0x22;
         public static final byte CREATE_FEED = 0x23;
+        public static final byte START_FEED = 0x24;
+        public static final byte STOP_FEED = 0x25;
 
         private Kind() {
         }

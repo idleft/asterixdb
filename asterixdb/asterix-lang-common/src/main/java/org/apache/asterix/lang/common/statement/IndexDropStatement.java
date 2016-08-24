@@ -39,8 +39,8 @@ public class IndexDropStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.INDEX_DROP;
+    public byte getKind() {
+        return Statement.Kind.INDEX_DROP;
     }
 
     public Identifier getDataverseName() {

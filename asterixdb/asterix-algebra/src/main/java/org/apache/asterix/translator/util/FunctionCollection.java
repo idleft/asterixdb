@@ -24,7 +24,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
+import org.apache.asterix.runtime.aggregates.collections.FirstElementAggregateDescriptor;
 import org.apache.asterix.runtime.aggregates.collections.ListifyAggregateDescriptor;
+import org.apache.asterix.runtime.aggregates.collections.LocalFirstElementAggregateDescriptor;
 import org.apache.asterix.runtime.aggregates.scalar.ScalarAvgAggregateDescriptor;
 import org.apache.asterix.runtime.aggregates.scalar.ScalarCountAggregateDescriptor;
 import org.apache.asterix.runtime.aggregates.scalar.ScalarMaxAggregateDescriptor;
@@ -131,8 +133,7 @@ import org.apache.asterix.runtime.evaluators.constructors.ClosedRecordConstructo
 import org.apache.asterix.runtime.evaluators.constructors.OpenRecordConstructorDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.AndDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.AnyCollectionMemberDescriptor;
-import org.apache.asterix.runtime.evaluators.functions.CastListDescriptor;
-import org.apache.asterix.runtime.evaluators.functions.CastRecordDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.CastTypeDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.CheckUnknownDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.CodePointToStringDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.CountHashedGramTokensDescriptor;
@@ -314,6 +315,8 @@ public class FunctionCollection {
         temp.add(LocalMaxAggregateDescriptor.FACTORY);
         temp.add(MinAggregateDescriptor.FACTORY);
         temp.add(LocalMinAggregateDescriptor.FACTORY);
+        temp.add(FirstElementAggregateDescriptor.FACTORY);
+        temp.add(LocalFirstElementAggregateDescriptor.FACTORY);
 
         // serializable aggregates
         temp.add(SerializableCountAggregateDescriptor.FACTORY);
@@ -374,10 +377,8 @@ public class FunctionCollection {
         temp.add(OrderedListConstructorDescriptor.FACTORY);
         temp.add(UnorderedListConstructorDescriptor.FACTORY);
 
-        // Cast functions
+        // Inject failure function
         temp.add(InjectFailureDescriptor.FACTORY);
-        temp.add(CastListDescriptor.FACTORY);
-        temp.add(CastRecordDescriptor.FACTORY);
 
         // Switch case
         temp.add(SwitchCaseDescriptor.FACTORY);
@@ -611,6 +612,9 @@ public class FunctionCollection {
         functionsToInjectUnkownHandling.add(PrintDateTimeDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(GetOverlappingIntervalDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(DurationFromIntervalDescriptor.FACTORY);
+
+        // Cast function
+        functionsToInjectUnkownHandling.add(CastTypeDescriptor.FACTORY);
 
         List<IFunctionDescriptorFactory> generatedFactories = new ArrayList<>();
         for (IFunctionDescriptorFactory factory : functionsToInjectUnkownHandling) {

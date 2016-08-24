@@ -67,8 +67,8 @@ public class LoadStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.LOAD;
+    public byte getKind() {
+        return Statement.Kind.LOAD;
     }
 
     public Identifier getDatasetName() {

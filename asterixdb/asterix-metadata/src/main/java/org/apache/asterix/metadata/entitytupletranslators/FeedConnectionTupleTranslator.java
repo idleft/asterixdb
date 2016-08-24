@@ -50,7 +50,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
     public static final int FEED_CONN_PAYLOAD_TUPLE_FIELD_INDEX = 3;
 
     private ISerializerDeserializer<ARecord> recordSerDes = AqlSerializerDeserializerProvider.INSTANCE
-            .getSerializerDeserializer(MetadataRecordTypes.FEED_CONN_RECORDTYPE);
+            .getSerializerDeserializer(MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE);
 
     public FeedConnectionTupleTranslator(boolean getTuple){
         super(getTuple, MetadataPrimaryIndexes.FEED_CONN_DATASET.getFieldCount());
@@ -105,7 +105,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         stringSerde.serialize(aString, tupleBuilder.getDataOutput());
         tupleBuilder.addFieldEndOffset();
 
-        recordBuilder.reset(MetadataRecordTypes.FEED_CONN_RECORDTYPE);
+        recordBuilder.reset(MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE);
         // field dataverse
         fieldValue.reset();
         aString.setValue(me.getDataverseName());

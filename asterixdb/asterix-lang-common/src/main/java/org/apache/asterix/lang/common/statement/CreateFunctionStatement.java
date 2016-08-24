@@ -58,8 +58,8 @@ public class CreateFunctionStatement implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.CREATE_FUNCTION;
+    public byte getKind() {
+        return Statement.Kind.CREATE_FUNCTION;
     }
 
     public List<String> getParamList() {

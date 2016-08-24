@@ -471,13 +471,29 @@ public class MetadataLockManager {
     }
 
     public void dropFeedPolicyBegin(String dataverseName, String policyName) {
-        releaseFeedWriteLock(policyName);
-        releaseDataverseReadLock(dataverseName);
+        acquireFeedWriteLock(policyName);
+        acquireDataverseReadLock(dataverseName);
     }
 
     public void dropFeedPolicyEnd(String dataverseName, String policyName) {
         releaseFeedWriteLock(policyName);
         releaseDataverseReadLock(dataverseName);
+    }
+
+    public void startFeedBegin(String dataverseName, String feedName, List<String> datasets) {
+        acquireDataverseReadLock(dataverseName);
+        acquireFeedReadLock(feedName);
+        for (String datasetName : datasets) {
+            acquireDatasetReadLock(dataverseName + "." + datasetName);
+        }
+    }
+
+    public void startFeedEnd(String dataverseName, String feedName, List<String> datasets) {
+        releaseDataverseReadLock(dataverseName);
+        releaseFeedReadLock(feedName);
+        for (String datasetName : datasets) {
+            releaseFeedReadLock(dataverseName + "." + datasetName);
+        }
     }
 
     public void createFeedBegin(String dataverseName, String feedFullyQualifiedName) {

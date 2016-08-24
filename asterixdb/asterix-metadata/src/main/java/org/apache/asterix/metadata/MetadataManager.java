@@ -840,6 +840,13 @@ public class MetadataManager implements IMetadataManager {
         return feedConnection;
     }
 
+    public List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
+            throws MetadataException {
+        List<FeedConnection> feedConnections = null;
+        feedConnections = metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
+        return feedConnections;
+    }
+
     public List<DatasourceAdapter> getDataverseAdapters(MetadataTransactionContext mdTxnCtx, String dataverse)
             throws MetadataException {
         List<DatasourceAdapter> dataverseAdapters;

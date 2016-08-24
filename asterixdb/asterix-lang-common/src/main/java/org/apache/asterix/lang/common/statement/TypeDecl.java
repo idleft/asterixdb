@@ -63,8 +63,8 @@ public class TypeDecl implements Statement {
     }
 
     @Override
-    public Kind getKind() {
-        return Kind.TYPE_DECL;
+    public byte getKind() {
+        return Statement.Kind.TYPE_DECL;
     }
 
     @Override

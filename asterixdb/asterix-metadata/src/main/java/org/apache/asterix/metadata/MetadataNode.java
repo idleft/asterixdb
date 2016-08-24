@@ -552,9 +552,6 @@ public class MetadataNode implements IMetadataNode {
             IValueExtractor<Dataverse> valueExtractor = new MetadataEntityValueExtractor<Dataverse>(tupleReaderWriter);
             List<Dataverse> results = new ArrayList<Dataverse>();
             searchIndex(jobId, MetadataPrimaryIndexes.DATAVERSE_DATASET, null, valueExtractor, results);
-            if (results.isEmpty()) {
-                return null;
-            }
             return results;
         } catch (IndexException | IOException e) {
             throw new MetadataException(e);
@@ -1326,6 +1323,20 @@ public class MetadataNode implements IMetadataNode {
         } catch (IndexException|ACIDException|IOException e) {
             throw new MetadataException(e);
         }
+    }
+
+    public List<FeedConnection> getFeedConnections(JobId jobId, String dataverseName, String feedName)
+        throws MetadataException {
+            try{
+                ITupleReference searchKey = createTuple(dataverseName, feedName);
+                FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(false);
+                List<FeedConnection> results = new ArrayList<>();
+                IValueExtractor<FeedConnection> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
+                searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey, valueExtractor, results);
+                return results;
+            } catch (IndexException |IOException e) {
+                throw new MetadataException(e);
+            }
     }
 
     @Override

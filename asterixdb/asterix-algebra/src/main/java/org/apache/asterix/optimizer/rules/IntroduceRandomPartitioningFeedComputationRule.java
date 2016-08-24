@@ -34,7 +34,7 @@ import org.apache.hyracks.algebricks.core.algebra.operators.logical.AssignOperat
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DataSourceScanOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExchangeOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AssignPOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionPOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 
@@ -58,11 +58,13 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             return false;
         }
 
+        //TODO restore with applied functions
+
         final FeedDataSource feedDataSource = (FeedDataSource) dataSource;
-        Feed feed = feedDataSource.getFeed();
-        if (feed.getAppliedFunction() == null) {
-            return false;
-        }
+//        Feed feed = feedDataSource.getFeed();
+//        if (feed.getAppliedFunction() == null) {
+//            return false;
+//        }
 
         ExchangeOperator exchangeOp = new ExchangeOperator();
         INodeDomain domain = new INodeDomain() {
@@ -77,7 +79,7 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             }
         };
 
-        exchangeOp.setPhysicalOperator(new RandomPartitionPOperator(domain));
+        exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
         op.getInputs().get(0).setValue(exchangeOp);
         exchangeOp.getInputs().add(new MutableObject<ILogicalOperator>(scanOp));
         ExecutionMode em = ((AbstractLogicalOperator) scanOp).getExecutionMode();

@@ -631,6 +631,10 @@ public interface IMetadataNode extends Remote, Serializable {
 
     public FeedConnection getFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
             throws MetadataException;
+
     public void dropFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
+            throws MetadataException;
+
+    public List<FeedConnection> getFeedConnections(JobId jobId, String dataverseName, String feedName)
             throws MetadataException;
 }
