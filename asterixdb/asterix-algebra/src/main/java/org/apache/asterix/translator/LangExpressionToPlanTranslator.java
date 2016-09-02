@@ -518,7 +518,7 @@ class LangExpressionToPlanTranslator
                     InsertDeleteUpsertOperator.Kind.INSERT;
             feedModificationOp = new InsertDeleteUpsertOperator(targetDatasource, varRef, varRefsForLoading,
                     metaExpSingletonList, opKind, false);
-            if (isUpsertFeed){
+            if (isUpsertFeed) {
                 feedModificationOp.setPrevRecordVar(context.newVar());
                 feedModificationOp.setPrevRecordType(targetDatasource.getItemType());
             }
