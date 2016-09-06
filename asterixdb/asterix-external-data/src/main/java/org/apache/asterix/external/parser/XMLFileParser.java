@@ -19,6 +19,13 @@
 
 package org.apache.asterix.external.parser;
 
+import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaLoader;
+import com.sun.org.apache.xerces.internal.jaxp.validation.XMLSchemaFactory;
+import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import com.sun.org.apache.xerces.internal.xs.XSModel;
+import com.sun.org.apache.xerces.internal.xs.XSNamedMap;
+import com.sun.org.apache.xerces.internal.xs.XSObject;
+import com.sun.xml.internal.xsom.XSComponent;
 import org.apache.asterix.builders.AbvsBuilderFactory;
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.RecordBuilder;
@@ -38,7 +45,10 @@ import org.xml.sax.helpers.DefaultHandler;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
 import java.io.DataOutput;
+import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -53,6 +63,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
     private SAXParser xmlParser;
     private IARecordBuilder rb;
     private String[] attrNameList;
+    private XMLSchemaLoader xmlSchemaLoader;
     private ArrayBackedValueStorage fieldValueBuffer, fieldNameBuffer;
     private ArrayList<ArrayBackedValueStorage> bufferList;
     private ArrayList<IARecordBuilder> rbList;
@@ -62,6 +73,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
             new RecordBuilderFactory());
 
     public XMLFileParser(ARecordType recordType) throws ParserConfigurationException, SAXException {
+        String xmlSchemaPath = "/Volumes/Storage/Users/Xikui/Work/XMLParser/CAPS_Schema.xsd";
         this.recordType = recordType;
         xmlParser = SAXParserFactory.newInstance().newSAXParser();
         attrNameList = recordType.getFieldNames();
@@ -70,6 +82,19 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
         rb = getRecordBuilder();
         bufferList = new ArrayList<>();
         rbList = new ArrayList<>();
+        xmlSchemaLoader = new XMLSchemaLoader();
+        Test();
+    }
+
+    private void Test() throws SAXException {
+        String xmlSchemaPath = "/Volumes/Storage/Users/Xikui/Work/XMLParser/CAPS_Schema.xsd";
+        XMLSchemaLoader loader = new XMLSchemaLoader();
+        XSModel xsModel = loader.loadURI(new File(xmlSchemaPath).toURI().toString());
+        XSNamedMap xsNamedMap = xsModel.getComponents(XSConstants.ELEMENT_DECLARATION);
+        for (int iter1 = 0; iter1< xsNamedMap.getLength(); iter1++){
+            XSObject obj = xsNamedMap.item(iter1);
+            System.out.println("{" + obj.getNamespace()+"},"+obj.toString()+","+obj.getName()+","+obj.getType());
+        }
     }
 
     @Override public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
