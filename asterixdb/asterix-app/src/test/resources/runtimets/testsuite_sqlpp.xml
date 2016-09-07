@@ -933,6 +933,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="comparison">
+      <compilation-unit name="datetime_range_between">
+        <output-dir compare="Text">datetime_range</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="comparison">
       <compilation-unit name="datetime_tzeq">
         <output-dir compare="Text">datetime_tzeq</output-dir>
       </compilation-unit>
@@ -1050,6 +1055,11 @@
     <test-case FilePath="comparison">
       <compilation-unit name="int8_null">
         <output-dir compare="Text">int8_null</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="comparison">
+      <compilation-unit name="int_not_between">
+        <output-dir compare="Text">int_not_between</output-dir>
       </compilation-unit>
     </test-case>
     <test-case FilePath="comparison">
@@ -3024,9 +3034,9 @@
     <test-case FilePath="misc">
       <compilation-unit name="partition-by-nonexistent-field">
         <output-dir compare="Text">partition-by-nonexistent-field</output-dir>
-        <expected-error>java.lang.NullPointerException</expected-error>
-        <expected-error>Cannot find dataset</expected-error>
-        <expected-error>Cannot find dataset testds in dataverse test nor an alias with name testds</expected-error>
+        <expected-error>Type not found for partitioning key [id]</expected-error>
+        <expected-error>Cannot find dataset testds in dataverse test</expected-error>
+        <expected-error>Cannot find dataset testds in dataverse test nor an alias with name testds!</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="misc">
@@ -3117,6 +3127,11 @@
       <compilation-unit name="query-ASTERIXDB-1577">
         <output-dir compare="Text">query-ASTERIXDB-1577</output-dir>
         <expected-error>The first argument of a field access should be a RECORD, but it is</expected-error>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="misc">
+      <compilation-unit name="uuid">
+        <output-dir compare="Text">uuid</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
@@ -4152,6 +4167,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="numeric">
+      <compilation-unit name="power">
+        <output-dir compare="Text">power</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="numeric">
       <compilation-unit name="round-half-to-even0">
         <output-dir compare="Text">round-half-to-even0</output-dir>
       </compilation-unit>
@@ -4262,6 +4282,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="numeric">
+      <compilation-unit name="trunc">
+        <output-dir compare="Text">trunc</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="numeric">
       <compilation-unit name="unary-minus_double_02">
         <output-dir compare="Text">unary-minus_double_02</output-dir>
       </compilation-unit>
@@ -4300,6 +4325,11 @@
     <test-case FilePath="numeric">
       <compilation-unit name="atan">
         <output-dir compare="Text">atan</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="numeric">
+      <compilation-unit name="atan2">
+        <output-dir compare="Text">atan2</output-dir>
       </compilation-unit>
     </test-case>
     <test-case FilePath="numeric">
@@ -5351,6 +5381,17 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="string">
+      <compilation-unit name="repeat">
+        <output-dir compare="Text">repeat</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="string">
+      <compilation-unit name="repeat_error">
+        <output-dir compare="Text">repeat</output-dir>
+        <expected-error>repeat: expects a non-negative repeating number but got -1</expected-error>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="string">
       <compilation-unit name="regexp_replace">
         <output-dir compare="Text">replace22</output-dir>
       </compilation-unit>
@@ -5383,6 +5424,11 @@
     <test-case FilePath="string">
       <compilation-unit name="rtrim">
         <output-dir compare="Text">rtrim</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="string">
+      <compilation-unit name="split">
+        <output-dir compare="Text">split</output-dir>
       </compilation-unit>
     </test-case>
     <test-case FilePath="string">

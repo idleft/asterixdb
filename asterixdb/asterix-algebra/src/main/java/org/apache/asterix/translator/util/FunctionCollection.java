@@ -165,6 +165,7 @@ import org.apache.asterix.runtime.evaluators.functions.LenDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NotDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericACosDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericASinDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.NumericATan2Descriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericATanDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericAbsDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericAddDescriptor;
@@ -186,6 +187,7 @@ import org.apache.asterix.runtime.evaluators.functions.NumericSinDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericSqrtDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericSubDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericTanDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.NumericTruncDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.NumericUnaryMinusDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.OrDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.OrderedListConstructorDescriptor;
@@ -222,6 +224,8 @@ import org.apache.asterix.runtime.evaluators.functions.StringRegExpPositionDescr
 import org.apache.asterix.runtime.evaluators.functions.StringRegExpPositionWithFlagDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringRegExpReplaceDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringRegExpReplaceWithFlagsDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.StringRepeatDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.StringSplitDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringStartsWithDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringToCodePointDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringTrim2Descriptor;
@@ -232,6 +236,7 @@ import org.apache.asterix.runtime.evaluators.functions.SubstringAfterDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.SubstringBeforeDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.SubstringDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.SwitchCaseDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.UUIDDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.UnorderedListConstructorDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.WordTokensDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.binary.BinaryConcatDescriptor;
@@ -414,6 +419,7 @@ public class FunctionCollection {
 
         // uuid generators (zero independent functions)
         temp.add(CreateUUIDDescriptor.FACTORY);
+        temp.add(UUIDDescriptor.FACTORY);
         temp.add(CreateQueryUIDDescriptor.FACTORY);
         temp.add(CurrentDateDescriptor.FACTORY);
         temp.add(CurrentTimeDescriptor.FACTORY);
@@ -461,6 +467,8 @@ public class FunctionCollection {
         functionsToInjectUnkownHandling.add(NumericLogDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(NumericSqrtDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(NumericSignDescriptor.FACTORY);
+        functionsToInjectUnkownHandling.add(NumericTruncDescriptor.FACTORY);
+        functionsToInjectUnkownHandling.add(NumericATan2Descriptor.FACTORY);
 
         // Comparisons.
         functionsToInjectUnkownHandling.add(EqualsDescriptor.FACTORY);
@@ -513,6 +521,8 @@ public class FunctionCollection {
         functionsToInjectUnkownHandling.add(StringLTrim2Descriptor.FACTORY);
         functionsToInjectUnkownHandling.add(StringRTrim2Descriptor.FACTORY);
         functionsToInjectUnkownHandling.add(StringPositionDescriptor.FACTORY);
+        functionsToInjectUnkownHandling.add(StringRepeatDescriptor.FACTORY);
+        functionsToInjectUnkownHandling.add(StringSplitDescriptor.FACTORY);
 
         // Constructors
         functionsToInjectUnkownHandling.add(ABooleanConstructorDescriptor.FACTORY);
