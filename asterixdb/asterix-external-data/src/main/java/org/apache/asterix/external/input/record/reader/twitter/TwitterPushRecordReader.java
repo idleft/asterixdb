@@ -24,6 +24,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
+import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 import twitter4j.FilterQuery;
@@ -34,14 +35,14 @@ import twitter4j.StatusListener;
 import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
 
-public class TwitterPushRecordReader implements IRecordReader<String> {
-    private LinkedBlockingQueue<String> inputQ;
+public class TwitterPushRecordReader implements IRecordReader<char[]> {
+    private LinkedBlockingQueue<char[]> inputQ;
     private TwitterStream twitterStream;
-    private GenericRecord<String> record;
+    private CharArrayRecord record;
     private boolean closed = false;
 
     public TwitterPushRecordReader(TwitterStream twitterStream, FilterQuery query) {
-        record = new GenericRecord<>();
+        record = new CharArrayRecord();
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//TwitterUtil.getTwitterStream(configuration);
         this.twitterStream.addListener(new TweetListener(inputQ));
@@ -49,7 +50,7 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
     }
 
     public TwitterPushRecordReader(TwitterStream twitterStream) {
-        record = new GenericRecord<>();
+        record = new CharArrayRecord();
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//
         this.twitterStream.addListener(new TweetListener(inputQ));
@@ -72,12 +73,13 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
     }
 
     @Override
-    public IRawRecord<String> next() throws IOException, InterruptedException {
-        String tweet = inputQ.poll();
+    public IRawRecord<char[]> next() throws IOException, InterruptedException {
+        char[] tweet = inputQ.poll();
         if (tweet == null) {
             return null;
         }
         record.set(tweet);
+        record.endRecord();
         return record;
     }
 
@@ -93,16 +95,16 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
 
     private class TweetListener implements StatusListener {
 
-        private LinkedBlockingQueue<String> inputQ;
+        private LinkedBlockingQueue<char[]> inputQ;
 
-        public TweetListener(LinkedBlockingQueue<String> inputQ) {
+        public TweetListener(LinkedBlockingQueue<char[]> inputQ) {
             this.inputQ = inputQ;
         }
 
         @Override
         public void onStatus(Status tweet) {
             String jsonTweet = TwitterObjectFactory.getRawJSON(tweet);
-            inputQ.add(jsonTweet);
+            inputQ.add(jsonTweet.toCharArray());
         }
 
         @Override

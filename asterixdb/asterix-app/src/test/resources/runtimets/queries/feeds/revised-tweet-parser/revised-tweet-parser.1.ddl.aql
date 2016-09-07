@@ -49,7 +49,7 @@ primary key id;
 
 create feed TwitterFeed using push_twitter(
 ("type-name"="Tweet"),
-("format"="twitter-status"),//
+("format"="adm"),//
 ("consumer.key"="************"),
 ("access.token"="************"),
 ("access.token.secret"="************"));

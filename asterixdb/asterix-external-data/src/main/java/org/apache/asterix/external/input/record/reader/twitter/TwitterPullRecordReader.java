@@ -24,6 +24,7 @@ import java.util.List;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
+import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -34,7 +35,7 @@ import twitter4j.Twitter;
 import twitter4j.TwitterException;
 import twitter4j.TwitterObjectFactory;
 
-public class TwitterPullRecordReader implements IRecordReader<String> {
+public class TwitterPullRecordReader implements IRecordReader<char[]> {
 
     private Query query;
     private Twitter twitter;
@@ -42,14 +43,14 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
     private QueryResult result;
     private int nextTweetIndex = 0;
     private long lastTweetIdReceived = 0;
-    private GenericRecord<String> record;
+    private CharArrayRecord record;
 
     public TwitterPullRecordReader(Twitter twitter, String keywords, int requestInterval) {
         this.twitter = twitter;
         this.requestInterval = requestInterval;
         this.query = new Query(keywords);
         this.query.setCount(100);
-        this.record = new GenericRecord<>();
+        this.record = new CharArrayRecord();
     }
 
     @Override
@@ -63,7 +64,7 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
     }
 
     @Override
-    public IRawRecord<String> next() throws IOException, InterruptedException {
+    public IRawRecord<char[]> next() throws IOException, InterruptedException {
         if (result == null || nextTweetIndex >= result.getTweets().size()) {
             Thread.sleep(1000 * requestInterval);
             query.setSinceId(lastTweetIdReceived);
@@ -81,7 +82,8 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
                 lastTweetIdReceived = tweet.getId();
             }
             String jsonTweet = TwitterObjectFactory.getRawJSON(tweet); // transform tweet obj to json
-            record.set(jsonTweet);
+            record.set(jsonTweet.toCharArray());
+            record.endRecord();
             return record;
         } else {
             return null;
