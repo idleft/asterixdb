@@ -19,11 +19,14 @@
 
 package org.apache.asterix.external.parser.factory;
 
+import org.apache.asterix.external.api.IExternalDataSourceFactory;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.api.IStreamDataParser;
+import org.apache.asterix.external.parser.ADMDataParser;
 import org.apache.asterix.external.parser.XMLFileParser;
 import org.apache.asterix.external.util.ExternalDataConstants;
+import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -31,6 +34,7 @@ import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -40,31 +44,22 @@ public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
 
     private ARecordType recordType;
     private String XML_Template;
+    private Map<String, String> configuration;
 
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
-        return new XMLFileParser(recordType, "");
+        return new XMLFileParser(recordType, new ADMDataParser(recordType,
+                ExternalDataUtils.getDataSourceType(configuration).equals(IExternalDataSourceFactory.DataSourceType.STREAM)));
     }
 
     @Override
     public void configure(Map<String, String> configuration) {
-        // Nothing to be configured.
-        XML_Template = configuration.containsKey(ExternalDataConstants.KEY_DATASOURCE_SCHEMA) ?
-                configuration.get(ExternalDataConstants.KEY_DATASOURCE_SCHEMA) :
-                null;
+        this.configuration = configuration;
     }
 
     @Override
     public void setRecordType(ARecordType recordType) {
         this.recordType = recordType;
-    }
-
-    private XMLFileParser createParser() throws HyracksDataException {
-        try {
-            return new XMLFileParser(recordType,"");
-        } catch (ParserConfigurationException | SAXException e) {
-            throw new HyracksDataException(e);
-        }
     }
 
     @Override

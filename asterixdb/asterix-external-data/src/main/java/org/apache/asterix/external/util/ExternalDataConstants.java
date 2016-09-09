@@ -103,7 +103,6 @@ public class ExternalDataConstants {
     public static final String KEY_RECORD_FORMAT = "record-format";
     public static final String KEY_META_TYPE_NAME = "meta-type-name";
     public static final String READER_STREAM = "stream";
-    public static final String FORCE_DATATYPE = "force-datatype";
     /**
      * HDFS class names
      */
@@ -229,7 +228,6 @@ public class ExternalDataConstants {
     public static final String KEY_READER_FACTORY = "reader-factory";
     public static final String READER_RSS = "rss_feed";
     public static final String FORMAT_CSV = "csv";
-    public static final String XML_FILE = "xml_file";
 
     public static final String ERROR_PARSE_RECORD = "Parser failed to parse record";
 }
