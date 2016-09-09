@@ -23,6 +23,7 @@ import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.api.IStreamDataParser;
 import org.apache.asterix.external.parser.XMLFileParser;
+import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -38,25 +39,30 @@ import java.util.Map;
 public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
 
     private ARecordType recordType;
+    private String XML_Template;
 
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
-        return createParser();
+        return new XMLFileParser(recordType, "");
     }
 
     @Override
     public void configure(Map<String, String> configuration) {
         // Nothing to be configured.
+        XML_Template = configuration.containsKey(ExternalDataConstants.KEY_DATASOURCE_SCHEMA) ?
+                configuration.get(ExternalDataConstants.KEY_DATASOURCE_SCHEMA) :
+                null;
     }
 
-    @Override public void setRecordType(ARecordType recordType) {
+    @Override
+    public void setRecordType(ARecordType recordType) {
         this.recordType = recordType;
     }
 
-    private XMLFileParser createParser() throws HyracksDataException{
+    private XMLFileParser createParser() throws HyracksDataException {
         try {
-            return new XMLFileParser(recordType);
-        } catch (ParserConfigurationException|SAXException e) {
+            return new XMLFileParser(recordType,"");
+        } catch (ParserConfigurationException | SAXException e) {
             throw new HyracksDataException(e);
         }
     }
@@ -65,7 +71,6 @@ public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
     public Class<?> getRecordClass() {
         return char[].class;
     }
-
 
     @Override
     public void setMetaType(ARecordType metaType) {

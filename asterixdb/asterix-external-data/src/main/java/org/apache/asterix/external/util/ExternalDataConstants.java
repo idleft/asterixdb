@@ -32,6 +32,8 @@ public class ExternalDataConstants {
     public static final String KEY_STREAM = "stream";
     // used to specify the dataverse of the adapter
     public static final String KEY_DATAVERSE = "dataverse";
+    // optional schema provided by datasource, used for data type inference
+    public static final String KEY_DATASOURCE_SCHEMA = "datasource-schema";
     // used to specify the socket addresses when reading data from sockets
     public static final String KEY_SOCKETS = "sockets";
     // specify whether the socket address points to an NC or an IP
