@@ -5768,6 +5768,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="subquery">
+      <compilation-unit name="query-ASTERIXDB-1572">
+        <output-dir compare="Text">query-ASTERIXDB-1572</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="subquery">
       <compilation-unit name="query-ASTERIXDB-1574">
         <output-dir compare="Text">query-ASTERIXDB-1574</output-dir>
         <expected-error>Unnest or index access expects the input to be a collection, but it was of type</expected-error>
@@ -5921,8 +5926,18 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="tpcds">
+      <compilation-unit name="query-ASTERIXDB-1591">
+        <output-dir compare="Text">query-ASTERIXDB-1591</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="tpcds">
       <compilation-unit name="query-ASTERIXDB-1596">
         <output-dir compare="Text">query-ASTERIXDB-1596</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="tpcds">
+      <compilation-unit name="query-ASTERIXDB-1602">
+        <output-dir compare="Text">query-ASTERIXDB-1602</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

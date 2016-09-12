@@ -55,7 +55,7 @@ import org.apache.asterix.optimizer.rules.LoadRecordFieldsRule;
 import org.apache.asterix.optimizer.rules.MetaFunctionToMetaVariableRule;
 import org.apache.asterix.optimizer.rules.NestGroupByRule;
 import org.apache.asterix.optimizer.rules.PushAggFuncIntoStandaloneAggregateRule;
-import org.apache.asterix.optimizer.rules.PushAggregateIntoGroupbyRule;
+import org.apache.asterix.optimizer.rules.PushAggregateIntoNestedSubplanRule;
 import org.apache.asterix.optimizer.rules.PushFieldAccessRule;
 import org.apache.asterix.optimizer.rules.PushGroupByThroughProduct;
 import org.apache.asterix.optimizer.rules.PushLimitIntoOrderByRule;
@@ -202,6 +202,9 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new DisjunctivePredicateToJoinRule());
         condPushDownAndJoinInference.add(new PushSelectIntoJoinRule());
         condPushDownAndJoinInference.add(new IntroJoinInsideSubplanRule());
+        // Apply RemoveCartesianProductWithEmptyBranchRule before PushMapOperatorDownThroughProductRule
+        // to avoid that a constant assignment gets pushed into an empty branch.
+        condPushDownAndJoinInference.add(new RemoveCartesianProductWithEmptyBranchRule());
         condPushDownAndJoinInference.add(new PushMapOperatorDownThroughProductRule());
         condPushDownAndJoinInference.add(new PushSubplanWithAggregateDownThroughProductRule());
         condPushDownAndJoinInference.add(new SubplanOutOfGroupRule());
@@ -212,7 +215,7 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new RemoveUnusedAssignAndAggregateRule());
 
         condPushDownAndJoinInference.add(new FactorRedundantGroupAndDecorVarsRule());
-        condPushDownAndJoinInference.add(new PushAggregateIntoGroupbyRule());
+        condPushDownAndJoinInference.add(new PushAggregateIntoNestedSubplanRule());
         condPushDownAndJoinInference.add(new EliminateSubplanRule());
         condPushDownAndJoinInference.add(new PushProperJoinThroughProduct());
         condPushDownAndJoinInference.add(new PushGroupByThroughProduct());
@@ -221,7 +224,7 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new PushSubplanIntoGroupByRule());
         condPushDownAndJoinInference.add(new NestedSubplanToJoinRule());
         condPushDownAndJoinInference.add(new EliminateSubplanWithInputCardinalityOneRule());
-        // The following rule should be fired after PushAggregateIntoGroupbyRule because
+        // The following rule should be fired after PushAggregateIntoNestedSubplanRule because
         // pulling invariants out of a subplan will make PushAggregateIntoGroupby harder.
         condPushDownAndJoinInference.add(new AsterixMoveFreeVariableOperatorOutOfSubplanRule());
 
