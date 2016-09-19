@@ -33,18 +33,17 @@ import org.apache.asterix.active.IActiveEntityEventsListener;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.external.feed.api.FeedOperationCounter;
 import org.apache.asterix.external.feed.api.IFeedJoint;
-import org.apache.asterix.external.feed.api.IFeedJoint.State;
 import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber;
 import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber.FeedLifecycleEvent;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
+import org.apache.asterix.external.feed.watch.FeedConnectInfo;
 import org.apache.asterix.external.feed.watch.FeedIntakeInfo;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.JobType;
 import org.apache.asterix.om.util.AsterixAppContextInfo;
-import org.apache.hyracks.algebricks.common.utils.Pair;
+import org.apache.avro.generic.GenericData;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
@@ -60,24 +59,25 @@ import org.apache.hyracks.api.job.JobStatus;
 import org.apache.hyracks.storage.am.lsm.common.dataflow.LSMTreeIndexInsertUpdateDeleteOperatorDescriptor;
 import org.apache.log4j.Logger;
 
+
+//TODO: Deregister Collection JOB?
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class);
-    private final Map<EntityId, Pair<FeedOperationCounter, List<IFeedJoint>>> feedPipeline;
-    private final List<IFeedLifecycleEventSubscriber> subscribers;
+    private final Map<EntityId, FeedOperationCounter> partitionCounters;
     private final Map<Long, ActiveJob> jobs;
     private final Map<Long, ActiveJob> intakeJobs;
-    private final Map<EntityId, FeedIntakeInfo> entity2Intake;
-    private final Map<FeedConnectionId, FeedConnectJobInfo> connectJobInfos;
+    private final Map<EntityId, FeedIntakeInfo> intakeInfos;
+    private final Map<EntityId, FeedConnectInfo> connectInfos;
+    private final List<String> connectedDatasets;
     private EntityId entityId;
-    private IFeedJoint sourceFeedJoint;
 
     public FeedEventsListener(EntityId entityId) {
         this.entityId = entityId;
-        subscribers = new ArrayList<>();
         jobs = new HashMap<>();
-        feedPipeline = new HashMap<>();
-        entity2Intake = new HashMap<>();
-        connectJobInfos = new HashMap<>();
+        connectedDatasets = new ArrayList<>();
+        partitionCounters = new HashMap<>();
+        intakeInfos = new HashMap<>();
+        connectInfos = new HashMap<>();
         intakeJobs = new HashMap<>();
     }
 
@@ -111,7 +111,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 handleIntakeJobStartMessage((FeedIntakeInfo) jobInfo);
                 break;
             case FEED_CONNECT:
-                handleCollectJobStartMessage((FeedConnectJobInfo) jobInfo);
+                handleCollectJobStartMessage((FeedConnectInfo) jobInfo);
                 break;
             default:
         }
@@ -125,7 +125,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("Collect Job finished for  " + jobInfo);
                 }
-                handleFeedCollectJobFinishMessage((FeedConnectJobInfo) jobInfo);
+                handleFeedCollectJobFinishMessage((FeedConnectInfo) jobInfo);
                 break;
             case INTAKE:
                 if (LOGGER.isInfoEnabled()) {
@@ -143,52 +143,19 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         JobType jobType = (JobType) jobInfo.getJobObject();
         switch (jobType) {
             case FEED_CONNECT:
-                ((FeedConnectJobInfo) jobInfo).partitionStart();
-                if (((FeedConnectJobInfo) jobInfo).collectionStarted()) {
-                    notifyFeedEventSubscribers(FeedLifecycleEvent.FEED_COLLECT_STARTED);
-                }
+                ((FeedConnectInfo) jobInfo).partitionStart();
                 break;
             case INTAKE:
                 handleIntakePartitionStarts(message, jobInfo);
                 break;
             default:
                 break;
-
         }
     }
 
     private void handleIntakePartitionStarts(ActiveEvent message, ActiveJob jobInfo) {
-        if (feedPipeline.get(message.getFeedId()).first.decrementAndGet() == 0) {
-            ((FeedIntakeInfo) jobInfo).getIntakeFeedJoint().setState(State.ACTIVE);
+        if (partitionCounters.get(message.getFeedId()).decrementAndGet() == 0) {
             jobInfo.setState(ActivityState.ACTIVE);
-            notifyFeedEventSubscribers(FeedLifecycleEvent.FEED_INTAKE_STARTED);
-        }
-    }
-
-    public synchronized void registerFeedJoint(IFeedJoint feedJoint, int numOfPrividers) {
-        Pair<FeedOperationCounter, List<IFeedJoint>> feedJointsOnPipeline =
-                feedPipeline.get(feedJoint.getOwnerFeedId());
-        if (feedJointsOnPipeline == null) {
-            feedJointsOnPipeline = new Pair<>(new FeedOperationCounter(numOfPrividers), new ArrayList<IFeedJoint>());
-            feedPipeline.put(feedJoint.getOwnerFeedId(), feedJointsOnPipeline);
-            feedJointsOnPipeline.second.add(feedJoint);
-        } else {
-            if (!feedJointsOnPipeline.second.contains(feedJoint)) {
-                feedJointsOnPipeline.second.add(feedJoint);
-            } else {
-                throw new IllegalArgumentException("Feed joint " + feedJoint + " already registered");
-            }
-        }
-    }
-
-    public synchronized void deregisterFeedIntakeJob(JobId jobId) {
-        FeedIntakeInfo info = (FeedIntakeInfo) intakeJobs.remove(jobId.getId());
-        jobs.remove(jobId.getId());
-        entity2Intake.remove(info.getFeedId());
-        List<IFeedJoint> joints = feedPipeline.get(info.getFeedId()).second;
-        joints.remove(info.getIntakeFeedJoint());
-        if (LOGGER.isInfoEnabled()) {
-            LOGGER.info("Deregistered feed intake job [" + jobId + "]");
         }
     }
 
@@ -217,17 +184,9 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         intakeJobInfo.setIntakeLocation(intakeLocations);
     }
 
-    public IFeedJoint getSourceFeedJoint(FeedConnectionId connectionId) {
-        FeedConnectJobInfo cInfo = connectJobInfos.get(connectionId);
-        if (cInfo != null) {
-            return cInfo.getSourceFeedJoint();
-        }
-        return null;
-    }
-
-    public synchronized void registerFeedIntakeJob(EntityId feedId, JobId jobId, JobSpecification jobSpec)
+    public synchronized void registerFeedIntakeOperator(EntityId feedId, JobId jobId, JobSpecification jobSpec)
             throws HyracksDataException {
-        if (entity2Intake.get(feedId) != null) {
+        if (intakeInfos.get(feedId) != null) {
             throw new IllegalStateException("Feed already has an intake job");
         }
         if (intakeJobs.get(jobId.getId()) != null) {
@@ -236,114 +195,53 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         if (jobs.get(jobId.getId()) != null) {
             throw new IllegalStateException("Feed job already registered in all jobs");
         }
+        FeedIntakeInfo intakeJobInfo = new FeedIntakeInfo(jobId, ActivityState.CREATED, feedId, jobSpec);
+        intakeInfos.put(feedId, intakeJobInfo);
+        jobs.put(jobId.getId(), intakeJobInfo);
+        intakeJobs.put(jobId.getId(), intakeJobInfo);
 
-        Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
-        sourceFeedJoint = null;
-        for (IFeedJoint joint : pair.second) {
-            if (joint.getType().equals(IFeedJoint.FeedJointType.INTAKE)) {
-                sourceFeedJoint = joint;
-                break;
-            }
-        }
-
-        if (sourceFeedJoint != null) {
-            FeedIntakeInfo intakeJobInfo =
-                    new FeedIntakeInfo(jobId, ActivityState.CREATED, feedId, sourceFeedJoint, jobSpec);
-            pair.first.setFeedJobInfo(intakeJobInfo);
-            entity2Intake.put(feedId, intakeJobInfo);
-            jobs.put(jobId.getId(), intakeJobInfo);
-            intakeJobs.put(jobId.getId(), intakeJobInfo);
-
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Registered feed intake [" + jobId + "]" + " for feed " + feedId);
-            }
-        } else {
-            throw new HyracksDataException(
-                    "Could not register feed intake job [" + jobId + "]" + " for feed  " + feedId);
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Registered feed intake [" + jobId + "]" + " for feed " + feedId);
         }
     }
 
-    public synchronized void registerFeedCollectionJob(EntityId sourceFeedId, FeedConnectionId connectionId,
-            JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) {
-        if (jobs.get(jobId.getId()) != null) {
-            throw new IllegalStateException("Feed job already registered");
-        }
-        if (connectJobInfos.containsKey(jobId.getId())) {
-            throw new IllegalStateException("Feed job already registered");
-        }
-
-        List<IFeedJoint> feedJoints = feedPipeline.get(sourceFeedId).second;
-        FeedConnectionId cid = null;
-        IFeedJoint collectionSourceFeedJoint = null;
-        for (IFeedJoint joint : feedJoints) {
-            cid = joint.getReceiver(connectionId);
-            if (cid != null) {
-                collectionSourceFeedJoint = joint;
-                break;
-            }
-        }
-
-        if (cid != null) {
-            FeedConnectJobInfo cInfo = new FeedConnectJobInfo(sourceFeedId, jobId, ActivityState.CREATED, connectionId,
-                    collectionSourceFeedJoint, null, jobSpec, feedPolicy);
-            jobs.put(jobId.getId(), cInfo);
-            connectJobInfos.put(connectionId, cInfo);
-
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info("Registered feed connection [" + jobId + "]" + " for feed " + connectionId);
-            }
+    public synchronized void registerFeedCollectOperator(EntityId feedId, String targetDataset, JobId jobId,
+            JobSpecification jobSpec, Map<String, String> feedPolicy) {
+        FeedConnectInfo cInfo = null;
+        if (connectInfos.containsKey(feedId)) {
+            cInfo = connectInfos.get(feedId);
+            cInfo.addTargetDataset(targetDataset);
         } else {
-            LOGGER.warn(
-                    "Could not register feed collection job [" + jobId + "]" + " for feed connection " + connectionId);
+            cInfo = new FeedConnectInfo(feedId,jobId, ActivityState.CREATED, jobSpec,
+                    feedPolicy);
+            cInfo.addTargetDataset(targetDataset);
+            jobs.put(jobId.getId(), cInfo);
+            connectInfos.put(feedId, cInfo);
+        }
+
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.info("Registered feed connection [" + jobId + "]" + " for feed " + feedId);
         }
     }
 
     @Override
     public void notifyJobCreation(JobId jobId, JobSpecification spec) {
-        FeedConnectionId feedConnectionId = null;
         Map<String, String> feedPolicy = null;
         try {
             for (IOperatorDescriptor opDesc : spec.getOperatorMap().values()) {
                 if (opDesc instanceof FeedCollectOperatorDescriptor) {
-                    feedConnectionId = ((FeedCollectOperatorDescriptor) opDesc).getFeedConnectionId();
                     feedPolicy = ((FeedCollectOperatorDescriptor) opDesc).getFeedPolicyProperties();
-                    registerFeedCollectionJob(((FeedCollectOperatorDescriptor) opDesc).getSourceFeedId(),
-                            feedConnectionId, jobId, spec, feedPolicy);
+                    registerFeedCollectOperator(((FeedCollectOperatorDescriptor) opDesc).getFeedId(),
+                            ((FeedCollectOperatorDescriptor) opDesc).getTargetDataset(), jobId, spec, feedPolicy);
                     return;
                 } else if (opDesc instanceof FeedIntakeOperatorDescriptor) {
-                    registerFeedIntakeJob(((FeedIntakeOperatorDescriptor) opDesc).getFeedId(), jobId, spec);
+                    registerFeedIntakeOperator(((FeedIntakeOperatorDescriptor) opDesc).getFeedId(), jobId, spec);
                     return;
                 }
             }
         } catch (Exception e) {
             LOGGER.error(e);
-        }
-    }
-
-    public synchronized List<String> getConnectionLocations(IFeedJoint feedJoint, final FeedConnectionRequest request)
-            throws Exception {
-        List<String> locations = null;
-        switch (feedJoint.getType()) {
-            case COMPUTE:
-                FeedConnectionId connectionId = feedJoint.getProvider();
-                FeedConnectJobInfo cInfo = connectJobInfos.get(connectionId);
-                locations = cInfo.getComputeLocations();
-                break;
-            case INTAKE:
-                FeedIntakeInfo intakeInfo = entity2Intake.get(feedJoint.getOwnerFeedId());
-                locations = intakeInfo.getIntakeLocation();
-                break;
-            default:
-                break;
-        }
-        return locations;
-    }
-
-    private void notifyFeedEventSubscribers(FeedLifecycleEvent event) {
-        if (subscribers != null && !subscribers.isEmpty()) {
-            for (IFeedLifecycleEventSubscriber subscriber : subscribers) {
-                subscriber.handleFeedEvent(event);
-            }
         }
     }
 
@@ -353,134 +251,28 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         JobInfo info = hcc.getJobInfo(message.getJobId());
         JobStatus status = info.getStatus();
         EntityId feedId = intakeInfo.getFeedId();
-        Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
+        FeedOperationCounter fc = partitionCounters.get(feedId);
         if (status.equals(JobStatus.FAILURE)) {
-            pair.first.setFailedIngestion(true);
+            fc.setFailedIngestion(true);
         }
-        // remove feed joints
-        deregisterFeedIntakeJob(message.getJobId());
-        // notify event listeners
-        feedPipeline.remove(feedId);
-        entity2Intake.remove(feedId);
-        notifyFeedEventSubscribers(pair.first.isFailedIngestion() ? FeedLifecycleEvent.FEED_INTAKE_FAILURE
-                : FeedLifecycleEvent.FEED_INTAKE_ENDED);
+        // deregister feed intake job
+        partitionCounters.remove(feedId);
+        jobs.remove(feedId);
+        intakeInfos.remove(feedId);
+        LOGGER.info("Deregistered feed intake job [" + feedId + "]");
     }
 
-    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws Exception {
-        FeedConnectionId connectionId = cInfo.getConnectionId();
-
+    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectInfo cInfo) throws Exception {
+        EntityId feedId = cInfo.getEntityId();
         IHyracksClientConnection hcc = AsterixAppContextInfo.getInstance().getHcc();
         JobInfo info = hcc.getJobInfo(cInfo.getJobId());
         JobStatus status = info.getStatus();
-        boolean failure = status != null && status.equals(JobStatus.FAILURE);
-        FeedPolicyAccessor fpa = new FeedPolicyAccessor(cInfo.getFeedPolicy());
-        boolean retainSubsription =
-                cInfo.getState().equals(ActivityState.UNDER_RECOVERY) || (failure && fpa.continueOnHardwareFailure());
-
-        if (!retainSubsription) {
-            IFeedJoint feedJoint = cInfo.getSourceFeedJoint();
-            feedJoint.removeReceiver(connectionId);
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.info(
-                        "Subscription " + cInfo.getConnectionId() + " completed successfully. Removed subscription");
-            }
-        }
-
-        connectJobInfos.remove(connectionId);
+        // probably missing place for policy
+        connectInfos.remove(feedId);
         jobs.remove(cInfo.getJobId().getId());
-        // notify event listeners
-        FeedLifecycleEvent event =
-                failure ? FeedLifecycleEvent.FEED_COLLECT_FAILURE : FeedLifecycleEvent.FEED_COLLECT_ENDED;
-        notifyFeedEventSubscribers(event);
     }
 
-    public List<String> getFeedStorageLocations(FeedConnectionId connectionId) {
-        return connectJobInfos.get(connectionId).getStorageLocations();
-    }
-
-    public List<String> getFeedCollectLocations(FeedConnectionId connectionId) {
-        return connectJobInfos.get(connectionId).getCollectLocations();
-    }
-
-    public List<String> getFeedIntakeLocations(EntityId feedId) {
-        return entity2Intake.get(feedId).getIntakeLocation();
-    }
-
-    public JobId getFeedCollectJobId(FeedConnectionId connectionId) {
-        return connectJobInfos.get(connectionId).getJobId();
-    }
-
-    public boolean isFeedPointAvailable(FeedJointKey feedJointKey) {
-        List<IFeedJoint> joints = feedPipeline.containsKey(feedJointKey.getFeedId())
-                ? feedPipeline.get(feedJointKey.getFeedId()).second : null;
-        if (joints != null && !joints.isEmpty()) {
-            for (IFeedJoint joint : joints) {
-                if (joint.getFeedJointKey().equals(feedJointKey)) {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public Collection<IFeedJoint> getFeedIntakeJoints() {
-        List<IFeedJoint> intakeFeedPoints = new ArrayList<>();
-        for (FeedIntakeInfo info : entity2Intake.values()) {
-            intakeFeedPoints.add(info.getIntakeFeedJoint());
-        }
-        return intakeFeedPoints;
-    }
-
-    public IFeedJoint getFeedJoint(FeedJointKey feedPointKey) {
-        List<IFeedJoint> joints = feedPipeline.containsKey(feedPointKey.getFeedId())
-                ? feedPipeline.get(feedPointKey.getFeedId()).second : null;
-        if (joints != null && !joints.isEmpty()) {
-            for (IFeedJoint joint : joints) {
-                if (joint.getFeedJointKey().equals(feedPointKey)) {
-                    return joint;
-                }
-            }
-        }
-        return null;
-    }
-
-    public IFeedJoint getAvailableFeedJoint(FeedJointKey feedJointKey) {
-        IFeedJoint feedJoint = getFeedJoint(feedJointKey);
-        if (feedJoint != null) {
-            return feedJoint;
-        } else {
-            String jointKeyString = feedJointKey.getStringRep();
-            List<IFeedJoint> jointsOnPipeline = feedPipeline.containsKey(feedJointKey.getFeedId())
-                    ? feedPipeline.get(feedJointKey.getFeedId()).second : null;
-            IFeedJoint candidateJoint = null;
-            if (jointsOnPipeline != null) {
-                for (IFeedJoint joint : jointsOnPipeline) {
-                    if (jointKeyString.contains(joint.getFeedJointKey().getStringRep()) && (candidateJoint == null
-                            || /*found feed point is a super set of the earlier find*/joint.getFeedJointKey()
-                                    .getStringRep().contains(candidateJoint.getFeedJointKey().getStringRep()))) {
-                        candidateJoint = joint;
-                    }
-                }
-            }
-            return candidateJoint;
-        }
-    }
-
-    public JobSpecification getCollectJobSpecification(FeedConnectionId connectionId) {
-        return connectJobInfos.get(connectionId).getSpec();
-    }
-
-    public IFeedJoint getFeedPoint(EntityId sourceFeedId, IFeedJoint.FeedJointType type) {
-        List<IFeedJoint> joints = feedPipeline.get(sourceFeedId).second;
-        for (IFeedJoint joint : joints) {
-            if (joint.getType().equals(type)) {
-                return joint;
-            }
-        }
-        return null;
-    }
-
-    private void setLocations(FeedConnectJobInfo cInfo) {
+    private void setLocations(FeedConnectInfo cInfo) {
         JobSpecification jobSpec = cInfo.getSpec();
 
         List<OperatorDescriptorId> collectOperatorIds = new ArrayList<>();
@@ -569,63 +361,27 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     }
 
-    public synchronized void registerFeedEventSubscriber(IFeedLifecycleEventSubscriber subscriber) {
-        subscribers.add(subscriber);
-    }
-
-    public void deregisterFeedEventSubscriber(IFeedLifecycleEventSubscriber subscriber) {
-        subscribers.remove(subscriber);
-    }
-
-    public synchronized boolean isFeedConnectionActive(FeedConnectionId connectionId,
-            IFeedLifecycleEventSubscriber eventSubscriber) {
+    public synchronized boolean isFeedConnectionActive(EntityId feedId) {
         boolean active = false;
-        FeedConnectJobInfo cInfo = connectJobInfos.get(connectionId);
+        FeedConnectInfo cInfo = connectInfos.get(feedId);
         if (cInfo != null) {
             active = cInfo.getState().equals(ActivityState.ACTIVE);
-        }
-        if (active) { // why active register event?
-            registerFeedEventSubscriber(eventSubscriber);
         }
         return active;
     }
 
-    public FeedConnectJobInfo getFeedConnectJobInfo(FeedConnectionId connectionId) {
-        return connectJobInfos.get(connectionId);
+    public FeedConnectInfo getFeedConnectJobInfo(EntityId feedId) {
+        return connectInfos.get(feedId);
     }
 
-    private void handleCollectJobStartMessage(FeedConnectJobInfo cInfo) throws ACIDException {
+    private void handleCollectJobStartMessage(FeedConnectInfo cInfo) throws ACIDException {
         // set locations of feed sub-operations (intake, compute, store)
         setLocations(cInfo);
-        Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(cInfo.getConnectionId().getFeedId());
-        // activate joints
-        List<IFeedJoint> joints = pair.second;
-        for (IFeedJoint joint : joints) {
-            if (joint.getProvider().equals(cInfo.getConnectionId())) {
-                joint.setState(State.ACTIVE);
-                if (joint.getType().equals(IFeedJoint.FeedJointType.COMPUTE)) {
-                    cInfo.setComputeFeedJoint(joint);
-                }
-            }
-        }
         cInfo.setState(ActivityState.ACTIVE);
     }
 
     public synchronized boolean isConnectedToDataset(String datasetName) {
-        for (FeedConnectionId connection : connectJobInfos.keySet()) {
-            if (connection.getDatasetName().equals(datasetName)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public FeedConnectionId[] getConnections() {
-        return connectJobInfos.keySet().toArray(new FeedConnectionId[connectJobInfos.size()]);
-    }
-
-    public boolean isFeedJointAvailable(FeedJointKey feedJointKey) {
-        return isFeedPointAvailable(feedJointKey);
+        return connectedDatasets.contains(datasetName);
     }
 
     @Override
@@ -636,9 +392,5 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     @Override
     public EntityId getEntityId() {
         return entityId;
-    }
-
-    public IFeedJoint getSourceFeedJoint() {
-        return sourceFeedJoint;
     }
 }

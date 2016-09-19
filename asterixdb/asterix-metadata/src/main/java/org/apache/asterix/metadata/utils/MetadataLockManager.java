@@ -508,12 +508,14 @@ public class MetadataLockManager {
 
     public void connectFeedBegin(String dataverseName, String datasetFullyQualifiedName,
             String feedFullyQualifiedName) {
+        //new connect feed logic wouldn't change the lock
         acquireDataverseReadLock(dataverseName);
         acquireDatasetReadLock(datasetFullyQualifiedName);
         acquireFeedReadLock(feedFullyQualifiedName);
     }
 
     public void connectFeedEnd(String dataverseName, String datasetFullyQualifiedName, String feedFullyQualifiedName) {
+        //This too
         releaseFeedReadLock(feedFullyQualifiedName);
         releaseDatasetReadLock(datasetFullyQualifiedName);
         releaseDataverseReadLock(dataverseName);

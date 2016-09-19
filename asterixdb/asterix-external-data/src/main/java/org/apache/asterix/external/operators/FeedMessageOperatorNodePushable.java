@@ -51,18 +51,18 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
 
     private static final Logger LOGGER = Logger.getLogger(FeedMessageOperatorNodePushable.class.getName());
 
-    private final FeedConnectionId connectionId;
+    private final EntityId feedId;
     private final IActiveMessage message;
     private final ActiveManager feedManager;
     private final int partition;
 
-    public FeedMessageOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId connectionId,
-            IActiveMessage feedMessage, int partition) {
-        this.connectionId = connectionId;
+    public FeedMessageOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IActiveMessage feedMessage,
+            int partition) {
+        this.feedId = feedId;
         this.message = feedMessage;
         this.partition = partition;
-        IAsterixAppRuntimeContext runtimeCtx =
-                (IAsterixAppRuntimeContext) ctx.getJobletContext().getApplicationContext().getApplicationObject();
+        IAsterixAppRuntimeContext runtimeCtx = (IAsterixAppRuntimeContext) ctx.getJobletContext()
+                .getApplicationContext().getApplicationObject();
         this.feedManager = (ActiveManager) runtimeCtx.getFeedManager();
     }
 
@@ -147,7 +147,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                     throw new IllegalStateException("Illegal State, invalid runtime type  " + subscribableRuntimeType);
                 case COMPUTE:
                     // feed could be primary or secondary, doesn't matter
-                    ActiveRuntimeId feedSubscribableRuntimeId = new ActiveRuntimeId(connectionId.getFeedId(),
+                    ActiveRuntimeId feedSubscribableRuntimeId = new ActiveRuntimeId(feedId,
                             FeedRuntimeType.COMPUTE.toString(), partition);
                     ISubscribableRuntime feedRuntime =
                             (ISubscribableRuntime) feedManager.getSubscribableRuntime(feedSubscribableRuntimeId);
@@ -164,7 +164,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
 
         if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info("Unsubscribed from feed :" + connectionId);
+            LOGGER.info("Unsubscribed from feed :" + feedId);
         }
     }
 }

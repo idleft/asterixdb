@@ -477,9 +477,9 @@ public class FeedMetadataUtil {
                     default:
                         throw new AsterixException("Unknown Adapter type " + adapterType);
                 }
-                adapterFactory.setOutputType(adapterOutputType);
-                adapterFactory.setMetaType(metaType);
-                adapterFactory.configure(null, configuration);
+//                adapterFactory.setOutputType(adapterOutputType);
+//                adapterFactory.setMetaType(metaType);
+//                adapterFactory.configure(null, configuration);
             } else {
                 AdapterFactoryProvider.getAdapterFactory(libraryManager, adapterName, configuration, adapterOutputType,
                         metaType);

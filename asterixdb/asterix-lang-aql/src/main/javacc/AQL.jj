@@ -99,8 +99,6 @@ import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
@@ -1123,7 +1121,7 @@ Statement FeedStatement() throws ParseException:
       }
     | <START> <FEED> feedNameComponents = QualifiedName()
       {
-        stmt = new StartFeedStatement (feedNameComponents, "start");
+        stmt = new StartFeedStatement (feedNameComponents);
       }
     | <STOP> <FEED> feedNameComponents = QulifiedName()
       {

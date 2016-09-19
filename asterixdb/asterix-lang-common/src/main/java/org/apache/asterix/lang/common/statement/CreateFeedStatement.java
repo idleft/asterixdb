@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.asterix.lang.common.statement;
 
 import org.apache.asterix.common.exceptions.AsterixException;
@@ -25,17 +26,25 @@ import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
-public abstract class CreateFeedStatement implements Statement {
+import java.util.Map;
+
+/**
+ * The new create feed statement only concerns the feed adaptor configuration.
+ * All feeds are considered as primary feeds.
+ */
+public class CreateFeedStatement implements Statement {
 
     private final Pair<Identifier, Identifier> qName;
-    private final FunctionSignature appliedFunction;
     private final boolean ifNotExists;
+    private final String adaptorName;
+    private final Map<String, String> adaptorConfiguration;
 
-    public CreateFeedStatement(Pair<Identifier, Identifier> qName, FunctionSignature appliedFunction,
-            boolean ifNotExists) {
+    public CreateFeedStatement(Pair<Identifier, Identifier> qName, String adaptorName,
+            Map<String, String> adaptorConfiguration, boolean ifNotExists) {
         this.qName = qName;
-        this.appliedFunction = appliedFunction;
         this.ifNotExists = ifNotExists;
+        this.adaptorName = adaptorName;
+        this.adaptorConfiguration = adaptorConfiguration;
     }
 
     public Identifier getDataverseName() {
@@ -46,15 +55,24 @@ public abstract class CreateFeedStatement implements Statement {
         return qName.second;
     }
 
-    public FunctionSignature getAppliedFunction() {
-        return appliedFunction;
-    }
-
     public boolean getIfNotExists() {
         return this.ifNotExists;
     }
 
-    @Override
-    public abstract <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException;
+    public String getAdaptorName() {
+        return adaptorName;
+    }
 
+    public Map<String, String> getAdaptorConfiguration() {
+        return adaptorConfiguration;
+    }
+
+    @Override
+    public byte getKind() {
+        return Kind.CREATE_FEED;
+    }
+
+    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
+        return visitor.visit(this, arg);
+    }
 }

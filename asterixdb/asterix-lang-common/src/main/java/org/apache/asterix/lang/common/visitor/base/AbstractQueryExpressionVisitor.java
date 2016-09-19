@@ -154,17 +154,7 @@ public abstract class AbstractQueryExpressionVisitor<R, T> implements ILangVisit
     }
 
     @Override
-    public R visit(CreateDirectFeedStatement del, T arg) throws AsterixException {
-        return null;
-    }
-
-    @Override
-    public R visit(CreatePrimaryFeedStatement del, T arg) throws AsterixException {
-        return null;
-    }
-
-    @Override
-    public R visit(CreateSecondaryFeedStatement del, T arg) throws AsterixException {
+    public R visit(CreateFeedStatement del, T arg) throws AsterixException {
         return null;
     }
 
@@ -174,7 +164,7 @@ public abstract class AbstractQueryExpressionVisitor<R, T> implements ILangVisit
     }
 
     @Override
-    public R visit(ControlFeedStatement ssfs, T arg) throws AsterixException{
+    public R visit(StartFeedStatement ssfs, T arg) throws AsterixException{
         return null;
     }
 

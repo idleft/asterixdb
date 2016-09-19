@@ -37,7 +37,7 @@ public class ConnectFeedStatement implements Statement {
     private Query query;
     private int varCounter;
     private boolean forceConnect = false;
-    private final ArrayList<FunctionSignature> appliedFunctions;
+    private final ArrayList<String> appliedFunctions;
 
     public static final String WAIT_FOR_COMPLETION = "wait-for-completion-feed";
 
@@ -55,16 +55,6 @@ public class ConnectFeedStatement implements Statement {
         this.varCounter = varCounter;
         this.appliedFunctions = null;
     }
-
-//    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName,
-//                                ArrayList<FunctionSignature> appliedFunctions, String policy,int varCounter) {
-//        this.dataverseName = dataverseName;
-//        this.datasetName = datasetName;
-//        this.feedName = feedName.getValue();
-//        this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
-//        this.varCounter = varCounter;
-//        this.appliedFunctions = appliedFunctions;
-//    }
 
     public Identifier getDataverseName() {
         return dataverseName;
@@ -108,7 +98,7 @@ public class ConnectFeedStatement implements Statement {
         return feedName;
     }
 
-    public ArrayList<FunctionSignature> getAppliedFunctions() {
+    public ArrayList<String> getAppliedFunctions() {
         return appliedFunctions;
     }
 }

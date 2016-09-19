@@ -32,24 +32,17 @@ public class FeedIntakeInfo extends ActiveJob {
 
     private static final long serialVersionUID = 1L;
     private final EntityId feedId;
-    private final IFeedJoint intakeFeedJoint;
     private final JobSpecification spec;
     private List<String> intakeLocation;
 
-    public FeedIntakeInfo(JobId jobId, ActivityState state, EntityId feedId, IFeedJoint intakeFeedJoint,
-            JobSpecification spec) {
+    public FeedIntakeInfo(JobId jobId, ActivityState state, EntityId feedId, JobSpecification spec) {
         super(feedId, jobId, state, JobType.INTAKE, spec);
         this.feedId = feedId;
-        this.intakeFeedJoint = intakeFeedJoint;
         this.spec = spec;
     }
 
     public EntityId getFeedId() {
         return feedId;
-    }
-
-    public IFeedJoint getIntakeFeedJoint() {
-        return intakeFeedJoint;
     }
 
     @Override

@@ -37,8 +37,6 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.asterix.active.ActiveEvent;
-import org.apache.asterix.active.ActiveJob;
 import org.apache.asterix.active.ActiveJobNotificationHandler;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
@@ -60,12 +58,10 @@ import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
-import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.api.IFeedJoint.FeedJointType;
 import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber;
 import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber.FeedLifecycleEvent;
-import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
@@ -73,7 +69,7 @@ import org.apache.asterix.external.feed.management.FeedJointKey;
 import org.apache.asterix.external.feed.management.FeedLifecycleEventSubscriber;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivity.FeedActivityDetails;
-import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
+import org.apache.asterix.external.feed.watch.FeedConnectInfo;
 import org.apache.asterix.external.feed.watch.FeedIntakeInfo;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -142,8 +138,6 @@ import org.apache.asterix.translator.util.ValidateUtil;
 import org.apache.asterix.util.FlushDatasetUtils;
 import org.apache.asterix.util.JobUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.hadoop.hive.ql.hooks.Entity;
-import org.apache.hadoop.hive.ql.io.orc.Metadata;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.common.utils.Triple;
@@ -321,8 +315,9 @@ public class QueryTranslator extends AbstractLangTranslator {
                         handleDisconnectFeedStatement(metadataProvider, stmt, hcc);
                         break;
                     case Statement.Kind.START_FEED:
+                        handleStartFeedStatement(metadataProvider, stmt, hcc);
                     case Statement.Kind.STOP_FEED:
-                        handleStartStopFeedStatement(metadataProvider, stmt, hcc);
+                        //                        handleStopFeedStatement(metadataProvider, stmt, hcc);
                         break;
                     case Statement.Kind.SUBSCRIBE_FEED:
                         handleSubscribeFeedStatement(metadataProvider, stmt, hcc);
@@ -1942,7 +1937,7 @@ public class QueryTranslator extends AbstractLangTranslator {
 
     private void handleCreateFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        CreateDirectFeedStatement cfs = (CreateDirectFeedStatement) stmt;
+        CreateFeedStatement cfs = (CreateFeedStatement) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName().getValue();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
@@ -2113,43 +2108,39 @@ public class QueryTranslator extends AbstractLangTranslator {
         }
     }
 
-    private void handleStartStopFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+    private void handleStartFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        StartStopFeedStatement ssfs = (StartStopFeedStatement) stmt;
-        String dataverseName = getActiveDataverse(ssfs.getDataverseName());
-        String feedName = ssfs.getFeedName().getValue();
-
-        boolean bActiveTxn = true;
-        boolean subscriberRegistered = false;
+        StartFeedStatement sfs = (StartFeedStatement) stmt;
+        String dataverseName = getActiveDataverse(sfs.getDataverseName());
+        String feedName = sfs.getFeedName().getValue();
+        // Transcation handler
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
-
+        // Runtime handler
         IFeedLifecycleEventSubscriber eventSubscriber = new FeedLifecycleEventSubscriber();
         EntityId entityId = new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName);
         FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                 .getActiveEntityListener(entityId);
+        // Feed & Feed Connections
         Feed feed = FeedMetadataUtil
                 .validateIfFeedExists(dataverseName, feedName, metadataProvider.getMetadataTxnContext());
-        // use empty dataset name as init for feedConnId first
-        FeedConnectionId feedConnId = new FeedConnectionId(dataverseName, feedName, "");
         List<FeedConnection> feedConnections = MetadataManager.INSTANCE
                 .getFeedConections(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
         List<String> targetDatasets = new ArrayList<>();
         for (FeedConnection fc : feedConnections) {
             targetDatasets.add(fc.getDatasetName());
         }
-        // lock logic need double check
+        // Start
         MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, targetDatasets);
-
         try {
             metadataProvider.setWriteTransaction(true);
             if (listener == null) {
-                // new feed start, will there be any listener is not null?
+                // Connect for the 1st time.
                 listener = new FeedEventsListener(entityId);
                 ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             } else {
                 listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE.getActiveEntityListener(entityId);
-                if (listener.isFeedConnectionActive(feedConnId, eventSubscriber)) {
+                if (listener.isFeedConnectionActive(entityId, eventSubscriber)) {
                     throw new AsterixException("Feed " + feedName + " is already started.");
                 }
             }
@@ -2161,7 +2152,6 @@ public class QueryTranslator extends AbstractLangTranslator {
             FeedConnectionRequest request = triple.first;
             Boolean createFeedIntakeJob = triple.second;
             listener.registerFeedEventSubscriber(eventSubscriber);
-            subscriberRegistered = true;
             FeedPolicyAccessor policyAccessor = null;
 
             if (createFeedIntakeJob) {
@@ -2177,18 +2167,47 @@ public class QueryTranslator extends AbstractLangTranslator {
                 eventSubscriber.assertEvent(FeedLifecycleEvent.FEED_INTAKE_STARTED);
             }
         } catch (Exception e) {
-            if (bActiveTxn) {
-                abort(e, e, mdTxnCtx);
-            }
+            abort(e, e, mdTxnCtx);
             throw e;
         } finally {
             MetadataLockManager.INSTANCE.startFeedEnd(dataverseName, dataverseName + "." + feedName, targetDatasets);
+        }
+    }
+
+    private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+            IHyracksClientConnection hcc) throws Exception {
+        FeedConnection fc = null;
+        ConnectFeedStatement cfs = (ConnectFeedStatement) stmt;
+        String dataverseName = getActiveDataverse(cfs.getDataverseName());
+        String feedName = cfs.getFeedName();
+        String datasetName = cfs.getDatasetName().getValue();
+        ArrayList<String> appliedFunctions = cfs.getAppliedFunctions();
+        // Transaction handling
+        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
+        metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        MetadataLockManager.INSTANCE
+                .connectFeedBegin(dataverseName, dataverseName + "." + datasetName, dataverseName + "." + feedName);
+        try {
+            fc = MetadataManager.INSTANCE
+                    .getFeedConnection(metadataProvider.getMetadataTxnContext(), dataverseName, feedName, datasetName);
+            if (fc != null) {
+                throw new AlgebricksException("Feed" + feedName + " is already connected dataset " + datasetName);
+            }
+            fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions);
+            MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
+        } catch (Exception e) {
+            abort(e, e, mdTxnCtx);
+            throw e;
+        } finally {
+            MetadataLockManager.INSTANCE
+                    .connectFeedEnd(dataverseName, dataverseName + "." + datasetName, dataverseName + "." + feedName);
         }
 
 
     }
 
-    private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+    private void handleStartFeedStatement0(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
 
         ConnectFeedStatement cfs = (ConnectFeedStatement) stmt;
@@ -2517,7 +2536,7 @@ public class QueryTranslator extends AbstractLangTranslator {
             if (compiled != null) {
                 FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                         .getActiveEntityListener(bfs.getSubscriptionRequest().getReceivingFeedId());
-                FeedConnectJobInfo activeJob = new FeedConnectJobInfo(bfs.getSubscriptionRequest().getReceivingFeedId(),
+                FeedConnectInfo activeJob = new FeedConnectInfo(bfs.getSubscriptionRequest().getReceivingFeedId(),
                         null, ActivityState.ACTIVE,
                         new FeedConnectionId(bfs.getSubscriptionRequest().getReceivingFeedId(), dataset),
                         listener.getSourceFeedJoint(), null, alteredJobSpec, policy.getProperties());

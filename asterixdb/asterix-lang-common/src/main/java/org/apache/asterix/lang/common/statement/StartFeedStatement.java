@@ -16,44 +16,40 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.asterix.lang.common.statement;
 
-import java.util.Map;
-
 import org.apache.asterix.common.exceptions.AsterixException;
-import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
-public class CreatePrimaryFeedStatement extends CreateFeedStatement {
+public class StartFeedStatement implements Statement{
 
-    private final String adaptorName;
-    private final Map<String, String> adaptorConfiguration;
+    private Identifier dataverseName;
+    private Identifier feedName;
+    private Byte stmtType;
 
-    public CreatePrimaryFeedStatement(Pair<Identifier, Identifier> qName, String adaptorName,
-            Map<String, String> adaptorConfiguration, FunctionSignature appliedFunction, boolean ifNotExists) {
-        super(qName, appliedFunction, ifNotExists);
-        this.adaptorName = adaptorName;
-        this.adaptorConfiguration = adaptorConfiguration;
+    public StartFeedStatement(Pair<Identifier, Identifier> feedNameComp){
+        dataverseName = feedNameComp.first;
+        feedName = feedNameComp.second;
+        this.stmtType = Kind.START_FEED;
     }
 
-    public String getAdaptorName() {
-        return adaptorName;
+    @Override public byte getKind() {
+        return stmtType;
     }
 
-    public Map<String, String> getAdaptorConfiguration() {
-        return adaptorConfiguration;
-    }
-
-    @Override
-    public byte getKind() {
-        return Statement.Kind.CREATE_PRIMARY_FEED;
-    }
-
-    @Override
-    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
+    @Override public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
         return visitor.visit(this, arg);
+    }
+
+    public Identifier getDataverseName() {
+        return dataverseName;
+    }
+
+    public Identifier getFeedName() {
+        return feedName;
     }
 }

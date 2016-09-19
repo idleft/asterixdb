@@ -49,27 +49,26 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     /** The type associated with the ADM data output from (the feed adapter OR the compute operator) */
     private final IAType outputType;
 
-    /** unique identifier for a feed instance. */
-    private final FeedConnectionId connectionId;
-
     /** Map representation of policy parameters */
     private final Map<String, String> feedPolicyProperties;
 
     /** The source feed from which the feed derives its data from. **/
-    private final EntityId sourceFeedId;
+    private final EntityId feedId;
 
     /** The subscription location at which the recipient feed receives tuples from the source feed {SOURCE_FEED_INTAKE_STAGE , SOURCE_FEED_COMPUTE_STAGE} **/
     private final FeedRuntimeType subscriptionLocation;
 
-    public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId,
-            EntityId sourceFeedId, ARecordType atype, RecordDescriptor rDesc, Map<String, String> feedPolicyProperties,
+    private String targetDataset;
+
+    public FeedCollectOperatorDescriptor(JobSpecification spec, EntityId feedId, String targetDataset,
+            ARecordType atype, RecordDescriptor rDesc, Map<String, String> feedPolicyProperties,
             FeedRuntimeType subscriptionLocation) {
         super(spec, 0, 1);
         this.recordDescriptors[0] = rDesc;
         this.outputType = atype;
-        this.connectionId = feedConnectionId;
+        this.targetDataset = targetDataset;
         this.feedPolicyProperties = feedPolicyProperties;
-        this.sourceFeedId = sourceFeedId;
+        this.feedId = feedId;
         this.subscriptionLocation = subscriptionLocation;
     }
 
@@ -79,13 +78,9 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
             throws HyracksDataException {
         ActiveManager feedManager = (ActiveManager) ((IAsterixAppRuntimeContext) ctx.getJobletContext()
                 .getApplicationContext().getApplicationObject()).getFeedManager();
-        ActiveRuntimeId sourceRuntimeId = new ActiveRuntimeId(sourceFeedId, subscriptionLocation.toString(), partition);
+        ActiveRuntimeId sourceRuntimeId = new ActiveRuntimeId(feedId, subscriptionLocation.toString(), partition);
         ISubscribableRuntime sourceRuntime = (ISubscribableRuntime) feedManager.getSubscribableRuntime(sourceRuntimeId);
-        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, sourceRuntime);
-    }
-
-    public FeedConnectionId getFeedConnectionId() {
-        return connectionId;
+        return new FeedCollectOperatorNodePushable(ctx, feedId, feedPolicyProperties, partition, sourceRuntime);
     }
 
     public Map<String, String> getFeedPolicyProperties() {
@@ -100,11 +95,15 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         return recordDescriptors[0];
     }
 
-    public EntityId getSourceFeedId() {
-        return sourceFeedId;
+    public EntityId getFeedId() {
+        return feedId;
     }
 
     public FeedRuntimeType getSubscriptionLocation() {
         return subscriptionLocation;
+    }
+
+    public String getTargetDataset() {
+        return targetDataset;
     }
 }

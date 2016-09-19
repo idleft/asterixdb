@@ -76,6 +76,7 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
     protected final static String SEMICOLON = ";";
     private final static String CREATE = "create ";
     private final static String FEED = " feed ";
+    public static final String START = "start ";
     private final static String DEFAULT_DATAVERSE_FORMAT = "org.apache.asterix.runtime.formats.NonTaggedDataFormat";
     protected Set<Character> validIdentifierChars = new HashSet<Character>();
     protected Set<Character> validIdentifierStartChars = new HashSet<Character>();
@@ -717,42 +718,20 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
         return null;
     }
 
+    public Void visit(StartFeedStatement sfs, Integer step) throws AsterixException{
+        out.print(skip(step) + START + FEED);
+        out.print(generateFullName(sfs.getDataverseName(), sfs.getFeedName()));
+        out.print(SEMICOLON);
+        return null;
+    }
+
     @Override
-    public Void visit(CreateDirectFeedStatement cfs, Integer step) throws AsterixException{
+    public Void visit(CreateFeedStatement cfs, Integer step) throws AsterixException{
         out.print(skip(step) + CREATE + " feed ");
         out.print(generateFullName(cfs.getDataverseName(), cfs.getFeedName()));
         out.print(generateIfNotExists(cfs.getIfNotExists()));
         out.print(" using " + cfs.getAdaptorName() + " ");
         printConfiguration(cfs.getAdaptorConfiguration());
-        out.println(SEMICOLON);
-        return null;
-    }
-
-    @Override
-    public Void visit(CreatePrimaryFeedStatement cpfs, Integer step) throws AsterixException {
-        out.print(skip(step) + CREATE + " primary feed ");
-        out.print(generateFullName(cpfs.getDataverseName(), cpfs.getFeedName()));
-        out.print(generateIfNotExists(cpfs.getIfNotExists()));
-        out.print(" using " + cpfs.getAdaptorName() + " ");
-        printConfiguration(cpfs.getAdaptorConfiguration());
-        FunctionSignature func = cpfs.getAppliedFunction();
-        if (func != null) {
-            out.print(" apply function " + generateFullName(func.getNamespace(), func.getName()));
-        }
-        out.println(SEMICOLON);
-        return null;
-    }
-
-    @Override
-    public Void visit(CreateSecondaryFeedStatement csfs, Integer step) throws AsterixException {
-        out.print(skip(step) + CREATE + " secondary feed ");
-        out.print(generateFullName(csfs.getDataverseName(), csfs.getFeedName()));
-        out.print(generateIfNotExists(csfs.getIfNotExists()));
-        out.print(" from feed " + generateFullName(csfs.getSourceFeedDataverse(), csfs.getSourceFeedName()));
-        FunctionSignature func = csfs.getAppliedFunction();
-        if (func != null) {
-            out.print(" apply function " + generateFullName(func.getNamespace(), func.getName()));
-        }
         out.println(SEMICOLON);
         return null;
     }

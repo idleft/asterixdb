@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.operators;
 
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveMessage;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -37,20 +38,19 @@ public class FeedMessageOperatorDescriptor extends AbstractSingleActivityOperato
 
     private static final long serialVersionUID = 1L;
 
-    private final FeedConnectionId connectionId;
+    private final EntityId feedId;
     private final IActiveMessage feedMessage;
 
-    public FeedMessageOperatorDescriptor(JobSpecification spec, FeedConnectionId connectionId,
-            IActiveMessage feedMessage) {
+    public FeedMessageOperatorDescriptor(JobSpecification spec, EntityId feedId, IActiveMessage feedMessage) {
         super(spec, 0, 1);
-        this.connectionId = connectionId;
+        this.feedId = feedId;
         this.feedMessage = feedMessage;
     }
 
     @Override
     public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
             IRecordDescriptorProvider recordDescProvider, int partition, int nPartitions) throws HyracksDataException {
-        return new FeedMessageOperatorNodePushable(ctx, connectionId, feedMessage, partition);
+        return new FeedMessageOperatorNodePushable(ctx, feedId, feedMessage, partition);
     }
 
 }

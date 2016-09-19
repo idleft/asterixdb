@@ -1427,7 +1427,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreateDirectFeedStatement cfs, Mutable<ILogicalOperator> arg) throws AsterixException {
+    public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedStatement cfs, Mutable<ILogicalOperator> arg) throws AsterixException {
         return null;
     }
 
@@ -1446,20 +1446,6 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreatePrimaryFeedStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreateSecondaryFeedStatement del,
-            Mutable<ILogicalOperator> arg) throws AsterixException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedPolicyStatement cfps, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
@@ -1468,6 +1454,13 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FeedPolicyDropStatement dfs, Mutable<ILogicalOperator> arg)
+            throws AsterixException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<ILogicalOperator, LogicalVariable> visit(StartFeedStatement del, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
         return null;

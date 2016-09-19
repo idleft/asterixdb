@@ -26,7 +26,7 @@ import org.apache.asterix.metadata.api.IMetadataEntity;
 import java.util.ArrayList;
 
 /**
- * Created by Xikui on 7/11/16.
+ * Feed connection records the feed --> dataset mapping.
  */
 public class FeedConnection implements IMetadataEntity<FeedConnection> {
 

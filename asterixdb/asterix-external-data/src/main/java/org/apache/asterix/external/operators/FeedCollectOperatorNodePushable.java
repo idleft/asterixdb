@@ -23,12 +23,12 @@ import java.util.Map;
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActivePartitionMessage;
 import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
 import org.apache.asterix.external.feed.api.ISubscribableRuntime;
 import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.CollectionRuntime;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -43,7 +43,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNod
 public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOperatorNodePushable {
 
     private final int partition;
-    private final FeedConnectionId connectionId;
+    private final EntityId feedId;
     private final Map<String, String> feedPolicy;
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager feedManager;
@@ -51,11 +51,11 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final IHyracksTaskContext ctx;
     private CollectionRuntime collectRuntime;
 
-    public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
-            Map<String, String> feedPolicy, int partition, ISubscribableRuntime sourceRuntime) {
+    public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, Map<String, String> feedPolicy,
+            int partition, ISubscribableRuntime sourceRuntime) {
         this.ctx = ctx;
         this.partition = partition;
-        this.connectionId = feedConnectionId;
+        this.feedId = feedId;
         this.sourceRuntime = sourceRuntime;
         this.feedPolicy = feedPolicy;
         this.policyAccessor = new FeedPolicyAccessor(feedPolicy);
@@ -66,8 +66,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     @Override
     public void initialize() throws HyracksDataException {
         try {
-            ActiveRuntimeId runtimeId =
-                    new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
+            ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.COLLECT.toString(), partition);
             // Does this collector have a handler?
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             if (policyAccessor.bufferingEnabled()) {
@@ -81,8 +80,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             feedManager.getActiveRuntimeRegistry().registerRuntime(collectRuntime);
             sourceRuntime.subscribe(collectRuntime);
             // Notify CC that Collection started
-            ctx.sendApplicationMessageToCC(
-                    new ActivePartitionMessage(connectionId.getFeedId(), ctx.getJobletContext().getJobId(), null),
+            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(feedId, ctx.getJobletContext().getJobId(), null),
                     null);
             collectRuntime.waitTillCollectionOver();
             feedManager.getActiveRuntimeRegistry().deregisterRuntime(collectRuntime.getRuntimeId());
