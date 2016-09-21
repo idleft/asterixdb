@@ -102,6 +102,7 @@ public final class MetadataRecordTypes {
     public static final String FIELD_NAME_UNORDERED_LIST = "UnorderedList";
     public static final String FIELD_NAME_VALUE = "Value";
     public static final String FIELD_NAME_WORKING_MEMORY_SIZE = "WorkingMemorySize";
+    public static final String FIELD_NAME_APPLIED_FUNCTIONS = "AppliedFunctions";
 
     //---------------------------------- Record Types Creation ----------------------------------//
     //--------------------------------------- Properties ----------------------------------------//
@@ -437,6 +438,25 @@ public final class MetadataRecordTypes {
                     AUnionType.createUnknownableType(BuiltinType.ASTRING), BuiltinType.ASTRING,
                     AUnionType.createUnknownableType(PRIMARY_FEED_DETAILS_RECORDTYPE),
                     AUnionType.createUnknownableType(SECONDARY_FEED_DETAILS_RECORDTYPE), BuiltinType.ASTRING },
+            //IsOpen?
+            true);
+
+    //------------------------------------- Feed Connection ---------------------------------------//
+    public static final String RECORD_NAME_FEED_CONNECTION = "FeedConnectionRecordType";
+    public static final int FEED_CONN_DATAVERSE_NAME_FIELD_INDEX = 0;
+    public static final int FEED_CONN_FEED_NAME_FIELD_INDEX = 1;
+    public static final int FEED_CONN_DATASET_NAME_FIELD_INDEX = 2;
+    public static final int FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX = 3;
+
+    public static final ARecordType FEED_CONNECTION_RECORDTYPE = createRecordType(
+            // RecordTypeName
+            RECORD_NAME_FEED_CONNECTION,
+            // FieldNames
+            new String[] { FIELD_NAME_DATAVERSE_NAME, FIELD_NAME_FEED_NAME, FIELD_NAME_DATASET_NAME,
+                    FIELD_NAME_APPLIED_FUNCTIONS },
+            // FieldTypes
+            new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
+                    new AUnorderedListType(BuiltinType.ASTRING, null) },
             //IsOpen?
             true);
 

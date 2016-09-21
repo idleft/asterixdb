@@ -35,18 +35,7 @@ import org.apache.asterix.metadata.api.IExtensionMetadataEntity;
 import org.apache.asterix.metadata.api.IExtensionMetadataSearchKey;
 import org.apache.asterix.metadata.api.IMetadataManager;
 import org.apache.asterix.metadata.api.IMetadataNode;
-import org.apache.asterix.metadata.entities.CompactionPolicy;
-import org.apache.asterix.metadata.entities.Dataset;
-import org.apache.asterix.metadata.entities.DatasourceAdapter;
-import org.apache.asterix.metadata.entities.Datatype;
-import org.apache.asterix.metadata.entities.Dataverse;
-import org.apache.asterix.metadata.entities.Feed;
-import org.apache.asterix.metadata.entities.FeedPolicyEntity;
-import org.apache.asterix.metadata.entities.Function;
-import org.apache.asterix.metadata.entities.Index;
-import org.apache.asterix.metadata.entities.Library;
-import org.apache.asterix.metadata.entities.Node;
-import org.apache.asterix.metadata.entities.NodeGroup;
+import org.apache.asterix.metadata.entities.*;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
 
@@ -832,6 +821,32 @@ public class MetadataManager implements IMetadataManager {
             throw new MetadataException(e);
         }
         ctx.addFeed(feed);
+    }
+
+    public void addFeedConnection(MetadataTransactionContext ctx, FeedConnection feedConnection)
+            throws MetadataException{
+        metadataNode.addFeedConnection(ctx.getJobId(),feedConnection);
+        ctx.addFeedConnection(feedConnection);
+    }
+
+    public void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName,
+                                   String feedName, String datasetName) throws MetadataException {
+        metadataNode.dropFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        ctx.dropFeedConnection(dataverseName, feedName, datasetName);
+    }
+
+    public FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
+                                            String datasetName) throws MetadataException {
+        FeedConnection feedConnection = null;
+        feedConnection = metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        return feedConnection;
+    }
+
+    public List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
+            throws MetadataException {
+        List<FeedConnection> feedConnections = null;
+        feedConnections = metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
+        return feedConnections;
     }
 
     public List<DatasourceAdapter> getDataverseAdapters(MetadataTransactionContext mdTxnCtx, String dataverse)

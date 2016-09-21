@@ -98,8 +98,6 @@ import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
@@ -1120,6 +1118,14 @@ Statement FeedStatement() throws ParseException:
     | <DISCONNECT> <FEED> feedNameComponents = QualifiedName() <FROM> <DATASET> datasetNameComponents = QualifiedName()
       {
         stmt = new DisconnectFeedStatement(feedNameComponents, datasetNameComponents);
+      }
+    | <START> <FEED> feedNameComponents = QualifiedName()
+      {
+        stmt = new StartFeedStatement (feedNameComponents);
+      }
+    | <STOP> <FEED> feedNameComponents = QulifiedName()
+      {
+        stmt = new StopFeedStatement (feedNameComponents, "stop");
       }
   )
     {
@@ -2652,6 +2658,8 @@ TOKEN :
   | <SECONDARY : "secondary">
   | <SELECT : "select">
   | <SET : "set">
+  | <START: "start">
+  | <STOP: "stop">
   | <SOME : "some">
   | <TEMPORARY : "temporary">
   | <THEN : "then">
