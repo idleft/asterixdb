@@ -56,6 +56,7 @@ public class TweetParserFactory implements IRecordDataParserFactory<String> {
 
     @Override
     public void setMetaType(ARecordType metaType) {
+        // do nothing
     }
 
 }

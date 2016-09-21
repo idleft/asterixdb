@@ -21,6 +21,7 @@
              <!ENTITY ComparisonQueries SYSTEM "queries/comparison/ComparisonQueries.xml">
              <!ENTITY RecordsQueries SYSTEM "queries/records/RecordsQueries.xml">
              <!ENTITY DeepEqualQueries SYSTEM "queries/comparison/deep_equal/DeepEqualQueries.xml">
+             <!ENTITY APIQueries SYSTEM "queries/api/APIQueries.xml">
              ]>
 
 <test-suite
@@ -28,6 +29,7 @@
              ResultOffsetPath="results"
              QueryOffsetPath="queries"
              QueryFileExtension=".aql">
+  &APIQueries;
   <test-group name="external-library">
     <test-case FilePath="external-library">
       <compilation-unit name="typed_adapter">
@@ -150,6 +152,13 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="feeds">
+      <compilation-unit name="revised-tweet-parser">
+        <output-dir compare="Text">revised-tweet-parser</output-dir>
+        <expected-error>One or more parameters are missing from adapter configuration</expected-error>
+        <expected-error>Unknown source feed</expected-error>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="feeds">
       <compilation-unit name="feed-with-external-parser">
         <output-dir compare="Text">feed-with-external-parser</output-dir>
       </compilation-unit>
@@ -254,6 +263,11 @@
     <test-case FilePath="upsert">
       <compilation-unit name="filtered-dataset">
         <output-dir compare="Text">filtered-dataset</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="upsert">
+      <compilation-unit name="issue1587-foreignDataType">
+        <output-dir compare="Text">issue1587-foreignDataType</output-dir>
       </compilation-unit>
     </test-case>
     <test-case FilePath="upsert">
@@ -856,6 +870,11 @@
         <output-dir compare="Text">query-ASTERIXDB-1230</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="aggregate">
+      <compilation-unit name="query-ASTERIXDB-159">
+        <output-dir compare="Text">query-ASTERIXDB-159</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="aggregate-sql">
     <test-case FilePath="aggregate-sql">
@@ -1234,9 +1253,7 @@
       </compilation-unit>
     </test-case>
   </test-group>
-  <test-group name="comparison">
-    &ComparisonQueries;
-  </test-group>
+  &ComparisonQueries;
   <test-group name="constructor">
     <test-case FilePath="constructor">
       <compilation-unit name="binary_01">
@@ -2727,6 +2744,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="index-selection">
+      <compilation-unit name="btree-index-composite-key-02">
+        <output-dir compare="Text">btree-index-composite-key-02</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="index-selection">
       <compilation-unit name="btree-index-composite-key-mixed-intervals">
         <output-dir compare="Text">btree-index-composite-key-mixed-intervals</output-dir>
       </compilation-unit>
@@ -3157,7 +3179,7 @@
     <test-case FilePath="misc">
       <compilation-unit name="partition-by-nonexistent-field"> <!-- Seriously?? 3 expected errors -->
         <output-dir compare="Text">partition-by-nonexistent-field</output-dir>
-        <expected-error>java.lang.NullPointerException</expected-error>
+        <expected-error>Type not found for partitioning key [id]</expected-error>
         <expected-error>org.apache.hyracks.algebricks.common.exceptions.AlgebricksException: Cannot find dataset</expected-error>
         <expected-error>org.apache.hyracks.algebricks.common.exceptions.AlgebricksException: Could not find dataset</expected-error>
       </compilation-unit>
@@ -3291,6 +3313,12 @@
         <compilation-unit name="missing-enforce-statement">
           <output-dir compare="Text">missing-enforce-statement</output-dir>
           <expected-error>org.apache.hyracks.algebricks.common.exceptions.AlgebricksException: Cannot create typed index on "[value]" field without enforcing it's type</expected-error>
+        </compilation-unit>
+      </test-case>
+      <test-case FilePath="open-index-enforced/error-checking">
+        <compilation-unit name="missing-optionality">
+          <output-dir compare="Text">missing-optionality</output-dir>
+          <expected-error>"?"</expected-error>
         </compilation-unit>
       </test-case>
       <test-case FilePath="open-index-enforced/error-checking">
@@ -3480,6 +3508,18 @@
       <test-case FilePath="open-index-enforced/external-indexing">
         <compilation-unit name="leftouterjoin-rtree">
           <output-dir compare="Text">leftouterjoin-rtree</output-dir>
+        </compilation-unit>
+      </test-case>
+    </test-group>
+    <test-group name="open-index-enforced/type-checking">
+      <test-case FilePath="open-index-enforced/type-checking">
+        <compilation-unit name="enforced-type-delete">
+          <output-dir compare="Text">enforced-type-delete</output-dir>
+        </compilation-unit>
+      </test-case>
+      <test-case FilePath="open-index-enforced/type-checking">
+        <compilation-unit name="enforced-type-upsert">
+          <output-dir compare="Text">enforced-type-upsert</output-dir>
         </compilation-unit>
       </test-case>
     </test-group>
@@ -4775,11 +4815,14 @@
       </compilation-unit>
     </test-case>-->
   </test-group>
+  &RecordsQueries;
+  &DeepEqualQueries;
   <test-group name="records">
-    &RecordsQueries;
-  </test-group>
-  <test-group name="deep-equal">
-    &DeepEqualQueries;
+      <test-case FilePath="records">
+      <compilation-unit name="closed-nullable-fields_issue1616">
+        <output-dir compare="Text">closed-nullable-fields_issue1616</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="scan">
     <test-case FilePath="scan">
@@ -6560,6 +6603,11 @@
         <output-dir compare="Text">adm_binary</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="load">
+      <compilation-unit name="utf8">
+        <output-dir compare="Text">utf8</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="hints">
     <test-case FilePath="hints">
@@ -6875,6 +6923,11 @@
     </test-case>
   </test-group>
   <test-group name="types">
+    <test-case FilePath="types">
+      <compilation-unit name="any-object">
+        <output-dir compare="Text">any-object</output-dir>
+      </compilation-unit>
+    </test-case>
     <test-case FilePath="types">
       <compilation-unit name="record01">
         <output-dir compare="Text">record01</output-dir>

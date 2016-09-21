@@ -30,7 +30,6 @@ import java.util.Set;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
-import org.apache.asterix.common.config.MetadataConstants;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Expression;
@@ -61,12 +60,43 @@ import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnaryExpr;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.VariableExpr;
-import org.apache.asterix.lang.common.statement.*;
+import org.apache.asterix.lang.common.statement.CompactStatement;
+import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
+import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
+import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
+import org.apache.asterix.lang.common.statement.CreateIndexStatement;
+import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
+import org.apache.asterix.lang.common.statement.DatasetDecl;
+import org.apache.asterix.lang.common.statement.DataverseDecl;
+import org.apache.asterix.lang.common.statement.DataverseDropStatement;
+import org.apache.asterix.lang.common.statement.DeleteStatement;
+import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
+import org.apache.asterix.lang.common.statement.DropDatasetStatement;
+import org.apache.asterix.lang.common.statement.ExternalDetailsDecl;
+import org.apache.asterix.lang.common.statement.FeedDropStatement;
+import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
+import org.apache.asterix.lang.common.statement.FunctionDecl;
+import org.apache.asterix.lang.common.statement.FunctionDropStatement;
+import org.apache.asterix.lang.common.statement.IndexDropStatement;
+import org.apache.asterix.lang.common.statement.InsertStatement;
+import org.apache.asterix.lang.common.statement.InternalDetailsDecl;
+import org.apache.asterix.lang.common.statement.LoadStatement;
+import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
+import org.apache.asterix.lang.common.statement.NodegroupDecl;
+import org.apache.asterix.lang.common.statement.Query;
+import org.apache.asterix.lang.common.statement.SetStatement;
+import org.apache.asterix.lang.common.statement.TypeDecl;
+import org.apache.asterix.lang.common.statement.TypeDropStatement;
+import org.apache.asterix.lang.common.statement.UpdateStatement;
+import org.apache.asterix.lang.common.statement.WriteStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.struct.OperatorType;
 import org.apache.asterix.lang.common.struct.QuantifiedPair;
 import org.apache.asterix.lang.common.struct.UnaryExprType;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
+import org.apache.asterix.metadata.utils.MetadataConstants;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionAnnotation;
 
@@ -385,7 +415,11 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
 
     @Override
     public Void visit(TypeReferenceExpression t, Integer arg) throws AsterixException {
-        out.print(normalize(t.getIdent().getValue()));
+        if (t.getIdent().first != null && t.getIdent().first.getValue() != null) {
+            out.print(normalize(t.getIdent().first.getValue()));
+            out.print('.');
+        }
+        out.print(normalize(t.getIdent().second.getValue()));
         return null;
     }
 
@@ -537,7 +571,7 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
     }
 
     @Override
-    public Void visit(DropStatement del, Integer step) throws AsterixException {
+    public Void visit(DropDatasetStatement del, Integer step) throws AsterixException {
         out.println(
                 skip(step) + "drop " + datasetSymbol + generateFullName(del.getDataverseName(), del.getDatasetName())
                         + generateIfExists(del.getIfExists()) + SEMICOLON);

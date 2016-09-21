@@ -48,7 +48,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws ACIDException
      * @throws RemoteException
      */
-    public void beginTransaction(JobId jobId) throws ACIDException, RemoteException;
+    void beginTransaction(JobId jobId) throws ACIDException, RemoteException;
 
     /**
      * Commits a local transaction against the metadata.
@@ -56,7 +56,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws ACIDException
      * @throws RemoteException
      */
-    public void commitTransaction(JobId jobId) throws ACIDException, RemoteException;
+    void commitTransaction(JobId jobId) throws ACIDException, RemoteException;
 
     /**
      * Aborts a local transaction against the metadata.
@@ -64,7 +64,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws ACIDException
      * @throws RemoteException
      */
-    public void abortTransaction(JobId jobId) throws ACIDException, RemoteException;
+    void abortTransaction(JobId jobId) throws ACIDException, RemoteException;
 
     /**
      * Locally locks the entire metadata in given mode on behalf of given
@@ -73,7 +73,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws ACIDException
      * @throws RemoteException
      */
-    public void lock(JobId jobId, byte lockMode) throws ACIDException, RemoteException;
+    void lock(JobId jobId, byte lockMode) throws ACIDException, RemoteException;
 
     /**
      * Releases all local locks of given transaction id.
@@ -81,7 +81,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws ACIDException
      * @throws RemoteException
      */
-    public void unlock(JobId jobId, byte lockMode) throws ACIDException, RemoteException;
+    void unlock(JobId jobId, byte lockMode) throws ACIDException, RemoteException;
 
     /**
      * Inserts a new dataverse into the metadata, acquiring local locks on
@@ -92,7 +92,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataverse already exists.
      * @throws RemoteException
      */
-    public void addDataverse(JobId jobId, Dataverse dataverse) throws MetadataException, RemoteException;
+    void addDataverse(JobId jobId, Dataverse dataverse) throws MetadataException, RemoteException;
 
     /**
      * Retrieves all dataverses, acquiring local locks on behalf of
@@ -103,7 +103,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataverse does not exist.
      * @throws RemoteException
      */
-    public List<Dataverse> getDataverses(JobId jobId) throws MetadataException, RemoteException;
+    List<Dataverse> getDataverses(JobId jobId) throws MetadataException, RemoteException;
 
     /**
      * Retrieves a dataverse with given name, acquiring local locks on behalf of
@@ -115,7 +115,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataverse does not exist.
      * @throws RemoteException
      */
-    public Dataverse getDataverse(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
+    Dataverse getDataverse(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * Retrieves all datasets belonging to the given dataverse, acquiring local
@@ -126,8 +126,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @return A list of dataset instances.
      * @throws MetadataException For example, if the dataverse does not exist. RemoteException
      */
-    public List<Dataset> getDataverseDatasets(JobId jobId, String dataverseName)
-            throws MetadataException, RemoteException;
+    List<Dataset> getDataverseDatasets(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * Deletes the dataverse with given name, and all it's associated datasets,
@@ -139,7 +138,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataverse does not exist.
      * @throws RemoteException
      */
-    public void dropDataverse(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
+    void dropDataverse(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * Inserts a new dataset into the metadata, acquiring local locks on behalf
@@ -150,7 +149,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataset already exists.
      * @throws RemoteException
      */
-    public void addDataset(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
+    void addDataset(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
 
     /**
      * Retrieves a dataset within a given dataverse, acquiring local locks on
@@ -163,8 +162,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataset does not exist.
      * @throws RemoteException
      */
-    public Dataset getDataset(JobId jobId, String dataverseName, String datasetName)
-            throws MetadataException, RemoteException;
+    Dataset getDataset(JobId jobId, String dataverseName, String datasetName) throws MetadataException, RemoteException;
 
     /**
      * Retrieves all indexes of a dataset, acquiring local locks on behalf of
@@ -177,7 +175,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataset and/or dataverse does not exist.
      * @throws RemoteException
      */
-    public List<Index> getDatasetIndexes(JobId jobId, String dataverseName, String datasetName)
+    List<Index> getDatasetIndexes(JobId jobId, String dataverseName, String datasetName)
             throws MetadataException, RemoteException;
 
     /**
@@ -190,8 +188,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataset and/or dataverse does not exist.
      * @throws RemoteException
      */
-    public void dropDataset(JobId jobId, String dataverseName, String datasetName)
-            throws MetadataException, RemoteException;
+    void dropDataset(JobId jobId, String dataverseName, String datasetName) throws MetadataException, RemoteException;
 
     /**
      * Inserts an index into the metadata, acquiring local locks on behalf of
@@ -203,7 +200,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the index already exists.
      * @throws RemoteException
      */
-    public void addIndex(JobId jobId, Index index) throws MetadataException, RemoteException;
+    void addIndex(JobId jobId, Index index) throws MetadataException, RemoteException;
 
     /**
      * Retrieves the index with given name, in given dataverse and dataset,
@@ -217,7 +214,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws RemoteException
      * @indexName Name of the index to retrieve.
      */
-    public Index getIndex(JobId jobId, String dataverseName, String datasetName, String indexName)
+    Index getIndex(JobId jobId, String dataverseName, String datasetName, String indexName)
             throws MetadataException, RemoteException;
 
     /**
@@ -231,7 +228,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws RemoteException
      * @indexName Name of the index to retrieve.
      */
-    public void dropIndex(JobId jobId, String dataverseName, String datasetName, String indexName)
+    void dropIndex(JobId jobId, String dataverseName, String datasetName, String indexName)
             throws MetadataException, RemoteException;
 
     /**
@@ -243,7 +240,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the datatype already exists.
      * @throws RemoteException
      */
-    public void addDatatype(JobId jobId, Datatype datatype) throws MetadataException, RemoteException;
+    void addDatatype(JobId jobId, Datatype datatype) throws MetadataException, RemoteException;
 
     /**
      * Retrieves the datatype with given name in given dataverse, acquiring
@@ -256,7 +253,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the datatype does not exist.
      * @throws RemoteException
      */
-    public Datatype getDatatype(JobId jobId, String dataverseName, String datatypeName)
+    Datatype getDatatype(JobId jobId, String dataverseName, String datatypeName)
             throws MetadataException, RemoteException;
 
     /**
@@ -270,8 +267,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                           deleted.
      * @throws RemoteException
      */
-    public void dropDatatype(JobId jobId, String dataverseName, String datatypeName)
-            throws MetadataException, RemoteException;
+    void dropDatatype(JobId jobId, String dataverseName, String datatypeName) throws MetadataException, RemoteException;
 
     /**
      * Inserts a node group, acquiring local locks on behalf of the given
@@ -282,7 +278,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the node group already exists.
      * @throws RemoteException
      */
-    public void addNodeGroup(JobId jobId, NodeGroup nodeGroup) throws MetadataException, RemoteException;
+    void addNodeGroup(JobId jobId, NodeGroup nodeGroup) throws MetadataException, RemoteException;
 
     /**
      * Retrieves a node group, acquiring local locks on behalf of the given
@@ -293,7 +289,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the node group does not exist.
      * @throws RemoteException
      */
-    public NodeGroup getNodeGroup(JobId jobId, String nodeGroupName) throws MetadataException, RemoteException;
+    NodeGroup getNodeGroup(JobId jobId, String nodeGroupName) throws MetadataException, RemoteException;
 
     /**
      * Deletes a node group, acquiring local locks on behalf of the given
@@ -305,7 +301,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                           group to be deleted.
      * @throws RemoteException
      */
-    public void dropNodegroup(JobId jobId, String nodeGroupName) throws MetadataException, RemoteException;
+    void dropNodegroup(JobId jobId, String nodeGroupName) throws MetadataException, RemoteException;
 
     /**
      * Inserts a node (compute node), acquiring local locks on behalf of the
@@ -316,7 +312,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the node already exists.
      * @throws RemoteException
      */
-    public void addNode(JobId jobId, Node node) throws MetadataException, RemoteException;
+    void addNode(JobId jobId, Node node) throws MetadataException, RemoteException;
 
     /**
      * @param jobId             A globally unique id for an active metadata transaction.
@@ -325,8 +321,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public Function getFunction(JobId jobId, FunctionSignature functionSignature)
-            throws MetadataException, RemoteException;
+    Function getFunction(JobId jobId, FunctionSignature functionSignature) throws MetadataException, RemoteException;
 
     /**
      * Deletes a function, acquiring local locks on behalf of the given
@@ -338,8 +333,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                           group to be deleted.
      * @throws RemoteException
      */
-    public void dropFunction(JobId jobId, FunctionSignature functionSignature)
-            throws MetadataException, RemoteException;
+    void dropFunction(JobId jobId, FunctionSignature functionSignature) throws MetadataException, RemoteException;
 
     /**
      * @param jobId    A globally unique id for an active metadata transaction.
@@ -348,7 +342,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                           unknown function
      * @throws RemoteException
      */
-    public void addFunction(JobId jobId, Function function) throws MetadataException, RemoteException;
+    void addFunction(JobId jobId, Function function) throws MetadataException, RemoteException;
 
     /**
      * @param ctx
@@ -357,8 +351,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<Function> getDataverseFunctions(JobId jobId, String dataverseName)
-            throws MetadataException, RemoteException;
+    List<Function> getDataverseFunctions(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * @param ctx
@@ -367,7 +360,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<DatasourceAdapter> getDataverseAdapters(JobId jobId, String dataverseName)
+    List<DatasourceAdapter> getDataverseAdapters(JobId jobId, String dataverseName)
             throws MetadataException, RemoteException;
 
     /**
@@ -378,7 +371,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public DatasourceAdapter getAdapter(JobId jobId, String dataverseName, String adapterName)
+    DatasourceAdapter getAdapter(JobId jobId, String dataverseName, String adapterName)
             throws MetadataException, RemoteException;
 
     /**
@@ -391,8 +384,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                      if the adapter does not exists.
      * @throws RemoteException
      */
-    public void dropAdapter(JobId jobId, String dataverseName, String adapterName)
-            throws MetadataException, RemoteException;
+    void dropAdapter(JobId jobId, String dataverseName, String adapterName) throws MetadataException, RemoteException;
 
     /**
      * @param jobId   A globally unique id for an active metadata transaction.
@@ -400,7 +392,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException for example, if the adapter already exists.
      * @throws RemoteException
      */
-    public void addAdapter(JobId jobId, DatasourceAdapter adapter) throws MetadataException, RemoteException;
+    void addAdapter(JobId jobId, DatasourceAdapter adapter) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -408,8 +400,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public void addCompactionPolicy(JobId jobId, CompactionPolicy compactionPolicy)
-            throws MetadataException, RemoteException;
+    void addCompactionPolicy(JobId jobId, CompactionPolicy compactionPolicy) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -419,7 +410,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public CompactionPolicy getCompactionPolicy(JobId jobId, String dataverse, String policy)
+    CompactionPolicy getCompactionPolicy(JobId jobId, String dataverse, String policy)
             throws MetadataException, RemoteException;
 
     /**
@@ -427,14 +418,14 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public void initializeDatasetIdFactory(JobId jobId) throws MetadataException, RemoteException;
+    void initializeDatasetIdFactory(JobId jobId) throws MetadataException, RemoteException;
 
     /**
      * @return
      * @throws MetadataException
      * @throws RemoteException
      */
-    public int getMostRecentDatasetId() throws MetadataException, RemoteException;
+    int getMostRecentDatasetId() throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -442,7 +433,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public void addFeed(JobId jobId, Feed feed) throws MetadataException, RemoteException;
+    void addFeed(JobId jobId, Feed feed) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -452,7 +443,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public Feed getFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException;
+    Feed getFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -461,7 +452,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public void dropFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException;
+    void dropFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -469,7 +460,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public void addFeedPolicy(JobId jobId, FeedPolicyEntity feedPolicy) throws MetadataException, RemoteException;
+    void addFeedPolicy(JobId jobId, FeedPolicyEntity feedPolicy) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -479,7 +470,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public FeedPolicyEntity getFeedPolicy(JobId jobId, String dataverse, String policy)
+    FeedPolicyEntity getFeedPolicy(JobId jobId, String dataverse, String policy)
             throws MetadataException, RemoteException;
 
     /**
@@ -492,8 +483,7 @@ public interface IMetadataNode extends Remote, Serializable {
      *                      if the library does not exists.
      * @throws RemoteException
      */
-    public void dropLibrary(JobId jobId, String dataverseName, String libraryName)
-            throws MetadataException, RemoteException;
+    void dropLibrary(JobId jobId, String dataverseName, String libraryName) throws MetadataException, RemoteException;
 
     /**
      * Adds a library, acquiring local locks on behalf of the given
@@ -504,7 +494,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException for example, if the library is already added.
      * @throws RemoteException
      */
-    public void addLibrary(JobId jobId, Library library) throws MetadataException, RemoteException;
+    void addLibrary(JobId jobId, Library library) throws MetadataException, RemoteException;
 
     /**
      * @param txnId         A globally unique id for an active metadata transaction.
@@ -514,8 +504,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public Library getLibrary(JobId jobId, String dataverseName, String libraryName)
-            throws MetadataException, RemoteException;
+    Library getLibrary(JobId jobId, String dataverseName, String libraryName) throws MetadataException, RemoteException;
 
     /**
      * Retireve libraries installed in a given dataverse.
@@ -526,8 +515,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<Library> getDataverseLibraries(JobId jobId, String dataverseName)
-            throws MetadataException, RemoteException;
+    List<Library> getDataverseLibraries(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -536,7 +524,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<Feed> getDataverseFeeds(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
+    List<Feed> getDataverseFeeds(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
 
     /**
      * delete a give feed (ingestion) policy
@@ -548,8 +536,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws RemoteException
      * @throws MetadataException
      */
-    public void dropFeedPolicy(JobId jobId, String dataverseName, String policyName)
-            throws MetadataException, RemoteException;
+    void dropFeedPolicy(JobId jobId, String dataverseName, String policyName) throws MetadataException, RemoteException;
 
     /**
      * @param jobId
@@ -558,7 +545,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<FeedPolicyEntity> getDataversePolicies(JobId jobId, String dataverse)
+    List<FeedPolicyEntity> getDataversePolicies(JobId jobId, String dataverse)
             throws MetadataException, RemoteException;
 
     /**
@@ -567,7 +554,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException for example, if the file already exists.
      * @throws RemoteException
      */
-    public void addExternalFile(JobId jobId, ExternalFile externalFile) throws MetadataException, RemoteException;
+    void addExternalFile(JobId jobId, ExternalFile externalFile) throws MetadataException, RemoteException;
 
     /**
      * @param jobId   A globally unique id for an active metadata transaction.
@@ -575,7 +562,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException
      * @throws RemoteException
      */
-    public List<ExternalFile> getExternalFiles(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
+    List<ExternalFile> getExternalFiles(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
 
     /**
      * Deletes an externalFile , acquiring local locks on behalf of the given
@@ -587,7 +574,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @param fileNumber    the id number for the file to be deleted
      * @throws RemoteException
      */
-    public void dropExternalFile(JobId jobId, String dataverseName, String datasetName, int fileNumber)
+    void dropExternalFile(JobId jobId, String dataverseName, String datasetName, int fileNumber)
             throws MetadataException, RemoteException;
 
     /**
@@ -598,7 +585,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @param dataset An external dataset the files belong to.
      * @throws RemoteException
      */
-    public void dropExternalFiles(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
+    void dropExternalFiles(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
 
     /**
      * Retrieves the file with given number, in given dataverse and dataset,
@@ -612,7 +599,7 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the index does not exist.
      * @throws RemoteException
      */
-    public ExternalFile getExternalFile(JobId jobId, String dataverseName, String datasetName, Integer fileNumber)
+    ExternalFile getExternalFile(JobId jobId, String dataverseName, String datasetName, Integer fileNumber)
             throws MetadataException, RemoteException;
 
     /**
@@ -624,7 +611,41 @@ public interface IMetadataNode extends Remote, Serializable {
      * @throws MetadataException For example, if the dataset already exists.
      * @throws RemoteException
      */
-    public void updateDataset(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
+    void updateDataset(JobId jobId, Dataset dataset) throws MetadataException, RemoteException;
+
+    /**
+     * Adds an extension entity under the ongoing transaction job id
+     *
+     * @param jobId
+     * @param entity
+     * @throws MetadataException
+     * @throws RemoteException
+     */
+    <T extends IExtensionMetadataEntity> void addEntity(JobId jobId, T entity)
+            throws MetadataException, RemoteException;
+
+    /**
+     * Deletes an extension entity under the ongoing transaction job id
+     *
+     * @param jobId
+     * @param entity
+     * @throws MetadataException
+     * @throws RemoteException
+     */
+    <T extends IExtensionMetadataEntity> void deleteEntity(JobId jobId, T entity)
+            throws MetadataException, RemoteException;
+
+    /**
+     * Gets a list of extension entities matching a search key under the ongoing transaction
+     *
+     * @param jobId
+     * @param searchKey
+     * @return
+     * @throws MetadataException
+     * @throws RemoteException
+     */
+    <T extends IExtensionMetadataEntity> List<T> getEntities(JobId jobId, IExtensionMetadataSearchKey searchKey)
+            throws MetadataException, RemoteException;
 
 
     public void addFeedConnection(JobId jobId, FeedConnection feedConnection) throws MetadataException;

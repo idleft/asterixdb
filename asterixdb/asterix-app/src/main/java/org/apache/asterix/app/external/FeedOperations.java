@@ -34,7 +34,7 @@ import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
 import org.apache.asterix.external.feed.message.EndFeedMessage;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.feed.watch.FeedConnectInfo;
+import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
 import org.apache.asterix.external.operators.FeedMessageOperatorDescriptor;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
@@ -42,7 +42,7 @@ import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.file.JobSpecificationUtils;
 import org.apache.asterix.metadata.declared.AqlMetadataProvider;
 import org.apache.asterix.metadata.entities.Feed;
-import org.apache.asterix.om.util.AsterixClusterProperties;
+import org.apache.asterix.runtime.util.ClusterStateManager;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
@@ -63,9 +63,9 @@ import org.apache.hyracks.dataflow.std.misc.NullSinkOperatorDescriptor;
 public class FeedOperations {
 
     /**
-     * Builds the job spec for ingesting a feed from its external source via the feed adaptor.
+     * Builds the job spec for ingesting a (primary) feed from its external source via the feed adaptor.
      *
-     * @param feed
+     * @param primaryFeed
      * @param metadataProvider
      * @return JobSpecification the Hyracks job specification for receiving data from external source
      * @throws Exception
@@ -95,7 +95,7 @@ public class FeedOperations {
      * its source.
      */
     public static Pair<JobSpecification, Boolean> buildDisconnectFeedJobSpec(AqlMetadataProvider metadataProvider,
-            EntityId feedId) throws AsterixException, AlgebricksException {
+            FeedConnectionId connectionId) throws AsterixException, AlgebricksException {
 
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
         IOperatorDescriptor feedMessenger;
@@ -104,10 +104,21 @@ public class FeedOperations {
         FeedRuntimeType sourceRuntimeType;
         try {
             FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
-                    .getActiveEntityListener(feedId);
-            FeedConnectInfo cInfo = listener.getFeedConnectJobInfo(feedId);
-            locations = cInfo.getCollectLocations();
-            sourceRuntimeType = FeedRuntimeType.INTAKE;
+                    .getActiveEntityListener(connectionId.getFeedId());
+            FeedConnectJobInfo cInfo = listener.getFeedConnectJobInfo(connectionId);
+            IFeedJoint sourceFeedJoint = cInfo.getSourceFeedJoint();
+            IFeedJoint computeFeedJoint = cInfo.getComputeFeedJoint();
+
+            boolean terminateIntakeJob = false;
+            boolean completeDisconnect = computeFeedJoint == null || computeFeedJoint.getReceivers().isEmpty();
+            if (completeDisconnect) {
+                sourceRuntimeType = FeedRuntimeType.INTAKE;
+                locations = cInfo.getCollectLocations();
+                terminateIntakeJob = sourceFeedJoint.getReceivers().size() == 1;
+            } else {
+                locations = cInfo.getComputeLocations();
+                sourceRuntimeType = FeedRuntimeType.COMPUTE;
+            }
 
             Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = buildDisconnectFeedMessengerRuntime(spec,
                     connectionId, locations, sourceRuntimeType, completeDisconnect, sourceFeedJoint.getOwnerFeedId());
@@ -139,7 +150,7 @@ public class FeedOperations {
     }
 
     private static Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> buildDisconnectFeedMessengerRuntime(
-            JobSpecification jobSpec, List<String> locations,
+            JobSpecification jobSpec, FeedConnectionId feedConenctionId, List<String> locations,
             FeedRuntimeType sourceFeedRuntimeType, boolean completeDisconnection, EntityId sourceFeedId)
             throws AlgebricksException {
         IActiveMessage feedMessage = new EndFeedMessage(feedConenctionId, sourceFeedRuntimeType, sourceFeedId,
@@ -149,7 +160,7 @@ public class FeedOperations {
 
     public static JobSpecification buildRemoveFeedStorageJob(Feed feed) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
-        AlgebricksAbsolutePartitionConstraint allCluster = AsterixClusterProperties.INSTANCE.getClusterLocations();
+        AlgebricksAbsolutePartitionConstraint allCluster = ClusterStateManager.INSTANCE.getClusterLocations();
         Set<String> nodes = new TreeSet<>();
         for (String node : allCluster.getLocations()) {
             nodes.add(node);

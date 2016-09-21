@@ -16,7 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
 package org.apache.asterix.lang.common.statement;
 
 import org.apache.asterix.common.exceptions.AsterixException;
@@ -59,20 +58,11 @@ public class CreateFeedStatement implements Statement {
         return this.ifNotExists;
     }
 
-    public String getAdaptorName() {
-        return adaptorName;
-    }
-
-    public Map<String, String> getAdaptorConfiguration() {
-        return adaptorConfiguration;
-    }
+    @Override
+    public abstract <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException;
 
     @Override
-    public byte getKind() {
-        return Kind.CREATE_FEED;
-    }
-
-    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
-        return visitor.visit(this, arg);
+    public byte getCategory() {
+        return Category.DDL;
     }
 }

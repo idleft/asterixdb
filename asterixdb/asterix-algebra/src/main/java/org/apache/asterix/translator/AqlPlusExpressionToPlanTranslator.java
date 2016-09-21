@@ -68,7 +68,35 @@ import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnaryExpr;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.VariableExpr;
-import org.apache.asterix.lang.common.statement.*;
+import org.apache.asterix.lang.common.statement.CompactStatement;
+import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
+import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
+import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
+import org.apache.asterix.lang.common.statement.CreateIndexStatement;
+import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
+import org.apache.asterix.lang.common.statement.DatasetDecl;
+import org.apache.asterix.lang.common.statement.DataverseDecl;
+import org.apache.asterix.lang.common.statement.DataverseDropStatement;
+import org.apache.asterix.lang.common.statement.DeleteStatement;
+import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
+import org.apache.asterix.lang.common.statement.DropDatasetStatement;
+import org.apache.asterix.lang.common.statement.FeedDropStatement;
+import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
+import org.apache.asterix.lang.common.statement.FunctionDecl;
+import org.apache.asterix.lang.common.statement.FunctionDropStatement;
+import org.apache.asterix.lang.common.statement.IndexDropStatement;
+import org.apache.asterix.lang.common.statement.InsertStatement;
+import org.apache.asterix.lang.common.statement.LoadStatement;
+import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
+import org.apache.asterix.lang.common.statement.NodegroupDecl;
+import org.apache.asterix.lang.common.statement.Query;
+import org.apache.asterix.lang.common.statement.SetStatement;
+import org.apache.asterix.lang.common.statement.TypeDecl;
+import org.apache.asterix.lang.common.statement.TypeDropStatement;
+import org.apache.asterix.lang.common.statement.UpdateStatement;
+import org.apache.asterix.lang.common.statement.WriteStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.struct.OperatorType;
 import org.apache.asterix.lang.common.struct.QuantifiedPair;
@@ -537,7 +565,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
             // the one bound by the aggregation op.
             context.setVar(entry.getValue(), aggVar);
         }
-
+        gOp.setGroupAll(gc.isGroupAll());
         gOp.getAnnotations().put(OperatorAnnotations.USE_HASH_GROUP_BY, gc.hasHashGroupByHint());
         return new Pair<ILogicalOperator, LogicalVariable>(gOp, null);
     }
@@ -1190,7 +1218,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(DropStatement del, Mutable<ILogicalOperator> arg)
+    public Pair<ILogicalOperator, LogicalVariable> visit(DropDatasetStatement del, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
         return null;
@@ -1427,11 +1455,6 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedStatement cfs, Mutable<ILogicalOperator> arg) throws AsterixException {
-        return null;
-    }
-
-    @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FeedDropStatement del, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
@@ -1446,6 +1469,20 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
+    public Pair<ILogicalOperator, LogicalVariable> visit(CreatePrimaryFeedStatement del, Mutable<ILogicalOperator> arg)
+            throws AsterixException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<ILogicalOperator, LogicalVariable> visit(CreateSecondaryFeedStatement del,
+            Mutable<ILogicalOperator> arg) throws AsterixException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedPolicyStatement cfps, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
@@ -1454,13 +1491,6 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FeedPolicyDropStatement dfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(StartFeedStatement del, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
         return null;

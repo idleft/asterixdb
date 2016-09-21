@@ -80,8 +80,8 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
             ingestionRuntime = new IngestionRuntime(feedId, runtimeId, frameDistributor, adapterRuntimeManager, ctx);
             feedManager.registerRuntime(ingestionRuntime);
             // Notify FeedJobNotificationHandler that this provider is ready to receive subscription requests.
-            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(feedId, ctx.getJobletContext().getJobId(), null),
-                    null);
+            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
+                    ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED), null);
             // open the distributor
             open = true;
             frameDistributor.open();

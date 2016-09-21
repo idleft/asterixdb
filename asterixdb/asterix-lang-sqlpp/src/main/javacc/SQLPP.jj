@@ -45,7 +45,6 @@ import org.apache.asterix.common.annotations.TypeDataGen;
 import org.apache.asterix.common.annotations.UndeclaredFieldsDataGen;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
-import org.apache.asterix.common.config.MetadataConstants;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Expression;
@@ -95,12 +94,14 @@ import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
+import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
 import org.apache.asterix.lang.common.statement.DeleteStatement;
 import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
-import org.apache.asterix.lang.common.statement.DropStatement;
+import org.apache.asterix.lang.common.statement.DropDatasetStatement;
 import org.apache.asterix.lang.common.statement.ExternalDetailsDecl;
 import org.apache.asterix.lang.common.statement.FeedDropStatement;
 import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
@@ -143,13 +144,12 @@ import org.apache.asterix.lang.sqlpp.struct.SetOperationInput;
 import org.apache.asterix.lang.sqlpp.struct.SetOperationRight;
 import org.apache.asterix.lang.sqlpp.util.ExpressionToVariableUtil;
 import org.apache.asterix.lang.sqlpp.util.SqlppVariableUtil;
+import org.apache.asterix.metadata.utils.MetadataConstants;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.common.utils.Triple;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionAnnotation;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IndexedNLJoinExpressionAnnotation;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
-
-
 
 class SQLPPParser extends ScopeChecker implements IParser {
 
@@ -176,6 +176,9 @@ class SQLPPParser extends ScopeChecker implements IParser {
 
     // data generator hints
     private static final String DGEN_HINT = "dgen";
+
+    // error configuration
+    protected static final boolean REPORT_EXPECTED_TOKENS = false;
 
     private static class IndexParams {
       public IndexType type;
@@ -249,7 +252,7 @@ class SQLPPParser extends ScopeChecker implements IParser {
       return rfdg;
     }
 
-    public SQLPPParser(String s){
+    public SQLPPParser(String s) {
         this(new StringReader(s));
         super.setInput(s);
     }
@@ -270,9 +273,47 @@ class SQLPPParser extends ScopeChecker implements IParser {
             // by the ANTLR-generated lexer or parser (e.g it does this for invalid backslash u + 4 hex digits escapes)
             throw new AsterixException(new ParseException(e.getMessage()));
         } catch (ParseException e) {
-            throw new AsterixException(e.getMessage());
+            throw new AsterixException("Syntax error: " + getMessage(e));
         }
     }
+
+    protected String getMessage(ParseException pe) {
+        Token currentToken = pe.currentToken;
+        if (currentToken == null) {
+            return pe.getMessage();
+        }
+        int[][] expectedTokenSequences = pe.expectedTokenSequences;
+        String[] tokenImage = pe.tokenImage;
+        String sep = REPORT_EXPECTED_TOKENS ? eol : " ";
+        StringBuilder expected = REPORT_EXPECTED_TOKENS ? new StringBuilder() : null;
+        int maxSize = appendExpected(expected, expectedTokenSequences, tokenImage);
+        Token tok = currentToken.next;
+        int line = tok.beginLine;
+        String message = "In line " + line + " >>" + getLine(line) + "<<" + sep + "Encountered ";
+        for (int i = 0; i < maxSize; i++) {
+            if (i != 0) {
+                message += " ";
+            }
+            if (tok.kind == 0) {
+                message += fixQuotes(tokenImage[0]);
+                break;
+            }
+            message += fixQuotes(tokenImage[tok.kind]) + " ";
+            message += quot + addEscapes(tok.image) + quot;
+            tok = tok.next;
+        }
+        message += " at column " + currentToken.next.beginColumn + "." + sep;
+        if (REPORT_EXPECTED_TOKENS) {
+            if (expectedTokenSequences.length == 1) {
+                message += "Was expecting:" + sep + "    ";
+            } else {
+                message += "Was expecting one of:" + sep + "    ";
+            }
+            message += expected.toString();
+        }
+        return message;
+    }
+
 }
 
 PARSER_END(SQLPPParser)
@@ -312,7 +353,7 @@ Statement SingleStatement() throws ParseException:
     | stmt = InsertStatement()
     | stmt = DeleteStatement()
     | stmt = UpdateStatement()
-    | stmt = FeedStatement()
+    | stmt = ConnectionStatement()
     | stmt = CompactStatement()
     | stmt = ExplainStatement()
     | stmt = Query(false) <SEMICOLON>
@@ -868,7 +909,7 @@ Statement DropStatement() throws ParseException:
   (
     Dataset() pairId = QualifiedName() ifExists = IfExists()
       {
-        stmt = new DropStatement(pairId.first, pairId.second, ifExists);
+        stmt = new DropDatasetStatement(pairId.first, pairId.second, ifExists);
       }
     | <INDEX> tripleId = DoubleQualifiedName() ifExists = IfExists()
       {
@@ -1095,7 +1136,7 @@ Statement CompactStatement() throws ParseException:
     }
 }
 
-Statement FeedStatement() throws ParseException:
+Statement ConnectionStatement() throws ParseException:
 {
   Pair<Identifier,Identifier> feedNameComponents = null;
   Pair<Identifier,Identifier> datasetNameComponents = null;
@@ -1106,18 +1147,54 @@ Statement FeedStatement() throws ParseException:
 }
 {
   (
-    <CONNECT> <FEED> feedNameComponents = QualifiedName() <TO> Dataset() datasetNameComponents = QualifiedName() (policy = GetPolicy())?
-      {
-        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
-      }
-    | <DISCONNECT> <FEED> feedNameComponents = QualifiedName() <FROM> Dataset() datasetNameComponents = QualifiedName()
+    <CONNECT> stmt = ConnectStatement()
+  | <DISCONNECT> stmt = DisconnectStatement()
+  )
+  {
+    return stmt;
+  }
+}
+
+Statement DisconnectStatement() throws ParseException:
+{
+  Pair<Identifier,Identifier> feedNameComponents = null;
+  Pair<Identifier,Identifier> datasetNameComponents = null;
+
+  Map<String,String> configuration = null;
+  Statement stmt = null;
+  String policy = null;
+}
+{
+  (
+    <FEED> feedNameComponents = QualifiedName() <FROM> Dataset() datasetNameComponents = QualifiedName()
       {
         stmt = new DisconnectFeedStatement(feedNameComponents, datasetNameComponents);
       }
   )
-    {
-      return stmt;
-    }
+  {
+    return stmt;
+  }
+}
+
+Statement ConnectStatement() throws ParseException:
+{
+  Pair<Identifier,Identifier> feedNameComponents = null;
+  Pair<Identifier,Identifier> datasetNameComponents = null;
+
+  Map<String,String> configuration = null;
+  Statement stmt = null;
+  String policy = null;
+}
+{
+  (
+    <FEED> feedNameComponents = QualifiedName() <TO> Dataset() datasetNameComponents = QualifiedName() (policy = GetPolicy())?
+      {
+        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
+      }
+  )
+  {
+    return stmt;
+  }
 }
 
 Map<String,String> Configuration()  throws ParseException :
@@ -1286,16 +1363,16 @@ void RecordField(RecordTypeDefinition recType) throws ParseException:
 
 TypeReferenceExpression TypeReference() throws ParseException:
 {
-  String id = null;
+  Pair<Identifier,Identifier> id = null;
 }
 {
- id = Identifier()
+ id = QualifiedName()
    {
-     if (id.equalsIgnoreCase("int")) {
-        id = "int64";
+     if (id.first == null && id.second.getValue().equalsIgnoreCase("int")) {
+        id.second.setValue("int64");
      }
 
-     return new TypeReferenceExpression(new Identifier(id));
+     return new TypeReferenceExpression(id);
    }
 }
 
@@ -1416,7 +1493,7 @@ Pair<Integer, Pair<List<String>, TypeExpression>> OpenField() throws ParseExcept
 }
 {
   fieldList = NestedField()
-  ( <COLON> fieldType =  IndexedTypeExpr() )?
+  ( <COLON> fieldType =  IndexedTypeExpr() <QUES>)?
   {
     return new Pair<Integer, Pair<List<String>, TypeExpression>>
           (fieldList.first, new Pair<List<String>, TypeExpression>(fieldList.second, fieldType));
@@ -1712,7 +1789,7 @@ Expression RelExpr()throws ParseException:
   IExpressionAnnotation annotation = null;
 }
 {
-    operand = IsExpr()
+    operand = BetweenExpr()
     {
       if (operand instanceof VariableExpr) {
         String hint = getHint(token);
@@ -1723,7 +1800,7 @@ Expression RelExpr()throws ParseException:
     }
 
     (
-      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> |<SIMILAR> | (<NOT> { not = true; })? (<LIKE>|<IN>))
+      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> | <LG> |<SIMILAR> | (<NOT> { not = true; })? (<LIKE>|<IN>))
         {
           String mhint = getHint(token);
           if (mhint != null) {
@@ -1734,7 +1811,10 @@ Expression RelExpr()throws ParseException:
             }
           }
           String operator = token.image.toLowerCase();
-          if(not){
+          if (operator.equals("<>")){
+              operator = "!=";
+          }
+          if (not) {
             operator = "not_" + operator;
           }
           if (op == null) {
@@ -1750,7 +1830,7 @@ Expression RelExpr()throws ParseException:
           }
         }
 
-       operand = IsExpr()
+       operand = BetweenExpr()
       {
          broadcast = false;
          if (operand instanceof VariableExpr) {
@@ -1771,6 +1851,63 @@ Expression RelExpr()throws ParseException:
      }
 }
 
+Expression BetweenExpr()throws ParseException:
+{
+  boolean not = false;
+  OperatorExpr op = null;
+  Expression operand = null;
+  IExpressionAnnotation annotation = null;
+}
+{
+    operand = IsExpr()
+    (
+      LOOKAHEAD(2)
+      (<NOT> { not = true; })? <BETWEEN>
+        {
+          String mhint = getHint(token);
+          if (mhint != null) {
+            if (mhint.equals(INDEXED_NESTED_LOOP_JOIN_HINT)) {
+                annotation = IndexedNLJoinExpressionAnnotation.INSTANCE;
+            } else if (mhint.equals(SKIP_SECONDARY_INDEX_SEARCH_HINT)) {
+                annotation = SkipSecondaryIndexSearchExpressionAnnotation.INSTANCE;
+            }
+          }
+          String operator = token.image.toLowerCase();
+          if(not){
+            operator = "not_" + operator;
+          }
+          if (op == null) {
+            op = new OperatorExpr();
+            op.addOperand(operand);
+            op.setCurrentop(true);
+          }
+          try{
+            op.addOperator(operator);
+          } catch (AsterixException e){
+            throw new ParseException(e.getMessage());
+          }
+        }
+
+       operand = IsExpr()
+       {
+         op.addOperand(operand);
+       }
+
+       <AND>
+       operand = IsExpr()
+       {
+         op.addOperand(operand);
+       }
+    )?
+
+    {
+       if (annotation != null) {
+         op.addHint(annotation);
+       }
+       return op==null? operand: op;
+    }
+}
+
 Expression IsExpr() throws ParseException:
 {
     Expression expr = null;
@@ -1778,7 +1915,7 @@ Expression IsExpr() throws ParseException:
     boolean not = false;
 }
 {
-    operand = AddExpr()
+    operand = ConcatExpr()
     ( <IS> (<NOT> { not = true; })? (<NULL> | <MISSING> | <UNKOWN>)
       {
         String functionName = "is-" + token.image.toLowerCase();
@@ -1795,6 +1932,38 @@ Expression IsExpr() throws ParseException:
     }
 }
 
+Expression ConcatExpr()throws ParseException:
+{
+  OperatorExpr op = null;
+  Expression operand = null;
+}
+{
+    operand = AddExpr()
+    (
+      LOOKAHEAD(1)
+      (<CONCAT>)
+      {
+        if (op == null) {
+          op = new OperatorExpr();
+          op.addOperand(operand);
+          op.setCurrentop(true);
+        }
+        try{
+            ((OperatorExpr)op).addOperator(token.image);
+        } catch (Exception e){
+            throw new ParseException(e.getMessage());
+        }
+    }
+    operand = AddExpr()
+    {
+      op.addOperand(operand);
+    }
+    )*
+
+    {
+       return op==null? operand: op;
+    }
+}
 
 Expression AddExpr()throws ParseException:
 {
@@ -1804,7 +1973,7 @@ Expression AddExpr()throws ParseException:
 {
     operand = MultExpr()
     (
-       LOOKAHEAD(1)
+      LOOKAHEAD(1)
       (<PLUS> | <MINUS>)
       {
         if (op == null) {
@@ -2200,19 +2369,27 @@ Expression FunctionCallExpr() throws ParseException:
 {
   CallExpr callExpr;
   List<Expression> argList = new ArrayList<Expression>();
-  Expression tmp;
+  Expression tmp = null;
   int arity = 0;
   FunctionName funcName = null;
   String hint = null;
+  boolean star = false;
 }
 {
   funcName = FunctionName()
     {
       hint = funcName.hint;
     }
-  <LEFTPAREN> (tmp = Expression()
+  <LEFTPAREN> ( ( tmp = Expression() | <MUL> { star = true; } )
     {
-      argList.add(tmp);
+      if(star){
+        if(!funcName.function.toLowerCase().equals("count")){
+           throw new ParseException("The parameter * can only be used in COUNT().");
+        }
+        argList.add(new LiteralExpr(new LongIntegerLiteral(1L)));
+      } else {
+         argList.add(tmp);
+      }
       arity ++;
     }
   (<COMMA> tmp = Expression()
@@ -2264,7 +2441,7 @@ Expression CaseExpr() throws ParseException:
    List<Expression> whenExprs = new ArrayList<Expression>();
    List<Expression> thenExprs = new ArrayList<Expression>();
    Expression elseExpr = null;
-   
+
    Expression whenExpr = null;
    Expression thenExpr = null;
 }
@@ -2287,13 +2464,15 @@ Expression CaseExpr() throws ParseException:
    }
 }
 
-SelectExpression SelectExpression(boolean subquery) throws ParseException: {
+SelectExpression SelectExpression(boolean subquery) throws ParseException:
+{
   List<LetClause> letClauses = new ArrayList<LetClause>();
   SelectSetOperation selectSetOperation;
   OrderbyClause orderbyClause = null;
   LimitClause limitClause = null;
   createNewScope();
-} {
+}
+{
     ( letClauses = LetClause() )?
     selectSetOperation = SelectSetOperation()
     (orderbyClause = OrderbyClause() {})?
@@ -2303,7 +2482,8 @@ SelectExpression SelectExpression(boolean subquery) throws ParseException: {
     }
 }
 
-SelectSetOperation SelectSetOperation() throws ParseException: {
+SelectSetOperation SelectSetOperation() throws ParseException:
+{
   SetOperationInput setOperationInputLeft;
   List<SetOperationRight> setOperationRights = new ArrayList<SetOperationRight>();
 }
@@ -2335,7 +2515,8 @@ SelectSetOperation SelectSetOperation() throws ParseException: {
   }
 }
 
-SelectExpression Subquery() throws ParseException: {
+SelectExpression Subquery() throws ParseException:
+{
    SelectExpression selectExpr = null;
 }
 {
@@ -2345,7 +2526,8 @@ SelectExpression Subquery() throws ParseException: {
   }
 }
 
-SelectBlock SelectBlock() throws ParseException: {
+SelectBlock SelectBlock() throws ParseException:
+{
   SelectClause selectClause = null;
   FromClause fromClause = null;
   List<LetClause> fromLetClauses = null;
@@ -2395,7 +2577,8 @@ SelectBlock SelectBlock() throws ParseException: {
   }
 }
 
-SelectClause SelectClause() throws ParseException: {
+SelectClause SelectClause() throws ParseException:
+{
   SelectRegular selectRegular = null;
   SelectElement selectElement = null;
   boolean distinct = false;
@@ -2418,7 +2601,8 @@ SelectClause SelectClause() throws ParseException: {
   }
 }
 
-SelectRegular SelectRegular() throws ParseException: {
+SelectRegular SelectRegular() throws ParseException:
+{
   List<Projection> projections = new ArrayList<Projection>();
 }
 {
@@ -2434,7 +2618,8 @@ SelectRegular SelectRegular() throws ParseException: {
   }
 }
 
-SelectElement SelectElement() throws ParseException: {
+SelectElement SelectElement() throws ParseException:
+{
   Expression expr = null;
   String name = null;
 }
@@ -2445,7 +2630,8 @@ SelectElement SelectElement() throws ParseException: {
   }
 }
 
-Projection Projection() throws ParseException: {
+Projection Projection() throws ParseException :
+{
   Expression expr = null;
   Identifier identifier = null;
   String name = null;
@@ -2767,7 +2953,7 @@ QuantifiedExpression QuantifiedExpression()throws ParseException:
     createNewScope();
   }
 
-   (      (<SOME>  {  qc.setQuantifier(QuantifiedExpression.Quantifier.SOME);    })
+   (      ((<ANY>|<SOME>)  {  qc.setQuantifier(QuantifiedExpression.Quantifier.SOME);    })
         | (<EVERY> {  qc.setQuantifier(QuantifiedExpression.Quantifier.EVERY);    }))
     var = Variable() <IN> inExpr = Expression()
     {
@@ -2849,6 +3035,7 @@ TOKEN [IGNORE_CASE]:
 {
   <ALL : "all">
   | <AND : "and">
+  | <ANY : "any">
   | <APPLY : "apply">
   | <AS : "as">
   | <ASC : "asc">
@@ -2958,6 +3145,7 @@ TOKEN [IGNORE_CASE]:
 TOKEN :
 {
     <CARET : "^">
+  | <CONCAT : "||">
   | <DIV : "/">
   | <IDIV : "idiv">
   | <MINUS : "-">
@@ -2984,6 +3172,7 @@ TOKEN :
   | <GE : ">=">
   | <EQ : "=">
   | <NE : "!=">
+  | <LG : "<>">
   | <SIMILAR : "~=">
 }
 
@@ -3123,6 +3312,32 @@ SKIP:
 SKIP:
 {
     <"//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")?>
+}
+
+<DEFAULT,IN_DBL_BRACE>
+SKIP:
+{
+    <"--" (~["\n"])* "\n">
+}
+
+
+<DEFAULT,IN_DBL_BRACE>
+SKIP:
+{
+    <"--" (~["\n","\r"])* ("\n"|"\r"|"\r\n")?>
+}
+
+<DEFAULT,IN_DBL_BRACE>
+SKIP:
+{
+    <"#" (~["\n"])* "\n">
+}
+
+
+<DEFAULT,IN_DBL_BRACE>
+SKIP:
+{
+    <"#" (~["\n","\r"])* ("\n"|"\r"|"\r\n")?>
 }
 
 <DEFAULT,IN_DBL_BRACE>

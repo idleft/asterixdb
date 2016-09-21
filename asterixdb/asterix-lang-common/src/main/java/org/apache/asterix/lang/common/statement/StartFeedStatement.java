@@ -29,16 +29,14 @@ public class StartFeedStatement implements Statement{
 
     private Identifier dataverseName;
     private Identifier feedName;
-    private Byte stmtType;
 
     public StartFeedStatement(Pair<Identifier, Identifier> feedNameComp){
         dataverseName = feedNameComp.first;
         feedName = feedNameComp.second;
-        this.stmtType = Kind.START_FEED;
     }
 
     @Override public byte getKind() {
-        return stmtType;
+        return Kind.START_FEED;
     }
 
     @Override public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {

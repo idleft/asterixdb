@@ -171,7 +171,7 @@ public class ExternalDataConstants {
     public static final String ALIAS_SOCKET_ADAPTER = "socket_adapter";
     public static final String ALIAS_TWITTER_FIREHOSE_ADAPTER = "twitter_firehose";
     public static final String ALIAS_SOCKET_CLIENT_ADAPTER = "socket_client";
-    public static final String ALIAS_RSS_ADAPTER = "rss_feed";
+    public static final String ALIAS_RSS_ADAPTER = "rss";
     public static final String ALIAS_FILE_FEED_ADAPTER = "file_feed";
     public static final String ALIAS_TWITTER_PUSH_ADAPTER = "push_twitter";
     public static final String ALIAS_TWITTER_PULL_ADAPTER = "pull_twitter";

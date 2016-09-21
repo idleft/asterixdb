@@ -28,13 +28,13 @@ import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.util.FeedUtils.JobType;
-import org.apache.avro.generic.GenericData;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 
-public class FeedConnectInfo extends ActiveJob {
+public class FeedConnectJobInfo extends ActiveJob {
 
     private static final long serialVersionUID = 1L;
+    private final FeedConnectionId connectionId;
     private final Map<String, String> feedPolicy;
 
     private List<String> collectLocations;

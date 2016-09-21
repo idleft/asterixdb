@@ -24,7 +24,31 @@ import org.apache.asterix.lang.common.expression.OrderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.RecordTypeDefinition;
 import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
-import org.apache.asterix.lang.common.statement.*;
+import org.apache.asterix.lang.common.statement.CompactStatement;
+import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
+import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
+import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
+import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
+import org.apache.asterix.lang.common.statement.CreateIndexStatement;
+import org.apache.asterix.lang.common.statement.DatasetDecl;
+import org.apache.asterix.lang.common.statement.DataverseDecl;
+import org.apache.asterix.lang.common.statement.DataverseDropStatement;
+import org.apache.asterix.lang.common.statement.DeleteStatement;
+import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
+import org.apache.asterix.lang.common.statement.DropDatasetStatement;
+import org.apache.asterix.lang.common.statement.FeedDropStatement;
+import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
+import org.apache.asterix.lang.common.statement.FunctionDropStatement;
+import org.apache.asterix.lang.common.statement.IndexDropStatement;
+import org.apache.asterix.lang.common.statement.InsertStatement;
+import org.apache.asterix.lang.common.statement.LoadStatement;
+import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
+import org.apache.asterix.lang.common.statement.NodegroupDecl;
+import org.apache.asterix.lang.common.statement.SetStatement;
+import org.apache.asterix.lang.common.statement.TypeDecl;
+import org.apache.asterix.lang.common.statement.TypeDropStatement;
+import org.apache.asterix.lang.common.statement.UpdateStatement;
+import org.apache.asterix.lang.common.statement.WriteStatement;
 
 public abstract class AbstractQueryExpressionVisitor<R, T> implements ILangVisitor<R, T> {
 
@@ -44,7 +68,7 @@ public abstract class AbstractQueryExpressionVisitor<R, T> implements ILangVisit
     }
 
     @Override
-    public R visit(DropStatement del, T arg) throws AsterixException {
+    public R visit(DropDatasetStatement del, T arg) throws AsterixException {
         return null;
     }
 

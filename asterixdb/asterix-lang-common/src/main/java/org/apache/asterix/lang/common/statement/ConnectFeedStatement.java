@@ -101,4 +101,9 @@ public class ConnectFeedStatement implements Statement {
     public ArrayList<String> getAppliedFunctions() {
         return appliedFunctions;
     }
+    @Override
+    public byte getCategory() {
+        return Category.UPDATE;
+    }
+
 }

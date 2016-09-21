@@ -24,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.asterix.common.config.AsterixPropertiesAccessor;
 import org.apache.asterix.common.config.GlobalConfig;
@@ -42,7 +44,7 @@ import org.apache.hyracks.control.common.controllers.NCConfig;
 import org.apache.hyracks.control.nc.NodeControllerService;
 
 public class AsterixHyracksIntegrationUtil {
-
+    private static final Logger LOGGER = Logger.getLogger(AsterixHyracksIntegrationUtil.class.getName());
     private static final String IO_DIR_KEY = "java.io.tmpdir";
     public static final int DEFAULT_HYRACKS_CC_CLIENT_PORT = 1098;
     public static final int DEFAULT_HYRACKS_CC_CLUSTER_PORT = 1099;
@@ -54,6 +56,7 @@ public class AsterixHyracksIntegrationUtil {
     private AsterixPropertiesAccessor propertiesAccessor;
 
     public void init(boolean deleteOldInstanceData) throws Exception {
+        ncs = new NodeControllerService[0]; // ensure that ncs is not null
         propertiesAccessor = new AsterixPropertiesAccessor();
         if (deleteOldInstanceData) {
             deleteTransactionLogs();
@@ -69,17 +72,18 @@ public class AsterixHyracksIntegrationUtil {
         for (String ncName : nodes) {
             NodeControllerService nodeControllerService = new NodeControllerService(createNCConfig(ncName));
             nodeControllers.add(nodeControllerService);
-            Thread ncStartThread = new Thread() {
+            Thread ncStartThread = new Thread("IntegrationUtil-" + ncName) {
                 @Override
                 public void run() {
                     try {
                         nodeControllerService.start();
                     } catch (Exception e) {
-                        e.printStackTrace();
+                        LOGGER.log(Level.SEVERE, e.getMessage(), e);
                     }
                 }
             };
             ncStartThread.start();
+            ncStartThread.join();
         }
         hcc = new HyracksConnection(cc.getConfig().clientNetIpAddress, cc.getConfig().clientNetPort);
         ncs = nodeControllers.toArray(new NodeControllerService[nodeControllers.size()]);
@@ -105,6 +109,7 @@ public class AsterixHyracksIntegrationUtil {
         ncConfig.clusterNetIPAddress = Inet4Address.getLoopbackAddress().getHostAddress();
         ncConfig.dataIPAddress = Inet4Address.getLoopbackAddress().getHostAddress();
         ncConfig.resultIPAddress = Inet4Address.getLoopbackAddress().getHostAddress();
+        ncConfig.messagingIPAddress = Inet4Address.getLoopbackAddress().getHostAddress();
         ncConfig.nodeId = ncName;
         ncConfig.resultTTL = 30000;
         ncConfig.resultSweepThreshold = 1000;
@@ -214,11 +219,16 @@ public class AsterixHyracksIntegrationUtil {
      */
     public static void main(String[] args) {
         AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
+        run(integrationUtil, Boolean.getBoolean("cleanup.start"), Boolean.getBoolean("cleanup.shutdown"));
+    }
+
+    protected static void run(final AsterixHyracksIntegrationUtil integrationUtil, boolean cleanupOnStart,
+            boolean cleanupOnShutdown) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
                 try {
-                    integrationUtil.deinit(false);
+                    integrationUtil.deinit(cleanupOnShutdown);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -227,7 +237,7 @@ public class AsterixHyracksIntegrationUtil {
         try {
             System.setProperty(GlobalConfig.CONFIG_FILE_PROPERTY, "asterix-build-configuration.xml");
 
-            integrationUtil.init(false);
+            integrationUtil.init(cleanupOnStart);
             while (true) {
                 Thread.sleep(10000);
             }

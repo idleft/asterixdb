@@ -32,6 +32,7 @@ import org.apache.asterix.lang.common.base.Clause;
 import org.apache.asterix.lang.common.base.Expression;
 import org.apache.asterix.lang.common.base.ILangExpression;
 import org.apache.asterix.lang.common.base.Expression.Kind;
+import org.apache.asterix.lang.common.base.ILangExpression;
 import org.apache.asterix.lang.common.expression.VariableExpr;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.metadata.declared.AqlMetadataProvider;

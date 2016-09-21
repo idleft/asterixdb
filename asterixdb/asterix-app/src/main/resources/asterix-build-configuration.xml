@@ -47,7 +47,7 @@
 
   <property>
     <name>log.level</name>
-    <value>WARNING</value>
+    <value>INFO</value>
     <description>Log level for running tests/build</description>
   </property>
   <property>
@@ -96,6 +96,18 @@
     <name>plot.activate</name>
     <value>false</value>
     <description>Enabling plot of Algebricks plan to tmp folder. (Default = false)
+    </description>
+  </property>
+  <property>
+    <name>messaging.frame.size</name>
+    <value>4096</value>
+    <description>The frame size to be used for NC to NC messaging. (Default = 4kb)
+    </description>
+  </property>
+  <property>
+    <name>messaging.frame.count</name>
+    <value>512</value>
+    <description>Number of reusable frames for NC to NC messaging. (Default = 512)
     </description>
   </property>
 </asterixConfiguration>

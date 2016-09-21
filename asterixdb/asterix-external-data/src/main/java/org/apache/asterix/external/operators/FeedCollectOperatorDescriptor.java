@@ -53,7 +53,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     private final Map<String, String> feedPolicyProperties;
 
     /** The source feed from which the feed derives its data from. **/
-    private final EntityId feedId;
+    private final EntityId sourceFeedId;
 
     /** The subscription location at which the recipient feed receives tuples from the source feed {SOURCE_FEED_INTAKE_STAGE , SOURCE_FEED_COMPUTE_STAGE} **/
     private final FeedRuntimeType subscriptionLocation;
@@ -68,7 +68,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         this.outputType = atype;
         this.targetDataset = targetDataset;
         this.feedPolicyProperties = feedPolicyProperties;
-        this.feedId = feedId;
+        this.sourceFeedId = feedId;
         this.subscriptionLocation = subscriptionLocation;
     }
 
@@ -95,8 +95,8 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         return recordDescriptors[0];
     }
 
-    public EntityId getFeedId() {
-        return feedId;
+    public EntityId getSourceFeedId() {
+        return sourceFeedId;
     }
 
     public FeedRuntimeType getSubscriptionLocation() {

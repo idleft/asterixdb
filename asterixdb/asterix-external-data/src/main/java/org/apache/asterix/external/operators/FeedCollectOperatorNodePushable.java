@@ -21,6 +21,9 @@ package org.apache.asterix.external.operators;
 import java.util.Map;
 
 import org.apache.asterix.active.ActiveManager;
+import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.message.ActivePartitionMessage;
+import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActivePartitionMessage;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
@@ -29,6 +32,7 @@ import org.apache.asterix.external.feed.api.ISubscribableRuntime;
 import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
+import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.CollectionRuntime;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -46,7 +50,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final EntityId feedId;
     private final Map<String, String> feedPolicy;
     private final FeedPolicyAccessor policyAccessor;
-    private final ActiveManager feedManager;
+    private final ActiveManager activeManager;
     private final ISubscribableRuntime sourceRuntime;
     private final IHyracksTaskContext ctx;
     private CollectionRuntime collectRuntime;
@@ -59,8 +63,8 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         this.sourceRuntime = sourceRuntime;
         this.feedPolicy = feedPolicy;
         this.policyAccessor = new FeedPolicyAccessor(feedPolicy);
-        this.feedManager = (ActiveManager) ((IAsterixAppRuntimeContext) ctx.getJobletContext().getApplicationContext()
-                .getApplicationObject()).getFeedManager();
+        this.activeManager = (ActiveManager) ((IAsterixAppRuntimeContext) ctx.getJobletContext().getApplicationContext()
+                .getApplicationObject()).getActiveManager();
     }
 
     @Override
@@ -71,19 +75,19 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             if (policyAccessor.bufferingEnabled()) {
                 writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
-                        feedManager.getFramePool());
+                        activeManager.getFramePool());
             } else {
                 writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
             }
             collectRuntime = new CollectionRuntime(connectionId, runtimeId, sourceRuntime, feedPolicy, ctx,
                     new FeedFrameCollector(policyAccessor, writer, connectionId));
-            feedManager.getActiveRuntimeRegistry().registerRuntime(collectRuntime);
+            activeManager.registerRuntime(collectRuntime);
             sourceRuntime.subscribe(collectRuntime);
             // Notify CC that Collection started
-            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(feedId, ctx.getJobletContext().getJobId(), null),
-                    null);
+            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
+                    ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED), null);
             collectRuntime.waitTillCollectionOver();
-            feedManager.getActiveRuntimeRegistry().deregisterRuntime(collectRuntime.getRuntimeId());
+            activeManager.deregisterRuntime(collectRuntime.getRuntimeId());
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
