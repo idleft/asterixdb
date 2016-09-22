@@ -263,8 +263,8 @@ class LangExpressionToPlanTranslator
             additionalFilteringExpressions = new ArrayList<>();
             PlanTranslationUtil.prepareVarAndExpression(additionalFilteringField, payloadVar, additionalFilteringVars,
                     additionalFilteringAssignExpressions, additionalFilteringExpressions, context);
-            additionalFilteringAssign =
-                    new AssignOperator(additionalFilteringVars, additionalFilteringAssignExpressions);
+            additionalFilteringAssign = new AssignOperator(additionalFilteringVars,
+                    additionalFilteringAssignExpressions);
         }
 
         InsertDeleteUpsertOperator insertOp = new InsertDeleteUpsertOperator(targetDatasource, payloadRef,
@@ -332,11 +332,10 @@ class LangExpressionToPlanTranslator
             project.getInputs().get(0).setValue(assignCollectionToSequence);
             project.getVariables().set(0, seqVar);
             resVar = seqVar;
-            DatasetDataSource targetDatasource =
-                    validateDatasetInfo(metadataProvider, stmt.getDataverseName(), stmt.getDatasetName());
-            List<Integer> keySourceIndicator =
-                    ((InternalDatasetDetails) targetDatasource.getDataset().getDatasetDetails())
-                            .getKeySourceIndicator();
+            DatasetDataSource targetDatasource = validateDatasetInfo(metadataProvider, stmt.getDataverseName(),
+                    stmt.getDatasetName());
+            List<Integer> keySourceIndicator = ((InternalDatasetDetails) targetDatasource.getDataset()
+                    .getDatasetDetails()).getKeySourceIndicator();
             ArrayList<LogicalVariable> vars = new ArrayList<>();
             ArrayList<Mutable<ILogicalExpression>> exprs = new ArrayList<>();
             List<Mutable<ILogicalExpression>> varRefsForLoading = new ArrayList<>();
@@ -368,8 +367,8 @@ class LangExpressionToPlanTranslator
                 PlanTranslationUtil.prepareVarAndExpression(additionalFilteringField, resVar, additionalFilteringVars,
                         additionalFilteringAssignExpressions, additionalFilteringExpressions, context);
 
-                additionalFilteringAssign =
-                        new AssignOperator(additionalFilteringVars, additionalFilteringAssignExpressions);
+                additionalFilteringAssign = new AssignOperator(additionalFilteringVars,
+                        additionalFilteringAssignExpressions);
                 additionalFilteringAssign.getInputs().add(new MutableObject<>(project));
                 assign.getInputs().add(new MutableObject<>(additionalFilteringAssign));
             } else {
@@ -513,9 +512,8 @@ class LangExpressionToPlanTranslator
                 feedModificationOp.getInputs().add(assign.getInputs().get(0));
             }
         } else {
-            final InsertDeleteUpsertOperator.Kind opKind = isUpsertFeed ?
-                    InsertDeleteUpsertOperator.Kind.UPSERT :
-                    InsertDeleteUpsertOperator.Kind.INSERT;
+            final InsertDeleteUpsertOperator.Kind opKind = isUpsertFeed ? InsertDeleteUpsertOperator.Kind.UPSERT
+                    : InsertDeleteUpsertOperator.Kind.INSERT;
             feedModificationOp = new InsertDeleteUpsertOperator(targetDatasource, varRef, varRefsForLoading,
                     metaExpSingletonList, opKind, false);
             if (isUpsertFeed) {
@@ -683,8 +681,8 @@ class LangExpressionToPlanTranslator
             returnedOp.getInputs().add(tupSource);
         } else {
             v = context.newVar(lc.getVarExpr());
-            Pair<ILogicalExpression, Mutable<ILogicalOperator>> eo =
-                    langExprToAlgExpression(lc.getBindingExpr(), tupSource);
+            Pair<ILogicalExpression, Mutable<ILogicalOperator>> eo = langExprToAlgExpression(lc.getBindingExpr(),
+                    tupSource);
             returnedOp = new AssignOperator(v, new MutableObject<>(eo.first));
             returnedOp.getInputs().add(eo.second);
         }
@@ -699,8 +697,8 @@ class LangExpressionToPlanTranslator
         AbstractFunctionCallExpression fldAccess = new ScalarFunctionCallExpression(
                 FunctionUtil.getFunctionInfo(AsterixBuiltinFunctions.FIELD_ACCESS_BY_NAME));
         fldAccess.getArguments().add(new MutableObject<>(p.first));
-        ILogicalExpression faExpr =
-                new ConstantExpression(new AsterixConstantValue(new AString(fa.getIdent().getValue())));
+        ILogicalExpression faExpr = new ConstantExpression(
+                new AsterixConstantValue(new AString(fa.getIdent().getValue())));
         fldAccess.getArguments().add(new MutableObject<>(faExpr));
         AssignOperator a = new AssignOperator(v, new MutableObject<>(fldAccess));
         a.getInputs().add(p.second);
@@ -718,8 +716,8 @@ class LangExpressionToPlanTranslator
                     FunctionUtil.getFunctionInfo(AsterixBuiltinFunctions.ANY_COLLECTION_MEMBER));
             f.getArguments().add(new MutableObject<>(p.first));
         } else {
-            Pair<ILogicalExpression, Mutable<ILogicalOperator>> indexPair =
-                    langExprToAlgExpression(ia.getIndexExpr(), tupSource);
+            Pair<ILogicalExpression, Mutable<ILogicalOperator>> indexPair = langExprToAlgExpression(ia.getIndexExpr(),
+                    tupSource);
             f = new ScalarFunctionCallExpression(FunctionUtil.getFunctionInfo(AsterixBuiltinFunctions.GET_ITEM));
             f.getArguments().add(new MutableObject<>(p.first));
             f.getArguments().add(new MutableObject<>(indexPair.first));
@@ -826,8 +824,8 @@ class LangExpressionToPlanTranslator
         if (AsterixBuiltinFunctions.isBuiltinAggregateFunction(fi)) {
             f = AsterixBuiltinFunctions.makeAggregateFunctionExpression(fi, args);
         } else if (AsterixBuiltinFunctions.isBuiltinUnnestingFunction(fi)) {
-            UnnestingFunctionCallExpression ufce =
-                    new UnnestingFunctionCallExpression(FunctionUtil.getFunctionInfo(fi), args);
+            UnnestingFunctionCallExpression ufce = new UnnestingFunctionCallExpression(FunctionUtil.getFunctionInfo(fi),
+                    args);
             ufce.setReturnsUniqueValues(AsterixBuiltinFunctions.returnsUniqueValues(fi));
             f = ufce;
         } else {
@@ -849,9 +847,8 @@ class LangExpressionToPlanTranslator
             List<Pair<Expression, Identifier>> groupFieldList = gc.getGroupFieldList();
             List<Mutable<ILogicalExpression>> groupRecordConstructorArgList = new ArrayList<>();
             for (Pair<Expression, Identifier> groupField : groupFieldList) {
-                ILogicalExpression groupFieldNameExpr =
-                        langExprToAlgExpression(new LiteralExpr(new StringLiteral(groupField.second.getValue())),
-                                topOp).first;
+                ILogicalExpression groupFieldNameExpr = langExprToAlgExpression(
+                        new LiteralExpr(new StringLiteral(groupField.second.getValue())), topOp).first;
                 groupRecordConstructorArgList.add(new MutableObject<>(groupFieldNameExpr));
                 ILogicalExpression groupFieldExpr = langExprToAlgExpression(groupField.first, topOp).first;
                 groupRecordConstructorArgList.add(new MutableObject<>(groupFieldExpr));
@@ -954,8 +951,8 @@ class LangExpressionToPlanTranslator
 
         // Produces the final result.
         LogicalVariable resultVar = context.newVar();
-        AssignOperator finalAssignOp =
-                new AssignOperator(resultVar, new MutableObject<>(new VariableReferenceExpression(unnestVar)));
+        AssignOperator finalAssignOp = new AssignOperator(resultVar,
+                new MutableObject<>(new VariableReferenceExpression(unnestVar)));
         finalAssignOp.getInputs().add(new MutableObject<>(unnestOp));
         return new Pair<>(finalAssignOp, resultVar);
     }
@@ -1322,8 +1319,8 @@ class LangExpressionToPlanTranslator
             Mutable<ILogicalOperator> topOpRef) throws AsterixException {
         switch (expr.getKind()) {
             case VARIABLE_EXPRESSION:
-                VariableReferenceExpression ve =
-                        new VariableReferenceExpression(context.getVar(((VariableExpr) expr).getVar().getId()));
+                VariableReferenceExpression ve = new VariableReferenceExpression(
+                        context.getVar(((VariableExpr) expr).getVar().getId()));
                 return new Pair<>(ve, topOpRef);
             case LITERAL_EXPRESSION:
                 LiteralExpr val = (LiteralExpr) expr;
@@ -1577,8 +1574,8 @@ class LangExpressionToPlanTranslator
         context.enterSubplan();
         SubplanOperator subplanOp = new SubplanOperator();
         subplanOp.getInputs().add(new MutableObject<>(inputOp));
-        Mutable<ILogicalOperator> nestedSource =
-                new MutableObject<>(new NestedTupleSourceOperator(new MutableObject<>(subplanOp)));
+        Mutable<ILogicalOperator> nestedSource = new MutableObject<>(
+                new NestedTupleSourceOperator(new MutableObject<>(subplanOp)));
         SelectOperator select = new SelectOperator(selectExpr, false, null);
         // The select operator cannot be moved up and down, otherwise it will cause typing issues (ASTERIXDB-1203).
         OperatorPropertiesUtil.markMovable(select, false);
@@ -1598,8 +1595,8 @@ class LangExpressionToPlanTranslator
 
     // Processes EXISTS and NOT EXISTS.
     private AssignOperator processExists(ILogicalExpression inputExpr, LogicalVariable v1, boolean not) {
-        AbstractFunctionCallExpression count =
-                new ScalarFunctionCallExpression(FunctionUtil.getFunctionInfo(AsterixBuiltinFunctions.SCALAR_COUNT));
+        AbstractFunctionCallExpression count = new ScalarFunctionCallExpression(
+                FunctionUtil.getFunctionInfo(AsterixBuiltinFunctions.SCALAR_COUNT));
         count.getArguments().add(new MutableObject<>(inputExpr));
         AbstractFunctionCallExpression comparison = new ScalarFunctionCallExpression(
                 FunctionUtil.getFunctionInfo(not ? AsterixBuiltinFunctions.EQ : AsterixBuiltinFunctions.NEQ));
@@ -1671,8 +1668,8 @@ class LangExpressionToPlanTranslator
         while (inputOpRefIterator.hasNext()) {
             // Generates the variable triple <leftVar, rightVar, outputVar> .
             topUnionVar = context.newVar();
-            Triple<LogicalVariable, LogicalVariable, LogicalVariable> varTriple =
-                    new Triple<>(leftInputVar, inputVarIterator.next(), topUnionVar);
+            Triple<LogicalVariable, LogicalVariable, LogicalVariable> varTriple = new Triple<>(leftInputVar,
+                    inputVarIterator.next(), topUnionVar);
             List<Triple<LogicalVariable, LogicalVariable, LogicalVariable>> varTriples = new ArrayList<>();
             varTriples.add(varTriple);
 

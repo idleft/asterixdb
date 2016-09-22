@@ -121,7 +121,6 @@ public class FeedMetadataUtil {
         if (feedPolicy == null) {
             feedPolicy = MetadataManager.INSTANCE.getFeedPolicy(ctx, MetadataConstants.METADATA_DATAVERSE_NAME,
                     policyName);
-
             if (feedPolicy == null) {
                 throw new AsterixException("Unknown feed policy" + policyName);
             }
@@ -162,11 +161,11 @@ public class FeedMetadataUtil {
                 boolean enableSubscriptionMode;
                 OperatorDescriptorId opId = null;
                 if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-                    IPushRuntimeFactory[] runtimeFactories =
-                            ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline().getRuntimeFactories();
+                    IPushRuntimeFactory[] runtimeFactories = ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
+                            .getRuntimeFactories();
                     if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-                        IConnectorDescriptor connectorDesc =
-                                spec.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
+                        IConnectorDescriptor connectorDesc = spec.getOperatorInputMap().get(opDesc.getOperatorId())
+                                .get(0);
                         IOperatorDescriptor sourceOp = spec.getProducer(connectorDesc);
                         if (sourceOp instanceof FeedCollectOperatorDescriptor) {
                             runtimeType = FeedRuntimeType.COMPUTE;
@@ -207,10 +206,10 @@ public class FeedMetadataUtil {
             Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
             Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
 
-            IOperatorDescriptor leftOpDesc =
-                    altered.getOperatorMap().get(oldNewOID.get(leftOp.getLeft().getOperatorId()));
-            IOperatorDescriptor rightOpDesc =
-                    altered.getOperatorMap().get(oldNewOID.get(rightOp.getLeft().getOperatorId()));
+            IOperatorDescriptor leftOpDesc = altered.getOperatorMap()
+                    .get(oldNewOID.get(leftOp.getLeft().getOperatorId()));
+            IOperatorDescriptor rightOpDesc = altered.getOperatorMap()
+                    .get(oldNewOID.get(rightOp.getLeft().getOperatorId()));
 
             altered.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
         }
