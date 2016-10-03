@@ -19,9 +19,12 @@
 
 package org.apache.asterix.metadata.entities;
 
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
+import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 
 import java.util.ArrayList;
 
@@ -33,18 +36,25 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
 
     private static final long serialVersionUID = 1L;
 
+    private EntityId feedId;
     private String connectionId;
     private String dataverseName;
     private String feedName;
     private String datasetName;
+    private String policyName;
+    private String outputType;
     private ArrayList<String> appliedFunctions;
 
-    public FeedConnection(String dataverseName, String feedName, String datasetName, ArrayList<String> appliedFunctions){
+    public FeedConnection(String dataverseName, String feedName, String datasetName, ArrayList<String> appliedFunctions,
+            String outputType) {
         this.dataverseName = dataverseName;
         this.feedName = feedName;
         this.datasetName = datasetName;
         this.appliedFunctions = appliedFunctions;
         this.connectionId = feedName+":"+datasetName;
+        this.policyName = BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
+        this.outputType = outputType;
+        this.feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, dataverseName, feedName);
     }
 
     public ArrayList<String> getAppliedFunctions(){
@@ -90,5 +100,17 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
 
     public String getFeedName() {
         return feedName;
+    }
+
+    public String getPolicyName() {
+        return policyName;
+    }
+
+    public String getOutputType() {
+        return outputType;
+    }
+
+    public EntityId getFeedId() {
+        return feedId;
     }
 }

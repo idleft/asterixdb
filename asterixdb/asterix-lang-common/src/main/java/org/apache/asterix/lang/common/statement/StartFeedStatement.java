@@ -25,22 +25,29 @@ import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
-public class StartFeedStatement implements Statement{
+public class StartFeedStatement implements Statement {
 
     private Identifier dataverseName;
     private Identifier feedName;
 
-    public StartFeedStatement(Pair<Identifier, Identifier> feedNameComp){
+    public StartFeedStatement(Pair<Identifier, Identifier> feedNameComp) {
         dataverseName = feedNameComp.first;
         feedName = feedNameComp.second;
     }
 
-    @Override public byte getKind() {
+    @Override
+    public byte getKind() {
         return Kind.START_FEED;
     }
 
-    @Override public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
+    @Override
+    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
         return visitor.visit(this, arg);
+    }
+
+    @Override
+    public byte getCategory(){
+        return Category.UPDATE;
     }
 
     public Identifier getDataverseName() {

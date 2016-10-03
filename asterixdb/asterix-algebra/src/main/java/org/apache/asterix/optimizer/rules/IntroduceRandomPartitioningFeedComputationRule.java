@@ -60,10 +60,6 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
         }
 
         final FeedDataSource feedDataSource = (FeedDataSource) dataSource;
-        Feed feed = feedDataSource.getFeed();
-        if (feed.getAppliedFunction() == null) {
-            return false;
-        }
 
         ExchangeOperator exchangeOp = new ExchangeOperator();
         INodeDomain domain = new INodeDomain() {

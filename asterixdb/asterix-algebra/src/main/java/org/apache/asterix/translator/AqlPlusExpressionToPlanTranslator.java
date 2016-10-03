@@ -72,10 +72,9 @@ import org.apache.asterix.lang.common.statement.CompactStatement;
 import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
+import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
@@ -93,6 +92,7 @@ import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
 import org.apache.asterix.lang.common.statement.NodegroupDecl;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.SetStatement;
+import org.apache.asterix.lang.common.statement.StartFeedStatement;
 import org.apache.asterix.lang.common.statement.TypeDecl;
 import org.apache.asterix.lang.common.statement.TypeDropStatement;
 import org.apache.asterix.lang.common.statement.UpdateStatement;
@@ -1469,15 +1469,15 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreatePrimaryFeedStatement del, Mutable<ILogicalOperator> arg)
+    public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedStatement cfs, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public Pair<ILogicalOperator, LogicalVariable> visit(CreateSecondaryFeedStatement del,
-            Mutable<ILogicalOperator> arg) throws AsterixException {
+    public Pair<ILogicalOperator, LogicalVariable> visit(StartFeedStatement sfs, Mutable<ILogicalOperator> arg)
+            throws AsterixException {
         // TODO Auto-generated method stub
         return null;
     }

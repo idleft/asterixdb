@@ -1486,7 +1486,7 @@ public class MetadataNode implements IMetadataNode {
         try{
             FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(true);
             ITupleReference feedConnTuple = tupleReaderWriter.getTupleFromMetadataEntity(feedConnection);
-            insertTupleIntoIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, feedConnTuple);
+            insertTupleIntoIndex(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, feedConnTuple);
         } catch (IndexException|ACIDException|IOException e) {
             throw new MetadataException(e);
         }
@@ -1499,7 +1499,7 @@ public class MetadataNode implements IMetadataNode {
                 FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(false);
                 List<FeedConnection> results = new ArrayList<>();
                 IValueExtractor<FeedConnection> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
-                searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey, valueExtractor, results);
+                searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, searchKey, valueExtractor, results);
                 return results;
             } catch (IndexException |IOException e) {
                 throw new MetadataException(e);
@@ -1514,7 +1514,7 @@ public class MetadataNode implements IMetadataNode {
             FeedConnectionTupleTranslator tupleReaderWriter = new FeedConnectionTupleTranslator(false);
             List<FeedConnection> results = new ArrayList<>();
             IValueExtractor<FeedConnection> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
-            searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey, valueExtractor, results);
+            searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, searchKey, valueExtractor, results);
             if(!results.isEmpty())
                 return results.get(0);
             return null;
@@ -1528,8 +1528,8 @@ public class MetadataNode implements IMetadataNode {
             throws MetadataException {
         try{
             ITupleReference searchKey = createTuple(dataverseName, feedName, datasetName);
-            ITupleReference tuple = getTupleToBeDeleted(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, searchKey);
-            deleteTupleFromIndex(jobId, MetadataPrimaryIndexes.FEED_CONN_DATASET, tuple);
+            ITupleReference tuple = getTupleToBeDeleted(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, searchKey);
+            deleteTupleFromIndex(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, tuple);
         } catch (IndexException| IOException |ACIDException e){
             throw new MetadataException(e);
         }

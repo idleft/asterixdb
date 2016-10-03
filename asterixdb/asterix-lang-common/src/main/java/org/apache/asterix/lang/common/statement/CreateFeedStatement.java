@@ -23,6 +23,7 @@ import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
+import org.apache.hadoop.io.compress.bzip2.CBZip2InputStream;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
 import java.util.Map;
@@ -68,7 +69,7 @@ public class CreateFeedStatement implements Statement {
 
     @Override
     public byte getKind() {
-        return Category.UPDATE;
+        return Kind.CREATE_FEED;
     }
 
     public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {

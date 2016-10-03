@@ -30,9 +30,12 @@ import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
 import org.apache.asterix.external.feed.runtime.IngestionRuntime;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
+import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.util.HyracksConstants;
+import org.apache.hyracks.dataflow.common.util.TaskUtils;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
 
 /**
@@ -64,36 +67,20 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
         ActiveManager feedManager = (ActiveManager) ((IAsterixAppRuntimeContext) ctx.getJobletContext()
                 .getApplicationContext().getApplicationObject()).getActiveManager();
         AdapterRuntimeManager adapterRuntimeManager = null;
-        DistributeFeedFrameWriter frameDistributor = null;
         IngestionRuntime ingestionRuntime = null;
         boolean open = false;
         try {
             Thread.currentThread().setName("Intake Thread");
-            // create the adapter
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
-            // create the distributor
-            frameDistributor = new DistributeFeedFrameWriter(feedId, writer, FeedRuntimeType.INTAKE, partition);
-            // create adapter runtime manager
-            adapterRuntimeManager = new AdapterRuntimeManager(feedId, adapter, frameDistributor, partition);
-            // create and register the runtime
-            ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.INTAKE.toString(), partition);
-            ingestionRuntime = new IngestionRuntime(feedId, runtimeId, frameDistributor, adapterRuntimeManager, ctx);
-            feedManager.registerRuntime(ingestionRuntime);
-            // Notify FeedJobNotificationHandler that this provider is ready to receive subscription requests.
-            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
-                    ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED), null);
-            // open the distributor
-            open = true;
-            frameDistributor.open();
-            // wait until ingestion is over
+            adapterRuntimeManager = new AdapterRuntimeManager(feedId, adapter, writer, partition);
+            writer.open();
+            TaskUtils.putInSharedMap(HyracksConstants.KEY_MESSAGE, new VSizeFrame(ctx), ctx);
+            adapterRuntimeManager.start();
             synchronized (adapterRuntimeManager) {
                 while (!adapterRuntimeManager.isDone()) {
                     adapterRuntimeManager.wait();
                 }
             }
-            // The ingestion is over. we need to remove the runtime from the manager
-            feedManager.deregisterRuntime(ingestionRuntime.getRuntimeId());
-            // If there was a failure, we need to throw an exception
             if (adapterRuntimeManager.isFailed()) {
                 throw new HyracksDataException("Unable to ingest data");
             }
@@ -110,7 +97,7 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
             throw new HyracksDataException(ie);
         } finally {
             if (open) {
-                frameDistributor.close();
+                writer.close();
             }
         }
     }

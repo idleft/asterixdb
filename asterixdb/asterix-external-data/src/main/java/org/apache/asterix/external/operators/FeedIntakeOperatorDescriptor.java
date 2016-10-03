@@ -29,6 +29,7 @@ import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.om.types.ARecordType;
+import org.apache.hadoop.hive.ql.hooks.Entity;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -42,6 +43,8 @@ import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescri
  * translating the received content.It uses an instance of feed adaptor to perform these functions.
  */
 public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperatorDescriptor {
+
+    private static final String FEED_EXTENSION_NAME = "Feed";
 
     private static final long serialVersionUID = 1L;
 
@@ -72,7 +75,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
             ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
         super(spec, 0, 1);
-        this.feedId = new EntityId(FeedConnectionId.FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
+        this.feedId = new EntityId(FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
                 primaryFeed.getFeedName());
         this.adaptorFactory = adapterFactory;
         this.adapterOutputType = adapterOutputType;
@@ -84,7 +87,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             String adapterFactoryClassName, ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor,
             RecordDescriptor rDesc) {
         super(spec, 0, 1);
-        this.feedId = new EntityId(FeedConnectionId.FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
+        this.feedId = new EntityId(FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
                 primaryFeed.getFeedName());
         this.adaptorFactoryClassName = adapterFactoryClassName;
         this.adaptorLibraryName = adapterLibraryName;
@@ -127,8 +130,23 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         return adapterFactory;
     }
 
-    public EntityId getFeedId() {
+    public EntityId getEntityId() {
         return feedId;
     }
 
+    public Map<String, String> getAdaptorConfiguration(){
+        return this.adaptorConfiguration;
+    }
+
+    public IAdapterFactory getAdaptorFactory(){
+        return this.adaptorFactory;
+    }
+
+    public ARecordType getAdapterOutputType(){
+        return this.adapterOutputType;
+    }
+
+    public FeedPolicyAccessor getPolicyAccessor(){
+        return this.policyAccessor;
+    }
 }

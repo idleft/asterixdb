@@ -21,12 +21,14 @@ package org.apache.asterix.metadata.entitytupletranslators;
 
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.OrderedListBuilder;
+import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
 import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
 import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.om.base.*;
+import org.apache.asterix.om.types.AUnorderedListType;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
@@ -52,9 +54,10 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
     private ISerializerDeserializer<ARecord> recordSerDes = AqlSerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE);
 
-    public FeedConnectionTupleTranslator(boolean getTuple){
-        super(getTuple, MetadataPrimaryIndexes.FEED_CONN_DATASET.getFieldCount());
+    public FeedConnectionTupleTranslator(boolean getTuple) {
+        super(getTuple, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET.getFieldCount());
     }
+
     @Override
     public FeedConnection getMetadataEntityFromTuple(ITupleReference frameTuple) throws MetadataException, IOException {
         byte[] serRecord = frameTuple.getFieldData(FEED_CONN_PAYLOAD_TUPLE_FIELD_INDEX);
@@ -66,24 +69,29 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         return createFeedConnFromRecord(feedConnRecord);
     }
 
-    private FeedConnection createFeedConnFromRecord(ARecord feedConnRecord){
-        String dataverseName = ((AString)feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_DATAVERSE_NAME_FIELD_INDEX)).getStringValue();
-        String feedId = ((AString)feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_FEED_NAME_FIELD_INDEX)).getStringValue();
-        String datasetName = ((AString)feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX)).getStringValue();
+    private FeedConnection createFeedConnFromRecord(ARecord feedConnRecord) {
+        String dataverseName = ((AString) feedConnRecord
+                .getValueByPos(MetadataRecordTypes.FEED_CONN_DATAVERSE_NAME_FIELD_INDEX)).getStringValue();
+        String feedId = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_FEED_NAME_FIELD_INDEX))
+                .getStringValue();
+        String datasetName = ((AString) feedConnRecord
+                .getValueByPos(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX)).getStringValue();
+        String outputType = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_OUTPUT_TYPE_INDEX))
+                .getStringValue();
         ArrayList<String> appliedFunctions = null;
         Object o = feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX);
         IACursor cursor = null;
 
         if (!(o instanceof ANull) && !(o instanceof AMissing)) {
             appliedFunctions = new ArrayList<>();
-            cursor = ((AOrderedList) feedConnRecord.getValueByPos(
-                    MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX)).getCursor();
-            while(cursor.next()){
+            cursor = ((AUnorderedList) feedConnRecord
+                    .getValueByPos(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX)).getCursor();
+            while (cursor.next()) {
                 appliedFunctions.add(((AString) cursor.get()).getStringValue());
             }
         }
 
-        return new FeedConnection(dataverseName, feedId, datasetName, appliedFunctions);
+        return new FeedConnection(dataverseName, feedId, datasetName, appliedFunctions, outputType);
     }
 
     @Override
@@ -109,17 +117,26 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         // field dataverse
         fieldValue.reset();
         aString.setValue(me.getDataverseName());
-        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_DATAVERSE_NAME_FIELD_INDEX,fieldValue);
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_DATAVERSE_NAME_FIELD_INDEX, fieldValue);
 
         // field: feedId
         fieldValue.reset();
         aString.setValue(me.getFeedName());
-        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX, fieldValue);
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_FEED_NAME_FIELD_INDEX, fieldValue);
 
         // field: dataset
         fieldValue.reset();
         aString.setValue(me.getDatasetName());
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
         recordBuilder.addField(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX, fieldValue);
+
+        // field: outputType
+        fieldValue.reset();
+        aString.setValue(me.getOutputType());
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_OUTPUT_TYPE_INDEX, fieldValue);
 
         // field: appliedFunctions
         fieldValue.reset();
@@ -134,18 +151,20 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
 
     private void writeAppliedFunctionsField(IARecordBuilder rb, FeedConnection fc, ArrayBackedValueStorage buffer)
             throws HyracksDataException {
-        OrderedListBuilder orderedListBuilder = new OrderedListBuilder();
+        UnorderedListBuilder listBuilder = new UnorderedListBuilder();
         ArrayBackedValueStorage listEleBuffer = new ArrayBackedValueStorage();
 
-        if(fc.getAppliedFunctions()!=null){
+        listBuilder.reset((AUnorderedListType) MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE
+                .getFieldTypes()[MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX]);
+        if (fc.getAppliedFunctions() != null) {
             ArrayList<String> appliedFunctions = fc.getAppliedFunctions();
-            for (String af:appliedFunctions){
+            for (String af : appliedFunctions) {
                 aString.setValue(af);
-                stringSerde.serialize(aString,listEleBuffer.getDataOutput());
-                orderedListBuilder.addItem(listEleBuffer);
+                stringSerde.serialize(aString, listEleBuffer.getDataOutput());
+                listBuilder.addItem(listEleBuffer);
             }
-            orderedListBuilder.write(buffer.getDataOutput(),true);
-            rb.addField(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX, buffer);
         }
+        listBuilder.write(buffer.getDataOutput(), true);
+        rb.addField(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX, buffer);
     }
 }

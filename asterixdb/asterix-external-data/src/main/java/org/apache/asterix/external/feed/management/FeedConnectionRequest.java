@@ -47,9 +47,6 @@ public class FeedConnectionRequest implements Serializable {
         FAILED
     }
 
-    /** Feed joint on the feed pipeline that serves as the source for this subscription **/
-    private final FeedJointKey feedJointKey;
-
     /** Location in the source feed pipeline from where feed tuples are received. **/
     private final FeedRuntimeType connectionLocation;
 
@@ -70,10 +67,9 @@ public class FeedConnectionRequest implements Serializable {
 
     private final EntityId receivingFeedId;
 
-    public FeedConnectionRequest(FeedJointKey feedPointKey, FeedRuntimeType connectionLocation,
+    public FeedConnectionRequest(FeedRuntimeType connectionLocation,
             List<String> functionsToApply, String targetDataset, String policy, Map<String, String> policyParameters,
             EntityId receivingFeedId) {
-        this.feedJointKey = feedPointKey;
         this.connectionLocation = connectionLocation;
         this.functionsToApply = functionsToApply;
         this.targetDataset = targetDataset;
@@ -81,10 +77,6 @@ public class FeedConnectionRequest implements Serializable {
         this.policyParameters = policyParameters;
         this.receivingFeedId = receivingFeedId;
         this.connectionStatus = ConnectionStatus.INITIALIZED;
-    }
-
-    public FeedJointKey getFeedJointKey() {
-        return feedJointKey;
     }
 
     public ConnectionStatus getConnectionStatus() {
@@ -121,7 +113,7 @@ public class FeedConnectionRequest implements Serializable {
 
     @Override
     public String toString() {
-        return "Feed Connection Request " + feedJointKey + " [" + connectionLocation + "]" + " Apply ("
+        return "Feed Connection Request " + receivingFeedId + " [" + connectionLocation + "]" + " Apply ("
                 + StringUtils.join(functionsToApply, ",") + ")";
     }
 

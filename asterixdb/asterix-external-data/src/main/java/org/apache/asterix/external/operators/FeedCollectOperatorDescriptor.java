@@ -64,7 +64,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId,
             EntityId sourceFeedId, ARecordType atype, RecordDescriptor rDesc, Map<String, String> feedPolicyProperties,
             FeedRuntimeType subscriptionLocation) {
-        super(spec, 0, 1);
+        super(spec, 1, 1);
         this.recordDescriptors[0] = rDesc;
         this.outputType = atype;
         this.connectionId = feedConnectionId;

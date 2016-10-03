@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.feed.watch;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -27,74 +28,48 @@ import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.util.FeedUtils.JobType;
+import org.apache.avro.generic.GenericData;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 
 public class FeedConnectJobInfo extends ActiveJob {
 
     private static final long serialVersionUID = 1L;
-    private final FeedConnectionId connectionId;
-    private final Map<String, String> feedPolicy;
-    private final IFeedJoint sourceFeedJoint;
-    private IFeedJoint computeFeedJoint;
 
+    private List<String> ingestLocations;
     private List<String> collectLocations;
     private List<String> computeLocations;
     private List<String> storageLocations;
     private int partitionStarts = 0;
+    private List<String> targetDatasets;
 
-    public FeedConnectJobInfo(EntityId entityId, JobId jobId, ActivityState state, FeedConnectionId connectionId,
-            IFeedJoint sourceFeedJoint, IFeedJoint computeFeedJoint, JobSpecification spec,
-            Map<String, String> feedPolicy) {
+    public FeedConnectJobInfo(EntityId entityId, JobId jobId, ActivityState state, JobSpecification spec) {
         super(entityId, jobId, state, JobType.FEED_CONNECT, spec);
-        this.connectionId = connectionId;
-        this.sourceFeedJoint = sourceFeedJoint;
-        this.computeFeedJoint = computeFeedJoint;
-        this.feedPolicy = feedPolicy;
-    }
-
-    public FeedConnectionId getConnectionId() {
-        return connectionId;
+        targetDatasets = new ArrayList();
     }
 
     public List<String> getCollectLocations() {
         return collectLocations;
     }
 
-    public List<String> getComputeLocations() {
-        return computeLocations;
-    }
-
-    public List<String> getStorageLocations() {
-        return storageLocations;
-    }
-
     public void setCollectLocations(List<String> collectLocations) {
         this.collectLocations = collectLocations;
+    }
+
+    public List<String> getComputeLocations() {
+        return computeLocations;
     }
 
     public void setComputeLocations(List<String> computeLocations) {
         this.computeLocations = computeLocations;
     }
 
+    public List<String> getStorageLocations() {
+        return storageLocations;
+    }
+
     public void setStorageLocations(List<String> storageLocations) {
         this.storageLocations = storageLocations;
-    }
-
-    public IFeedJoint getSourceFeedJoint() {
-        return sourceFeedJoint;
-    }
-
-    public IFeedJoint getComputeFeedJoint() {
-        return computeFeedJoint;
-    }
-
-    public Map<String, String> getFeedPolicy() {
-        return feedPolicy;
-    }
-
-    public void setComputeFeedJoint(IFeedJoint computeFeedJoint) {
-        this.computeFeedJoint = computeFeedJoint;
     }
 
     public void partitionStart() {
@@ -105,4 +80,19 @@ public class FeedConnectJobInfo extends ActiveJob {
         return partitionStarts == collectLocations.size();
     }
 
+    public void addTargetDataset(String targetDataset) {
+        targetDatasets.add(targetDataset);
+    }
+
+    public void removeTargetDataset(String targetDataset) {
+        targetDatasets.remove(targetDataset);
+    }
+
+    public List<String> getIngestLocations() {
+        return ingestLocations;
+    }
+
+    public void setIngestLocations(List<String> ingestLocations) {
+        this.ingestLocations = ingestLocations;
+    }
 }

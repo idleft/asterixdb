@@ -25,17 +25,16 @@ import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
 import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
+import java.util.ArrayList;
+
 public class ConnectFeedStatement implements Statement {
 
     private final Identifier dataverseName;
     private final Identifier datasetName;
     private final String feedName;
     private final String policy;
-    private Query query;
     private int varCounter;
-    private boolean forceConnect = false;
-
-    public static final String WAIT_FOR_COMPLETION = "wait-for-completion-feed";
+    private final ArrayList<String> appliedFunctions;
 
     public ConnectFeedStatement(Pair<Identifier, Identifier> feedNameCmp, Pair<Identifier, Identifier> datasetNameCmp,
             String policy, int varCounter) {
@@ -49,15 +48,7 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
-    }
-
-    public ConnectFeedStatement(Identifier dataverseName, Identifier feedName, Identifier datasetName, String policy,
-            int varCounter) {
-        this.dataverseName = dataverseName;
-        this.datasetName = datasetName;
-        this.feedName = feedName.getValue();
-        this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
-        this.varCounter = varCounter;
+        this.appliedFunctions = null;
     }
 
     public Identifier getDataverseName() {
@@ -66,10 +57,6 @@ public class ConnectFeedStatement implements Statement {
 
     public Identifier getDatasetName() {
         return datasetName;
-    }
-
-    public Query getQuery() {
-        return query;
     }
 
     public int getVarCounter() {
@@ -90,16 +77,12 @@ public class ConnectFeedStatement implements Statement {
         return visitor.visit(this, arg);
     }
 
-    public boolean forceConnect() {
-        return forceConnect;
-    }
-
-    public void setForceConnect(boolean forceConnect) {
-        this.forceConnect = forceConnect;
-    }
-
     public String getFeedName() {
         return feedName;
+    }
+
+    public ArrayList<String> getAppliedFunctions() {
+        return appliedFunctions;
     }
 
     @Override

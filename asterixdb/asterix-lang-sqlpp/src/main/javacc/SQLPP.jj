@@ -89,13 +89,12 @@ import org.apache.asterix.lang.common.literal.TrueLiteral;
 import org.apache.asterix.lang.common.parser.ScopeChecker;
 import org.apache.asterix.lang.common.statement.CompactStatement;
 import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
+import org.apache.asterix.lang.common.statement.StartFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedPolicyStatement;
 import org.apache.asterix.lang.common.statement.CreateFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateFunctionStatement;
 import org.apache.asterix.lang.common.statement.CreateIndexStatement;
-import org.apache.asterix.lang.common.statement.CreatePrimaryFeedStatement;
-import org.apache.asterix.lang.common.statement.CreateSecondaryFeedStatement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
@@ -737,27 +736,14 @@ CreateFeedStatement FeedSpecification() throws ParseException:
   FunctionSignature appliedFunction = null;
   CreateFeedStatement cfs = null;
   Pair<Identifier,Identifier> sourceNameComponents = null;
-
 }
 {
-  (
-    <SECONDARY> <FEED>  nameComponents = QualifiedName() ifNotExists = IfNotExists()
-      <FROM> <FEED> sourceNameComponents = QualifiedName() (appliedFunction = ApplyFunction())?
-      {
-        cfs = new CreateSecondaryFeedStatement(nameComponents,
-                                   sourceNameComponents, appliedFunction, ifNotExists);
-      }
-     |
-     (<PRIMARY>)? <FEED> nameComponents = QualifiedName() ifNotExists = IfNotExists()
-      <USING> adapterName = AdapterName() properties = Configuration() (appliedFunction = ApplyFunction())?
-       {
-        cfs = new CreatePrimaryFeedStatement(nameComponents,
-                                    adapterName, properties, appliedFunction, ifNotExists);
-       }
-  )
-    {
-      return cfs;
-    }
+  <FEED> nameComponents = QualifiedName() ifNotExists = IfNotExists()
+  <USING> adapterName = AdapterName() properties = Configuration()
+  {
+    cfs = new CreateFeedStatement(nameComponents, adapterName, properties, ifNotExists);
+    return cfs;
+  }
 }
 
 CreateFeedPolicyStatement FeedPolicySpecification() throws ParseException:
@@ -1149,8 +1135,23 @@ Statement ConnectionStatement() throws ParseException:
   (
     <CONNECT> stmt = ConnectStatement()
   | <DISCONNECT> stmt = DisconnectStatement()
+  | <START> stmt = StartStatement()
   )
   {
+    return stmt;
+  }
+}
+
+Statement StartStatement() throws ParseException:
+{
+  Pair<Identifier,Identifier> feedNameComponents = null;
+
+  Statement stmt = null;
+}
+{
+  <FEED> feedNameComponents = QualifiedName()
+  {
+    stmt = new StartFeedStatement (feedNameComponents);
     return stmt;
   }
 }
@@ -3124,6 +3125,7 @@ TOKEN [IGNORE_CASE]:
   | <SELECT : "select">
   | <SET : "set">
   | <SOME : "some">
+  | <START : "start">
   | <TEMPORARY : "temporary">
   | <THEN : "then">
   | <TYPE : "type">
