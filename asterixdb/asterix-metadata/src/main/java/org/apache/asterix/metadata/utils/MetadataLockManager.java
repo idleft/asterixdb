@@ -498,6 +498,17 @@ public class MetadataLockManager {
         }
     }
 
+    public void StopFeedBegin(String dataverseName, String feedName) {
+        // TODO: dataset lock?
+        acquireDataverseReadLock(dataverseName);
+        acquireFeedReadLock(feedName);
+    }
+
+    public void StopFeedEnd(String dataverseName, String feedName) {
+        releaseDataverseReadLock(dataverseName);
+        releaseFeedReadLock(feedName);
+    }
+
     public void createFeedBegin(String dataverseName, String feedFullyQualifiedName) {
         acquireDataverseReadLock(dataverseName);
         acquireFeedWriteLock(feedFullyQualifiedName);

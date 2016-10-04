@@ -72,7 +72,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
     private FeedConnection createFeedConnFromRecord(ARecord feedConnRecord) {
         String dataverseName = ((AString) feedConnRecord
                 .getValueByPos(MetadataRecordTypes.FEED_CONN_DATAVERSE_NAME_FIELD_INDEX)).getStringValue();
-        String feedId = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_FEED_NAME_FIELD_INDEX))
+        String feedName = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_FEED_NAME_FIELD_INDEX))
                 .getStringValue();
         String datasetName = ((AString) feedConnRecord
                 .getValueByPos(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX)).getStringValue();
@@ -91,7 +91,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
             }
         }
 
-        return new FeedConnection(dataverseName, feedId, datasetName, appliedFunctions, outputType);
+        return new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, outputType);
     }
 
     @Override

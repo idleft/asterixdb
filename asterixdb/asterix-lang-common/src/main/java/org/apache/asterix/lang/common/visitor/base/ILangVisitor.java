@@ -65,6 +65,7 @@ import org.apache.asterix.lang.common.statement.NodegroupDecl;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.SetStatement;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
+import org.apache.asterix.lang.common.statement.StopFeedStatement;
 import org.apache.asterix.lang.common.statement.TypeDecl;
 import org.apache.asterix.lang.common.statement.TypeDropStatement;
 import org.apache.asterix.lang.common.statement.UpdateStatement;
@@ -153,6 +154,8 @@ public interface ILangVisitor<R, T> {
     R visit(ConnectFeedStatement del, T arg) throws AsterixException;
 
     R visit(StartFeedStatement sfs, T arg) throws AsterixException;
+
+    R visit(StopFeedStatement sfs, T arg) throws AsterixException;
 
     R visit(CreateFeedStatement cfs, T arg) throws AsterixException;
 

@@ -60,6 +60,7 @@ import org.apache.asterix.lang.common.expression.TypeReferenceExpression;
 import org.apache.asterix.lang.common.expression.UnaryExpr;
 import org.apache.asterix.lang.common.expression.UnorderedListTypeDefinition;
 import org.apache.asterix.lang.common.expression.VariableExpr;
+import org.apache.asterix.lang.common.literal.IntegerLiteral;
 import org.apache.asterix.lang.common.statement.CompactStatement;
 import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
 import org.apache.asterix.lang.common.statement.CreateDataverseStatement;
@@ -87,6 +88,7 @@ import org.apache.asterix.lang.common.statement.NodegroupDecl;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.SetStatement;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
+import org.apache.asterix.lang.common.statement.StopFeedStatement;
 import org.apache.asterix.lang.common.statement.TypeDecl;
 import org.apache.asterix.lang.common.statement.TypeDropStatement;
 import org.apache.asterix.lang.common.statement.UpdateStatement;
@@ -768,6 +770,14 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
     public Void visit(StartFeedStatement startFeedStatement, Integer step) throws AsterixException {
         out.print(skip(step) + "start " + FEED);
         out.print(generateFullName(startFeedStatement.getDataverseName(), startFeedStatement.getFeedName()));
+        out.println(SEMICOLON);
+        return null;
+    }
+
+    @Override
+    public Void visit(StopFeedStatement stopFeedStatement, Integer step) throws AsterixException {
+        out.print(skip(step) + "stop " + FEED);
+        out.print(generateFullName(stopFeedStatement.getDataverseName(), stopFeedStatement.getFeedName()));
         out.println(SEMICOLON);
         return null;
     }

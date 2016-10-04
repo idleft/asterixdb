@@ -93,6 +93,7 @@ import org.apache.asterix.lang.common.statement.NodegroupDecl;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.SetStatement;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
+import org.apache.asterix.lang.common.statement.StopFeedStatement;
 import org.apache.asterix.lang.common.statement.TypeDecl;
 import org.apache.asterix.lang.common.statement.TypeDropStatement;
 import org.apache.asterix.lang.common.statement.UpdateStatement;
@@ -1477,6 +1478,13 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(StartFeedStatement sfs, Mutable<ILogicalOperator> arg)
+            throws AsterixException {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public Pair<ILogicalOperator, LogicalVariable> visit(StopFeedStatement sfs, Mutable<ILogicalOperator> arg)
             throws AsterixException {
         // TODO Auto-generated method stub
         return null;

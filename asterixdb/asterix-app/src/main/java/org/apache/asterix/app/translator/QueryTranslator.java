@@ -41,15 +41,15 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveJobNotificationHandler;
-import org.apache.asterix.active.ActivityState;
+import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
+import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.algebra.extension.IExtensionStatement;
 import org.apache.asterix.api.common.APIFramework;
 import org.apache.asterix.api.http.servlet.APIServlet;
 import org.apache.asterix.app.cc.CompilerExtensionManager;
 import org.apache.asterix.app.external.ExternalIndexingOperations;
-import org.apache.asterix.app.external.FeedJoint;
 import org.apache.asterix.app.external.FeedOperations;
 import org.apache.asterix.app.result.ResultReader;
 import org.apache.asterix.app.result.ResultUtil;
@@ -65,25 +65,18 @@ import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.asterix.external.feed.api.IFeedJoint;
-import org.apache.asterix.external.feed.api.IFeedJoint.FeedJointType;
-import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber;
-import org.apache.asterix.external.feed.api.IFeedLifecycleEventSubscriber.FeedLifecycleEvent;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
-import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
-import org.apache.asterix.external.feed.management.FeedJointKey;
-import org.apache.asterix.external.feed.management.FeedLifecycleEventSubscriber;
+import org.apache.asterix.external.feed.message.FeedMessage;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.feed.watch.FeedActivity.FeedActivityDetails;
+import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.util.ExternalDataConstants;
-import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
+import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.file.DatasetOperations;
 import org.apache.asterix.file.DataverseOperations;
 import org.apache.asterix.file.IndexOperations;
 import org.apache.asterix.formats.nontagged.AqlTypeTraitProvider;
-import org.apache.asterix.lang.aql.statement.SubscribeFeedStatement;
 import org.apache.asterix.lang.common.base.IRewriterFactory;
 import org.apache.asterix.lang.common.base.IStatementRewriter;
 import org.apache.asterix.lang.common.base.Statement;
@@ -118,11 +111,11 @@ import org.apache.asterix.lang.common.statement.RefreshExternalDatasetStatement;
 import org.apache.asterix.lang.common.statement.RunStatement;
 import org.apache.asterix.lang.common.statement.SetStatement;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
+import org.apache.asterix.lang.common.statement.StopFeedStatement;
 import org.apache.asterix.lang.common.statement.TypeDecl;
 import org.apache.asterix.lang.common.statement.TypeDropStatement;
 import org.apache.asterix.lang.common.statement.WriteStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
-import org.apache.asterix.lang.common.util.FunctionUtil;
 import org.apache.asterix.metadata.IDatasetDetails;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.MetadataManager;
@@ -144,7 +137,6 @@ import org.apache.asterix.metadata.entities.Function;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.InternalDatasetDetails;
 import org.apache.asterix.metadata.entities.NodeGroup;
-import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 import org.apache.asterix.metadata.feeds.FeedMetadataUtil;
 import org.apache.asterix.metadata.utils.DatasetUtils;
 import org.apache.asterix.metadata.utils.ExternalDatasetsRegistry;
@@ -167,7 +159,6 @@ import org.apache.asterix.translator.CompiledStatements.CompiledIndexCompactStat
 import org.apache.asterix.translator.CompiledStatements.CompiledIndexDropStatement;
 import org.apache.asterix.translator.CompiledStatements.CompiledInsertStatement;
 import org.apache.asterix.translator.CompiledStatements.CompiledLoadFromFileStatement;
-import org.apache.asterix.translator.CompiledStatements.CompiledSubscribeFeedStatement;
 import org.apache.asterix.translator.CompiledStatements.CompiledUpsertStatement;
 import org.apache.asterix.translator.CompiledStatements.ICompiledDmlStatement;
 import org.apache.asterix.translator.IStatementExecutor;
@@ -181,7 +172,6 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
-import org.apache.hyracks.algebricks.common.utils.Triple;
 import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
 import org.apache.hyracks.algebricks.data.IAWriterFactory;
 import org.apache.hyracks.algebricks.data.IResultSerializerFactoryProvider;
@@ -217,6 +207,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
     protected final APIFramework apiFramework;
     protected final IRewriterFactory rewriterFactory;
     protected Dataverse activeDefaultDataverse;
+
     public QueryTranslator(List<Statement> aqlStatements, SessionConfig conf,
             ILangCompilationProvider compliationProvider, CompilerExtensionManager ccExtensionManager) {
         this.statements = aqlStatements;
@@ -476,6 +467,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         handleStartFeedStatement(metadataProvider, stmt, hcc);
                         break;
                     case Statement.Kind.STOP_FEED:
+                        handleStopFeedStatement(metadataProvider, stmt, hcc);
                         break;
                     case Statement.Kind.CREATE_FEED_POLICY:
                         handleCreateFeedPolicyStatement(metadataProvider, stmt);
@@ -2253,7 +2245,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 listener = new FeedEventsListener(entityId);
             }
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
-            JobSpecification feedJob = FeedOperations.buildFeedJob(metadataProvider, feed, feedConnections);
+            JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections);
             JobUtils.runJob(hcc, feedJob, false);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2263,9 +2255,40 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
+    private void handleStopFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
+            IHyracksClientConnection hcc) throws Exception {
+        List<String> intakeNodeLocations;
+        StopFeedStatement sfst = (StopFeedStatement) stmt;
+        String dataverseName = getActiveDataverseName(sfst.getDataverseName().getValue());
+        String feedName = sfst.getFeedName().getValue();
+        EntityId feedId = new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName);
+        // Obtain runtime info from ActiveListener
+        FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE.getActiveEntityListener(feedId);
+        FeedConnectJobInfo cInfo = listener.getFeedConnectJobInfo();
+        intakeNodeLocations = cInfo.getIntakeLocations();
+        // Transaction
+        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
+        metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        MetadataLockManager.INSTANCE.StopFeedBegin(dataverseName, feedName);
+        try {
+            // validate
+            // TODO: check feed is actually running.
+            FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
+            // Construct ActiveMessage
+            for (String intakeLocation : intakeNodeLocations) {
+                FeedOperations.SendStopMessageToNode(feedId, intakeLocation);
+            }
+        } catch (Exception e) {
+            abort(e, e, mdTxnCtx);
+            throw e;
+        } finally {
+            MetadataLockManager.INSTANCE.StopFeedEnd(dataverseName, feedName);
+        }
+    }
+
     private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        FeedConnection fc = null;
+        FeedConnection fc;
         ConnectFeedStatement cfs = (ConnectFeedStatement) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName();
@@ -2301,50 +2324,31 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
     protected void handleDisconnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc) throws Exception {
-        //        DisconnectFeedStatement cfs = (DisconnectFeedStatement) stmt;
-        //        String dataverseName = getActiveDataverse(cfs.getDataverseName());
-        //        String datasetName = cfs.getDatasetName().getValue();
-        //        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
-        //        boolean bActiveTxn = true;
-        //        metadataProvider.setMetadataTxnContext(mdTxnCtx);
-        //
-        //        FeedMetadataUtil.validateIfDatasetExists(dataverseName, cfs.getDatasetName().getValue(), mdTxnCtx);
-        //        Feed feed = FeedMetadataUtil.validateIfFeedExists(dataverseName, cfs.getFeedName().getValue(), mdTxnCtx);
-        //        EntityId entityId = new EntityId(Feed.EXTENSION_NAME, feed.getDataverseName(), feed.getFeedName());
-        //        FeedConnectionId connectionId = new FeedConnectionId(feed.getFeedId(), cfs.getDatasetName().getValue());
-        //        IFeedLifecycleEventSubscriber eventSubscriber = new FeedLifecycleEventSubscriber();
-        //        FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
-        //                .getActiveEntityListener(entityId);
-        //        if (listener == null || !listener.isEntityConnectedToDataset(dataverseName, datasetName)) {
-        //            throw new AsterixException("Feed " + feed.getFeedId().getEntityName() + " is currently not connected to "
-        //                    + cfs.getDatasetName().getValue() + ". Invalid operation!");
-        //        }
-        //        listener.registerFeedEventSubscriber(eventSubscriber);
-        //        MetadataLockManager.INSTANCE.disconnectFeedBegin(dataverseName, dataverseName + "." + datasetName,
-        //                dataverseName + "." + cfs.getFeedName());
-        //        try {
-        //            Dataset dataset = MetadataManager.INSTANCE.getDataset(metadataProvider.getMetadataTxnContext(),
-        //                    dataverseName, cfs.getDatasetName().getValue());
-        //            if (dataset == null) {
-        //                throw new AsterixException(
-        //                        "Unknown dataset :" + cfs.getDatasetName().getValue() + " in dataverse " + dataverseName);
-        //            }
-        //            Pair<JobSpecification, Boolean> specDisconnectType = FeedOperations
-        //                    .buildDisconnectFeedJobSpec(metadataProvider, connectionId);
-        //            JobSpecification jobSpec = specDisconnectType.first;
-        //            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
-        //            bActiveTxn = false;
-        //            JobUtils.runJob(hcc, jobSpec, true);
-        //            eventSubscriber.assertEvent(FeedLifecycleEvent.FEED_COLLECT_ENDED);
-        //        } catch (Exception e) {
-        //            if (bActiveTxn) {
-        //                abort(e, e, mdTxnCtx);
-        //            }
-        //            throw e;
-        //        } finally {
-        //            MetadataLockManager.INSTANCE.disconnectFeedEnd(dataverseName, dataverseName + "." + datasetName,
-        //                    dataverseName + "." + cfs.getFeedName());
-        //        }
+        DisconnectFeedStatement cfs = (DisconnectFeedStatement) stmt;
+        String dataverseName = getActiveDataverse(cfs.getDataverseName());
+        String datasetName = cfs.getDatasetName().getValue();
+        String feedName = cfs.getFeedName().getValue();
+        MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
+        metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        MetadataLockManager.INSTANCE.disconnectFeedBegin(dataverseName, dataverseName + "." + datasetName,
+                dataverseName + "." + cfs.getFeedName());
+        try {
+            FeedMetadataUtil.validateIfDatasetExists(dataverseName, cfs.getDatasetName().getValue(), mdTxnCtx);
+            FeedMetadataUtil.validateIfFeedExists(dataverseName, cfs.getFeedName().getValue(), mdTxnCtx);
+            FeedConnection fc = MetadataManager.INSTANCE.getFeedConnection(metadataProvider.getMetadataTxnContext(),
+                    dataverseName, feedName, datasetName);
+            if (fc == null) {
+                throw new AsterixException("Feed " + feedName + " is currently not connected to "
+                        + cfs.getDatasetName().getValue() + ". Invalid operation!");
+            }
+            MetadataManager.INSTANCE.dropFeedConnection(mdTxnCtx, dataverseName, feedName, datasetName);
+        } catch (Exception e) {
+            abort(e, e, mdTxnCtx);
+            throw e;
+        } finally {
+            MetadataLockManager.INSTANCE.disconnectFeedEnd(dataverseName, dataverseName + "." + datasetName,
+                    dataverseName + "." + cfs.getFeedName());
+        }
     }
 
     protected void handleCompactStatement(AqlMetadataProvider metadataProvider, Statement stmt,

@@ -36,11 +36,9 @@ public class FeedConnectJobInfo extends ActiveJob {
 
     private static final long serialVersionUID = 1L;
 
-    private List<String> ingestLocations;
-    private List<String> collectLocations;
+    private List<String> intakeLocations;
     private List<String> computeLocations;
     private List<String> storageLocations;
-    private int partitionStarts = 0;
     private List<String> targetDatasets;
 
     public FeedConnectJobInfo(EntityId entityId, JobId jobId, ActivityState state, JobSpecification spec) {
@@ -48,13 +46,6 @@ public class FeedConnectJobInfo extends ActiveJob {
         targetDatasets = new ArrayList();
     }
 
-    public List<String> getCollectLocations() {
-        return collectLocations;
-    }
-
-    public void setCollectLocations(List<String> collectLocations) {
-        this.collectLocations = collectLocations;
-    }
 
     public List<String> getComputeLocations() {
         return computeLocations;
@@ -72,27 +63,11 @@ public class FeedConnectJobInfo extends ActiveJob {
         this.storageLocations = storageLocations;
     }
 
-    public void partitionStart() {
-        partitionStarts++;
+    public List<String> getIntakeLocations() {
+        return intakeLocations;
     }
 
-    public boolean collectionStarted() {
-        return partitionStarts == collectLocations.size();
-    }
-
-    public void addTargetDataset(String targetDataset) {
-        targetDatasets.add(targetDataset);
-    }
-
-    public void removeTargetDataset(String targetDataset) {
-        targetDatasets.remove(targetDataset);
-    }
-
-    public List<String> getIngestLocations() {
-        return ingestLocations;
-    }
-
-    public void setIngestLocations(List<String> ingestLocations) {
-        this.ingestLocations = ingestLocations;
+    public void setIntakeLocations(List<String> intakeLocations) {
+        this.intakeLocations = intakeLocations;
     }
 }
