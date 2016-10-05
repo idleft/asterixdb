@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import com.microsoft.windowsazure.services.serviceBus.implementation.Feed;
 import org.apache.asterix.active.ActiveEvent;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
@@ -50,7 +51,6 @@ import org.apache.log4j.Logger;
 
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class);
-    private final List<String> intakeLocations;
     private final List<String> connectedDatasets;
     private JobSpecification connectionJobSpec;
     private JobId connectionJobId = null;
@@ -60,19 +60,17 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     public FeedEventsListener(EntityId entityId) {
         this.entityId = entityId;
         connectedDatasets = new ArrayList<>();
-        intakeLocations = new ArrayList<>();
     }
 
     @Override
     public void notify(ActiveEvent event) {
-        EntityId entityId = event.getEntityId();
         try {
             switch (event.getEventKind()) {
                 case JOB_START:
                     handeStartFeedEvent();
                     break;
                 case JOB_FINISH:
-                    handleJobFinishEvent(event);
+                    handleJobFinishEvent();
                     break;
                 case PARTITION_EVENT:
                     handlePartitionStart();
@@ -91,8 +89,12 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         cInfo.setState(ActivityState.ACTIVE);
     }
 
-    private synchronized void handleJobFinishEvent(ActiveEvent message) throws Exception {
+    private synchronized void handleJobFinishEvent() throws Exception {
        // null
+    }
+
+    public void setFeedConnectJobInfo(FeedConnectJobInfo info){
+        this.cInfo = info;
     }
 
     public FeedConnectJobInfo getFeedConnectJobInfo() {
@@ -105,14 +107,14 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     public synchronized List<String> getConnectionLocations(IFeedJoint feedJoint, final FeedConnectionRequest request)
             throws Exception {
-        return this.intakeLocations;
+        return cInfo.getIntakeLocations();
     }
 
     @Override
     public void notifyJobCreation(JobId jobId, JobSpecification spec) {
         this.connectionJobSpec = spec;
         this.connectionJobId = jobId;
-        cInfo = new FeedConnectJobInfo(entityId, jobId, ActivityState.CREATED, spec);
+        cInfo.setJobId(jobId);
     }
 
     private void setLocations(FeedConnectJobInfo cInfo) {

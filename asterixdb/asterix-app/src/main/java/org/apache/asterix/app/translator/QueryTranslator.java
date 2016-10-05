@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveJobNotificationHandler;
 import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
 import org.apache.asterix.active.message.ActiveManagerMessage;
@@ -2246,6 +2247,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections);
+            FeedConnectJobInfo cInfo = new FeedConnectJobInfo(entityId, null, ActivityState.CREATED, feedJob);
+            listener.setFeedConnectJobInfo(cInfo);
+            feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
             JobUtils.runJob(hcc, feedJob, false);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2259,13 +2263,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             IHyracksClientConnection hcc) throws Exception {
         List<String> intakeNodeLocations;
         StopFeedStatement sfst = (StopFeedStatement) stmt;
-        String dataverseName = getActiveDataverseName(sfst.getDataverseName().getValue());
+        String dataverseName = getActiveDataverse(sfst.getDataverseName());
         String feedName = sfst.getFeedName().getValue();
         EntityId feedId = new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName);
         // Obtain runtime info from ActiveListener
         FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE.getActiveEntityListener(feedId);
-        FeedConnectJobInfo cInfo = listener.getFeedConnectJobInfo();
-        intakeNodeLocations = cInfo.getIntakeLocations();
+        intakeNodeLocations = listener.getIntakeLocations();
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
