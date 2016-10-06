@@ -97,6 +97,7 @@ public class SubscribeFeedStatement implements Statement {
 
         List<FunctionSignature> functionsToApply = connectionRequest.getFunctionsToApply();
         if ((functionsToApply != null) && functionsToApply.isEmpty()) {
+            builder.append(" return $x");
         } else {
             Function function;
             String rValueName = "x";

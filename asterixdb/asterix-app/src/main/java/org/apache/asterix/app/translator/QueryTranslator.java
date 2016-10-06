@@ -1306,8 +1306,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 EntityId activeEntityId = listener.getEntityId();
                 if (activeEntityId.getExtensionName().equals(Feed.EXTENSION_NAME)
                         && activeEntityId.getDataverse().equals(dataverseName)) {
-                    stopFeedBeforeDelete(
-                            new Pair<Identifier, Identifier>(dvId, new Identifier(activeEntityId.getEntityName())),
+                    stopFeedBeforeDelete(new Pair<>(dvId, new Identifier(activeEntityId.getEntityName())),
                             metadataProvider, hcc);
                     // prepare job to remove feed log storage
                     jobsToExecute.add(FeedOperations.buildRemoveFeedStorageJob(
@@ -1425,7 +1424,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             IHyracksClientConnection hcc) {
         StopFeedStatement disStmt = new StopFeedStatement(feedNameComp);
         try {
-            handleDisconnectFeedStatement(metadataProvider, disStmt, hcc);
+            handleStopFeedStatement(metadataProvider, disStmt, hcc);
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info("Stopped feed " + feedNameComp.second.getValue());
             }
@@ -2272,7 +2271,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
             // Construct ActiveMessage
             for (String intakeLocation : intakeNodeLocations) {
-                FeedOperations.SendStopMessageToNode(feedId, intakeLocation, intakeNodeLocations.indexOf(intakeLocation));
+                FeedOperations.SendStopMessageToNode(feedId, intakeLocation,
+                        intakeNodeLocations.indexOf(intakeLocation));
             }
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);

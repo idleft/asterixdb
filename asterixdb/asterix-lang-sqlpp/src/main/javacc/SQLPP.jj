@@ -733,7 +733,6 @@ CreateFeedStatement FeedSpecification() throws ParseException:
   boolean ifNotExists = false;
   String adapterName = null;
   Map<String,String> properties = null;
-  FunctionSignature appliedFunction = null;
   CreateFeedStatement cfs = null;
   Pair<Identifier,Identifier> sourceNameComponents = null;
 }
@@ -1183,14 +1182,17 @@ Statement ConnectStatement() throws ParseException:
   Pair<Identifier,Identifier> datasetNameComponents = null;
 
   Map<String,String> configuration = null;
+  FunctionSignature appliedFunction = null;
   Statement stmt = null;
   String policy = null;
 }
 {
   (
-    <FEED> feedNameComponents = QualifiedName() <TO> Dataset() datasetNameComponents = QualifiedName() (policy = GetPolicy())?
+    <FEED> feedNameComponents = QualifiedName() <TO> Dataset() datasetNameComponents = QualifiedName()
+    (appliedFunction = ApplyFunction())?  (policy = GetPolicy())?
       {
-        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
+        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, appliedFunction,
+         policy, getVarCounter());
       }
   )
   {

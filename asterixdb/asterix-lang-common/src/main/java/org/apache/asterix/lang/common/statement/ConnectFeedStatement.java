@@ -50,7 +50,9 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
-        this.appliedFunctions.add(appliedFunction);
+        if(appliedFunction !=null) {
+            this.appliedFunctions.add(appliedFunction);
+        }
     }
 
     public Identifier getDataverseName() {

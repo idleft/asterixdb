@@ -489,11 +489,16 @@ public class MetadataNode implements IMetadataNode {
             }
 
             List<Feed> dataverseFeeds;
+            List<FeedConnection> feedConnections;
             Feed feed;
             dataverseFeeds = getDataverseFeeds(jobId, dataverseName);
-            // Drop all datasets in this dataverse.
+            // Drop all feeds&connections in this dataverse.
             for (int i = 0; i < dataverseFeeds.size(); i++) {
                 feed = dataverseFeeds.get(i);
+                feedConnections = getFeedConnections(jobId, dataverseName, feed.getFeedName());
+                for (FeedConnection feedConnection : feedConnections) {
+                    dropFeedConnection(jobId, dataverseName, feed.getFeedName(), feedConnection.getDatasetName());
+                }
                 dropFeed(jobId, dataverseName, feed.getFeedName());
             }
 

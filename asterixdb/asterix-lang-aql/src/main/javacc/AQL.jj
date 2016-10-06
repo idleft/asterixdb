@@ -1097,6 +1097,7 @@ Statement FeedStatement() throws ParseException:
   Pair<Identifier,Identifier> datasetNameComponents = null;
 
   Map<String,String> configuration = null;
+  FunctionSignature appliedFunction = null;
   Statement stmt = null;
   String policy = null;
 }
