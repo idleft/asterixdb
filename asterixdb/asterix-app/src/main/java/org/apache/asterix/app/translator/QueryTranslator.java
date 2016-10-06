@@ -41,11 +41,9 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveJobNotificationHandler;
-import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
-import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.algebra.extension.IExtensionStatement;
 import org.apache.asterix.api.common.APIFramework;
 import org.apache.asterix.api.http.servlet.APIServlet;
@@ -68,12 +66,9 @@ import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
-import org.apache.asterix.external.feed.message.FeedMessage;
-import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.util.ExternalDataConstants;
-import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.file.DatasetOperations;
 import org.apache.asterix.file.DataverseOperations;
 import org.apache.asterix.file.IndexOperations;
@@ -1311,7 +1306,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 EntityId activeEntityId = listener.getEntityId();
                 if (activeEntityId.getExtensionName().equals(Feed.EXTENSION_NAME)
                         && activeEntityId.getDataverse().equals(dataverseName)) {
-                    stopFeedBeforeDelete(dvId, activeEntityId, (FeedEventsListener) listener, metadataProvider, hcc);
+                    stopFeedBeforeDelete(
+                            new Pair<Identifier, Identifier>(dvId, new Identifier(activeEntityId.getEntityName())),
+                            metadataProvider, hcc);
                     // prepare job to remove feed log storage
                     jobsToExecute.add(FeedOperations.buildRemoveFeedStorageJob(
                             MetadataManager.INSTANCE.getFeed(mdTxnCtx, dataverseName, activeEntityId.getEntityName())));
@@ -1424,23 +1421,19 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    protected void stopFeedBeforeDelete(Identifier dvId, EntityId activeEntityId, FeedEventsListener feedEventsListener,
-            AqlMetadataProvider metadataProvider, IHyracksClientConnection hcc) {
-        //TODO: implement the stop feed logic
-        //        DisconnectFeedStatement disStmt = new DisconnectFeedStatement(dvId,
-        //                new Identifier(activeEntityId.getEntityName()), new Identifier(conn.getDatasetName()));
-        //        try {
-        //            handleDisconnectFeedStatement(metadataProvider, disStmt, hcc);
-        //            if (LOGGER.isLoggable(Level.INFO)) {
-        //                LOGGER.info("Disconnected feed " + activeEntityId.getEntityName() + " from dataset "
-        //                        + conn.getDatasetName());
-        //            }
-        //        } catch (Exception exception) {
-        //            if (LOGGER.isLoggable(Level.WARNING)) {
-        //                LOGGER.warning("Unable to disconnect feed " + activeEntityId.getEntityName() + " from dataset "
-        //                        + conn.getDatasetName() + ". Encountered exception " + exception);
-        //            }
-        //        }
+    protected void stopFeedBeforeDelete(Pair<Identifier, Identifier> feedNameComp, AqlMetadataProvider metadataProvider,
+            IHyracksClientConnection hcc) {
+        StopFeedStatement disStmt = new StopFeedStatement(feedNameComp);
+        try {
+            handleDisconnectFeedStatement(metadataProvider, disStmt, hcc);
+            if (LOGGER.isLoggable(Level.INFO)) {
+                LOGGER.info("Stopped feed " + feedNameComp.second.getValue());
+            }
+        } catch (Exception exception) {
+            if (LOGGER.isLoggable(Level.WARNING)) {
+                LOGGER.warning("Unable to stop feed " + feedNameComp.second.getValue() + exception);
+            }
+        }
     }
 
     protected Dataset getDataset(MetadataTransactionContext mdTxnCtx, String dataverseName, String datasetName)
@@ -2266,7 +2259,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         String feedName = sfst.getFeedName().getValue();
         EntityId feedId = new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName);
         // Obtain runtime info from ActiveListener
-        FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE.getActiveEntityListener(feedId);
+        FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
+                .getActiveEntityListener(feedId);
         intakeNodeLocations = listener.getIntakeLocations();
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
@@ -2278,7 +2272,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
             // Construct ActiveMessage
             for (String intakeLocation : intakeNodeLocations) {
-                FeedOperations.SendStopMessageToNode(feedId, intakeLocation);
+                FeedOperations.SendStopMessageToNode(feedId, intakeLocation, intakeNodeLocations.indexOf(intakeLocation));
             }
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2313,7 +2307,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (fc != null) {
                 throw new AlgebricksException("Feed" + feedName + " is already connected dataset " + datasetName);
             }
-            fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName, outputType.toString());
+            fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName,
+                    outputType.toString());
             MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {

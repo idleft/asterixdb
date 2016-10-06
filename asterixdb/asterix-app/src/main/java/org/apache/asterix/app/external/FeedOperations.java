@@ -419,9 +419,10 @@ public class FeedOperations {
         return jobSpec;
     }
 
-    public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation) throws Exception {
+    public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation, Integer ioDeviceIdx)
+            throws Exception {
         ActiveManagerMessage stopFeedMessage = new ActiveManagerMessage(ActiveManagerMessage.STOP_ACTIVITY, "SRC",
-                new ActiveRuntimeId(feedId, FeedUtils.FeedRuntimeType.INTAKE.toString(), 0));
+                new ActiveRuntimeId(feedId, FeedUtils.FeedRuntimeType.INTAKE.toString(), ioDeviceIdx));
         SendActiveMessage(stopFeedMessage, intakeNodeLocation);
     }
 

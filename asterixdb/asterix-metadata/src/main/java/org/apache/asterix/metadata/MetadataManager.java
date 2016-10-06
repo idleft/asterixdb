@@ -80,10 +80,10 @@ public class MetadataManager implements IMetadataManager {
     public static MetadataManager INSTANCE;
     private final MetadataCache cache = new MetadataCache();
     private final IAsterixStateProxy proxy;
-    private IMetadataNode metadataNode;
     private final ReadWriteLock metadataLatch;
     private final AsterixMetadataProperties metadataProperties;
     public boolean rebindMetadataNode = false;
+    private IMetadataNode metadataNode;
 
     public MetadataManager(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
         if (proxy == null) {
@@ -103,6 +103,10 @@ public class MetadataManager implements IMetadataManager {
         this.metadataProperties = null;
         this.metadataNode = metadataNode;
         this.metadataLatch = new ReentrantReadWriteLock(true);
+    }
+
+    public static synchronized void instantiate(MetadataManager metadataManager) {
+        MetadataManager.INSTANCE = metadataManager;
     }
 
     @Override
@@ -804,9 +808,15 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public void dropFeed(MetadataTransactionContext ctx, String dataverse, String feedName) throws MetadataException {
         Feed feed = null;
+        List<FeedConnection> feedConnections = null;
         try {
             feed = metadataNode.getFeed(ctx.getJobId(), dataverse, feedName);
+            feedConnections = metadataNode.getFeedConnections(ctx.getJobId(), dataverse, feedName);
             metadataNode.dropFeed(ctx.getJobId(), dataverse, feedName);
+            for (FeedConnection feedConnection : feedConnections) {
+                metadataNode.dropFeedConnection(ctx.getJobId(), dataverse, feedName, feedConnection.getDatasetName());
+                ctx.dropFeedConnection(dataverse, feedName, feedConnection.getDatasetName());
+            }
         } catch (RemoteException e) {
             throw new MetadataException(e);
         }
@@ -824,19 +834,19 @@ public class MetadataManager implements IMetadataManager {
     }
 
     public void addFeedConnection(MetadataTransactionContext ctx, FeedConnection feedConnection)
-            throws MetadataException{
-        metadataNode.addFeedConnection(ctx.getJobId(),feedConnection);
+            throws MetadataException {
+        metadataNode.addFeedConnection(ctx.getJobId(), feedConnection);
         ctx.addFeedConnection(feedConnection);
     }
 
-    public void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName,
-                                   String feedName, String datasetName) throws MetadataException {
+    public void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
+            String datasetName) throws MetadataException {
         metadataNode.dropFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
         ctx.dropFeedConnection(dataverseName, feedName, datasetName);
     }
 
     public FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
-                                            String datasetName) throws MetadataException {
+            String datasetName) throws MetadataException {
         FeedConnection feedConnection = null;
         feedConnection = metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
         return feedConnection;
@@ -990,9 +1000,5 @@ public class MetadataManager implements IMetadataManager {
         } catch (RemoteException e) {
             throw new MetadataException(e);
         }
-    }
-
-    public static synchronized void instantiate(MetadataManager metadataManager) {
-        MetadataManager.INSTANCE = metadataManager;
     }
 }

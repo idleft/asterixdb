@@ -389,28 +389,13 @@ public class MetadataCache {
         }
     }
 
-    /**
-     * Represents a logical operation against the metadata.
-     */
-    protected class MetadataLogicalOperation {
-        // Entity to be added/dropped.
-        public final IMetadataEntity<?> entity;
-        // True for add, false for drop.
-        public final boolean isAdd;
-
-        public MetadataLogicalOperation(IMetadataEntity<?> entity, boolean isAdd) {
-            this.entity = entity;
-            this.isAdd = isAdd;
-        }
-    };
-
-    protected void doOperation(MetadataLogicalOperation op) {
+        protected void doOperation(MetadataLogicalOperation op) {
         if (op.isAdd) {
             op.entity.addToCache(this);
         } else {
             op.entity.dropFromCache(this);
         }
-    }
+    };
 
     protected void undoOperation(MetadataLogicalOperation op) {
         if (!op.isAdd) {
@@ -522,35 +507,36 @@ public class MetadataCache {
         }
     }
 
-    public FeedConnection addFeedConnectionIfNotExists(FeedConnection feedConnection){
+    public FeedConnection addFeedConnectionIfNotExists(FeedConnection feedConnection) {
         synchronized (feedConnections) {
-            Map<String, FeedConnection> feedConnsInDataverse  = feedConnections.get(feedConnection.getDataverseName());
-            if(feedConnsInDataverse == null){
+            Map<String, FeedConnection> feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
+            if (feedConnsInDataverse == null) {
                 feedConnections.put(feedConnection.getDataverseName(), new HashMap<>());
                 feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
             }
-            return feedConnsInDataverse.put(feedConnection.getConnectionId(),feedConnection);
+            return feedConnsInDataverse.put(feedConnection.getConnectionId(), feedConnection);
         }
     }
 
-    public FeedConnection dropFeedConnection(FeedConnection feedConnection){
-        synchronized (feedConnections){
+    public FeedConnection dropFeedConnection(FeedConnection feedConnection) {
+        synchronized (feedConnections) {
             Map<String, FeedConnection> feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
-            if(feedConnsInDataverse!=null)
-                return feedConnsInDataverse.remove(feedConnection);
-            else
+            if (feedConnsInDataverse != null) {
+                return feedConnsInDataverse.remove(feedConnection.getConnectionId());
+            } else {
                 return null;
+            }
         }
     }
 
     public Feed addFeedIfNotExists(Feed feed) {
         synchronized (feeds) {
-            Map<String, Feed> feedsInDataverse  = feeds.get(feed.getDataverseName());
-            if(feedsInDataverse == null){
+            Map<String, Feed> feedsInDataverse = feeds.get(feed.getDataverseName());
+            if (feedsInDataverse == null) {
                 feeds.put(feed.getDataverseName(), new HashMap<>());
                 feedsInDataverse = feeds.get(feed.getDataverseName());
             }
-            return feedsInDataverse.put(feed.getFeedName(),feed);
+            return feedsInDataverse.put(feed.getFeedName(), feed);
         }
     }
 
@@ -600,6 +586,21 @@ public class MetadataCache {
                     }
                 }
             }
+        }
+    }
+
+/**
+     * Represents a logical operation against the metadata.
+     */
+    protected class MetadataLogicalOperation {
+        // Entity to be added/dropped.
+        public final IMetadataEntity<?> entity;
+        // True for add, false for drop.
+        public final boolean isAdd;
+
+        public MetadataLogicalOperation(IMetadataEntity<?> entity, boolean isAdd) {
+            this.entity = entity;
+            this.isAdd = isAdd;
         }
     }
 }

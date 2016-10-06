@@ -155,13 +155,11 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
             // intake operator locations
             List<String> intakeLocations = new ArrayList<>();
-            List<Integer> intakePartitions = new ArrayList<>();
             for (OperatorDescriptorId intakeOperatorId : intakeOperatorIds) {
                 Map<Integer, String> operatorLocations = info.getOperatorLocations().get(intakeOperatorId);
                 int nOperatorInstances = operatorLocations.size();
                 for (int i = 0; i < nOperatorInstances; i++) {
                     intakeLocations.add(operatorLocations.get(i));
-//                    intakePartitions.add(operatorLocations.get(i))
                 }
             }
             // compute operator locations
