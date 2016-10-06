@@ -72,7 +72,7 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
         try {
             Thread.currentThread().setName("Intake Thread");
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
-            adapterRuntimeManager = new AdapterRuntimeManager(feedId, adapter, writer, partition);
+            adapterRuntimeManager = new AdapterRuntimeManager(ctx, feedId, adapter, writer, partition);
             ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.INTAKE.toString(), partition);
             ingestionRuntime = new IngestionRuntime(feedId, runtimeId, adapterRuntimeManager, ctx);
             feedManager.registerRuntime(ingestionRuntime);

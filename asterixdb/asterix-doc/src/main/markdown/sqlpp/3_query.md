@@ -1,3 +1,22 @@
+<!--
+ ! Licensed to the Apache Software Foundation (ASF) under one
+ ! or more contributor license agreements.  See the NOTICE file
+ ! distributed with this work for additional information
+ ! regarding copyright ownership.  The ASF licenses this file
+ ! to you under the Apache License, Version 2.0 (the
+ ! "License"); you may not use this file except in compliance
+ ! with the License.  You may obtain a copy of the License at
+ !
+ !   http://www.apache.org/licenses/LICENSE-2.0
+ !
+ ! Unless required by applicable law or agreed to in writing,
+ ! software distributed under the License is distributed on an
+ ! "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ ! KIND, either express or implied.  See the License for the
+ ! specific language governing permissions and limitations
+ ! under the License.
+ !-->
+
 # <a id="Queries">3. Queries</a>
 
 A SQL++ query can be any legal SQL++ expression or `SELECT` statement. A SQL++ query always ends with a semicolon.
@@ -7,8 +26,6 @@ A SQL++ query can be any legal SQL++ expression or `SELECT` statement. A SQL++ q
 ##  <a id="SELECT_statements">SELECT statements</a>
 
 The following shows the (rich) grammar for the `SELECT` statement in SQL++.
-
-> TW: Should we replace SelectElement with SelectValue? MC: Yes, and done below.
 
     SelectStatement    ::= ( WithClause )?
                            SelectSetOperation (OrderbyClause )? ( LimitClause )?
@@ -55,7 +72,7 @@ The following shows the (rich) grammar for the `SELECT` statement in SQL++.
     OrderbyClause      ::= <ORDER> <BY> Expression ( <ASC> | <DESC> )? ( "," Expression ( <ASC> | <DESC> )? )*
     LimitClause        ::= <LIMIT> Expression ( <OFFSET> Expression )?
 
-In this section, we will make use of two stored collections of records (datasets in ADM parlance), `GleambookUsers` and `GleambookMessages`, in a series of running examples to explain `SELECT` queries. The contents of the example collections are as follows:
+In this section, we will make use of two stored collections of records (datasets), `GleambookUsers` and `GleambookMessages`, in a series of running examples to explain `SELECT` queries. The contents of the example collections are as follows:
 
 `GleambookUsers` collection:
 
@@ -579,11 +596,11 @@ The following table catalogs the SQL++ built-in aggregation functions and also i
 | COLL_MAX       | returns NULL | returns NULL | returns NULL     |
 | COLL_MIN       | returns NULL | returns NULL | returns NULL     |
 | COLL_AVG       | returns NULL | returns NULL | returns NULL     |
-| COLL_SQL-COUNT | not counted  | not counted  | 0                |
-| COLL_SQL-SUM   | ignores NULL | ignores NULL | returns NULL     |
-| COLL_SQL-MAX   | ignores NULL | ignores NULL | returns NULL     |
-| COLL_SQL-MIN   | ignores NULL | ignores NULL | returns NULL     |
-| COLL_SQL-AVG   | ignores NULL | ignores NULL | returns NULL     |
+| ARRAY_COUNT    | not counted  | not counted  | 0                |
+| ARRAY_SUM      | ignores NULL | ignores NULL | returns NULL     |
+| ARRAY_MAX      | ignores NULL | ignores NULL | returns NULL     |
+| ARRAY_MIN      | ignores NULL | ignores NULL | returns NULL     |
+| ARRAY_AVG      | ignores NULL | ignores NULL | returns NULL     |
 
 Notice that SQL++ has twice as many functions listed above as there are aggregate functions in SQL-92.
 This is because SQL++ offers two versions of each -- one that handles `UNKNOWN` values in a semantically
@@ -592,7 +609,7 @@ handles them in the ad hoc "just ignore the unknown values" fashion that the SQL
 
 ##### Example
 
-    COLL_AVG(
+    ARRAY_AVG(
         (
           SELECT VALUE len(friendIds) FROM GleambookUsers
         )
@@ -604,7 +621,7 @@ This example returns:
 
 ##### Example
 
-    SELECT uid AS uid, COLL_COUNT(grp) AS msgCnt
+    SELECT uid AS uid, ARRAY_COUNT(grp) AS msgCnt
     FROM GleambookMessages message
     GROUP BY message.authorId AS uid GROUP AS grp(message AS msg);
 
@@ -617,7 +634,7 @@ This query returns:
 
 Notice how the query forms groups where each group involves a message author and their messages.
 (SQL cannot do this because the grouped intermediate result is non-1NF in nature.)
-The query then uses the collection aggregate function `COLL_COUNT` to get the cardinality of each
+The query then uses the collection aggregate function ARRAY_COUNT to get the cardinality of each
 group of messages.
 
 ### <a id="SQL-92_aggregation_functions">SQL-92 aggregation functions</a>
@@ -637,13 +654,10 @@ It is important to realize that `COUNT` is actually **not** a SQL++ built-in agg
 Rather, the `COUNT` query above is using a special "sugared" function symbol that the SQL++ compiler
 will rewrite as follows:
 
-    SELECT uid AS uid, `COLL_SQL-COUNT`( (SELECT g.msg FROM `$1` as g) ) AS msgCnt
+    SELECT uid AS uid, ARRAY_COUNT( (SELECT g.msg FROM `$1` as g) ) AS msgCnt
     FROM GleambookMessages msg
     GROUP BY msg.authorId AS uid GROUP AS `$1`(msg AS msg);
 
-> TW: We really need to do something about `COLL_SQL-COUNT`.
-> MC: You mean about its name? And inconsistent dashing? I agree...!  :-)
-> Also, do we need to say anything about the (mandatory) double parens here?
 
 The same sort of rewritings apply to the function symbols `SUM`, `MAX`, `MIN`, and `AVG`.
 In contrast to the SQL++ collection aggregate functions, these special SQL-92 function symbols
@@ -672,7 +686,7 @@ However, since the SELECT expression `msg.authorId` is syntactically identical t
 it will be internally replaced by the generated group key variable.
 The following is the equivalent rewritten query that will be generated by the compiler for the query above:
 
-    SELECT authorId AS authorId, COLL_COUNT( (SELECT g.msg FROM `$1` AS g) )
+    SELECT authorId AS authorId, ARRAY_COUNT( (SELECT g.msg FROM `$1` AS g) )
     FROM GleambookMessages msg
     GROUP BY msg.authorId AS authorId GROUP AS `$1`(msg AS msg);
 
@@ -779,15 +793,15 @@ a list-valued query expression's result; this is needed above, even though the r
 element, to "de-listify" the list and obtain the desired scalar for the comparison.
 
 ## <a id="Let_clauses">LET clauses</a>
-Similar to `WITH` clauses, `LET` clauses can be useful when a (complex) expression is used several times in a query, such that the query can be more concise. The next query shows an example.
+Similar to `WITH` clauses, `LET` clauses can be useful when a (complex) expression is used several times within a query, allowing it to be written once to make the query more concise. The next query shows an example.
 
 ##### Example
 
     SELECT u.name AS uname, messages AS messages
     FROM GleambookUsers u
-    LET messages = ( SELECT VALUE m
-                   FROM GleambookMessages m
-                   WHERE m.authorId = u.id )
+    LET messages = (SELECT VALUE m
+                    FROM GleambookMessages m
+                    WHERE m.authorId = u.id)
     WHERE EXISTS messages;
 
 This query lists `GleambookUsers` that have posted `GleambookMessages` and shows all authored messages for each listed user. It returns:
@@ -807,17 +821,17 @@ This query is equivalent to the following query that does not use the `LET` clau
     WHERE EXISTS ( SELECT VALUE m
                    FROM GleambookMessages m
                    WHERE m.authorId = u.id
-    );
+                 );
 
 ## <a id="Union_all">UNION ALL</a>
-UNION ALL can be used to combine two input streams into one. Similar to SQL, there is no ordering guarantee on the output stream. However, different from SQL, SQL++ does not inspect what the data looks like on each input stream and allows heterogenity on the output stream and does not enforce schema change on any input streams. The following query is an example:
+UNION ALL can be used to combine two input streams into one. As in SQL, there is no ordering guarantee on the contents of the output stream. However, unlike SQL, SQL++ does not constrain what the data looks like on the input streams; in particular, it allows heterogenity on the input and output streams. The following odd but legal query is an example:
 
 ##### Example
 
     SELECT u.name AS uname
     FROM GleambookUsers u
     WHERE u.id = 2
-    UNION ALL
+      UNION ALL
     SELECT VALUE m.message
     FROM GleambookMessages m
     WHERE authorId=2;
@@ -860,22 +874,23 @@ Note that a subquery, like a top-level `SELECT` statment, always returns a colle
 within a query the subquery occurs -- and again, its result is never automatically cast into a scalar.
 
 ## <a id="Vs_SQL-92">SQL++ vs. SQL-92</a>
-The following matrix is a quick "key differences cheat sheet" for SQL++ and SQL-92.
+The following matrix is a quick "SQL-92 compatibility cheat sheet" for SQL++.
 
 | Feature |  SQL++ | SQL-92 |
 |----------|--------|--------|
-| SELECT * | Returns nested records. | Returns flattened concatenated records. |
-| Subquery | Returns a collection.  | The returned collection of records is cast into a scalar value if the subquery appears in a SELECT list or on one side of a comparison or as input to a function. |
-| Left outer join |  Fills in `MISSING` for non-matches.  |   Fills in `NULL`(s) for non-matches.    |
-| Union All       | Allows heterogenous input and does not enforce schema changes on data. | Different input streams have to follow equivalent structural types and output field names for non-first input streams have to be be changed to be the same as that of the first input stream.
-| String literal | Double quotes or single quotes. | Single quotes only. |
-| Delimited identifiers | Backticks. | Double quotes. |
+| SELECT * | Returns nested records | Returns flattened concatenated records |
+| Subquery | Returns a collection  | The returned collection is cast into a scalar value if the subquery appears in a SELECT list or on one side of a comparison or as input to a function |
+| LEFT OUTER JOIN |  Fills in `MISSING`(s) for non-matches  |   Fills in `NULL`(s) for non-matches    |
+| UNION ALL       | Allows heterogeneous inputs and output | Input streams must be UNION-compatible and output field names are drawn from the first input stream
+| IN constant_expr | The constant expression has to be an array or multiset, i.e., [..,..,...] | The constant collection can be represented as comma-separated items in a paren pair |
+| String literal | Double quotes or single quotes | Single quotes only |
+| Delimited identifiers | Backticks | Double quotes |
 
-For things beyond the cheat sheet, SQL++ is SQL-92 compliant.
+For things beyond this cheat sheet, SQL++ is SQL-92 compliant.
 Morever, SQL++ offers the following additional features beyond SQL-92 (hence the "++" in its name):
 
   * Fully composable and functional: A subquery can iterate over any intermediate collection and can appear anywhere in a query.
-  * Schema-free: The query language does not assume the existence of a fixed schema for any data it processes.
+  * Schema-free: The query language does not assume the existence of a static schema for any data that it processes.
   * Correlated FROM terms: A right-side FROM term expression can refer to variables defined by FROM terms on its left.
   * Powerful GROUP BY: In addition to a set of aggregate functions as in standard SQL, the groups created by the `GROUP BY` clause are directly usable in nested queries and/or to obtain nested results.
   * Generalized SELECT clause: A SELECT clause can return any type of collection, while in SQL-92, a `SELECT` clause has to return a (homogeneous) collection of records.

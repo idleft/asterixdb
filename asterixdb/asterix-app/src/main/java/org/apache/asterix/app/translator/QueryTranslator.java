@@ -52,7 +52,6 @@ import org.apache.asterix.app.external.ExternalIndexingOperations;
 import org.apache.asterix.app.external.FeedOperations;
 import org.apache.asterix.app.result.ResultReader;
 import org.apache.asterix.app.result.ResultUtil;
-import org.apache.asterix.common.app.SessionConfig;
 import org.apache.asterix.common.config.AsterixExternalProperties;
 import org.apache.asterix.common.config.ClusterProperties;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
@@ -121,6 +120,7 @@ import org.apache.asterix.metadata.bootstrap.MetadataBuiltinEntities;
 import org.apache.asterix.metadata.dataset.hints.DatasetHints;
 import org.apache.asterix.metadata.dataset.hints.DatasetHints.DatasetNodegroupCardinalityHint;
 import org.apache.asterix.metadata.declared.AqlMetadataProvider;
+import org.apache.asterix.metadata.entities.BuiltinTypeMap;
 import org.apache.asterix.metadata.entities.CompactionPolicy;
 import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.Datatype;
@@ -158,6 +158,7 @@ import org.apache.asterix.translator.CompiledStatements.CompiledLoadFromFileStat
 import org.apache.asterix.translator.CompiledStatements.CompiledUpsertStatement;
 import org.apache.asterix.translator.CompiledStatements.ICompiledDmlStatement;
 import org.apache.asterix.translator.IStatementExecutor;
+import org.apache.asterix.translator.SessionConfig;
 import org.apache.asterix.translator.TypeTranslator;
 import org.apache.asterix.translator.util.ValidateUtil;
 import org.apache.asterix.util.FlushDatasetUtils;
@@ -1255,7 +1256,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     throw new AlgebricksException("A datatype with this name " + typeName + " already exists.");
                 }
             } else {
-                if (builtinTypeMap.get(typeName) != null) {
+                if (BuiltinTypeMap.getBuiltinType(typeName) != null) {
                     throw new AlgebricksException("Cannot redefine builtin type " + typeName + ".");
                 } else {
                     Map<TypeSignature, IAType> typeMap = TypeTranslator.computeTypes(mdTxnCtx,
@@ -2458,7 +2459,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 sessionConfig.out().flush();
                 return;
             } else if (sessionConfig.isExecuteQuery() && compiled != null) {
-                GlobalConfig.ASTERIX_LOGGER.info(compiled.toJSON().toString(1));
+                if (GlobalConfig.ASTERIX_LOGGER.isLoggable(Level.FINE)) {
+                    GlobalConfig.ASTERIX_LOGGER.fine(compiled.toJSON().toString(1));
+                }
                 JobId jobId = JobUtils.runJob(hcc, compiled, false);
 
                 JSONObject response = new JSONObject();

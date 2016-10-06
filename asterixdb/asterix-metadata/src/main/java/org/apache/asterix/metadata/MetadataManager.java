@@ -22,6 +22,7 @@ package org.apache.asterix.metadata;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -35,9 +36,22 @@ import org.apache.asterix.metadata.api.IExtensionMetadataEntity;
 import org.apache.asterix.metadata.api.IExtensionMetadataSearchKey;
 import org.apache.asterix.metadata.api.IMetadataManager;
 import org.apache.asterix.metadata.api.IMetadataNode;
-import org.apache.asterix.metadata.entities.*;
+import org.apache.asterix.metadata.entities.CompactionPolicy;
+import org.apache.asterix.metadata.entities.Dataset;
+import org.apache.asterix.metadata.entities.DatasourceAdapter;
+import org.apache.asterix.metadata.entities.Datatype;
+import org.apache.asterix.metadata.entities.Dataverse;
+import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.asterix.metadata.entities.FeedPolicyEntity;
+import org.apache.asterix.metadata.entities.Function;
+import org.apache.asterix.metadata.entities.Index;
+import org.apache.asterix.metadata.entities.Library;
+import org.apache.asterix.metadata.entities.Node;
+import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 /**
  * Provides access to Asterix metadata via remote methods to the metadata node.
@@ -72,75 +86,34 @@ import org.apache.asterix.transaction.management.service.transaction.JobIdFactor
  * with transaction ids of regular jobs or other metadata transactions.
  */
 public class MetadataManager implements IMetadataManager {
-    private static final int INITIAL_SLEEP_TIME = 64;
-    private static final int RETRY_MULTIPLIER = 5;
-    private static final int MAX_RETRY_COUNT = 10;
-
-    // Set in init().
-    public static MetadataManager INSTANCE;
     private final MetadataCache cache = new MetadataCache();
-    private final IAsterixStateProxy proxy;
+    protected final IAsterixStateProxy proxy;
+    protected IMetadataNode metadataNode;
     private final ReadWriteLock metadataLatch;
-    private final AsterixMetadataProperties metadataProperties;
-    public boolean rebindMetadataNode = false;
-    private IMetadataNode metadataNode;
+    protected boolean rebindMetadataNode = false;
 
-    public MetadataManager(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
-        if (proxy == null) {
-            throw new Error("Null proxy given to MetadataManager.");
-        }
-        this.proxy = proxy;
-        this.metadataProperties = metadataProperties;
-        this.metadataNode = null;
-        this.metadataLatch = new ReentrantReadWriteLock(true);
-    }
+    // TODO(mblow): replace references of this (non-constant) field with a method, update field name accordingly
+    public static IMetadataManager INSTANCE;
 
-    public MetadataManager(IAsterixStateProxy proxy, IMetadataNode metadataNode) {
+    private MetadataManager(IAsterixStateProxy proxy, IMetadataNode metadataNode) {
+        this(proxy);
         if (metadataNode == null) {
-            throw new Error("Null metadataNode given to MetadataManager.");
+            throw new IllegalArgumentException("Null metadataNode given to MetadataManager");
         }
-        this.proxy = proxy;
-        this.metadataProperties = null;
         this.metadataNode = metadataNode;
-        this.metadataLatch = new ReentrantReadWriteLock(true);
     }
 
-    public static synchronized void instantiate(MetadataManager metadataManager) {
-        MetadataManager.INSTANCE = metadataManager;
+    private MetadataManager(IAsterixStateProxy proxy) {
+        if (proxy == null) {
+            throw new IllegalArgumentException("Null proxy given to MetadataManager");
+        }
+        this.proxy = proxy;
+        this.metadataLatch = new ReentrantReadWriteLock(true);
     }
 
     @Override
-    public void init() throws RemoteException, MetadataException {
-        // Could be synchronized on any object. Arbitrarily chose proxy.
-        synchronized (proxy) {
-            if (metadataNode != null && !rebindMetadataNode) {
-                return;
-            }
-            try {
-                int retry = 0;
-                int sleep = INITIAL_SLEEP_TIME;
-                while (retry++ < MAX_RETRY_COUNT) {
-                    metadataNode = proxy.getMetadataNode();
-                    if (metadataNode != null) {
-                        rebindMetadataNode = false;
-                        break;
-                    }
-                    Thread.sleep(sleep);
-                    sleep *= RETRY_MULTIPLIER;
-                }
-            } catch (InterruptedException e) {
-                throw new MetadataException(e);
-            }
-            if (metadataNode == null) {
-                throw new Error("Failed to get the MetadataNode.\n" + "The MetadataNode was configured to run on NC: "
-                        + metadataProperties.getMetadataNodeName());
-            }
-        }
-
-        // Starts the garbage collector thread which
-        // should always be running.
-        Thread garbageCollectorThread = new Thread(new GarbageCollector());
-        garbageCollectorThread.start();
+    public void init() throws HyracksDataException {
+        GarbageCollector.ensure();
     }
 
     @Override
@@ -236,7 +209,7 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public List<Dataset> getDataverseDatasets(MetadataTransactionContext ctx, String dataverseName)
             throws MetadataException {
-        List<Dataset> dataverseDatasets = new ArrayList<Dataset>();
+        List<Dataset> dataverseDatasets = new ArrayList<>();
         // add uncommitted temporary datasets
         for (Dataset dataset : ctx.getDataverseDatasets(dataverseName)) {
             if (dataset.getDatasetDetails().isTemp()) {
@@ -332,7 +305,7 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public List<Index> getDatasetIndexes(MetadataTransactionContext ctx, String dataverseName, String datasetName)
             throws MetadataException {
-        List<Index> datasetIndexes = new ArrayList<Index>();
+        List<Index> datasetIndexes = new ArrayList<>();
         Dataset dataset = findDataset(ctx, dataverseName, datasetName);
         if (dataset == null) {
             return datasetIndexes;
@@ -366,7 +339,7 @@ public class MetadataManager implements IMetadataManager {
     public CompactionPolicy getCompactionPolicy(MetadataTransactionContext ctx, String dataverse, String policyName)
             throws MetadataException {
 
-        CompactionPolicy compactionPolicy = null;
+        CompactionPolicy compactionPolicy;
         try {
             compactionPolicy = metadataNode.getCompactionPolicy(ctx.getJobId(), dataverse, policyName);
         } catch (RemoteException e) {
@@ -427,7 +400,7 @@ public class MetadataManager implements IMetadataManager {
             ARecordType aRecType = (ARecordType) datatype.getDatatype();
             return new Datatype(
                     datatype.getDataverseName(), datatype.getDatatypeName(), new ARecordType(aRecType.getTypeName(),
-                            aRecType.getFieldNames(), aRecType.getFieldTypes(), aRecType.isOpen()),
+                    aRecType.getFieldNames(), aRecType.getFieldTypes(), aRecType.isOpen()),
                     datatype.getIsAnonymous());
         }
         try {
@@ -703,7 +676,7 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public DatasourceAdapter getAdapter(MetadataTransactionContext ctx, String dataverseName, String name)
             throws MetadataException {
-        DatasourceAdapter adapter = null;
+        DatasourceAdapter adapter;
         try {
             adapter = metadataNode.getAdapter(ctx.getJobId(), dataverseName, name);
         } catch (RemoteException e) {
@@ -726,7 +699,7 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public List<Library> getDataverseLibraries(MetadataTransactionContext ctx, String dataverseName)
             throws MetadataException {
-        List<Library> dataverseLibaries = null;
+        List<Library> dataverseLibaries;
         try {
             // Assuming that the transaction can read its own writes on the
             // metadata node.
@@ -752,7 +725,7 @@ public class MetadataManager implements IMetadataManager {
     @Override
     public Library getLibrary(MetadataTransactionContext ctx, String dataverseName, String libraryName)
             throws MetadataException, RemoteException {
-        Library library = null;
+        Library library;
         try {
             library = metadataNode.getLibrary(ctx.getJobId(), dataverseName, libraryName);
         } catch (RemoteException e) {
@@ -785,18 +758,18 @@ public class MetadataManager implements IMetadataManager {
     public FeedPolicyEntity getFeedPolicy(MetadataTransactionContext ctx, String dataverse, String policyName)
             throws MetadataException {
 
-        FeedPolicyEntity FeedPolicy = null;
+        FeedPolicyEntity feedPolicy;
         try {
-            FeedPolicy = metadataNode.getFeedPolicy(ctx.getJobId(), dataverse, policyName);
+            feedPolicy = metadataNode.getFeedPolicy(ctx.getJobId(), dataverse, policyName);
         } catch (RemoteException e) {
             throw new MetadataException(e);
         }
-        return FeedPolicy;
+        return feedPolicy;
     }
 
     @Override
     public Feed getFeed(MetadataTransactionContext ctx, String dataverse, String feedName) throws MetadataException {
-        Feed feed = null;
+        Feed feed;
         try {
             feed = metadataNode.getFeed(ctx.getJobId(), dataverse, feedName);
         } catch (RemoteException e) {
@@ -859,6 +832,7 @@ public class MetadataManager implements IMetadataManager {
         return feedConnections;
     }
 
+    @Override
     public List<DatasourceAdapter> getDataverseAdapters(MetadataTransactionContext mdTxnCtx, String dataverse)
             throws MetadataException {
         List<DatasourceAdapter> dataverseAdapters;
@@ -870,9 +844,10 @@ public class MetadataManager implements IMetadataManager {
         return dataverseAdapters;
     }
 
+    @Override
     public void dropFeedPolicy(MetadataTransactionContext mdTxnCtx, String dataverseName, String policyName)
             throws MetadataException {
-        FeedPolicyEntity feedPolicy = null;
+        FeedPolicyEntity feedPolicy;
         try {
             feedPolicy = metadataNode.getFeedPolicy(mdTxnCtx.getJobId(), dataverseName, policyName);
             metadataNode.dropFeedPolicy(mdTxnCtx.getJobId(), dataverseName, policyName);
@@ -926,7 +901,7 @@ public class MetadataManager implements IMetadataManager {
 
     @Override
     public ExternalFile getExternalFile(MetadataTransactionContext ctx, String dataverseName, String datasetName,
-            Integer fileNumber) throws MetadataException {
+                                        Integer fileNumber) throws MetadataException {
         ExternalFile file;
         try {
             file = metadataNode.getExternalFile(ctx.getJobId(), dataverseName, datasetName, fileNumber);
@@ -964,7 +939,7 @@ public class MetadataManager implements IMetadataManager {
         cache.cleanupTempDatasets();
     }
 
-    private Dataset findDataset(MetadataTransactionContext ctx, String dataverseName, String datasetName) {
+    public Dataset findDataset(MetadataTransactionContext ctx, String dataverseName, String datasetName) {
         Dataset dataset = ctx.getDataset(dataverseName, datasetName);
         if (dataset == null) {
             dataset = cache.getDataset(dataverseName, datasetName);
@@ -994,11 +969,58 @@ public class MetadataManager implements IMetadataManager {
 
     @Override
     public <T extends IExtensionMetadataEntity> List<T> getEntities(MetadataTransactionContext mdTxnCtx,
-            IExtensionMetadataSearchKey searchKey) throws MetadataException {
+                                                                    IExtensionMetadataSearchKey searchKey)
+            throws MetadataException {
         try {
             return metadataNode.getEntities(mdTxnCtx.getJobId(), searchKey);
         } catch (RemoteException e) {
             throw new MetadataException(e);
+        }
+    }
+
+    @Override
+    public void rebindMetadataNode() {
+        rebindMetadataNode = true;
+    }
+
+    public static void initialize(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
+        INSTANCE = new CCMetadataManagerImpl(proxy, metadataProperties);
+    }
+
+    public static void initialize(IAsterixStateProxy proxy, MetadataNode metadataNode) {
+        INSTANCE = new MetadataManager(proxy, metadataNode);
+    }
+
+    private static class CCMetadataManagerImpl extends MetadataManager {
+        private final AsterixMetadataProperties metadataProperties;
+
+        public CCMetadataManagerImpl(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
+            super(proxy);
+            this.metadataProperties = metadataProperties;
+        }
+
+        @Override
+        public synchronized void init() throws HyracksDataException {
+            if (metadataNode != null && !rebindMetadataNode) {
+                return;
+            }
+            try {
+                metadataNode = proxy.waitForMetadataNode(metadataProperties.getRegistrationTimeoutSecs(),
+                        TimeUnit.SECONDS);
+                if (metadataNode != null) {
+                    rebindMetadataNode = false;
+                } else {
+                    throw new HyracksDataException("The MetadataNode failed to bind before the configured timeout ("
+                            + metadataProperties.getRegistrationTimeoutSecs() + " seconds); the MetadataNode was " +
+                            "configured to run on NC: " + metadataProperties.getMetadataNodeName());
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new HyracksDataException(e);
+            } catch (RemoteException e) {
+                throw new HyracksDataException(e);
+            }
+            super.init();
         }
     }
 }

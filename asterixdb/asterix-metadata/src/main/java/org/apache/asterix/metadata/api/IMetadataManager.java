@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.common.metadata.IMetadataBootstrap;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.MetadataTransactionContext;
@@ -33,13 +34,13 @@ import org.apache.asterix.metadata.entities.DatasourceAdapter;
 import org.apache.asterix.metadata.entities.Datatype;
 import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
 import org.apache.asterix.metadata.entities.Function;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.Library;
 import org.apache.asterix.metadata.entities.Node;
 import org.apache.asterix.metadata.entities.NodeGroup;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 /**
  * A metadata manager provides user access to Asterix metadata (e.g., types,
@@ -53,16 +54,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
  * finer levels is the responsibility of the metadata node, not the metadata
  * manager or its user.
  */
-public interface IMetadataManager {
-
-    /**
-     * Initializes the metadata manager, e.g., finds the remote metadata node.
-     *
-     * @throws RemoteException
-     *             If an error occurred while contacting the proxy for finding
-     *             the metadata node.
-     */
-    void init() throws RemoteException, MetadataException;
+public interface IMetadataManager extends IMetadataBootstrap {
 
     /**
      * Begins a transaction on the metadata node.
@@ -256,7 +248,8 @@ public interface IMetadataManager {
      *            Name of the datavers holding the given dataset.
      * @param datasetName
      *            Name of the dataset holding the index.
-     * @indexName Name of the index to retrieve.
+     * @param indexName
+     *            Name of the index to retrieve.
      * @return An Index instance.
      * @throws MetadataException
      *             For example, if the index does not exist.
@@ -273,7 +266,8 @@ public interface IMetadataManager {
      *            Name of the datavers holding the given dataset.
      * @param datasetName
      *            Name of the dataset holding the index.
-     * @indexName Name of the index to retrieve.
+     * @param indexName
+     *            Name of the index to retrieve.
      * @throws MetadataException
      *             For example, if the index does not exist.
      */
@@ -406,7 +400,7 @@ public interface IMetadataManager {
     /**
      * @param mdTxnCtx
      *            MetadataTransactionContext of an active metadata transaction.
-     * @param function
+     * @param adapter
      *            An instance of type Adapter that represents the adapter being
      *            added
      * @throws MetadataException
@@ -418,7 +412,7 @@ public interface IMetadataManager {
      *            MetadataTransactionContext of an active metadata transaction.
      * @param dataverseName
      *            the dataverse associated with the adapter being searched
-     * @param Name
+     * @param name
      *            name of the adapter
      * @return
      * @throws MetadataException
@@ -436,6 +430,17 @@ public interface IMetadataManager {
      * @throws MetadataException
      */
     void dropAdapter(MetadataTransactionContext ctx, String dataverseName, String name) throws MetadataException;
+
+    /**
+     * @param ctx
+     *            MetadataTransactionContext of an active metadata transaction.
+     * @param dataverseName
+     *            the dataverse whose associated adapters are being requested
+     * @return
+     * @throws MetadataException
+     */
+    List<DatasourceAdapter> getDataverseAdapters(MetadataTransactionContext ctx, String dataverseName)
+            throws MetadataException;
 
     /**
      * @param ctx
@@ -497,6 +502,14 @@ public interface IMetadataManager {
      * @param ctx
      * @param dataverse
      * @param policyName
+     * @throws MetadataException
+     */
+    void dropFeedPolicy(MetadataTransactionContext ctx, String dataverse, String policyName) throws MetadataException;
+
+    /**
+     * @param ctx
+     * @param dataverse
+     * @param policyName
      * @return
      * @throws MetadataException
      */
@@ -526,7 +539,7 @@ public interface IMetadataManager {
      * @param libraryName
      *            Name of library to be deleted. MetadataException for example,
      *            if the library does not exists.
-     * @throws RemoteException
+     * @throws MetadataException
      */
     void dropLibrary(MetadataTransactionContext ctx, String dataverseName, String libraryName) throws MetadataException;
 
@@ -540,7 +553,6 @@ public interface IMetadataManager {
      *            Library to be added
      * @throws MetadataException
      *             for example, if the library is already added.
-     * @throws RemoteException
      */
     void addLibrary(MetadataTransactionContext ctx, Library library) throws MetadataException;
 
@@ -567,7 +579,6 @@ public interface IMetadataManager {
      *            dataverse asociated with the library that is to be retrieved.
      * @return Library
      * @throws MetadataException
-     * @throws RemoteException
      */
     List<Library> getDataverseLibraries(MetadataTransactionContext ctx, String dataverseName) throws MetadataException;
 
@@ -671,9 +682,28 @@ public interface IMetadataManager {
      * @param searchKey
      * @return
      * @throws MetadataException
-     * @throws HyracksDataException
      */
     <T extends IExtensionMetadataEntity> List<T> getEntities(MetadataTransactionContext mdTxnCtx,
-            IExtensionMetadataSearchKey searchKey) throws MetadataException, HyracksDataException;
+            IExtensionMetadataSearchKey searchKey) throws MetadataException;
 
+    /**
+     * Indicate when the metadata node has left or rejoined the cluster, and the MetadataManager should
+     * rebind it
+     */
+    void rebindMetadataNode();
+
+    /**
+     * Feed Connection Related Metadata operations
+     */
+    void addFeedConnection(MetadataTransactionContext ctx, FeedConnection feedConnection)
+            throws MetadataException;
+
+    void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
+            String datasetName) throws MetadataException;
+
+    FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
+            String datasetName) throws MetadataException;
+
+    List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
+            throws MetadataException;
 }
