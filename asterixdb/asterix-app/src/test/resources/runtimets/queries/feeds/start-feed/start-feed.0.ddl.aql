@@ -40,8 +40,4 @@
 
      create feed TwitterFeed using push_twitter(
  ("type-name"="Tweet"),
- ("format"="twitter-status"),//
- ("consumer.key"="DVRNmClmWgPI1Oix2Ly0lYYib"),
- ("consumer.secret"="kZ2GoOei4e2gl3mKNPCLEfwYfPYi9SvJZY1iP7uysZ0yURdTii"),
- ("access.token"="90370423-qhoH7wpc4JKSPyinDIyqzHYj90T5lbBlTbqHlqbVk"),
- ("access.token.secret"="PxCnsNDu9gdXDrqpAfKjw7kh8IPc0mZJAEccHbCTgKE2t"));
+ ("format"="twitter-status"));
