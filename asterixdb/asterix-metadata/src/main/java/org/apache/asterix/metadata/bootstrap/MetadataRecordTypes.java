@@ -61,7 +61,6 @@ public final class MetadataRecordTypes {
     public static final String FIELD_NAME_FILE_NUMBER = "FileNumber";
     public static final String FIELD_NAME_FILE_SIZE = "FileSize";
     public static final String FIELD_NAME_FILE_STRUCTURE = "FileStructure";
-    public static final String FIELD_NAME_FUNCTION = "Function";
     public static final String FIELD_NAME_GROUP_NAME = "GroupName";
     public static final String FIELD_NAME_HINTS = "Hints";
     public static final String FIELD_NAME_INDEX_NAME = "IndexName";
@@ -87,13 +86,10 @@ public final class MetadataRecordTypes {
     public static final String FIELD_NAME_PENDING_OP = "PendingOp";
     public static final String FIELD_NAME_POLICY_NAME = "PolicyName";
     public static final String FIELD_NAME_PRIMARY_KEY = "PrimaryKey";
-    public static final String FIELD_NAME_PRIMARY_TYPE_DETAILS = "PrimaryTypeDetails";
     public static final String FIELD_NAME_PROPERTIES = "Properties";
     public static final String FIELD_NAME_RECORD = "Record";
     public static final String FIELD_NAME_RETURN_TYPE = "ReturnType";
     public static final String FIELD_NAME_SEARCH_KEY = "SearchKey";
-    public static final String FIELD_NAME_SECONDARY_TYPE_DETAILS = "SecondaryTypeDetails";
-    public static final String FIELD_NAME_SOURCE_FEED_NAME = "SourceFeedName";
     public static final String FIELD_NAME_STATUS = "Status";
     public static final String FIELD_NAME_TAG = "Tag";
     public static final String FIELD_NAME_TIMESTAMP = "Timestamp";
@@ -382,16 +378,18 @@ public final class MetadataRecordTypes {
     public static final int FEED_CONN_DATASET_NAME_FIELD_INDEX = 2;
     public static final int FEED_CONN_OUTPUT_TYPE_INDEX = 3;
     public static final int FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX = 4;
+    public static final int FEED_CONN_POLICY_FIELD_INDEX = 5;
+
 
     public static final ARecordType FEED_CONNECTION_RECORDTYPE = createRecordType(
             // RecordTypeName
             RECORD_NAME_FEED_CONNECTION,
             // FieldNames
             new String[] { FIELD_NAME_DATAVERSE_NAME, FIELD_NAME_FEED_NAME, FIELD_NAME_DATASET_NAME,
-                    FIELD_NAME_RETURN_TYPE, FIELD_NAME_APPLIED_FUNCTIONS },
+                    FIELD_NAME_RETURN_TYPE, FIELD_NAME_APPLIED_FUNCTIONS, FIELD_NAME_POLICY_NAME },
             // FieldTypes
             new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
-                    new AUnorderedListType(BuiltinType.ASTRING, null) },
+                    new AUnorderedListType(BuiltinType.ASTRING, null), BuiltinType.ASTRING},
             //IsOpen?
             true);
 

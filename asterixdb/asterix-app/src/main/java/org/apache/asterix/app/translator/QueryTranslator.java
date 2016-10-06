@@ -2238,11 +2238,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, feedName, feedConnections);
         try {
             MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, feedConnections);
-            FeedPolicyAccessor policyAccessor = new FeedPolicyAccessor(new HashMap<>());
+            // Prepare policy
             FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                     .getActiveEntityListener(entityId);
             if (listener == null) {
-                metadataProvider.setWriteTransaction(true);
                 listener = new FeedEventsListener(entityId);
             }
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
@@ -2296,6 +2295,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String feedName = cfs.getFeedName();
         String datasetName = cfs.getDatasetName().getValue();
+        String policyName = cfs.getPolicy();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
         // validation
@@ -2303,7 +2303,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 metadataProvider.getMetadataTxnContext());
         ARecordType outputType = FeedMetadataUtil.getOutputType(feed, feed.getAdapterConfiguration(),
                 ExternalDataConstants.KEY_TYPE_NAME);
-        ArrayList<String> appliedFunctions = cfs.getAppliedFunctions();
+        ArrayList<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
         // Transaction handling
         MetadataLockManager.INSTANCE.connectFeedBegin(dataverseName, dataverseName + "." + datasetName,
                 dataverseName + "." + feedName);
@@ -2313,7 +2313,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (fc != null) {
                 throw new AlgebricksException("Feed" + feedName + " is already connected dataset " + datasetName);
             }
-            fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, outputType.toString());
+            fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName, outputType.toString());
             MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {

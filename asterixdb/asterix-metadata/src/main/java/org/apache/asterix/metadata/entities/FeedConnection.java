@@ -33,7 +33,6 @@ import java.util.ArrayList;
  */
 public class FeedConnection implements IMetadataEntity<FeedConnection> {
 
-
     private static final long serialVersionUID = 1L;
 
     private EntityId feedId;
@@ -43,37 +42,33 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
     private String datasetName;
     private String policyName;
     private String outputType;
-    private ArrayList<String> appliedFunctions;
+    private ArrayList<FunctionSignature> appliedFunctions;
 
-    public FeedConnection(String dataverseName, String feedName, String datasetName, ArrayList<String> appliedFunctions,
-            String outputType) {
+    public FeedConnection(String dataverseName, String feedName, String datasetName,
+            ArrayList<FunctionSignature> appliedFunctions, String policyName, String outputType) {
         this.dataverseName = dataverseName;
         this.feedName = feedName;
         this.datasetName = datasetName;
         this.appliedFunctions = appliedFunctions;
-        this.connectionId = feedName+":"+datasetName;
+        this.connectionId = feedName + ":" + datasetName;
         this.policyName = BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.outputType = outputType;
         this.feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, dataverseName, feedName);
     }
 
-    public ArrayList<String> getAppliedFunctions(){
+    public ArrayList<FunctionSignature> getAppliedFunctions() {
         return appliedFunctions;
     }
 
-    public void setAppliedFunctions(ArrayList<String> appliedFunctions){
-        this.appliedFunctions = appliedFunctions;
-    }
-
     @Override
-    public boolean equals(Object other){
+    public boolean equals(Object other) {
         if (this == other) {
             return true;
         }
         if (!(other instanceof FeedConnection)) {
             return false;
         }
-        return ((FeedConnection)other).getConnectionId().equals(connectionId);
+        return ((FeedConnection) other).getConnectionId().equals(connectionId);
     }
 
     @Override

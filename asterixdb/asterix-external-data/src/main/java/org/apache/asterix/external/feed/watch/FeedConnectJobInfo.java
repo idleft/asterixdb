@@ -39,11 +39,10 @@ public class FeedConnectJobInfo extends ActiveJob {
     private List<String> intakeLocations;
     private List<String> computeLocations;
     private List<String> storageLocations;
-    private List<String> targetDatasets;
+    private List<Integer> intakePartitions;
 
     public FeedConnectJobInfo(EntityId entityId, JobId jobId, ActivityState state, JobSpecification spec) {
         super(entityId, jobId, state, JobType.FEED_CONNECT, spec);
-        targetDatasets = new ArrayList();
     }
 
 
@@ -69,5 +68,13 @@ public class FeedConnectJobInfo extends ActiveJob {
 
     public void setIntakeLocations(List<String> intakeLocations) {
         this.intakeLocations = intakeLocations;
+    }
+
+    public List<Integer> getIntakePartitions() {
+        return intakePartitions;
+    }
+
+    public void setIntakePartitions(List<Integer> intakePartitions) {
+        this.intakePartitions = intakePartitions;
     }
 }

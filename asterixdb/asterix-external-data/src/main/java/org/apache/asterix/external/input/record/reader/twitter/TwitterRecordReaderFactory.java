@@ -30,6 +30,7 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.TwitterUtil;
 import org.apache.asterix.external.util.TwitterUtil.AuthenticationConstants;
 import org.apache.asterix.external.util.TwitterUtil.SearchAPIConstants;
+import org.apache.asterix.runtime.util.ClusterStateManager;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -43,11 +44,20 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
     private static final Logger LOGGER = Logger.getLogger(TwitterRecordReaderFactory.class.getName());
 
     private static final String DEFAULT_INTERVAL = "10"; // 10 seconds
-    private static final int INTAKE_CARDINALITY = 1; // degree of parallelism at intake stage
+    private static final int INTAKE_CARDINALITY = ClusterStateManager.INSTANCE.getNumberOfNodes(); // degree of parallelism at intake stage
 
     private Map<String, String> configuration;
     private boolean pull;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
+
+    public static boolean isTwitterPull(Map<String, String> configuration) {
+        String reader = configuration.get(ExternalDataConstants.KEY_READER);
+        if (reader.equals(ExternalDataConstants.READER_TWITTER_PULL)
+                || reader.equals(ExternalDataConstants.READER_PULL_TWITTER)) {
+            return true;
+        }
+        return false;
+    }
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -97,15 +107,6 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
         } else {
             pull = false;
         }
-    }
-
-    public static boolean isTwitterPull(Map<String, String> configuration) {
-        String reader = configuration.get(ExternalDataConstants.KEY_READER);
-        if (reader.equals(ExternalDataConstants.READER_TWITTER_PULL)
-                || reader.equals(ExternalDataConstants.READER_PULL_TWITTER)) {
-            return true;
-        }
-        return false;
     }
 
     @Override

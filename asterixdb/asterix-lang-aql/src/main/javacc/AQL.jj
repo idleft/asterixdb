@@ -1102,9 +1102,10 @@ Statement FeedStatement() throws ParseException:
 }
 {
   (
-    <CONNECT> <FEED> feedNameComponents = QualifiedName() <TO> <DATASET> datasetNameComponents = QualifiedName() (policy = GetPolicy())?
+    <CONNECT> <FEED> feedNameComponents = QualifiedName() <TO> <DATASET> datasetNameComponents = QualifiedName()
+    (appliedFunction = ApplyFunction())? (policy = GetPolicy())?
       {
-        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, policy, getVarCounter());
+        stmt = new ConnectFeedStatement(feedNameComponents, datasetNameComponents, appliedFunction, policy, getVarCounter());
       }
     | <DISCONNECT> <FEED> feedNameComponents = QualifiedName() <FROM> <DATASET> datasetNameComponents = QualifiedName()
       {

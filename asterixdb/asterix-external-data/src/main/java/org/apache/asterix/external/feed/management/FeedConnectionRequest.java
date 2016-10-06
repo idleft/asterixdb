@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,49 +33,24 @@ import org.apache.commons.lang3.StringUtils;
 public class FeedConnectionRequest implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    public enum ConnectionStatus {
-        /** initial state upon creating a connection request **/
-        INITIALIZED,
-
-        /** connection establish; feed is receiving data **/
-        ACTIVE,
-
-        /** connection removed; feed is not receiving data **/
-        INACTIVE,
-
-        /** connection request failed **/
-        FAILED
-    }
-
     /** Location in the source feed pipeline from where feed tuples are received. **/
     private final FeedRuntimeType connectionLocation;
-
     /** List of functions that need to be applied in sequence after the data hand-off at the source feedPointKey. **/
-    private final List<String> functionsToApply;
-
+    private final List<FunctionSignature> functionsToApply;
+    /** Name of the policy that governs feed ingestion **/
+    private final String policy;
+    /** Target dataset associated with the connection request **/
+    private final String targetDataset;
+    private final EntityId receivingFeedId;
     /** Status associated with the subscription. */
     private ConnectionStatus connectionStatus;
 
-    /** Name of the policy that governs feed ingestion **/
-    private final String policy;
-
-    /** Policy associated with a feed connection **/
-    private final Map<String, String> policyParameters;
-
-    /** Target dataset associated with the connection request **/
-    private final String targetDataset;
-
-    private final EntityId receivingFeedId;
-
-    public FeedConnectionRequest(FeedRuntimeType connectionLocation,
-            List<String> functionsToApply, String targetDataset, String policy, Map<String, String> policyParameters,
-            EntityId receivingFeedId) {
+    public FeedConnectionRequest(FeedRuntimeType connectionLocation, List<FunctionSignature> functionsToApply,
+            String targetDataset, String policy, EntityId receivingFeedId) {
         this.connectionLocation = connectionLocation;
         this.functionsToApply = functionsToApply;
         this.targetDataset = targetDataset;
         this.policy = policy;
-        this.policyParameters = policyParameters;
         this.receivingFeedId = receivingFeedId;
         this.connectionStatus = ConnectionStatus.INITIALIZED;
     }
@@ -103,11 +79,7 @@ public class FeedConnectionRequest implements Serializable {
         return receivingFeedId;
     }
 
-    public Map<String, String> getPolicyParameters() {
-        return policyParameters;
-    }
-
-    public List<String> getFunctionsToApply() {
+    public List<FunctionSignature> getFunctionsToApply() {
         return functionsToApply;
     }
 
@@ -115,6 +87,20 @@ public class FeedConnectionRequest implements Serializable {
     public String toString() {
         return "Feed Connection Request " + receivingFeedId + " [" + connectionLocation + "]" + " Apply ("
                 + StringUtils.join(functionsToApply, ",") + ")";
+    }
+
+    public enum ConnectionStatus {
+        /** initial state upon creating a connection request **/
+        INITIALIZED,
+
+        /** connection establish; feed is receiving data **/
+        ACTIVE,
+
+        /** connection removed; feed is not receiving data **/
+        INACTIVE,
+
+        /** connection request failed **/
+        FAILED
     }
 
 }

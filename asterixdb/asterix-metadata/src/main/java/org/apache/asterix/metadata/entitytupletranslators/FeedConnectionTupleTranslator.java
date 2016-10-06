@@ -22,6 +22,7 @@ package org.apache.asterix.metadata.entitytupletranslators;
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.OrderedListBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
+import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
@@ -40,9 +41,6 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 
-/**
- * Created by Xikui on 7/12/16.
- */
 public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedConnection> {
 
     public static final int FEED_CONN_DATAVERSE_NAME_FIELD_INDEX = 0;
@@ -78,20 +76,25 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
                 .getValueByPos(MetadataRecordTypes.FEED_CONN_DATASET_NAME_FIELD_INDEX)).getStringValue();
         String outputType = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_OUTPUT_TYPE_INDEX))
                 .getStringValue();
-        ArrayList<String> appliedFunctions = null;
+        String policyName = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_POLICY_FIELD_INDEX))
+                .getStringValue();
+        ArrayList<FunctionSignature> appliedFunctions = null;
         Object o = feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX);
         IACursor cursor = null;
 
         if (!(o instanceof ANull) && !(o instanceof AMissing)) {
             appliedFunctions = new ArrayList<>();
+            FunctionSignature functionSignature;
             cursor = ((AUnorderedList) feedConnRecord
                     .getValueByPos(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX)).getCursor();
             while (cursor.next()) {
-                appliedFunctions.add(((AString) cursor.get()).getStringValue());
+                //TODO: allow different arity
+                functionSignature = new FunctionSignature(dataverseName, ((AString) cursor.get()).getStringValue(), 1);
+                appliedFunctions.add(functionSignature);
             }
         }
 
-        return new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, outputType);
+        return new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName, outputType);
     }
 
     @Override
@@ -142,6 +145,12 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         fieldValue.reset();
         writeAppliedFunctionsField(recordBuilder, me, fieldValue);
 
+        // field: policyName
+        fieldValue.reset();
+        aString.setValue(me.getPolicyName());
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_POLICY_FIELD_INDEX, fieldValue);
+
         recordBuilder.write(tupleBuilder.getDataOutput(), true);
         tupleBuilder.addFieldEndOffset();
 
@@ -157,9 +166,9 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         listBuilder.reset((AUnorderedListType) MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE
                 .getFieldTypes()[MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX]);
         if (fc.getAppliedFunctions() != null) {
-            ArrayList<String> appliedFunctions = fc.getAppliedFunctions();
-            for (String af : appliedFunctions) {
-                aString.setValue(af);
+            ArrayList<FunctionSignature> appliedFunctions = fc.getAppliedFunctions();
+            for (FunctionSignature af : appliedFunctions) {
+                aString.setValue(af.getName());
                 stringSerde.serialize(aString, listEleBuffer.getDataOutput());
                 listBuilder.addItem(listEleBuffer);
             }

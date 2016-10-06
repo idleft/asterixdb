@@ -52,7 +52,6 @@ import org.apache.log4j.Logger;
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class);
     private final List<String> connectedDatasets;
-    private JobSpecification connectionJobSpec;
     private JobId connectionJobId = null;
     private FeedConnectJobInfo cInfo;
     private EntityId entityId;
@@ -97,22 +96,12 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         this.cInfo = info;
     }
 
-    public FeedConnectJobInfo getFeedConnectJobInfo() {
-        return this.cInfo;
-    }
-
     private void handlePartitionStart() {
         cInfo.setState(ActivityState.ACTIVE);
     }
 
-    public synchronized List<String> getConnectionLocations(IFeedJoint feedJoint, final FeedConnectionRequest request)
-            throws Exception {
-        return cInfo.getIntakeLocations();
-    }
-
     @Override
     public void notifyJobCreation(JobId jobId, JobSpecification spec) {
-        this.connectionJobSpec = spec;
         this.connectionJobId = jobId;
         cInfo.setJobId(jobId);
     }
@@ -166,11 +155,13 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
             // intake operator locations
             List<String> intakeLocations = new ArrayList<>();
+            List<Integer> intakePartitions = new ArrayList<>();
             for (OperatorDescriptorId intakeOperatorId : intakeOperatorIds) {
                 Map<Integer, String> operatorLocations = info.getOperatorLocations().get(intakeOperatorId);
                 int nOperatorInstances = operatorLocations.size();
                 for (int i = 0; i < nOperatorInstances; i++) {
                     intakeLocations.add(operatorLocations.get(i));
+//                    intakePartitions.add(operatorLocations.get(i))
                 }
             }
             // compute operator locations

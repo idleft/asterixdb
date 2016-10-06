@@ -19,6 +19,7 @@
 package org.apache.asterix.lang.common.statement;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
@@ -34,10 +35,11 @@ public class ConnectFeedStatement implements Statement {
     private final String feedName;
     private final String policy;
     private int varCounter;
-    private final ArrayList<String> appliedFunctions;
+    private final ArrayList<FunctionSignature> appliedFunctions;
 
     public ConnectFeedStatement(Pair<Identifier, Identifier> feedNameCmp, Pair<Identifier, Identifier> datasetNameCmp,
-            String policy, int varCounter) {
+            FunctionSignature appliedFunction, String policy, int varCounter) {
+        appliedFunctions = new ArrayList<>();
         if (feedNameCmp.first != null && datasetNameCmp.first != null
                 && !feedNameCmp.first.getValue().equals(datasetNameCmp.first.getValue())) {
             throw new IllegalArgumentException("Dataverse for source feed and target dataset do not match");
@@ -48,7 +50,7 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
-        this.appliedFunctions = null;
+        this.appliedFunctions.add(appliedFunction);
     }
 
     public Identifier getDataverseName() {
@@ -81,7 +83,7 @@ public class ConnectFeedStatement implements Statement {
         return feedName;
     }
 
-    public ArrayList<String> getAppliedFunctions() {
+    public ArrayList<FunctionSignature> getAppliedFunctions() {
         return appliedFunctions;
     }
 

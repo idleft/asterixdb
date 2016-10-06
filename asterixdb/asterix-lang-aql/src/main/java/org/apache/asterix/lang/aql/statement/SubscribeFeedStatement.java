@@ -82,23 +82,11 @@ public class SubscribeFeedStatement implements Statement {
         }
 
         String feedOutputType = getOutputType(mdTxnCtx);
-        //        FunctionSignature appliedFunction = subscriberFeed.getAppliedFunction();
-        //        Function function = null;
-        //        if (appliedFunction != null) {
-        //            function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, appliedFunction);
-        //            if (function == null) {
-        //                throw new MetadataException(" Unknown function " + appliedFunction);
-        //            } else if (function.getParams().size() > 1) {
-        //                throw new MetadataException(
-        //                        " Incompatible function: " + appliedFunction + " Number if arguments must be 1");
-        //            }
-        //        }
-
         StringBuilder builder = new StringBuilder();
         builder.append("use dataverse " + sourceFeedId.getDataverse() + ";\n");
         builder.append("set" + " " + FunctionUtil.IMPORT_PRIVATE_FUNCTIONS + " " + "'" + Boolean.TRUE + "'" + ";\n");
-                builder.append("set" + " " + FeedActivity.FeedActivityDetails.FEED_POLICY_NAME + " " + "'"
-                        + connectionRequest.getPolicy() + "'" + ";\n");
+        builder.append("set" + " " + FeedActivity.FeedActivityDetails.FEED_POLICY_NAME + " " + "'"
+                + connectionRequest.getPolicy() + "'" + ";\n");
 
         builder.append("insert into dataset " + connectionRequest.getTargetDataset() + " ");
         builder.append(" (" + " for $x in feed-collect ('" + sourceFeedId.getDataverse() + "'" + "," + "'"
@@ -107,32 +95,32 @@ public class SubscribeFeedStatement implements Statement {
                 + connectionRequest.getSubscriptionLocation().name() + "'" + "," + "'"
                 + connectionRequest.getTargetDataset() + "'" + "," + "'" + feedOutputType + "'" + ")");
 
-        //        List<String> functionsToApply = connectionRequest.getFunctionsToApply();
-        //        if ((functionsToApply != null) && functionsToApply.isEmpty()) {
-        builder.append(" return $x");
-        //        } else {
-        //            String rValueName = "x";
-        //            String lValueName = "y";
-        //            int variableIndex = 0;
-        //            for (String functionName : functionsToApply) {
-        //                function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, appliedFunction);
-        //                variableIndex++;
-        //                switch (function.getLanguage().toUpperCase()) {
-        //                    case Function.LANGUAGE_AQL:
-        //                        builder.append(
-        //                                " let " + "$" + lValueName + variableIndex + ":=(" + function.getFunctionBody() + ")");
-        //                        builder.append("\n");
-        //                        break;
-        //                    case Function.LANGUAGE_JAVA:
-        //                        builder.append(" let " + "$" + lValueName + variableIndex + ":=" + functionName + "(" + "$"
-        //                                + rValueName + ")");
-        //                        rValueName = lValueName + variableIndex;
-        //                        break;
-        //                }
-        //                builder.append("\n");
-        //            }
-        //            builder.append("return $" + lValueName + variableIndex);
-        //        }
+        List<FunctionSignature> functionsToApply = connectionRequest.getFunctionsToApply();
+        if ((functionsToApply != null) && functionsToApply.isEmpty()) {
+        } else {
+            Function function;
+            String rValueName = "x";
+            String lValueName = "y";
+            int variableIndex = 0;
+            for (FunctionSignature appliedFunction : functionsToApply) {
+                function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, appliedFunction);
+                variableIndex++;
+                switch (function.getLanguage().toUpperCase()) {
+                    case Function.LANGUAGE_AQL:
+                        builder.append(
+                                " let " + "$" + lValueName + variableIndex + ":=(" + function.getFunctionBody() + ")");
+                        builder.append("\n");
+                        break;
+                    case Function.LANGUAGE_JAVA:
+                        builder.append(" let " + "$" + lValueName + variableIndex + ":=" + function.getName() + "("
+                                + "$" + rValueName + ")");
+                        rValueName = lValueName + variableIndex;
+                        break;
+                }
+                builder.append("\n");
+            }
+            builder.append("return $" + lValueName + variableIndex);
+        }
         builder.append(")");
         builder.append(";");
         if (LOGGER.isLoggable(Level.INFO)) {
@@ -181,10 +169,9 @@ public class SubscribeFeedStatement implements Statement {
     }
 
     private String getOutputType(MetadataTransactionContext mdTxnCtx) throws MetadataException {
-        String outputType = null;
+        String outputType;
         EntityId feedId = connectionRequest.getReceivingFeedId();
         Feed feed = MetadataManager.INSTANCE.getFeed(mdTxnCtx, feedId.getDataverse(), feedId.getEntityName());
-        FeedPolicyAccessor policyAccessor = new FeedPolicyAccessor(connectionRequest.getPolicyParameters());
         try {
             outputType = FeedMetadataUtil
                     .getOutputType(feed, feed.getAdapterConfiguration(), ExternalDataConstants.KEY_TYPE_NAME)
