@@ -22,6 +22,7 @@ import org.apache.asterix.metadata.declared.AqlDataSource;
 import org.apache.asterix.metadata.declared.AqlDataSource.AqlDataSourceType;
 import org.apache.asterix.metadata.declared.FeedDataSource;
 import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
@@ -60,6 +61,10 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
         }
 
         final FeedDataSource feedDataSource = (FeedDataSource) dataSource;
+        FeedConnection feedConnection = feedDataSource.getFeedConnection();
+        if (feedConnection.getAppliedFunctions() == null) {
+            return false;
+        }
 
         ExchangeOperator exchangeOp = new ExchangeOperator();
         INodeDomain domain = new INodeDomain() {

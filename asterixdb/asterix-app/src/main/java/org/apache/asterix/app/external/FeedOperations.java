@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
@@ -110,6 +111,8 @@ import org.json.JSONException;
  */
 public class FeedOperations {
 
+    static final Logger LOGGER = Logger.getLogger(FeedOperations.class.getName());
+
     private static final ILangCompilationProvider compilationProvider = new AqlCompilationProvider();
     private static final DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory(null);
 
@@ -117,7 +120,7 @@ public class FeedOperations {
             AqlMetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
         spec.setFrameSize(FeedConstants.JobConstants.DEFAULT_FRAME_SIZE);
-        IAdapterFactory adapterFactory = null;
+        IAdapterFactory adapterFactory;
         IOperatorDescriptor feedIngestor;
         AlgebricksPartitionConstraint ingesterPc;
         Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t = metadataProvider
@@ -144,7 +147,8 @@ public class FeedOperations {
                 nodes.toArray(new String[nodes.size()]));
         FileSplit[] feedLogFileSplits = FeedUtils.splitsForAdapter(feed.getDataverseName(), feed.getFeedName(),
                 locations);
-        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> splitsAndConstraint = StoragePathUtil
+        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint>
+                splitsAndConstraint = StoragePathUtil
                 .splitProviderAndPartitionConstraints(feedLogFileSplits);
         FileRemoveOperatorDescriptor frod = new FileRemoveOperatorDescriptor(spec, splitsAndConstraint.first, true);
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, frod, splitsAndConstraint.second);
@@ -158,8 +162,6 @@ public class FeedOperations {
         PrintWriter writer = new PrintWriter(System.err, true);
         SessionConfig pc = new SessionConfig(writer, SessionConfig.OutputFormat.ADM);
         DataverseDecl dataverseDecl = new DataverseDecl(new Identifier(feedConnection.getDataverseName()));
-        FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil.validateIfPolicyExists(feedConnection.getDataverseName(),
-                feedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
         FeedConnectionRequest fcr = new FeedConnectionRequest(FeedRuntimeType.INTAKE,
                 feedConnection.getAppliedFunctions(), feedConnection.getDatasetName(), feedConnection.getPolicyName(),
                 feedConnection.getFeedId());
@@ -178,12 +180,10 @@ public class FeedOperations {
 
         CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
                 subscribeStmt.getSubscriptionRequest(), subscribeStmt.getVarCounter());
-        JobSpecification connectJob = translator.rewriteCompileQuery(metadataProvider, subscribeStmt.getQuery(), csfs);
-
-        return connectJob;
+        return translator.rewriteCompileQuery(metadataProvider, subscribeStmt.getQuery(), csfs);
     }
 
-    private static JobSpecification combineIngestionConnectionJobs(AqlMetadataProvider metadataProvider, Feed feed,
+    private static JobSpecification combineIntakeCollectJobs(AqlMetadataProvider metadataProvider, Feed feed,
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections)
             throws AsterixException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
@@ -199,7 +199,7 @@ public class FeedOperations {
                 ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
         jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
         String[] locationConstraints = ClusterStateManager.INSTANCE.getParticipantNodes()
-                .toArray(new String[ClusterStateManager.INSTANCE.getNumberOfNodes()]);
+                .toArray(new String[ClusterStateManager.INSTANCE.getParticipantNodes().size()]);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, locationConstraints);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, locationConstraints);
         // Loop over the jobs to copy operators and connections
@@ -255,8 +255,9 @@ public class FeedOperations {
                 ConnectorDescriptorId newConnId;
                 if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
                     MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-                    if (entry.getKey().getId() == 0)
+                    if (entry.getKey().getId() == 0) {
                         continue;
+                    }
                     connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
                             m2nConn.getTuplePartitionComputerFactory());
                     newConnId = connDesc.getConnectorId();
@@ -267,7 +268,8 @@ public class FeedOperations {
             }
 
             // make connections between operators
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : subJob
+            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
+                    Pair<IOperatorDescriptor, Integer>>> entry : subJob
                     .getConnectorOperatorMap().entrySet()) {
                 ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
                 IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
@@ -296,7 +298,6 @@ public class FeedOperations {
                     case PARTITION_COUNT:
                         opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
                         if (opId.getId() == 0) {
-                            // skip the bucket operator
                             continue;
                         }
                         operatorCounts.put(operatorIdMapping.get(opId), (int) ((ConstantExpression) cexpr).getValue());
@@ -304,7 +305,6 @@ public class FeedOperations {
                     case PARTITION_LOCATION:
                         opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
                         if (opId.getId() == 0) {
-                            // skip the bucket operator
                             continue;
                         }
                         IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(operatorIdMapping.get(opId));
@@ -378,7 +378,7 @@ public class FeedOperations {
             JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, ingestionLocations);
             jobsList.add(connectionJob);
         }
-        feedJob = combineIngestionConnectionJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections);
+        feedJob = combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections);
         return feedJob;
     }
 
@@ -398,7 +398,7 @@ public class FeedOperations {
                 ActiveManagerMessage.STOP_ACTIVITY, locations);
     }
 
-    public static JobSpecification buildStopFeedJob(EntityId feedId, ArrayList<String> intakeNodeLocations)
+    public static JobSpecification buildStopFeedJob(EntityId feedId, List<String> intakeNodeLocations)
             throws AlgebricksException {
         JobSpecification jobSpec = JobSpecificationUtils.createJobSpecification();
         AlgebricksPartitionConstraint messengerPc;

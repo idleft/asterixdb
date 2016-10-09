@@ -83,16 +83,16 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private void handeStartFeedEvent() throws Exception {
+    private void handeStartFeedEvent() {
         setLocations(cInfo);
         cInfo.setState(ActivityState.ACTIVE);
     }
 
-    private synchronized void handleJobFinishEvent() throws Exception {
-       // null
+    private synchronized void handleJobFinishEvent() {
+        // Do nothing
     }
 
-    public void setFeedConnectJobInfo(FeedConnectJobInfo info){
+    public void setFeedConnectJobInfo(FeedConnectJobInfo info) {
         this.cInfo = info;
     }
 
@@ -204,7 +204,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     @Override
     public boolean isEntityActive() {
-        return connectionJobId!=null;
+        return connectionJobId != null;
     }
 
     @Override

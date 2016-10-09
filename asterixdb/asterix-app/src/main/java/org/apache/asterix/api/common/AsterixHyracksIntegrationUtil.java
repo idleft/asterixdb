@@ -244,7 +244,7 @@ public class AsterixHyracksIntegrationUtil {
         try {
             System.setProperty(GlobalConfig.CONFIG_FILE_PROPERTY, "asterix-build-configuration.xml");
 
-            integrationUtil.init(true);
+            integrationUtil.init(cleanupOnStart);
             while (true) {
                 Thread.sleep(10000);
             }

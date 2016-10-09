@@ -30,6 +30,7 @@ import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.DatasourceAdapter;
 import org.apache.asterix.metadata.entities.Datatype;
 import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.NodeGroup;
@@ -128,6 +129,15 @@ public class MetadataManagerUtil {
             throws AlgebricksException {
         try {
             return MetadataManager.INSTANCE.getFeed(mdTxnCtx, dataverse, feedName);
+        } catch (MetadataException e) {
+            throw new AlgebricksException(e);
+        }
+    }
+
+    public static FeedConnection findFeedConnection(MetadataTransactionContext mdTxnCtx, String dataverse,
+            String feedName, String datasetName) throws AlgebricksException {
+        try {
+            return MetadataManager.INSTANCE.getFeedConnection(mdTxnCtx, dataverse, feedName, datasetName);
         } catch (MetadataException e) {
             throw new AlgebricksException(e);
         }

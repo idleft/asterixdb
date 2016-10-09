@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.feed.runtime;
 
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveRuntimeId;
@@ -30,16 +31,13 @@ public class IngestionRuntime implements IActiveRuntime {
     private static final Logger LOGGER = Logger.getLogger(IngestionRuntime.class.getName());
 
     private final AdapterRuntimeManager adapterRuntimeManager;
-    private final IHyracksTaskContext ctx;
     private final ActiveRuntimeId runtimeId;
     private final EntityId feedId;
 
-    public IngestionRuntime(EntityId entityId, ActiveRuntimeId runtimeId, AdapterRuntimeManager adaptorRuntimeManager,
-            IHyracksTaskContext ctx) {
+    public IngestionRuntime(EntityId entityId, ActiveRuntimeId runtimeId, AdapterRuntimeManager adaptorRuntimeManager) {
         this.feedId = entityId;
         this.runtimeId = runtimeId;
         this.adapterRuntimeManager = adaptorRuntimeManager;
-        this.ctx = ctx;
     }
 
     @Override
@@ -47,17 +45,15 @@ public class IngestionRuntime implements IActiveRuntime {
         return this.runtimeId;
     }
 
-    public AdapterRuntimeManager getAdapterRuntimeManager() {
-        return adapterRuntimeManager;
-    }
-
     public void start() {
         adapterRuntimeManager.start();
+        LOGGER.log(Level.INFO, "Feed " + feedId.getEntityName() + " running on partition " + runtimeId);
     }
 
     @Override
     public void stop() throws InterruptedException {
         adapterRuntimeManager.stop();
+        LOGGER.log(Level.INFO, "Feed " + feedId.getEntityName() + " stopped on partition " + runtimeId);
     }
 
     public EntityId getFeedId() {

@@ -59,8 +59,6 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
  */
 public class FeedMetadataUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(FeedMetadataUtil.class.getName());
-
     public static Dataset validateIfDatasetExists(String dataverse, String datasetName, MetadataTransactionContext ctx)
             throws AsterixException {
         Dataset dataset = MetadataManager.INSTANCE.getDataset(ctx, dataverse, datasetName);

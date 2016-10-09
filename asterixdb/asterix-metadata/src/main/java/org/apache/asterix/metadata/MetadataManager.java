@@ -820,16 +820,12 @@ public class MetadataManager implements IMetadataManager {
 
     public FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
             String datasetName) throws MetadataException {
-        FeedConnection feedConnection = null;
-        feedConnection = metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
-        return feedConnection;
+        return metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
     }
 
     public List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
             throws MetadataException {
-        List<FeedConnection> feedConnections = null;
-        feedConnections = metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
-        return feedConnections;
+        return metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
     }
 
     @Override

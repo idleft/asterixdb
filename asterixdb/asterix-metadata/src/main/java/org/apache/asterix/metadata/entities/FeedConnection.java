@@ -27,6 +27,7 @@ import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Feed connection records the feed --> dataset mapping.
@@ -42,10 +43,10 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
     private String datasetName;
     private String policyName;
     private String outputType;
-    private ArrayList<FunctionSignature> appliedFunctions;
+    private List<FunctionSignature> appliedFunctions;
 
     public FeedConnection(String dataverseName, String feedName, String datasetName,
-            ArrayList<FunctionSignature> appliedFunctions, String policyName, String outputType) {
+            List<FunctionSignature> appliedFunctions, String policyName, String outputType) {
         this.dataverseName = dataverseName;
         this.feedName = feedName;
         this.datasetName = datasetName;
@@ -56,7 +57,7 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
         this.feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, dataverseName, feedName);
     }
 
-    public ArrayList<FunctionSignature> getAppliedFunctions() {
+    public List<FunctionSignature> getAppliedFunctions() {
         return appliedFunctions;
     }
 
@@ -69,6 +70,11 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
             return false;
         }
         return ((FeedConnection) other).getConnectionId().equals(connectionId);
+    }
+
+    @Override
+    public int hashCode() {
+        return connectionId.hashCode();
     }
 
     @Override

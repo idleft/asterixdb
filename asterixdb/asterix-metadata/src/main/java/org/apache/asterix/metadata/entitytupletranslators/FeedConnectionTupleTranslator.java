@@ -40,6 +40,7 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedConnection> {
 
@@ -80,7 +81,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
                 .getStringValue();
         ArrayList<FunctionSignature> appliedFunctions = null;
         Object o = feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX);
-        IACursor cursor = null;
+        IACursor cursor;
 
         if (!(o instanceof ANull) && !(o instanceof AMissing)) {
             appliedFunctions = new ArrayList<>();
@@ -166,7 +167,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         listBuilder.reset((AUnorderedListType) MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE
                 .getFieldTypes()[MetadataRecordTypes.FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX]);
         if (fc.getAppliedFunctions() != null) {
-            ArrayList<FunctionSignature> appliedFunctions = fc.getAppliedFunctions();
+            List<FunctionSignature> appliedFunctions = fc.getAppliedFunctions();
             for (FunctionSignature af : appliedFunctions) {
                 aString.setValue(af.getName());
                 stringSerde.serialize(aString, listEleBuffer.getDataOutput());

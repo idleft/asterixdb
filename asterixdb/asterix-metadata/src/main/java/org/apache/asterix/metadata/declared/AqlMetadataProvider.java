@@ -73,6 +73,7 @@ import org.apache.asterix.metadata.entities.DatasourceAdapter;
 import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.asterix.metadata.entities.ExternalDatasetDetails;
 import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.InternalDatasetDetails;
@@ -324,6 +325,11 @@ public class AqlMetadataProvider implements IMetadataProvider<AqlSourceId, Strin
 
     public Feed findFeed(String dataverse, String feedName) throws AlgebricksException {
         return MetadataManagerUtil.findFeed(mdTxnCtx, dataverse, feedName);
+    }
+
+    public FeedConnection findFeedConnection(String dataverseName, String feedName, String datasetName)
+            throws AlgebricksException {
+        return MetadataManagerUtil.findFeedConnection(mdTxnCtx, dataverseName, feedName, datasetName);
     }
 
     public FeedPolicyEntity findFeedPolicy(String dataverse, String policyName) throws AlgebricksException {

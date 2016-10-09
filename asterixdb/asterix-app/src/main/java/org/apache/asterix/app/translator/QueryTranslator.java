@@ -338,16 +338,16 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         handleDropFeedPolicyStatement(metadataProvider, stmt);
                         break;
                     case Statement.Kind.CONNECT_FEED:
-                        handleConnectFeedStatement(metadataProvider, stmt, hcc);
+                        handleConnectFeedStatement(metadataProvider, stmt);
                         break;
                     case Statement.Kind.DISCONNECT_FEED:
-                        handleDisconnectFeedStatement(metadataProvider, stmt, hcc);
+                        handleDisconnectFeedStatement(metadataProvider, stmt);
                         break;
                     case Statement.Kind.START_FEED:
                         handleStartFeedStatement(metadataProvider, stmt, hcc);
                         break;
                     case Statement.Kind.STOP_FEED:
-                        handleStopFeedStatement(metadataProvider, stmt, hcc);
+                        handleStopFeedStatement(metadataProvider, stmt);
                         break;
                     case Statement.Kind.CREATE_FEED_POLICY:
                         handleCreateFeedPolicyStatement(metadataProvider, stmt);
@@ -1308,7 +1308,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             IHyracksClientConnection hcc) {
         StopFeedStatement disStmt = new StopFeedStatement(feedNameComp);
         try {
-            handleStopFeedStatement(metadataProvider, disStmt, hcc);
+            handleStopFeedStatement(metadataProvider, disStmt);
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info("Stopped feed " + feedNameComp.second.getValue());
             }
@@ -2134,8 +2134,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    private void handleStopFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
-            IHyracksClientConnection hcc) throws Exception {
+    private void handleStopFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt) throws Exception {
         List<String> intakeNodeLocations;
         StopFeedStatement sfst = (StopFeedStatement) stmt;
         String dataverseName = getActiveDataverse(sfst.getDataverseName());
@@ -2166,8 +2165,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
-            IHyracksClientConnection hcc) throws Exception {
+    private void handleConnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt) throws Exception {
         FeedConnection fc;
         ConnectFeedStatement cfs = (ConnectFeedStatement) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
@@ -2181,7 +2179,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 metadataProvider.getMetadataTxnContext());
         ARecordType outputType = FeedMetadataUtil.getOutputType(feed, feed.getAdapterConfiguration(),
                 ExternalDataConstants.KEY_TYPE_NAME);
-        ArrayList<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
+        List<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
         // Transaction handling
         MetadataLockManager.INSTANCE.connectFeedBegin(dataverseName, dataverseName + "." + datasetName,
                 dataverseName + "." + feedName);
@@ -2204,8 +2202,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    protected void handleDisconnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt,
-            IHyracksClientConnection hcc) throws Exception {
+    protected void handleDisconnectFeedStatement(AqlMetadataProvider metadataProvider, Statement stmt)
+            throws Exception {
         DisconnectFeedStatement cfs = (DisconnectFeedStatement) stmt;
         String dataverseName = getActiveDataverse(cfs.getDataverseName());
         String datasetName = cfs.getDatasetName().getValue();

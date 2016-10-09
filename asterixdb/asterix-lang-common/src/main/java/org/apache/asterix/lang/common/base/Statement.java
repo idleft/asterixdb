@@ -93,7 +93,7 @@ public interface Statement extends ILangExpression {
         public static final byte EXTERNAL_DATASET_REFRESH = 0x21;
         public static final byte RUN = 0x22;
         public static final byte EXTENSION = 0x23;
-        public static final byte SUBSCRIBE_FEED=0x24;
+        public static final byte SUBSCRIBE_FEED = 0x24;
 
         private Kind() {
         }

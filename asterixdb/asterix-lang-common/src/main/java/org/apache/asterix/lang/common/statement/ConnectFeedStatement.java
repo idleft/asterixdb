@@ -27,6 +27,7 @@ import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class ConnectFeedStatement implements Statement {
 
@@ -50,7 +51,7 @@ public class ConnectFeedStatement implements Statement {
         this.feedName = feedNameCmp.second.getValue();
         this.policy = policy != null ? policy : BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
         this.varCounter = varCounter;
-        if(appliedFunction !=null) {
+        if (appliedFunction != null) {
             this.appliedFunctions.add(appliedFunction);
         }
     }
@@ -85,7 +86,7 @@ public class ConnectFeedStatement implements Statement {
         return feedName;
     }
 
-    public ArrayList<FunctionSignature> getAppliedFunctions() {
+    public List<FunctionSignature> getAppliedFunctions() {
         return appliedFunctions;
     }
 

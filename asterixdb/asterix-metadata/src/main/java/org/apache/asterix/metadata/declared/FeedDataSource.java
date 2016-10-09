@@ -28,6 +28,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
 import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
 import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;
 import org.apache.asterix.om.types.ARecordType;
@@ -60,11 +61,12 @@ public class FeedDataSource extends AqlDataSource implements IMutationDataSource
     private final int computeCardinality;
     private final List<IAType> pkTypes;
     private final List<ScalarFunctionCallExpression> keyAccessExpression;
+    private final FeedConnection feedConnection;
 
     public FeedDataSource(Feed feed, AqlSourceId id, String targetDataset, IAType itemType, IAType metaType,
             List<IAType> pkTypes, List<List<String>> partitioningKeys,
             List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId,
-            FeedRuntimeType location, String[] locations, INodeDomain domain)
+            FeedRuntimeType location, String[] locations, INodeDomain domain, FeedConnection feedConnection)
             throws AlgebricksException {
         super(id, itemType, metaType, AqlDataSourceType.FEED, domain);
         this.feed = feed;
@@ -75,6 +77,7 @@ public class FeedDataSource extends AqlDataSource implements IMutationDataSource
         this.pkTypes = pkTypes;
         this.keyAccessExpression = keyAccessExpression;
         this.computeCardinality = ClusterStateManager.INSTANCE.getParticipantNodes().size();
+        this.feedConnection = feedConnection;
         initFeedDataSource();
     }
 
@@ -202,5 +205,9 @@ public class FeedDataSource extends AqlDataSource implements IMutationDataSource
     @Override
     public boolean isScanAccessPathALeaf() {
         return true;
+    }
+
+    public FeedConnection getFeedConnection() {
+        return feedConnection;
     }
 }

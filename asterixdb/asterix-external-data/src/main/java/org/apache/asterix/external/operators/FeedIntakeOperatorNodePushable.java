@@ -74,9 +74,10 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
             adapterRuntimeManager = new AdapterRuntimeManager(ctx, feedId, adapter, writer, partition);
             ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.INTAKE.toString(), partition);
-            ingestionRuntime = new IngestionRuntime(feedId, runtimeId, adapterRuntimeManager, ctx);
+            ingestionRuntime = new IngestionRuntime(feedId, runtimeId, adapterRuntimeManager);
             feedManager.registerRuntime(ingestionRuntime);
             writer.open();
+            open = true;
             TaskUtils.putInSharedMap(HyracksConstants.KEY_MESSAGE, new VSizeFrame(ctx), ctx);
             adapterRuntimeManager.start();
             synchronized (adapterRuntimeManager) {

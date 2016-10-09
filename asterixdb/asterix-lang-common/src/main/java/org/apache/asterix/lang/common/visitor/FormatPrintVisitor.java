@@ -748,7 +748,7 @@ public class FormatPrintVisitor implements ILangVisitor<Void, Integer> {
         if (connectFeedStmt.getPolicy() != null) {
             out.print(" using policy " + revertStringToQuoted(connectFeedStmt.getPolicy()));
         }
-        if(connectFeedStmt.getAppliedFunctions()!=null){
+        if (connectFeedStmt.getAppliedFunctions() != null) {
             out.print(" apply function " + connectFeedStmt.getAppliedFunctions());
         }
         out.println(SEMICOLON);

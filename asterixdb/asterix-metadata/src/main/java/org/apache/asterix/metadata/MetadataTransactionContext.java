@@ -229,13 +229,13 @@ public class MetadataTransactionContext extends MetadataCache {
         logAndApply(new MetadataLogicalOperation(feed, false));
     }
 
-    public void addFeedConnection(FeedConnection feedConnection){
+    public void addFeedConnection(FeedConnection feedConnection) {
         droppedCache.dropFeedConnection(feedConnection);
         logAndApply(new MetadataLogicalOperation(feedConnection, true));
     }
 
-    public void dropFeedConnection(String dataverseName, String feedName, String datasetName){
-        FeedConnection feedConnection = new FeedConnection(dataverseName,feedName,datasetName, null, null, null);
+    public void dropFeedConnection(String dataverseName, String feedName, String datasetName) {
+        FeedConnection feedConnection = new FeedConnection(dataverseName, feedName, datasetName, null, null, null);
         droppedCache.addFeedConnectionIfNotExists(feedConnection);
         logAndApply((new MetadataLogicalOperation(feedConnection, false)));
     }

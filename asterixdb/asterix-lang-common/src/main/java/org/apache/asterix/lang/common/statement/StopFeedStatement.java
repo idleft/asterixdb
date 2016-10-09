@@ -29,7 +29,7 @@ public class StopFeedStatement implements Statement {
     private final Identifier dataverseName;
     private final Identifier feedName;
 
-    public StopFeedStatement(Pair<Identifier, Identifier> feedNameComp){
+    public StopFeedStatement(Pair<Identifier, Identifier> feedNameComp) {
         this.dataverseName = feedNameComp.first;
         this.feedName = feedNameComp.second;
     }

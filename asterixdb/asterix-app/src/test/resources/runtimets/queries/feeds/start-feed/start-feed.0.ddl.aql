@@ -17,27 +17,31 @@
  * under the License.
  */
 
- drop dataverse feeds if exists;
- create dataverse feeds;
- use dataverse feeds;
+drop dataverse feeds if exists;
+create dataverse feeds;
+use dataverse feeds;
 
- create type TwitterUser as closed{
-         screen_name: string,
-         lang: string,
-         friends_count: int32,
-         statuses_count: int32
-     };
+create type TwitterUser as closed{
+     screen_name: string,
+     lang: string,
+     friends_count: int32,
+     statuses_count: int32
+ };
 
- create type Tweet as closed
- {
-   id: int64,
-   user: TwitterUser
- }
+create type Tweet as closed
+{
+id: int64,
+user: TwitterUser
+}
 
- create dataset Tweets (Tweet)
- primary key id;
+create dataset Tweets (Tweet)
+primary key id;
 
 
-     create feed TwitterFeed using push_twitter(
- ("type-name"="Tweet"),
- ("format"="twitter-status"));
+ create feed TwitterFeed using push_twitter(
+("type-name"="Tweet"),
+("format"="twitter-status"),
+("consumer.key"="DVRNmClmWgPI1Oix2Ly0lYYib"),
+("consumer.secret"="kZ2GoOei4e2gl3mKNPCLEfwYfPYi9SvJZY1iP7uysZ0yURdTii"),
+("access.token"="90370423-qhoH7wpc4JKSPyinDIyqzHYj90T5lbBlTbqHlqbVk"),
+("access.token.secret"="PxCnsNDu9gdXDrqpAfKjw7kh8IPc0mZJAEccHbCTgKE2t"));

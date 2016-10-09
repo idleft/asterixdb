@@ -46,7 +46,7 @@ public class StartFeedStatement implements Statement {
     }
 
     @Override
-    public byte getCategory(){
+    public byte getCategory() {
         return Category.UPDATE;
     }
 
