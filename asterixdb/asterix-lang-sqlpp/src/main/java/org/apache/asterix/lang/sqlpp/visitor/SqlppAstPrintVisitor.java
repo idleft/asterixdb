@@ -130,8 +130,12 @@ public class SqlppAstPrintVisitor extends QueryPrintVisitor implements ISqlppVis
 
     @Override
     public Void visit(Projection projection, Integer step) throws AsterixException {
-        projection.getExpression().accept(this, step);
-        out.println(skip(step) + projection.getName());
+        if (projection.star()) {
+            out.println(skip(step) + "*");
+        } else {
+            projection.getExpression().accept(this, step);
+            out.println(skip(step) + projection.getName());
+        }
         return null;
     }
 

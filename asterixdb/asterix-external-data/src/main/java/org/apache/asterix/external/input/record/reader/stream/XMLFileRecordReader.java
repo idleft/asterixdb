@@ -24,9 +24,6 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 
 import java.io.IOException;
 
-/**
- * Created by Xikui on 6/28/16.
- */
 public class XMLFileRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;

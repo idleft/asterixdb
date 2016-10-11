@@ -43,7 +43,6 @@ import org.apache.asterix.common.annotations.TypeDataGen;
 import org.apache.asterix.common.annotations.UndeclaredFieldsDataGen;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
-import org.apache.asterix.common.config.MetadataConstants;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.aql.clause.DistinctClause;
@@ -106,7 +105,7 @@ import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
 import org.apache.asterix.lang.common.statement.DeleteStatement;
 import org.apache.asterix.lang.common.statement.DisconnectFeedStatement;
-import org.apache.asterix.lang.common.statement.DropStatement;
+import org.apache.asterix.lang.common.statement.DropDatasetStatement;
 import org.apache.asterix.lang.common.statement.ExternalDetailsDecl;
 import org.apache.asterix.lang.common.statement.FeedDropStatement;
 import org.apache.asterix.lang.common.statement.FeedPolicyDropStatement;
@@ -130,6 +129,7 @@ import org.apache.asterix.lang.common.statement.WriteStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.struct.QuantifiedPair;
 import org.apache.asterix.lang.common.struct.VarIdentifier;
+import org.apache.asterix.metadata.utils.MetadataConstants;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.common.utils.Triple;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionAnnotation;
@@ -872,7 +872,7 @@ Statement DropStatement() throws ParseException:
   (
     <DATASET> pairId = QualifiedName() ifExists = IfExists()
       {
-        stmt = new DropStatement(pairId.first, pairId.second, ifExists);
+        stmt = new DropDatasetStatement(pairId.first, pairId.second, ifExists);
       }
     | <INDEX> tripleId = DoubleQualifiedName() ifExists = IfExists()
       {
@@ -1291,16 +1291,16 @@ void RecordField(RecordTypeDefinition recType) throws ParseException:
 
 TypeReferenceExpression TypeReference() throws ParseException:
 {
-  String id = null;
+  Pair<Identifier,Identifier> id = null;
 }
 {
- id = Identifier()
+ id = QualifiedName()
    {
-     if (id.equalsIgnoreCase("int")) {
-        id = "int64";
+     if (id.first == null && id.second.getValue().equalsIgnoreCase("int")) {
+        id.second.setValue("int64");
      }
 
-     return new TypeReferenceExpression(new Identifier(id));
+     return new TypeReferenceExpression(id);
    }
 }
 
@@ -1415,7 +1415,7 @@ Pair<Integer, Pair<List<String>, TypeExpression>> OpenField() throws ParseExcept
 }
 {
   fieldList = NestedField()
-  ( <COLON> fieldType =  IndexedTypeExpr() )?
+  ( <COLON> fieldType =  IndexedTypeExpr() <QUES>)?
   {
     return new Pair<Integer, Pair<List<String>, TypeExpression>>
            (fieldList.first, new Pair<List<String>, TypeExpression>(fieldList.second, fieldType));
@@ -2409,7 +2409,7 @@ Clause GroupClause()throws ParseException :
     // GbyVariableExpressionPair pair = new GbyVariableExpressionPair();
     List<GbyVariableExpressionPair> vePairList = new ArrayList<GbyVariableExpressionPair>();
     List<GbyVariableExpressionPair> decorPairList = new ArrayList<GbyVariableExpressionPair>();
-    List<VariableExpr> withVarList= new ArrayList<VariableExpr>();
+    Map<Expression, VariableExpr> withVarMap = new HashMap<Expression, VariableExpr>();
     VariableExpr var = null;
     VariableExpr withVar = null;
     Expression expr = null;
@@ -2465,20 +2465,20 @@ Clause GroupClause()throws ParseException :
     {
       if(withVar.getIsNewVar()==true)
           throw new ParseException("can't find variable " + withVar.getVar());
-      withVarList.add(withVar);
+      withVarMap.put(withVar, withVar);
       newScope.addNewVarSymbolToScope(withVar.getVar());
     }
     (<COMMA> withVar = VariableRef()
     {
       if(withVar.getIsNewVar()==true)
           throw new ParseException("can't find variable " + withVar.getVar());
-      withVarList.add(withVar);
+      withVarMap.put(withVar, withVar);
       newScope.addNewVarSymbolToScope(withVar.getVar());
     })*
     {
       gbc.setGbyPairList(vePairList);
       gbc.setDecorPairList(decorPairList);
-      gbc.setWithVarList(withVarList);
+      gbc.setWithVarMap(withVarMap);
       replaceCurrentScope(newScope);
       return gbc;
     }

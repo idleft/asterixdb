@@ -131,7 +131,7 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
 
     @Override
     public Void visitGroupByOperator(GroupByOperator op, Integer indent) throws AlgebricksException {
-        addIndent(indent).append("group by (");
+        addIndent(indent).append("group by" + (op.isGroupAll() ? " (all)" : "") + " (");
         pprintVeList(op.getGroupByList(), indent);
         buffer.append(") decor (");
         pprintVeList(op.getDecorList(), indent);
@@ -150,7 +150,8 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
 
     @Override
     public Void visitInnerJoinOperator(InnerJoinOperator op, Integer indent) throws AlgebricksException {
-        addIndent(indent).append("join (").append(op.getCondition().getValue().accept(exprVisitor, indent)).append(")");
+        addIndent(indent).append("join (").append(op.getCondition().getValue().accept(exprVisitor, indent)).
+        append(")");
         return null;
     }
 
@@ -381,9 +382,10 @@ public class LogicalOperatorPrettyPrintVisitor implements ILogicalOperatorVisito
         pprintExprList(op.getPrimaryKeyExpressions(), indent);
         if (op.getOperation() == Kind.UPSERT) {
             buffer.append(
-                    " out: ([record-before-upsert:" + op.getPrevRecordVar()
-                            + ((op.getPrevAdditionalNonFilteringVars() != null)
-                                    ? (", additional-before-upsert: " + op.getPrevAdditionalNonFilteringVars()) : "")
+                    " out: ([record-before-upsert:" + op.getBeforeOpRecordVar()
+                            + ((op.getBeforeOpAdditionalNonFilteringVars() != null)
+                                    ? (", additional-before-upsert: " + op.getBeforeOpAdditionalNonFilteringVars())
+                                    : "")
                             + "]) ");
         }
         if (op.isBulkload()) {

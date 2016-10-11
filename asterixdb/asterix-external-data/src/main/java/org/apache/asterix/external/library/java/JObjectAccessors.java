@@ -18,12 +18,6 @@
  */
 package org.apache.asterix.external.library.java;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
-import java.util.LinkedHashMap;
-import java.util.List;
-
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
 import org.apache.asterix.dataflow.data.nontagged.serde.ACircleSerializerDeserializer;
@@ -70,15 +64,32 @@ import org.apache.asterix.external.library.java.JObjects.JRectangle;
 import org.apache.asterix.external.library.java.JObjects.JString;
 import org.apache.asterix.external.library.java.JObjects.JTime;
 import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
-import org.apache.asterix.om.base.*;
+import org.apache.asterix.om.base.ACircle;
+import org.apache.asterix.om.base.ADuration;
+import org.apache.asterix.om.base.ALine;
+import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.om.base.APoint3D;
+import org.apache.asterix.om.base.APolygon;
+import org.apache.asterix.om.base.ARectangle;
 import org.apache.asterix.om.pointables.AFlatValuePointable;
 import org.apache.asterix.om.pointables.AListVisitablePointable;
 import org.apache.asterix.om.pointables.ARecordVisitablePointable;
 import org.apache.asterix.om.pointables.base.IVisitablePointable;
-import org.apache.asterix.om.types.*;
+import org.apache.asterix.om.types.ARecordType;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.EnumDeserializer;
+import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.om.types.TypeTagUtil;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.util.string.UTF8StringReader;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class JObjectAccessors {
 
@@ -454,7 +465,7 @@ public class JObjectAccessors {
             List<IVisitablePointable> fieldTypeTags = recordPointable.getFieldTypeTags();
             List<IVisitablePointable> fieldNames = recordPointable.getFieldNames();
             int index = 0;
-            boolean closedPart = true;
+            boolean closedPart;
             try {
                 IJObject fieldObject = null;
                 for (IVisitablePointable fieldPointable : fieldPointables) {
@@ -462,12 +473,10 @@ public class JObjectAccessors {
                     IVisitablePointable tt = fieldTypeTags.get(index);
                     ATypeTag typeTag = EnumDeserializer.ATYPETAGDESERIALIZER
                             .deserialize(tt.getByteArray()[tt.getStartOffset()]);
-                    IAType fieldType = null;
-                    if(closedPart){
-                        fieldType = recordType.getFieldTypes()[index];
-                    }
-                    else
-                        fieldType = ATypeMachine(typeTag);
+                    IAType fieldType;
+                    fieldType = closedPart ?
+                            recordType.getFieldTypes()[index] :
+                            TypeTagUtil.getBuiltinTypeByTag(typeTag);
                     IVisitablePointable fieldName = fieldNames.get(index);
                     typeInfo.reset(fieldType, typeTag);
                     switch (typeTag) {
@@ -480,8 +489,8 @@ public class JObjectAccessors {
                                 // value is null
                                 fieldObject = null;
                             } else {
-                                fieldObject = pointableVisitor.visit((AListVisitablePointable) fieldPointable,
-                                        typeInfo);
+                                fieldObject = pointableVisitor
+                                        .visit((AListVisitablePointable) fieldPointable, typeInfo);
                             }
                             break;
                         case ANY:
@@ -530,15 +539,15 @@ public class JObjectAccessors {
             List<IVisitablePointable> items = pointable.getItems();
             List<IVisitablePointable> itemTags = pointable.getItemTags();
             JList list = pointable.ordered() ? new JOrderedList(listType) : new JUnorderedList(listType);
-            IJObject listItem = null;
+            IJObject listItem;
             int index = 0;
             try {
                 for (IVisitablePointable itemPointable : items) {
                     IVisitablePointable itemTagPointable = itemTags.get(index);
                     ATypeTag itemTypeTag = EnumDeserializer.ATYPETAGDESERIALIZER
                             .deserialize(itemTagPointable.getByteArray()[itemTagPointable.getStartOffset()]);
-                    IAType fieldType = null;
-                    fieldType = ATypeMachine(itemTypeTag);
+                    IAType fieldType;
+                    fieldType = TypeTagUtil.getBuiltinTypeByTag(itemTypeTag);
                     typeInfo.reset(fieldType, itemTypeTag);
                     switch (itemTypeTag) {
                         case RECORD:
@@ -571,66 +580,5 @@ public class JObjectAccessors {
             return null;
         }
 
-    }
-
-    public static IAType ATypeMachine(ATypeTag typeTag){
-        IAType aType = null;
-        switch (typeTag){
-            case BOOLEAN:
-                aType = BuiltinType.ABOOLEAN;
-                break;
-            case INT8:
-                aType = BuiltinType.AINT8;
-                break;
-            case INT16:
-                aType = BuiltinType.AINT16;
-                break;
-            case INT32:
-                aType = BuiltinType.AINT32;
-                break;
-            case INT64:
-                aType = BuiltinType.AINT64;
-                break;
-            case FLOAT:
-                aType = BuiltinType.AFLOAT;
-                break;
-            case DOUBLE:
-                aType = BuiltinType.ADOUBLE;
-                break;
-            case STRING:
-                aType = BuiltinType.ASTRING;
-                break;
-            case POINT:
-                aType = BuiltinType.APOINT;
-                break;
-            case POINT3D:
-                aType = BuiltinType.APOINT3D;
-                break;
-            case LINE:
-                aType = BuiltinType.ALINE;
-                break;
-            case DATE:
-                aType = BuiltinType.ADATE;
-                break;
-            case DATETIME:
-                aType = BuiltinType.ADATETIME;
-                break;
-            case DURATION:
-                aType = BuiltinType.ADURATION;
-                break;
-            case RECORD:
-                aType = ARecordType.FULLY_OPEN_RECORD_TYPE;
-                break;
-            case UNORDEREDLIST:
-                aType = AUnorderedListType.FULLY_OPEN_UNORDEREDLIST_TYPE;
-                break;
-            case ORDEREDLIST:
-                aType = AOrderedListType.FULL_OPEN_ORDEREDLIST_TYPE;
-                break;
-            default:
-                aType = BuiltinType.ANY;
-                break;
-        }
-        return aType;
     }
 }

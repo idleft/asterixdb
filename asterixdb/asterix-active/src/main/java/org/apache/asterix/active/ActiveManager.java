@@ -20,28 +20,27 @@ package org.apache.asterix.active;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 
+import org.apache.asterix.active.message.ActiveManagerMessage;
+import org.apache.asterix.common.memory.ConcurrentFramePool;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.log4j.Logger;
 
 public class ActiveManager {
 
+    private static final Logger LOGGER = Logger.getLogger(ActiveManager.class.getName());
+    private final Executor executor;
     private final Map<ActiveRuntimeId, IActiveRuntime> runtimes;
-
-    private final IActiveRuntimeRegistry activeRuntimeRegistry;
-
     private final ConcurrentFramePool activeFramePool;
-
     private final String nodeId;
 
-    public ActiveManager(String nodeId, long activeMemoryBudget, int frameSize) throws HyracksDataException {
+    public ActiveManager(Executor executor, String nodeId, long activeMemoryBudget, int frameSize)
+            throws HyracksDataException {
+        this.executor = executor;
         this.nodeId = nodeId;
-        this.activeRuntimeRegistry = new ActiveRuntimeRegistry(nodeId);
         this.activeFramePool = new ConcurrentFramePool(nodeId, activeMemoryBudget, frameSize);
         this.runtimes = new ConcurrentHashMap<>();
-    }
-
-    public IActiveRuntimeRegistry getActiveRuntimeRegistry() {
-        return activeRuntimeRegistry;
     }
 
     public ConcurrentFramePool getFramePool() {
@@ -59,12 +58,39 @@ public class ActiveManager {
         runtimes.remove(id);
     }
 
-    public IActiveRuntime getSubscribableRuntime(ActiveRuntimeId subscribableRuntimeId) {
-        return runtimes.get(subscribableRuntimeId);
+    public IActiveRuntime getRuntime(ActiveRuntimeId runtimeId) {
+        return runtimes.get(runtimeId);
     }
 
     @Override
     public String toString() {
         return ActiveManager.class.getSimpleName() + "[" + nodeId + "]";
+    }
+
+    public void submit(ActiveManagerMessage message) {
+        switch (message.getKind()) {
+            case ActiveManagerMessage.STOP_ACTIVITY:
+                stopRuntime(message);
+                break;
+            default:
+                LOGGER.warn("Unknown message type received: " + message.getKind());
+        }
+    }
+
+    private void stopRuntime(ActiveManagerMessage message) {
+        ActiveRuntimeId runtimeId = (ActiveRuntimeId) message.getPayload();
+        IActiveRuntime runtime = runtimes.get(runtimeId);
+        if (runtime == null) {
+            LOGGER.warn("Request to stop a runtime that is not registered " + runtimeId);
+        } else {
+            executor.execute(() -> {
+                try {
+                    runtime.stop();
+                } catch (Exception e) {
+                    // TODO(till) Figure out a better way to handle failure to stop a runtime
+                    LOGGER.warn("Failed to stop runtime: " + runtimeId, e);
+                }
+            });
+        }
     }
 }

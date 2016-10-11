@@ -17,12 +17,15 @@
  * under the License.
  */
 
+drop dataverse test if exists;
+create dataverse test;
+
 use test;
 
 
 create type test.DBLPType as
  closed {
-  id : int64,
+  id : bigint,
   dblpid : string,
   title : string,
   authors : string,

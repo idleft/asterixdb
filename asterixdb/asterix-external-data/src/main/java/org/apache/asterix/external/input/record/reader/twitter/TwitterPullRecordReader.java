@@ -27,8 +27,12 @@ import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-
-import twitter4j.*;
+import twitter4j.Query;
+import twitter4j.QueryResult;
+import twitter4j.Status;
+import twitter4j.Twitter;
+import twitter4j.TwitterException;
+import twitter4j.TwitterObjectFactory;
 
 public class TwitterPullRecordReader implements IRecordReader<String> {
 
@@ -50,6 +54,7 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
 
     @Override
     public void close() throws IOException {
+        // do nothing
     }
 
     @Override
@@ -90,10 +95,12 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
 
     @Override
     public void setFeedLogManager(FeedLogManager feedLogManager) {
+        // do nothing
     }
 
     @Override
     public void setController(AbstractFeedDataFlowController controller) {
+        // do nothing
     }
 
     @Override

@@ -25,10 +25,10 @@ use test;
 
 create type test.testType as
 {
-  id : int32
+  id : integer
 }
 
 create  dataset testDS(testType) primary key id;
 
-create  index testIdx  on testDS (`value`:string) type btree;
+create  index testIdx  on testDS (`value`:string?) type btree;
 

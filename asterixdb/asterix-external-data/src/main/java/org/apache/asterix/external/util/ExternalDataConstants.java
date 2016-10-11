@@ -95,6 +95,8 @@ public class ExternalDataConstants {
     public static final String KEY_VALUE_FORMAT = "value-format";
     // a boolean indicating whether the feed is a change feed
     public static final String KEY_IS_CHANGE_FEED = "change-feed";
+    // a boolean indicating whether the feed use upsert
+    public static final String KEY_IS_UPSERT_FEED = "upsert-feed";
     // an integer representing the number of keys in a change feed
     public static final String KEY_KEY_SIZE = "key-size";
     // a boolean indicating whether the feed produces records with metadata
@@ -173,7 +175,7 @@ public class ExternalDataConstants {
     public static final String ALIAS_SOCKET_ADAPTER = "socket_adapter";
     public static final String ALIAS_TWITTER_FIREHOSE_ADAPTER = "twitter_firehose";
     public static final String ALIAS_SOCKET_CLIENT_ADAPTER = "socket_client";
-    public static final String ALIAS_RSS_ADAPTER = "rss_feed";
+    public static final String ALIAS_RSS_ADAPTER = "rss";
     public static final String ALIAS_FILE_FEED_ADAPTER = "file_feed";
     public static final String ALIAS_TWITTER_PUSH_ADAPTER = "push_twitter";
     public static final String ALIAS_TWITTER_PULL_ADAPTER = "pull_twitter";

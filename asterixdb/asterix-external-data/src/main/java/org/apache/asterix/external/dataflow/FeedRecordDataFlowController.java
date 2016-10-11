@@ -25,14 +25,12 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.annotation.Nonnull;
-
+import org.apache.asterix.common.exceptions.ExceptionUtils;
 import org.apache.asterix.external.api.IFeedMarker;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
-import org.apache.asterix.external.util.ExternalDataExceptionUtils;
 import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.VSizeFrame;
@@ -54,11 +52,11 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected final boolean sendMarker;
     protected boolean failed = false;
     private FeedRecordDataFlowController<T>.DataflowMarker dataflowMarker;
-    private Future<?> result;
+    private Future<?> dataflowMarkerResult;
 
     public FeedRecordDataFlowController(IHyracksTaskContext ctx, FeedTupleForwarder tupleForwarder,
-            @Nonnull FeedLogManager feedLogManager, int numOfOutputFields, @Nonnull IRecordDataParser<T> dataParser,
-            @Nonnull IRecordReader<T> recordReader, boolean sendMarker) throws HyracksDataException {
+            FeedLogManager feedLogManager, int numOfOutputFields, IRecordDataParser<T> dataParser,
+            IRecordReader<T> recordReader, boolean sendMarker) throws HyracksDataException {
         super(ctx, tupleForwarder, feedLogManager, numOfOutputFields);
         this.dataParser = dataParser;
         this.recordReader = recordReader;
@@ -69,12 +67,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
 
     @Override
     public void start(IFrameWriter writer) throws HyracksDataException {
-        ExecutorService executorService = sendMarker ? Executors.newSingleThreadExecutor() : null;
-        if (sendMarker && dataflowMarker == null) {
-            dataflowMarker = new DataflowMarker(recordReader.getProgressReporter(),
-                    TaskUtils.<VSizeFrame> get(HyracksConstants.KEY_MESSAGE, ctx));
-            result = executorService.submit(dataflowMarker);
-        }
+        startDataflowMarker();
         HyracksDataException hde = null;
         try {
             failed = false;
@@ -102,23 +95,21 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             LOGGER.warn("Failure while operating a feed source", e);
             throw new HyracksDataException(e);
         }
-        if(dataflowMarker != null){
-            dataflowMarker.stop();
-        }
+        stopDataflowMarker();
         try {
             tupleForwarder.close();
         } catch (Throwable th) {
-            hde = ExternalDataExceptionUtils.suppressIntoHyracksDataException(hde, th);
+            hde = ExceptionUtils.suppressIntoHyracksDataException(hde, th);
         }
         try {
             recordReader.close();
         } catch (Throwable th) {
             LOGGER.warn("Failure during while operating a feed sourcec", th);
-            hde = ExternalDataExceptionUtils.suppressIntoHyracksDataException(hde, th);
+            hde = ExceptionUtils.suppressIntoHyracksDataException(hde, th);
         } finally {
             closeSignal();
-            if (sendMarker && result != null) {
-                result.cancel(true);
+            if (sendMarker && dataflowMarkerResult != null) {
+                dataflowMarkerResult.cancel(true);
             }
         }
         if (hde != null) {
@@ -149,6 +140,21 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
     }
 
+    private void startDataflowMarker() {
+        ExecutorService executorService = sendMarker ? Executors.newSingleThreadExecutor() : null;
+        if (sendMarker && dataflowMarker == null) {
+            dataflowMarker = new DataflowMarker(recordReader.getProgressReporter(),
+                    TaskUtils.<VSizeFrame> get(HyracksConstants.KEY_MESSAGE, ctx));
+            dataflowMarkerResult = executorService.submit(dataflowMarker);
+        }
+    }
+
+    private void stopDataflowMarker() {
+        if (dataflowMarker != null) {
+            dataflowMarker.stop();
+        }
+    }
+
     private void closeSignal() {
         synchronized (closed) {
             closed.set(true);
@@ -166,9 +172,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
 
     @Override
     public boolean stop() throws HyracksDataException {
-        if (dataflowMarker != null) {
-            dataflowMarker.stop();
-        }
+        stopDataflowMarker();
         HyracksDataException hde = null;
         if (recordReader.stop()) {
             if (failed) {
@@ -176,12 +180,12 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
                 try {
                     tupleForwarder.close();
                 } catch (Throwable th) {
-                    hde = ExternalDataExceptionUtils.suppressIntoHyracksDataException(hde, th);
+                    hde = ExceptionUtils.suppressIntoHyracksDataException(hde, th);
                 }
                 try {
                     recordReader.close();
                 } catch (Throwable th) {
-                    hde = ExternalDataExceptionUtils.suppressIntoHyracksDataException(hde, th);
+                    hde = ExceptionUtils.suppressIntoHyracksDataException(hde, th);
                 }
                 if (hde != null) {
                     throw hde;

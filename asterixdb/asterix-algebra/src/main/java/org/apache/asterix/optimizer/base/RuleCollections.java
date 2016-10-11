@@ -22,6 +22,7 @@ package org.apache.asterix.optimizer.base;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.apache.asterix.algebra.extension.IAlgebraExtensionManager;
 import org.apache.asterix.optimizer.rules.AddEquivalenceClassForRecordConstructorRule;
 import org.apache.asterix.optimizer.rules.AsterixExtractFunctionsFromJoinConditionRule;
 import org.apache.asterix.optimizer.rules.AsterixInlineVariablesRule;
@@ -49,11 +50,12 @@ import org.apache.asterix.optimizer.rules.IntroduceRapidFrameFlushProjectAssignR
 import org.apache.asterix.optimizer.rules.IntroduceSecondaryIndexInsertDeleteRule;
 import org.apache.asterix.optimizer.rules.IntroduceStaticTypeCastForInsertRule;
 import org.apache.asterix.optimizer.rules.IntroduceUnnestForCollectionToSequenceRule;
+import org.apache.asterix.optimizer.rules.ListifyUnnestingFunctionRule;
 import org.apache.asterix.optimizer.rules.LoadRecordFieldsRule;
 import org.apache.asterix.optimizer.rules.MetaFunctionToMetaVariableRule;
 import org.apache.asterix.optimizer.rules.NestGroupByRule;
 import org.apache.asterix.optimizer.rules.PushAggFuncIntoStandaloneAggregateRule;
-import org.apache.asterix.optimizer.rules.PushAggregateIntoGroupbyRule;
+import org.apache.asterix.optimizer.rules.PushAggregateIntoNestedSubplanRule;
 import org.apache.asterix.optimizer.rules.PushFieldAccessRule;
 import org.apache.asterix.optimizer.rules.PushGroupByThroughProduct;
 import org.apache.asterix.optimizer.rules.PushLimitIntoOrderByRule;
@@ -90,6 +92,7 @@ import org.apache.hyracks.algebricks.rewriter.rules.EnforceStructuralPropertiesR
 import org.apache.hyracks.algebricks.rewriter.rules.ExtractCommonExpressionsRule;
 import org.apache.hyracks.algebricks.rewriter.rules.ExtractCommonOperatorsRule;
 import org.apache.hyracks.algebricks.rewriter.rules.ExtractGbyExpressionsRule;
+import org.apache.hyracks.algebricks.rewriter.rules.ExtractGroupByDecorVariablesRule;
 import org.apache.hyracks.algebricks.rewriter.rules.FactorRedundantGroupAndDecorVarsRule;
 import org.apache.hyracks.algebricks.rewriter.rules.InferTypesRule;
 import org.apache.hyracks.algebricks.rewriter.rules.InlineAssignIntoAggregateRule;
@@ -112,13 +115,14 @@ import org.apache.hyracks.algebricks.rewriter.rules.PushSubplanWithAggregateDown
 import org.apache.hyracks.algebricks.rewriter.rules.PushUnnestDownThroughUnionRule;
 import org.apache.hyracks.algebricks.rewriter.rules.ReinferAllTypesRule;
 import org.apache.hyracks.algebricks.rewriter.rules.RemoveCartesianProductWithEmptyBranchRule;
-import org.apache.hyracks.algebricks.rewriter.rules.RemoveRedundantGroupByDecorVars;
+import org.apache.hyracks.algebricks.rewriter.rules.RemoveRedundantGroupByDecorVarsRule;
 import org.apache.hyracks.algebricks.rewriter.rules.RemoveRedundantVariablesRule;
 import org.apache.hyracks.algebricks.rewriter.rules.RemoveUnnecessarySortMergeExchange;
 import org.apache.hyracks.algebricks.rewriter.rules.RemoveUnusedAssignAndAggregateRule;
 import org.apache.hyracks.algebricks.rewriter.rules.SetAlgebricksPhysicalOperatorsRule;
 import org.apache.hyracks.algebricks.rewriter.rules.SetExecutionModeRule;
 import org.apache.hyracks.algebricks.rewriter.rules.SimpleUnnestToProductRule;
+import org.apache.hyracks.algebricks.rewriter.rules.SwitchInnerJoinBranchRule;
 import org.apache.hyracks.algebricks.rewriter.rules.subplan.EliminateSubplanRule;
 import org.apache.hyracks.algebricks.rewriter.rules.subplan.EliminateSubplanWithInputCardinalityOneRule;
 import org.apache.hyracks.algebricks.rewriter.rules.subplan.NestedSubplanToJoinRule;
@@ -131,9 +135,10 @@ public final class RuleCollections {
     }
 
     public static final List<IAlgebraicRewriteRule> buildInitialTranslationRuleCollection() {
-        List<IAlgebraicRewriteRule> typeInfer = new LinkedList<>();
-        typeInfer.add(new TranslateIntervalExpressionRule());
-        return typeInfer;
+        List<IAlgebraicRewriteRule> translationRules = new LinkedList<>();
+        translationRules.add(new TranslateIntervalExpressionRule());
+        translationRules.add(new ExtractGroupByDecorVariablesRule());
+        return translationRules;
     }
 
     public static final List<IAlgebraicRewriteRule> buildTypeInferenceRuleCollection() {
@@ -150,13 +155,14 @@ public final class RuleCollections {
         return autogen;
     }
 
-    public static final List<IAlgebraicRewriteRule> buildNormalizationRuleCollection() {
+    //TODO(amoudi/yingyi): refactor this to use a provider instead of passing the extensionManager
+    public static final List<IAlgebraicRewriteRule> buildNormalizationRuleCollection(
+            IAlgebraExtensionManager algebraExtensionManager) {
         List<IAlgebraicRewriteRule> normalization = new LinkedList<>();
         normalization.add(new ResolveVariableRule());
         normalization.add(new IntroduceUnnestForCollectionToSequenceRule());
         normalization.add(new EliminateSubplanRule());
         normalization.add(new EnforceOrderByAfterSubplan());
-        normalization.add(new PushAggFuncIntoStandaloneAggregateRule());
         normalization.add(new BreakSelectIntoConjunctsRule());
         normalization.add(new ExtractGbyExpressionsRule());
         normalization.add(new ExtractDistinctByExpressionsRule());
@@ -170,9 +176,14 @@ public final class RuleCollections {
         normalization.add(new IntroduceDynamicTypeCastForExternalFunctionRule());
         normalization.add(new IntroduceEnforcedListTypeRule());
         normalization.add(new ExtractCommonExpressionsRule());
+
+        // Let PushAggFuncIntoStandaloneAggregateRule run after ExtractCommonExpressionsRule
+        // so that PushAggFunc can happen in fewer places.
+        normalization.add(new PushAggFuncIntoStandaloneAggregateRule());
+        normalization.add(new ListifyUnnestingFunctionRule());
         normalization.add(new ConstantFoldingRule());
         normalization.add(new RemoveRedundantSelectRule());
-        normalization.add(new UnnestToDataScanRule());
+        normalization.add(new UnnestToDataScanRule(algebraExtensionManager));
         normalization.add(new MetaFunctionToMetaVariableRule());
         normalization.add(new FuzzyEqRule());
         normalization.add(new SimilarityCheckRule());
@@ -191,6 +202,9 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new DisjunctivePredicateToJoinRule());
         condPushDownAndJoinInference.add(new PushSelectIntoJoinRule());
         condPushDownAndJoinInference.add(new IntroJoinInsideSubplanRule());
+        // Apply RemoveCartesianProductWithEmptyBranchRule before PushMapOperatorDownThroughProductRule
+        // to avoid that a constant assignment gets pushed into an empty branch.
+        condPushDownAndJoinInference.add(new RemoveCartesianProductWithEmptyBranchRule());
         condPushDownAndJoinInference.add(new PushMapOperatorDownThroughProductRule());
         condPushDownAndJoinInference.add(new PushSubplanWithAggregateDownThroughProductRule());
         condPushDownAndJoinInference.add(new SubplanOutOfGroupRule());
@@ -201,7 +215,7 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new RemoveUnusedAssignAndAggregateRule());
 
         condPushDownAndJoinInference.add(new FactorRedundantGroupAndDecorVarsRule());
-        condPushDownAndJoinInference.add(new PushAggregateIntoGroupbyRule());
+        condPushDownAndJoinInference.add(new PushAggregateIntoNestedSubplanRule());
         condPushDownAndJoinInference.add(new EliminateSubplanRule());
         condPushDownAndJoinInference.add(new PushProperJoinThroughProduct());
         condPushDownAndJoinInference.add(new PushGroupByThroughProduct());
@@ -210,7 +224,7 @@ public final class RuleCollections {
         condPushDownAndJoinInference.add(new PushSubplanIntoGroupByRule());
         condPushDownAndJoinInference.add(new NestedSubplanToJoinRule());
         condPushDownAndJoinInference.add(new EliminateSubplanWithInputCardinalityOneRule());
-        // The following rule should be fired after PushAggregateIntoGroupbyRule because
+        // The following rule should be fired after PushAggregateIntoNestedSubplanRule because
         // pulling invariants out of a subplan will make PushAggregateIntoGroupby harder.
         condPushDownAndJoinInference.add(new AsterixMoveFreeVariableOperatorOutOfSubplanRule());
 
@@ -251,7 +265,7 @@ public final class RuleCollections {
         consolidation.add(new IntroduceAggregateCombinerRule());
         consolidation.add(new CountVarToCountOneRule());
         consolidation.add(new RemoveUnusedAssignAndAggregateRule());
-        consolidation.add(new RemoveRedundantGroupByDecorVars());
+        consolidation.add(new RemoveRedundantGroupByDecorVarsRule());
         //PushUnnestDownUnion => RemoveRedundantListifyRule cause these rules are correlated
         consolidation.add(new PushUnnestDownThroughUnionRule());
         consolidation.add(new RemoveRedundantListifyRule());
@@ -272,6 +286,7 @@ public final class RuleCollections {
 
     public static final List<IAlgebraicRewriteRule> buildPlanCleanupRuleCollection() {
         List<IAlgebraicRewriteRule> planCleanupRules = new LinkedList<>();
+        planCleanupRules.add(new SwitchInnerJoinBranchRule());
         planCleanupRules.add(new PushAssignBelowUnionAllRule());
         planCleanupRules.add(new ExtractCommonExpressionsRule());
         planCleanupRules.add(new RemoveRedundantVariablesRule());

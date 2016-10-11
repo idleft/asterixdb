@@ -26,8 +26,13 @@ import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
-
-import twitter4j.*;
+import twitter4j.FilterQuery;
+import twitter4j.StallWarning;
+import twitter4j.Status;
+import twitter4j.StatusDeletionNotice;
+import twitter4j.StatusListener;
+import twitter4j.TwitterObjectFactory;
+import twitter4j.TwitterStream;
 
 public class TwitterPushRecordReader implements IRecordReader<String> {
     private LinkedBlockingQueue<String> inputQ;
@@ -39,7 +44,6 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         record = new GenericRecord<>();
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//TwitterUtil.getTwitterStream(configuration);
-//        this.twitterStream.addListener(new TweetStringListener(inputQ));
         this.twitterStream.addListener(new TweetListener(inputQ));
         this.twitterStream.filter(query);
     }
@@ -49,7 +53,6 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
         inputQ = new LinkedBlockingQueue<>();
         this.twitterStream = twitterStream;//
         this.twitterStream.addListener(new TweetListener(inputQ));
-//        this.twitterStream.addListener(new TweetStringListener(inputQ));
         twitterStream.sample();
     }
 
@@ -104,32 +107,38 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
 
         @Override
         public void onException(Exception arg0) {
-
+            // do nothing
         }
 
         @Override
         public void onDeletionNotice(StatusDeletionNotice arg0) {
+            // do nothing
         }
 
         @Override
         public void onScrubGeo(long arg0, long arg1) {
+            // do nothing
         }
 
         @Override
         public void onStallWarning(StallWarning arg0) {
+            // do nothing
         }
 
         @Override
         public void onTrackLimitationNotice(int arg0) {
+            // do nothing
         }
     }
 
     @Override
     public void setFeedLogManager(FeedLogManager feedLogManager) {
+        // do nothing
     }
 
     @Override
     public void setController(AbstractFeedDataFlowController controller) {
+        // do nothing
     }
 
     @Override

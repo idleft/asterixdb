@@ -43,7 +43,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.JobType;
-import org.apache.asterix.om.util.AsterixAppContextInfo;
+import org.apache.asterix.runtime.util.AsterixAppContextInfo;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
@@ -158,7 +158,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     private void handleIntakePartitionStarts(ActiveEvent message, ActiveJob jobInfo) {
-        if (feedPipeline.get(message.getFeedId()).first.decrementAndGet() == 0) {
+        if (feedPipeline.get(message.getEntityId()).first.decrementAndGet() == 0) {
             ((FeedIntakeInfo) jobInfo).getIntakeFeedJoint().setState(State.ACTIVE);
             jobInfo.setState(ActivityState.ACTIVE);
             notifyFeedEventSubscribers(FeedLifecycleEvent.FEED_INTAKE_STARTED);
@@ -202,7 +202,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
             }
         }
 
-        IHyracksClientConnection hcc = AsterixAppContextInfo.getInstance().getHcc();
+        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
         JobInfo info = hcc.getJobInfo(intakeJobInfo.getJobId());
         List<String> intakeLocations = new ArrayList<>();
         for (OperatorDescriptorId intakeOperatorId : intakeOperatorIds) {
@@ -339,7 +339,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         return locations;
     }
 
-    private void notifyFeedEventSubscribers(FeedLifecycleEvent event) {
+    private synchronized void notifyFeedEventSubscribers(FeedLifecycleEvent event) {
         if (subscribers != null && !subscribers.isEmpty()) {
             for (IFeedLifecycleEventSubscriber subscriber : subscribers) {
                 subscriber.handleFeedEvent(event);
@@ -349,7 +349,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     private synchronized void handleFeedIntakeJobFinishMessage(FeedIntakeInfo intakeInfo, ActiveEvent message)
             throws Exception {
-        IHyracksClientConnection hcc = AsterixAppContextInfo.getInstance().getHcc();
+        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
         JobInfo info = hcc.getJobInfo(message.getJobId());
         JobStatus status = info.getStatus();
         EntityId feedId = intakeInfo.getFeedId();
@@ -369,7 +369,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws Exception {
         FeedConnectionId connectionId = cInfo.getConnectionId();
 
-        IHyracksClientConnection hcc = AsterixAppContextInfo.getInstance().getHcc();
+        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
         JobInfo info = hcc.getJobInfo(cInfo.getJobId());
         JobStatus status = info.getStatus();
         boolean failure = status != null && status.equals(JobStatus.FAILURE);
@@ -523,7 +523,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
 
         try {
-            IHyracksClientConnection hcc = AsterixAppContextInfo.getInstance().getHcc();
+            IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
             JobInfo info = hcc.getJobInfo(cInfo.getJobId());
             List<String> collectLocations = new ArrayList<>();
             for (OperatorDescriptorId collectOpId : collectOperatorIds) {
@@ -611,7 +611,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         cInfo.setState(ActivityState.ACTIVE);
     }
 
-    public synchronized boolean isConnectedToDataset(String datasetName) {
+    private synchronized boolean isConnectedToDataset(String datasetName) {
         for (FeedConnectionId connection : connectJobInfos.keySet()) {
             if (connection.getDatasetName().equals(datasetName)) {
                 return true;
@@ -640,5 +640,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     public IFeedJoint getSourceFeedJoint() {
         return sourceFeedJoint;
+    }
+
+    @Override
+    public boolean isEntityConnectedToDataset(String dataverseName, String datasetName) {
+        return isConnectedToDataset(datasetName);
     }
 }

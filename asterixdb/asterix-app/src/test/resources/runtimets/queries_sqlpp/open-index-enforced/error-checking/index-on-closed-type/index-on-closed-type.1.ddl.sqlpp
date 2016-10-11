@@ -25,10 +25,10 @@ use test;
 
 create type test.testType as
  closed {
-  id : int32
+  id : integer
 }
 
 create  dataset testDS(testType) primary key id;
 
-create  index testIdx  on testDS (`value`:string) type btree enforced;
+create  index testIdx  on testDS (`value`:string?) type btree enforced;
 

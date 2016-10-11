@@ -1038,7 +1038,7 @@ public class JObjects {
             }
         }
 
-        public int getFieldPosByName(String fieldName) {
+        private int getFieldPosByName(String fieldName) {
             int index = 0;
             String[] fieldNames = recordType.getFieldNames();
             for (String name : fieldNames) {

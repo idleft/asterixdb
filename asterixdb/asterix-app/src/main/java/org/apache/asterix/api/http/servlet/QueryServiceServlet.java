@@ -18,6 +18,9 @@
  */
 package org.apache.asterix.api.http.servlet;
 
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_CONNECTION_ATTR;
+import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_DATASET_ATTR;
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,41 +36,48 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.asterix.api.common.SessionConfig;
-import org.apache.asterix.aql.translator.QueryTranslator;
+import org.apache.asterix.app.result.ResultReader;
+import org.apache.asterix.app.result.ResultUtil;
+import org.apache.asterix.app.translator.QueryTranslator;
+import org.apache.asterix.common.api.IClusterManagementWork;
 import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.utils.JSONUtil;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.asterix.compiler.provider.SqlppCompilationProvider;
 import org.apache.asterix.lang.aql.parser.TokenMgrError;
 import org.apache.asterix.lang.common.base.IParser;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.metadata.MetadataManager;
-import org.apache.asterix.result.ResultReader;
-import org.apache.asterix.result.ResultUtils;
+import org.apache.asterix.runtime.util.ClusterStateManager;
+import org.apache.asterix.translator.IStatementExecutor;
+import org.apache.asterix.translator.IStatementExecutor.Stats;
+import org.apache.asterix.translator.IStatementExecutorFactory;
+import org.apache.asterix.translator.SessionConfig;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.AlgebricksAppendable;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.dataset.IHyracksDataset;
 import org.apache.hyracks.client.dataset.HyracksDataset;
-
-import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_CONNECTION_ATTR;
-import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_DATASET_ATTR;
+import org.json.JSONException;
+import org.json.JSONObject;
 
 public class QueryServiceServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
     private static final Logger LOGGER = Logger.getLogger(QueryServiceServlet.class.getName());
+    private final transient ILangCompilationProvider compilationProvider;
+    private final transient IStatementExecutorFactory statementExecutorFactory;
 
-    private transient final ILangCompilationProvider compilationProvider;
+    public QueryServiceServlet(ILangCompilationProvider compilationProvider,
+            IStatementExecutorFactory statementExecutorFactory) {
+        this.compilationProvider = compilationProvider;
+        this.statementExecutorFactory = statementExecutorFactory;
+    }
 
     public enum Parameter {
-        // Standard
         STATEMENT("statement"),
         FORMAT("format"),
-        // Asterix
+        CLIENT_ID("client_context_id"),
         PRETTY("pretty");
 
         private final String str;
@@ -112,8 +122,9 @@ public class QueryServiceServlet extends HttpServlet {
         }
     }
 
-    private enum ResultFields {
+    public enum ResultFields {
         REQUEST_ID("requestID"),
+        CLIENT_ID("clientContextID"),
         SIGNATURE("signature"),
         TYPE("type"),
         STATUS("status"),
@@ -132,7 +143,7 @@ public class QueryServiceServlet extends HttpServlet {
         }
     }
 
-    private enum ResultStatus {
+    public enum ResultStatus {
         SUCCESS("success"),
         TIMEOUT("timeout"),
         ERRORS("errors"),
@@ -210,8 +221,28 @@ public class QueryServiceServlet extends HttpServlet {
         }
     }
 
-    public QueryServiceServlet(final ILangCompilationProvider compilationProvider) {
-        this.compilationProvider = compilationProvider;
+    static class RequestParameters {
+        String statement;
+        String format;
+        boolean pretty;
+        String clientContextID;
+
+        @Override
+        public String toString() {
+            return append(new StringBuilder()).toString();
+        }
+
+        public StringBuilder append(final StringBuilder sb) {
+            sb.append("{ ");
+            sb.append("\"statement\": \"");
+            JSONUtil.escape(sb, statement);
+            sb.append("\", ");
+            sb.append("\"format\": \"").append(format).append("\", ");
+            sb.append("\"pretty\": ").append(pretty).append(", ");
+            sb.append("\"clientContextID\": \"").append(clientContextID).append("\" ");
+            sb.append('}');
+            return sb;
+        }
     }
 
     private static String getParameterValue(String content, String attribute) {
@@ -252,11 +283,7 @@ public class QueryServiceServlet extends HttpServlet {
         return SessionConfig.OutputFormat.CLEAN_JSON;
     }
 
-    /**
-     * Construct a SessionConfig with the appropriate output writer and
-     * output-format based on the Accept: header and other servlet parameters.
-     */
-    private static SessionConfig createSessionConfig(HttpServletRequest request, PrintWriter resultWriter) {
+    private static SessionConfig createSessionConfig(RequestParameters param, PrintWriter resultWriter) {
         SessionConfig.ResultDecorator resultPrefix = (AlgebricksAppendable app) -> {
             app.append("\t\"");
             app.append(ResultFields.RESULTS.str());
@@ -269,16 +296,14 @@ public class QueryServiceServlet extends HttpServlet {
             return app;
         };
 
-        final String formatstr = toLower(request.getParameter(Parameter.FORMAT.str()));
-        SessionConfig.OutputFormat format = getFormat(formatstr);
+        SessionConfig.OutputFormat format = getFormat(param.format);
         SessionConfig sessionConfig = new SessionConfig(resultWriter, format, resultPrefix, resultPostfix);
         sessionConfig.set(SessionConfig.FORMAT_WRAPPER_ARRAY, true);
-        boolean indentJson = Boolean.parseBoolean(request.getParameter(Parameter.PRETTY.str()));
-        sessionConfig.set(SessionConfig.FORMAT_INDENT_JSON, indentJson);
+        sessionConfig.set(SessionConfig.FORMAT_INDENT_JSON, param.pretty);
         sessionConfig.set(SessionConfig.FORMAT_QUOTE_RECORD,
                 format != SessionConfig.OutputFormat.CLEAN_JSON && format != SessionConfig.OutputFormat.LOSSLESS_JSON);
-        sessionConfig.set(SessionConfig.FORMAT_CSV_HEADER,
-                format == SessionConfig.OutputFormat.CSV && "present".equals(getParameterValue(formatstr, "header")));
+        sessionConfig.set(SessionConfig.FORMAT_CSV_HEADER, format == SessionConfig.OutputFormat.CSV
+                && "present".equals(getParameterValue(param.format, "header")));
         return sessionConfig;
     }
 
@@ -302,6 +327,12 @@ public class QueryServiceServlet extends HttpServlet {
         UUID requestId = UUID.randomUUID();
         printField(pw, ResultFields.REQUEST_ID.str(), requestId.toString());
         return requestId;
+    }
+
+    private static void printClientContextID(PrintWriter pw, RequestParameters params) {
+        if (params.clientContextID != null && !params.clientContextID.isEmpty()) {
+            printField(pw, ResultFields.CLIENT_ID.str(), params.clientContextID);
+        }
     }
 
     private static void printSignature(PrintWriter pw) {
@@ -328,7 +359,7 @@ public class QueryServiceServlet extends HttpServlet {
     }
 
     private static void printError(PrintWriter pw, Throwable e) {
-        Throwable rootCause = ExceptionUtils.getRootCause(e);
+        Throwable rootCause = ResultUtil.getRootCause(e);
         if (rootCause == null) {
             rootCause = e;
         }
@@ -338,8 +369,8 @@ public class QueryServiceServlet extends HttpServlet {
         pw.print("\": [{ \n");
         printField(pw, ErrorField.CODE.str(), "1");
         final String msg = rootCause.getMessage();
-        printField(pw, ErrorField.MSG.str(),
-                JSONUtil.escape(rootCause.getClass().getName() + ": " + msg != null ? msg : ""), addStack);
+        printField(pw, ErrorField.MSG.str(), JSONUtil.escape(msg != null ? msg : rootCause.getClass().getSimpleName()),
+                addStack);
         if (addStack) {
             StringWriter sw = new StringWriter();
             PrintWriter stackWriter = new PrintWriter(sw);
@@ -367,56 +398,79 @@ public class QueryServiceServlet extends HttpServlet {
     }
 
     @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        String query = request.getParameter(Parameter.STATEMENT.str());
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException {
         try {
-            if (query == null) {
-                StringWriter sw = new StringWriter();
-                IOUtils.copy(request.getInputStream(), sw, StandardCharsets.UTF_8.name());
-                query = sw.toString();
+            handleRequest(getRequestParameters(request), response);
+        } catch (IOException e) {
+            // Servlet methods should not throw exceptions
+            // http://cwe.mitre.org/data/definitions/600.html
+            GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, e.getMessage(), e);
+        }
+    }
+
+    private RequestParameters getRequestParameters(HttpServletRequest request) throws IOException {
+        final String contentTypeParam = request.getContentType();
+        int sep = contentTypeParam.indexOf(';');
+        final String contentType = sep < 0 ? contentTypeParam.trim() : contentTypeParam.substring(0, sep).trim();
+        RequestParameters param = new RequestParameters();
+        if (MediaType.JSON.str().equals(contentType)) {
+            try {
+                JSONObject jsonRequest = new JSONObject(getRequestBody(request));
+                param.statement = jsonRequest.getString(Parameter.STATEMENT.str());
+                param.format = toLower(jsonRequest.optString(Parameter.FORMAT.str()));
+                param.pretty = jsonRequest.optBoolean(Parameter.PRETTY.str());
+                param.clientContextID = jsonRequest.optString(Parameter.CLIENT_ID.str());
+            } catch (JSONException e) {
+                // if the JSON parsing fails, the statement is empty and we get an empty statement error
+                GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, e.getMessage(), e);
             }
-            handleRequest(request, response, query);
-        } catch (IOException e) {
-            // Servlet methods should not throw exceptions
-            // http://cwe.mitre.org/data/definitions/600.html
-            GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, e.getMessage(), e);
+        } else {
+            param.statement = request.getParameter(Parameter.STATEMENT.str());
+            if (param.statement == null) {
+                param.statement = getRequestBody(request);
+            }
+            param.format = toLower(request.getParameter(Parameter.FORMAT.str()));
+            param.pretty = Boolean.parseBoolean(request.getParameter(Parameter.PRETTY.str()));
+            param.clientContextID = request.getParameter(Parameter.CLIENT_ID.str());
         }
+        return param;
     }
 
-    @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        String query = request.getParameter(Parameter.STATEMENT.str());
-        try {
-            handleRequest(request, response, query);
-        } catch (IOException e) {
-            // Servlet methods should not throw exceptions
-            // http://cwe.mitre.org/data/definitions/600.html
-            GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, e.getMessage(), e);
-        }
+    private static String getRequestBody(HttpServletRequest request) throws IOException {
+        StringWriter sw = new StringWriter();
+        IOUtils.copy(request.getInputStream(), sw, StandardCharsets.UTF_8.name());
+        return sw.toString();
     }
 
-    private void handleRequest(HttpServletRequest request, HttpServletResponse response, String query)
-            throws IOException {
+    private void handleRequest(RequestParameters param, HttpServletResponse response) throws IOException {
+        LOGGER.info(param.toString());
         long elapsedStart = System.nanoTime();
-
         final StringWriter stringWriter = new StringWriter();
         final PrintWriter resultWriter = new PrintWriter(stringWriter);
 
-        SessionConfig sessionConfig = createSessionConfig(request, resultWriter);
+        SessionConfig sessionConfig = createSessionConfig(param, resultWriter);
         response.setCharacterEncoding("utf-8");
         response.setContentType(MediaType.JSON.str());
 
         int respCode = HttpServletResponse.SC_OK;
-        ResultUtils.Stats stats = new ResultUtils.Stats();
-        long execStart = 0;
+        Stats stats = new Stats();
+        long execStart = -1;
         long execEnd = -1;
 
         resultWriter.print("{\n");
-        UUID requestId = printRequestId(resultWriter);
+        printRequestId(resultWriter);
+        printClientContextID(resultWriter, param);
         printSignature(resultWriter);
         printType(resultWriter, sessionConfig);
         try {
+            final IClusterManagementWork.ClusterState clusterState = ClusterStateManager.INSTANCE.getState();
+            if (clusterState != IClusterManagementWork.ClusterState.ACTIVE) {
+                // using a plain IllegalStateException here to get into the right catch clause for a 500
+                throw new IllegalStateException("Cannot execute request, cluster is " + clusterState);
+            }
+            if (param.statement == null || param.statement.isEmpty()) {
+                throw new AsterixException("Empty request, no statement provided");
+            }
             IHyracksClientConnection hcc;
             IHyracksDataset hds;
             ServletContext context = getServletContext();
@@ -428,10 +482,11 @@ public class QueryServiceServlet extends HttpServlet {
                     context.setAttribute(HYRACKS_DATASET_ATTR, hds);
                 }
             }
-            IParser parser = compilationProvider.getParserFactory().createParser(query);
+            IParser parser = compilationProvider.getParserFactory().createParser(param.statement);
             List<Statement> aqlStatements = parser.parse();
             MetadataManager.INSTANCE.init();
-            QueryTranslator translator = new QueryTranslator(aqlStatements, sessionConfig, compilationProvider);
+            IStatementExecutor translator = statementExecutorFactory.create(aqlStatements, sessionConfig,
+                    compilationProvider);
             execStart = System.nanoTime();
             translator.compileAndExecute(hcc, hds, QueryTranslator.ResultDelivery.SYNC, stats);
             execEnd = System.nanoTime();
@@ -447,21 +502,24 @@ public class QueryServiceServlet extends HttpServlet {
             printStatus(resultWriter, ResultStatus.FATAL);
             respCode = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
         } finally {
-            if (execEnd == -1) {
+            if (execStart == -1) {
+                execEnd = -1;
+            } else if (execEnd == -1) {
                 execEnd = System.nanoTime();
             }
         }
-        printMetrics(resultWriter, System.nanoTime() - elapsedStart, execEnd - execStart, stats.count, stats.size);
+        printMetrics(resultWriter, System.nanoTime() - elapsedStart, execEnd - execStart, stats.getCount(),
+                stats.getSize());
         resultWriter.print("}\n");
         resultWriter.flush();
         String result = stringWriter.toString();
 
         GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, result);
 
+        response.setStatus(respCode);
         response.getWriter().print(result);
         if (response.getWriter().checkError()) {
             LOGGER.warning("Error flushing output writer");
         }
-        response.setStatus(respCode);
     }
 }
