@@ -1947,7 +1947,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 }
             }
             String adaptorName = cfs.getAdaptorName();
-            // Q: Where should the function reside, feed side or some where else?
             feed = new Feed(dataverseName, feedName, adaptorName, cfs.getAdaptorConfiguration());
             FeedMetadataUtil.validateFeed(feed, mdTxnCtx, metadataProvider.getLibraryManager());
             MetadataManager.INSTANCE.addFeed(metadataProvider.getMetadataTxnContext(), feed);
@@ -2111,7 +2110,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         List<FeedConnection> feedConnections = MetadataManager.INSTANCE
                 .getFeedConections(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
         // Start
-        MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, feedName, feedConnections);
         try {
             MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, feedConnections);
             // Prepare policy
@@ -2125,7 +2123,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             FeedConnectJobInfo cInfo = new FeedConnectJobInfo(entityId, null, ActivityState.CREATED, feedJob);
             listener.setFeedConnectJobInfo(cInfo);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
-            JobUtils.runJob(hcc, feedJob, false);
+            JobUtils.runJob(hcc, feedJob,
+                    Boolean.valueOf(metadataProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION)));
+            LOGGER.log(Level.INFO,"Submitted");
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;

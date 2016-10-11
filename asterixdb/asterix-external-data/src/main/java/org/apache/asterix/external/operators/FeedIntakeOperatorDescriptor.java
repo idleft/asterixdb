@@ -136,4 +136,13 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     public FeedPolicyAccessor getPolicyAccessor() {
         return this.policyAccessor;
     }
+
+    public String getAdaptorLibraryName() {
+        return this.adaptorLibraryName;
+    }
+
+    public String getAdaptorFactoryClassName() {
+        return this.adaptorFactoryClassName;
+    }
+
 }

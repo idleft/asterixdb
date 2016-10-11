@@ -51,6 +51,7 @@ import org.apache.asterix.metadata.entities.Node;
 import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
+import org.apache.hadoop.hive.ql.io.orc.Metadata;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 /**
@@ -808,24 +809,40 @@ public class MetadataManager implements IMetadataManager {
 
     public void addFeedConnection(MetadataTransactionContext ctx, FeedConnection feedConnection)
             throws MetadataException {
-        metadataNode.addFeedConnection(ctx.getJobId(), feedConnection);
+        try {
+            metadataNode.addFeedConnection(ctx.getJobId(), feedConnection);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
         ctx.addFeedConnection(feedConnection);
     }
 
     public void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
             String datasetName) throws MetadataException {
-        metadataNode.dropFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        try {
+            metadataNode.dropFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
         ctx.dropFeedConnection(dataverseName, feedName, datasetName);
     }
 
     public FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
             String datasetName) throws MetadataException {
-        return metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        try {
+            return metadataNode.getFeedConnection(ctx.getJobId(), dataverseName, feedName, datasetName);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
     }
 
     public List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
             throws MetadataException {
-        return metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
+        try {
+            return metadataNode.getFeedConnections(ctx.getJobId(), dataverseName, feedName);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
     }
 
     @Override

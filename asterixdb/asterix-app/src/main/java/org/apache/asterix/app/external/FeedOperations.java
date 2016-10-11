@@ -95,6 +95,7 @@ import org.apache.hyracks.api.dataflow.ConnectorDescriptorId;
 import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
@@ -185,23 +186,32 @@ public class FeedOperations {
 
     private static JobSpecification combineIntakeCollectJobs(AqlMetadataProvider metadataProvider, Feed feed,
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections)
-            throws AsterixException {
+            throws AlgebricksException, HyracksDataException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
 
         // copy ingestor
         FeedIntakeOperatorDescriptor firstOp = (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap()
                 .get(new OperatorDescriptorId(0));
-        FeedIntakeOperatorDescriptor ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed,
-                firstOp.getAdaptorFactory(), firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
-                firstOp.getOutputRecordDescriptors()[0]);
+        FeedIntakeOperatorDescriptor ingestionOp;
+        if(firstOp.getAdaptorFactory() == null) {
+            ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed, firstOp.getAdaptorLibraryName(),
+                    firstOp.getAdaptorFactoryClassName(), firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
+                    firstOp.getOutputRecordDescriptors()[0]);
+        } else {
+            ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed,
+                    firstOp.getAdaptorFactory(), firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
+                    firstOp.getOutputRecordDescriptors()[0]);
+        }
         // create replicator
         SplitOperatorDescriptor replicateOp = new SplitOperatorDescriptor(jobSpec,
                 ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
         jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
         String[] locationConstraints = ClusterStateManager.INSTANCE.getParticipantNodes()
                 .toArray(new String[ClusterStateManager.INSTANCE.getParticipantNodes().size()]);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, locationConstraints);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, locationConstraints);
+        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, ingestionOp, firstOp.getAdaptorFactory().getPartitionConstraint());
+        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, replicateOp, firstOp.getAdaptorFactory().getPartitionConstraint());
+//        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, locationConstraints[0]);
+//        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, locationConstraints[0]);
         // Loop over the jobs to copy operators and connections
         Map<OperatorDescriptorId, OperatorDescriptorId> operatorIdMapping = new HashMap<>();
         Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
@@ -253,11 +263,11 @@ public class FeedOperations {
             for (Entry<ConnectorDescriptorId, IConnectorDescriptor> entry : subJob.getConnectorMap().entrySet()) {
                 IConnectorDescriptor connDesc = entry.getValue();
                 ConnectorDescriptorId newConnId;
+                if (entry.getKey().getId() == 0) {
+                    continue;
+                }
                 if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
                     MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-                    if (entry.getKey().getId() == 0) {
-                        continue;
-                    }
                     connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
                             m2nConn.getTuplePartitionComputerFactory());
                     newConnId = connDesc.getConnectorId();

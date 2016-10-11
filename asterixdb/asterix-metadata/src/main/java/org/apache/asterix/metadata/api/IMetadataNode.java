@@ -765,14 +765,14 @@ public interface IMetadataNode extends Remote, Serializable {
     <T extends IExtensionMetadataEntity> List<T> getEntities(JobId jobId, IExtensionMetadataSearchKey searchKey)
             throws MetadataException, RemoteException;
 
-    public void addFeedConnection(JobId jobId, FeedConnection feedConnection) throws MetadataException;
+    void addFeedConnection(JobId jobId, FeedConnection feedConnection) throws MetadataException, RemoteException;
 
-    public FeedConnection getFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
-            throws MetadataException;
+    FeedConnection getFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
+            throws MetadataException, RemoteException;
 
-    public void dropFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
-            throws MetadataException;
+    void dropFeedConnection(JobId jobId, String dataverseName, String feedName, String datasetName)
+            throws MetadataException, RemoteException;
 
-    public List<FeedConnection> getFeedConnections(JobId jobId, String dataverseName, String feedName)
-            throws MetadataException;
+    List<FeedConnection> getFeedConnections(JobId jobId, String dataverseName, String feedName)
+            throws MetadataException, RemoteException;
 }

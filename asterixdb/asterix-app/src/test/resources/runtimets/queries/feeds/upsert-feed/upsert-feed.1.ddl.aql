@@ -38,7 +38,7 @@ create dataset TwitterUsers(TwitterUser) primary key screen-name;
 
 create feed UserFeed using socket_adapter
 (
-    ("sockets"="127.0.0.1:10001"),
+    ("sockets"="localhost:10001"),
     ("address-type"="IP"),
     ("type-name"="TwitterUser"),
     ("format"="adm"),

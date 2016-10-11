@@ -34,3 +34,5 @@ use dataverse feeds;
 set wait-for-completion-feed "true";
 
 connect feed SyntheticTweetFeed to dataset SyntheticTweets;
+
+start feed SyntheticTweetFeed;

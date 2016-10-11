@@ -22,20 +22,18 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
-import com.microsoft.windowsazure.services.serviceBus.implementation.Feed;
 import org.apache.asterix.active.ActiveEvent;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
-import org.apache.asterix.common.exceptions.ACIDException;
-import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.runtime.util.AsterixAppContextInfo;
-import org.apache.derby.iapi.db.ConnectionInfo;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
@@ -47,10 +45,9 @@ import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobInfo;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.storage.am.lsm.common.dataflow.LSMTreeIndexInsertUpdateDeleteOperatorDescriptor;
-import org.apache.log4j.Logger;
 
 public class FeedEventsListener implements IActiveEntityEventsListener {
-    private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class);
+    private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class.getName());
     private final List<String> connectedDatasets;
     private JobId connectionJobId = null;
     private FeedConnectJobInfo cInfo;
@@ -75,21 +72,23 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                     handlePartitionStart();
                     break;
                 default:
-                    LOGGER.warn("Unknown Feed Event" + event);
+                    LOGGER.log(Level.SEVERE, "Unknown Feed Event" + event);
                     break;
             }
         } catch (Exception e) {
-            LOGGER.error("Unhandled Exception", e);
+            LOGGER.log(Level.SEVERE, "Unhandled Exception", e);
         }
     }
 
     private void handeStartFeedEvent() {
+        LOGGER.log(Level.INFO, "Feed Start " + cInfo.getEntityId());
         setLocations(cInfo);
         cInfo.setState(ActivityState.ACTIVE);
     }
 
     private synchronized void handleJobFinishEvent() {
-        // Do nothing
+        LOGGER.log(Level.INFO, "Feed End " + cInfo);
+        cInfo.setState(ActivityState.INACTIVE);
     }
 
     public void setFeedConnectJobInfo(FeedConnectJobInfo info) {
@@ -194,7 +193,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
             cInfo.setStorageLocations(storageLocations);
             cInfo.setIntakeLocations(intakeLocations);
         } catch (Exception e) {
-            LOGGER.error("Error while setting feed active locations", e);
+            LOGGER.log(Level.SEVERE, "Error while setting feed active locations", e);
         }
     }
 
@@ -204,7 +203,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     @Override
     public boolean isEntityActive() {
-        return connectionJobId != null;
+        return cInfo.getState() == ActivityState.ACTIVE;
     }
 
     @Override

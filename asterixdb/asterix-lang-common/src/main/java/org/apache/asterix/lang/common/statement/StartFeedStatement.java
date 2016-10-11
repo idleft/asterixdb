@@ -27,6 +27,7 @@ import org.apache.hyracks.algebricks.common.utils.Pair;
 
 public class StartFeedStatement implements Statement {
 
+    public static final String WAIT_FOR_COMPLETION = "wait-for-completion-feed";
     private Identifier dataverseName;
     private Identifier feedName;
 

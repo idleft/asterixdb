@@ -226,7 +226,7 @@ public class AsterixHyracksIntegrationUtil {
      */
     public static void main(String[] args) {
         AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
-        run(integrationUtil, Boolean.getBoolean("cleanup.start"), Boolean.getBoolean("cleanup.shutdown"));
+        run(integrationUtil, true, Boolean.getBoolean("cleanup.shutdown"));
     }
 
     protected static void run(final AsterixHyracksIntegrationUtil integrationUtil, boolean cleanupOnStart,
