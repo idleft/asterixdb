@@ -16,17 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * Description  : Create a feed dataset that uses the feed simulator adapter.
-                  The feed simulator simulates feed from a file in the local fs.
-                  Associate with the feed an external user-defined function. The UDF
-                  finds topics in each tweet. A topic is identified by a #.
-                  Begin ingestion and apply external user defined function
- * Expected Res : Success
- * Date         : 23rd Apr 2013
- */
-use dataverse externallibtest;
 
-for $x in dataset TweetsFeedIngest
-order by $x.id
-return $x
+{
+  "a": isnumber(true),
+  "b": isnumber(false),
+  "c": isnumber(null),
+  "d": is_number(missing),
+  "e": is_number("d"),
+  "f": isnumber(4.0),
+  "g": isnum(5),
+  "h": isnum(["1", 2]),
+  "i": isnum({"a":1})
+};
+

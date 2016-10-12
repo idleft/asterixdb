@@ -16,4 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-10000
+
+SELECT compare
+FROM [ {"a":1} ] t
+LET compare = (t.b is null);
