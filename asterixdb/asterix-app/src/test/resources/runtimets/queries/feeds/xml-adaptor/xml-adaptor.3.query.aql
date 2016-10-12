@@ -17,4 +17,4 @@
  * under the License.
  */
 use dataverse xml_feeds;
-drop dataverse xml_feeds if exists;
+for $i in dataset XML_Alerts return $i.identifier

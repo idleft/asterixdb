@@ -27,29 +27,68 @@ import java.io.IOException;
 public class XMLFileRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;
-    protected boolean prevCharLF = false;
+    private boolean hasStarted;
+    private int curLvl;
 
     public XMLFileRecordReader(AsterixInputStream inputStream) {
         super(inputStream);
+        bufferPosn = 0;
+        curLvl = 0;
+        hasStarted = false;
     }
 
-    @Override public boolean hasNext() throws IOException {
+    @Override
+    public boolean hasNext() throws IOException {
         newRecordFormed = false;
         record.reset();
-        prevCharLF = false;
-        while (!newRecordFormed) {
-            if (done)
-                return false;
-
-            bufferLength = reader.read(inputBuffer);
-
-            if((bufferLength == 1 && inputBuffer[0]==ExternalDataConstants.BYTE_LF) || bufferLength == -1){
-                newRecordFormed = true;
-//                record.endRecord();
-            } else{
-                record.append(inputBuffer, 0, bufferLength);
+        do {
+            int startPos = bufferPosn;
+            // chk whether there is enough data in buffer
+            if (bufferPosn >= bufferLength) {
+                startPos = bufferPosn = 0;
+                bufferLength = reader.read(inputBuffer);
+                if (bufferLength < 0) {
+                    close();
+                    return false;
+                }
             }
-        }
+            while (bufferPosn < bufferLength) {
+                if (inputBuffer[bufferPosn] == ExternalDataConstants.LT){
+                    if (inputBuffer[bufferPosn + 1] == ExternalDataConstants.SLASH){
+                        // end of an element
+                        curLvl--;
+                        if(curLvl == 0) {
+                            while(inputBuffer[bufferPosn++]!=ExternalDataConstants.GT);
+                            int appendLength = bufferPosn - startPos;
+                            record.append(inputBuffer, startPos, appendLength);
+                            record.endRecord();
+                            newRecordFormed = true;
+                            break;
+                        }
+                    } else if (inputBuffer[bufferPosn + 1] == ExternalDataConstants.QUESTION_MARK){
+                        // start of an record
+                        hasStarted = true;
+                        startPos = bufferPosn;
+                    } else {
+                        // start of an element
+                        curLvl++;
+                    }
+                }
+                bufferPosn++;
+            }
+        } while (!newRecordFormed);
+
         return newRecordFormed;
+    }
+
+    @Override
+    public boolean stop() {
+        try {
+            reader.stop();
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
     }
 }

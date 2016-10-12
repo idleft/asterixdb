@@ -53,7 +53,6 @@ public class FileSystemWatcher {
     private final boolean isFeed;
     private boolean done;
     private final LinkedList<Path> dirs;
-    private final ReentrantLock lock = new ReentrantLock();
 
     public FileSystemWatcher(List<Path> inputResources, String expression, boolean isFeed) throws HyracksDataException {
         this.isFeed = isFeed;
@@ -142,7 +141,7 @@ public class FileSystemWatcher {
         return (WatchEvent<T>) event;
     }
 
-    private void handleEvents(WatchKey key) throws IOException {
+    private synchronized void handleEvents(WatchKey key) throws IOException {
         // get dir associated with the key
         Path dir = keys.get(key);
         if (dir == null) {
@@ -226,7 +225,7 @@ public class FileSystemWatcher {
     }
 
     // take is blocking
-    public synchronized File take() throws IOException {
+    public File take() throws IOException {
         File next = poll();
         if (next != null) {
             return next;
@@ -236,35 +235,30 @@ public class FileSystemWatcher {
         }
         // No file was found, wait for the filesystem to push events
         WatchKey key = null;
-        lock.lock();
-        try {
-            while (!it.hasNext()) {
-                try {
-                    key = watcher.take();
-                } catch (InterruptedException x) {
-                    if (LOGGER.isEnabledFor(Level.WARN)) {
-                        LOGGER.warn("Feed Closed");
-                    }
-                    if (watcher == null) {
-                        return null;
-                    }
-                    continue;
-                } catch (ClosedWatchServiceException e) {
-                    if (LOGGER.isEnabledFor(Level.WARN)) {
-                        LOGGER.warn("The watcher has exited");
-                    }
-                    if (watcher == null) {
-                        return null;
-                    }
-                    continue;
+        while (!it.hasNext()) {
+            try {
+                key = watcher.take();
+            } catch (InterruptedException x) {
+                if (LOGGER.isEnabledFor(Level.WARN)) {
+                    LOGGER.warn("Feed Closed");
                 }
-                handleEvents(key);
-                if (endOfEvents(key)) {
+                if (watcher == null) {
                     return null;
                 }
+                continue;
+            } catch (ClosedWatchServiceException e) {
+                if (LOGGER.isEnabledFor(Level.WARN)) {
+                    LOGGER.warn("The watcher has exited");
+                }
+                if (watcher == null) {
+                    return null;
+                }
+                continue;
             }
-        } finally {
-            lock.unlock();
+            handleEvents(key);
+            if (endOfEvents(key)) {
+                return null;
+            }
         }
         // files were found, re-create the iterator and move it one step
         return it.next();

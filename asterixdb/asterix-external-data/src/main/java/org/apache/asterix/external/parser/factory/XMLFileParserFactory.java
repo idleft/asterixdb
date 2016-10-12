@@ -37,19 +37,15 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by Xikui on 6/28/16.
- */
 public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
 
     private ARecordType recordType;
-    private String XML_Template;
     private Map<String, String> configuration;
 
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
-        return new XMLFileParser(recordType, new ADMDataParser(recordType,
-                ExternalDataUtils.getDataSourceType(configuration).equals(IExternalDataSourceFactory.DataSourceType.STREAM)));
+        return new XMLFileParser(recordType, new ADMDataParser(recordType, ExternalDataUtils
+                .getDataSourceType(configuration).equals(IExternalDataSourceFactory.DataSourceType.STREAM)));
     }
 
     @Override
@@ -69,6 +65,6 @@ public class XMLFileParserFactory implements IRecordDataParserFactory<char[]> {
 
     @Override
     public void setMetaType(ARecordType metaType) {
-
+        // do nothing
     }
 }

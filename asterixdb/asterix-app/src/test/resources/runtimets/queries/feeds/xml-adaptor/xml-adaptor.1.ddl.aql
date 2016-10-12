@@ -29,4 +29,4 @@ create dataset XML_Alerts(XML_Alert)
 primary key identifier;
 
 create feed XML_Alert_Feeds using localfs
-(("path"="asterix_nc1://data/xml/"),("format"="xml"),("type-name"="XML_Alert"));
+(("path"="asterix_nc1://data/xml/"),("format"="xml"),("type-name"="XML_Alert"),("tuple-interval"="10"));

@@ -36,7 +36,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
     ADMDataParser admDataParser;
     CharArrayRecord charArrayRecord;
 
-    public XMLFileParser(ARecordType recordType, ADMDataParser admDataParser){
+    public XMLFileParser(ARecordType recordType, ADMDataParser admDataParser) {
         this.recordType = recordType;
         this.admDataParser = admDataParser;
         charArrayRecord = new CharArrayRecord();
@@ -51,7 +51,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
             charArrayRecord.endRecord();
             admDataParser.parse(charArrayRecord,out);
         } catch (JSONException e) {
-            new IOException(e);
+            throw new IOException(e);
         }
     }
 }

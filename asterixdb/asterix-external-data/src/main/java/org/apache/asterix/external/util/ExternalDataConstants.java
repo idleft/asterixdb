@@ -200,6 +200,10 @@ public class ExternalDataConstants {
     public static final char TAB = '\t';
     public static final char LF = '\n';
     public static final char CR = '\r';
+    public static final char LT = '<';
+    public static final char SLASH = '/';
+    public static final char GT = '>';
+    public static final char QUESTION_MARK = '?';
     public static final char DEFAULT_RECORD_START = '{';
     public static final char DEFAULT_RECORD_END = '}';
 
