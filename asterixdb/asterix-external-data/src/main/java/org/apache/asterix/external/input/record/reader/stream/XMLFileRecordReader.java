@@ -83,15 +83,4 @@ public class XMLFileRecordReader extends StreamRecordReader {
 
         return newRecordFormed;
     }
-
-    @Override
-    public boolean stop() {
-        try {
-            reader.stop();
-        } catch (Exception e) {
-            e.printStackTrace();
-            return false;
-        }
-        return true;
-    }
 }
