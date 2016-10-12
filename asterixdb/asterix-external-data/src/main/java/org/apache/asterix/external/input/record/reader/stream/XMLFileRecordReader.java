@@ -27,14 +27,18 @@ import java.io.IOException;
 public class XMLFileRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;
-    private boolean hasStarted;
     private int curLvl;
 
     public XMLFileRecordReader(AsterixInputStream inputStream) {
         super(inputStream);
         bufferPosn = 0;
         curLvl = 0;
-        hasStarted = false;
+    }
+
+    private void moveCursor() {
+        while (inputBuffer[bufferPosn++] != ExternalDataConstants.GT) {
+            //do nothing, move to the end of document
+        }
     }
 
     @Override
@@ -53,26 +57,25 @@ public class XMLFileRecordReader extends StreamRecordReader {
                 }
             }
             while (bufferPosn < bufferLength) {
-                if (inputBuffer[bufferPosn] == ExternalDataConstants.LT){
-                    if (inputBuffer[bufferPosn + 1] == ExternalDataConstants.SLASH){
-                        // end of an element
-                        curLvl--;
-                        if(curLvl == 0) {
-                            while(inputBuffer[bufferPosn++]!=ExternalDataConstants.GT);
-                            int appendLength = bufferPosn - startPos;
-                            record.append(inputBuffer, startPos, appendLength);
-                            record.endRecord();
-                            newRecordFormed = true;
-                            break;
-                        }
-                    } else if (inputBuffer[bufferPosn + 1] == ExternalDataConstants.QUESTION_MARK){
-                        // start of an record
-                        hasStarted = true;
-                        startPos = bufferPosn;
-                    } else {
-                        // start of an element
-                        curLvl++;
+                if (inputBuffer[bufferPosn] == ExternalDataConstants.LT
+                        && inputBuffer[bufferPosn + 1] == ExternalDataConstants.SLASH) {
+                    // end of an element
+                    curLvl--;
+                    if (curLvl == 0) {
+                        moveCursor();
+                        int appendLength = bufferPosn - startPos;
+                        record.append(inputBuffer, startPos, appendLength);
+                        record.endRecord();
+                        newRecordFormed = true;
+                        break;
                     }
+                } else if (inputBuffer[bufferPosn] == ExternalDataConstants.LT
+                        && inputBuffer[bufferPosn + 1] == ExternalDataConstants.QUESTION_MARK) {
+                    // start of an record
+                    startPos = bufferPosn;
+                } else if (inputBuffer[bufferPosn] == ExternalDataConstants.LT) {
+                    // start of an element
+                    curLvl++;
                 }
                 bufferPosn++;
             }

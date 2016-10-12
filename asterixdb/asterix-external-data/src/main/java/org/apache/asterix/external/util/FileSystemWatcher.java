@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Level;
@@ -168,7 +167,7 @@ public class FileSystemWatcher {
             Path name = ev.context();
             Path child = dir.resolve(name);
             // if directory is created then register it and its sub-directories
-            if ((kind == StandardWatchEventKinds.ENTRY_CREATE)) {
+            if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                 try {
                     if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
                         register(child);
@@ -234,7 +233,7 @@ public class FileSystemWatcher {
             return null;
         }
         // No file was found, wait for the filesystem to push events
-        WatchKey key = null;
+        WatchKey key;
         while (!it.hasNext()) {
             try {
                 key = watcher.take();
