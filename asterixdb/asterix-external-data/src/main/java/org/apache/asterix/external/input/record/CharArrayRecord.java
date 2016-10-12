@@ -88,7 +88,7 @@ public class CharArrayRecord implements IRawRecord<char[]> {
 
     @Override
     public String toString() {
-        return String.valueOf(value, 0, size == 0 ? 0 : size - 1);
+        return String.valueOf(value, 0, size);
     }
 
     public void endRecord() throws IOException {

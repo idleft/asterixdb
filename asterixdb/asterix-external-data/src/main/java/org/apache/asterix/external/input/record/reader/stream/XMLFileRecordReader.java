@@ -43,7 +43,7 @@ public class XMLFileRecordReader extends StreamRecordReader {
 
             bufferLength = reader.read(inputBuffer);
 
-            if(bufferLength == 1 && inputBuffer[0]==ExternalDataConstants.BYTE_LF){
+            if((bufferLength == 1 && inputBuffer[0]==ExternalDataConstants.BYTE_LF) || bufferLength == -1){
                 newRecordFormed = true;
 //                record.endRecord();
             } else{

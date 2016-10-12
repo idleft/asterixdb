@@ -17,4 +17,4 @@
  * under the License.
  */
 use dataverse xml_feeds;
-for $i in dataset XML_Alerts return $i;
+count(for $i in dataset XML_Alerts return $i);
