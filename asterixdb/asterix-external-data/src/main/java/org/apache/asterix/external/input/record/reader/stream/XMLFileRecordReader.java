@@ -35,20 +35,18 @@ public class XMLFileRecordReader extends StreamRecordReader {
         curLvl = 0;
     }
 
-    private void moveCursor() {
-        while (inputBuffer[bufferPosn++] != ExternalDataConstants.GT) {
-            //do nothing, move to the end of document
-        }
-    }
-
     @Override
     public boolean hasNext() throws IOException {
         newRecordFormed = false;
         record.reset();
+        int startPos = bufferPosn;
+        Integer curStatus = 0;
         do {
-            int startPos = bufferPosn;
             // chk whether there is enough data in buffer
             if (bufferPosn >= bufferLength) {
+                if (curLvl > 0) {
+                    record.append(inputBuffer, startPos, bufferPosn - startPos);
+                }
                 startPos = bufferPosn = 0;
                 bufferLength = reader.read(inputBuffer);
                 if (bufferLength < 0) {
@@ -56,29 +54,60 @@ public class XMLFileRecordReader extends StreamRecordReader {
                     return false;
                 }
             }
-            while (bufferPosn < bufferLength) {
-                if (inputBuffer[bufferPosn] == ExternalDataConstants.LT
-                        && inputBuffer[bufferPosn + 1] == ExternalDataConstants.SLASH) {
-                    // end of an element
-                    curLvl--;
-                    if (curLvl == 0) {
-                        moveCursor();
-                        int appendLength = bufferPosn - startPos;
+            // TODO: simplify the state numbers (xikui)
+            switch (inputBuffer[bufferPosn]) {
+                case '<':
+                    curStatus = 1;
+                    break;
+                case '/':
+                    if (curStatus == 1) {
+                        curStatus = 2;
+                    }
+                    break;
+                case '>':
+                    if (curStatus == 4) {
+                        // add lvl
+                        curLvl++;
+                    } else if (curStatus == 5) {
+                        // decrease lvl
+                        curLvl--;
+                    } else if (curStatus == 3) {
+                        // document head
+                    } else if (curStatus == 7) {
+                        // schema definition
+                    }
+                    if (curLvl == 0 && curStatus != 6 && curStatus != 7) {
+                        int appendLength = bufferPosn + 1 - startPos;
                         record.append(inputBuffer, startPos, appendLength);
                         record.endRecord();
                         newRecordFormed = true;
-                        break;
                     }
-                } else if (inputBuffer[bufferPosn] == ExternalDataConstants.LT
-                        && inputBuffer[bufferPosn + 1] == ExternalDataConstants.QUESTION_MARK) {
-                    // start of an record
-                    startPos = bufferPosn;
-                } else if (inputBuffer[bufferPosn] == ExternalDataConstants.LT) {
-                    // start of an element
-                    curLvl++;
-                }
-                bufferPosn++;
+                    curStatus = 0;
+                    break;
+                case '?':
+                    if (curStatus == 1) {
+                        startPos = bufferPosn - 1;
+                        curStatus = 3;
+                    } else if (curStatus == 6) {
+                        // in document head, do nothing.
+                    }
+                    break;
+                case '!':
+                    if (curStatus == 1) {
+                        curStatus = 7; // in schema definition
+                    }
+                    break;
+                default:
+                    if (curStatus == 1) {
+                        curStatus = 4; // in start element name
+                    } else if (curStatus == 2) {
+                        curStatus = 5; // in end element name
+                    } else if (curStatus == 3) {
+                        // inside document head
+                        curStatus = 6;
+                    }
             }
+            bufferPosn++;
         } while (!newRecordFormed);
 
         return newRecordFormed;

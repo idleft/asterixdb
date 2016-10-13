@@ -46,7 +46,7 @@ public class XMLFileParser extends AbstractDataParser implements IRecordDataPars
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
         try {
             JSONObject xmlObj = XML.toJSONObject(record.toString());
-            String jsonStr = xmlObj.getJSONObject("alert").toString(4);
+            String jsonStr = xmlObj.getJSONObject(xmlObj.names().getString(0)).toString();
             charArrayRecord.set(jsonStr.toCharArray());
             charArrayRecord.endRecord();
             admDataParser.parse(charArrayRecord,out);
