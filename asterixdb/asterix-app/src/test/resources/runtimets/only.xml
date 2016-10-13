@@ -19,10 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="load">
-      <compilation-unit name="load-xml-files">
-        <output-dir compare="Text">load-xml-files</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>
