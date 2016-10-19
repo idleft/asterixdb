@@ -185,7 +185,8 @@ public class FeedOperations {
     }
 
     private static JobSpecification combineIntakeCollectJobs(AqlMetadataProvider metadataProvider, Feed feed,
-            JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections)
+            JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
+            String[] intakeLocations)
             throws AlgebricksException, HyracksDataException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
 
@@ -206,12 +207,12 @@ public class FeedOperations {
         SplitOperatorDescriptor replicateOp = new SplitOperatorDescriptor(jobSpec,
                 ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
         jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
-        String[] locationConstraints = ClusterStateManager.INSTANCE.getParticipantNodes()
-                .toArray(new String[ClusterStateManager.INSTANCE.getParticipantNodes().size()]);
-        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, ingestionOp, firstOp.getAdaptorFactory().getPartitionConstraint());
-        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, replicateOp, firstOp.getAdaptorFactory().getPartitionConstraint());
-//        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, locationConstraints[0]);
-//        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, locationConstraints[0]);
+        //        String[] locationConstraints = ClusterStateManager.INSTANCE.getParticipantNodes()
+        //                .toArray(new String[ClusterStateManager.INSTANCE.getParticipantNodes().size()]);
+        //        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, ingestionOp, firstOp.getAdaptorFactory().getPartitionConstraint());
+        //        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, replicateOp, firstOp.getAdaptorFactory().getPartitionConstraint());
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, intakeLocations);
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
         // Loop over the jobs to copy operators and connections
         Map<OperatorDescriptorId, OperatorDescriptorId> operatorIdMapping = new HashMap<>();
         Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
@@ -388,7 +389,8 @@ public class FeedOperations {
             JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, ingestionLocations);
             jobsList.add(connectionJob);
         }
-        feedJob = combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections);
+        feedJob = combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+                ingestionLocations);
         return feedJob;
     }
 

@@ -129,6 +129,10 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         return this.adaptorFactory;
     }
 
+    public void setAdaptorFactory(IAdapterFactory factory) {
+        this.adaptorFactory = factory;
+    }
+
     public ARecordType getAdapterOutputType() {
         return this.adapterOutputType;
     }
