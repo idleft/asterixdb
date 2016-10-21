@@ -37,7 +37,6 @@ import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.common.dataflow.AsterixLSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
@@ -47,7 +46,7 @@ import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.feed.watch.FeedActivity;
+import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMessageOperatorDescriptor;
@@ -104,7 +103,7 @@ import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.file.FileSplit;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 import org.apache.hyracks.dataflow.std.misc.NullSinkOperatorDescriptor;
-import org.apache.hyracks.dataflow.std.misc.SplitOperatorDescriptor;
+import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
 import org.json.JSONException;
 
 /**
@@ -174,9 +173,9 @@ public class FeedOperations {
         IStatementExecutor translator = qtFactory.create(statements, pc, compilationProvider);
         // configure the metadata provider
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, "" + Boolean.TRUE);
-        metadataProvider.getConfig().put(FeedActivity.FeedActivityDetails.FEED_POLICY_NAME,
+        metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME,
                 "" + subscribeStmt.getPolicy());
-        metadataProvider.getConfig().put(FeedActivity.FeedActivityDetails.COLLECT_LOCATIONS,
+        metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
                 StringUtils.join(subscribeStmt.getLocations(), ','));
 
         CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
@@ -204,13 +203,9 @@ public class FeedOperations {
                     firstOp.getOutputRecordDescriptors()[0]);
         }
         // create replicator
-        SplitOperatorDescriptor replicateOp = new SplitOperatorDescriptor(jobSpec,
+        ReplicateOperatorDescriptor replicateOp = new ReplicateOperatorDescriptor(jobSpec,
                 ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
         jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
-        //        String[] locationConstraints = ClusterStateManager.INSTANCE.getParticipantNodes()
-        //                .toArray(new String[ClusterStateManager.INSTANCE.getParticipantNodes().size()]);
-        //        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, ingestionOp, firstOp.getAdaptorFactory().getPartitionConstraint());
-        //        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, replicateOp, firstOp.getAdaptorFactory().getPartitionConstraint());
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, intakeLocations);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
         // Loop over the jobs to copy operators and connections

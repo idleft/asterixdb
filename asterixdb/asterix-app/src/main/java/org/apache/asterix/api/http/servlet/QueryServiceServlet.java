@@ -54,6 +54,7 @@ import org.apache.asterix.translator.IStatementExecutor.Stats;
 import org.apache.asterix.translator.IStatementExecutorFactory;
 import org.apache.asterix.translator.SessionConfig;
 import org.apache.commons.io.IOUtils;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.AlgebricksAppendable;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.dataset.IHyracksDataset;
@@ -284,11 +285,19 @@ public class QueryServiceServlet extends HttpServlet {
     }
 
     private static SessionConfig createSessionConfig(RequestParameters param, PrintWriter resultWriter) {
-        SessionConfig.ResultDecorator resultPrefix = (AlgebricksAppendable app) -> {
-            app.append("\t\"");
-            app.append(ResultFields.RESULTS.str());
-            app.append("\": ");
-            return app;
+        SessionConfig.ResultDecorator resultPrefix = new SessionConfig.ResultDecorator() {
+            int resultNo = -1;
+            @Override
+            public AlgebricksAppendable append(AlgebricksAppendable app) throws AlgebricksException {
+                app.append("\t\"");
+                app.append(ResultFields.RESULTS.str());
+                if (resultNo >= 0) {
+                    app.append('-').append(String.valueOf(resultNo));
+                }
+                ++resultNo;
+                app.append("\": ");
+                return app;
+            }
         };
 
         SessionConfig.ResultDecorator resultPostfix = (AlgebricksAppendable app) -> {
@@ -514,7 +523,7 @@ public class QueryServiceServlet extends HttpServlet {
         resultWriter.flush();
         String result = stringWriter.toString();
 
-        GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, result);
+        GlobalConfig.ASTERIX_LOGGER.log(Level.FINE, result);
 
         response.setStatus(respCode);
         response.getWriter().print(result);

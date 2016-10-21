@@ -28,10 +28,11 @@
 * [Similarity Functions](#SimilarityFunctions)
 * [Tokenizing Functions](#TokenizingFunctions)
 * [Temporal Functions](#TemporalFunctions)
-* [Record Functions](#RecordFunctions)
+* [Object Functions](#ObjectFunctions)
 * [Aggregate Functions (Array Functions)](#AggregateFunctions)
 * [Comparison Functions](#ComparisonFunctions)
-* [Other Functions](#OtherFunctions)
+* [Type Functions](#TypeFunctions)
+* [Miscellaneous Functions](#MiscFunctions)
 
 The system provides various classes of functions to support operations on numeric, string, spatial, and temporal data.
 This document explains how to use these functions.

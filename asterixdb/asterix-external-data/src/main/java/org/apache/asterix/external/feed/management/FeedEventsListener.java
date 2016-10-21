@@ -212,7 +212,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     @Override
-    public boolean isEntityConnectedToDataset(String dataverseName, String datasetName) {
+    public boolean isEntityUsingDataset(String dataverseName, String datasetName) {
         return isConnectedToDataset(datasetName);
     }
 

@@ -37,6 +37,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -65,6 +66,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.util.EntityUtils;
+import org.apache.hyracks.util.StorageUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -81,6 +83,11 @@ public class TestExecutor {
     private static final Pattern JAVA_BLOCK_COMMENT_PATTERN =
             Pattern.compile("/\\*.*\\*/", Pattern.MULTILINE | Pattern.DOTALL);
     private static final Pattern REGEX_LINES_PATTERN = Pattern.compile("^(-)?/(.*)/([im]*)$");
+    private static final Pattern POLL_TIMEOUT_PATTERN =
+            Pattern.compile("polltimeoutsecs=(\\d+)(\\D|$)", Pattern.MULTILINE);
+    private static final Pattern POLL_DELAY_PATTERN = Pattern.compile("polldelaysecs=(\\d+)(\\D|$)", Pattern.MULTILINE);
+    public static final int TRUNCATE_THRESHOLD = 16384;
+
     private static Method managixExecuteMethod = null;
     private static final HashMap<Integer, ITestServer> runningTestServers = new HashMap<>();
 
@@ -142,30 +149,24 @@ public class TestExecutor {
                     if (lineExpected.isEmpty()) {
                         continue;
                     }
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected + "\n> ");
+                    throwLineChanged(scriptFile, lineExpected, "<EOF>", num);
                 }
 
                 // Comparing result equality but ignore "Time"-prefixed fields. (for metadata tests.)
                 String[] lineSplitsExpected = lineExpected.split("Time");
                 String[] lineSplitsActual = lineActual.split("Time");
                 if (lineSplitsExpected.length != lineSplitsActual.length) {
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected
-                                    + "\n> " + lineActual);
+                    throwLineChanged(scriptFile, lineExpected, lineActual, num);
                 }
                 if (!equalStrings(lineSplitsExpected[0], lineSplitsActual[0], regex)) {
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected
-                                    + "\n> " + lineActual);
+                    throwLineChanged(scriptFile, lineExpected, lineActual, num);
                 }
 
                 for (int i = 1; i < lineSplitsExpected.length; i++) {
                     String[] splitsByCommaExpected = lineSplitsExpected[i].split(",");
                     String[] splitsByCommaActual = lineSplitsActual[i].split(",");
                     if (splitsByCommaExpected.length != splitsByCommaActual.length) {
-                        throw new ComparisonException("Result for " + scriptFile + " changed at line " + num + ":\n< "
-                                + lineExpected + "\n> " + lineActual);
+                        throwLineChanged(scriptFile, lineExpected, lineActual, num);
                     }
                     for (int j = 1; j < splitsByCommaExpected.length; j++) {
                         if (splitsByCommaExpected[j].indexOf("DatasetId") >= 0) {
@@ -174,9 +175,7 @@ public class TestExecutor {
                             continue;
                         }
                         if (!equalStrings(splitsByCommaExpected[j], splitsByCommaActual[j], regex)) {
-                            throw new ComparisonException(
-                                    "Result for " + scriptFile + " changed at line " + num + ":\n< "
-                                            + lineExpected + "\n> " + lineActual);
+                            throwLineChanged(scriptFile, lineExpected, lineActual, num);
                         }
                     }
                 }
@@ -196,6 +195,25 @@ public class TestExecutor {
             readerActual.close();
         }
 
+    }
+
+    private void throwLineChanged(File scriptFile, String lineExpected, String lineActual, int num)
+            throws ComparisonException {
+        throw new ComparisonException(
+                "Result for " + scriptFile + " changed at line " + num + ":\n< "
+                        + truncateIfLong(lineExpected) + "\n> " + truncateIfLong(lineActual));
+    }
+
+    private String truncateIfLong(String string) {
+        if (string.length() < TRUNCATE_THRESHOLD) {
+            return string;
+        }
+        final StringBuilder truncatedString = new StringBuilder(string);
+        truncatedString.setLength(TRUNCATE_THRESHOLD);
+        truncatedString.append("\n<truncated ")
+                .append(StorageUtil.toHumanReadableSize(string.length() - TRUNCATE_THRESHOLD))
+                .append("...>");
+        return truncatedString.toString();
     }
 
     private boolean equalStrings(String expected, String actual, boolean regexMatch) {
@@ -656,6 +674,42 @@ public class TestExecutor {
                 } else {
                     InputStream resultStream = executeQueryService(statement, getEndpoint(Servlets.QUERY_SERVICE));
                     ResultExtractor.extract(resultStream);
+                }
+                break;
+            case "pollquery":
+                // polltimeoutsecs=nnn, polldelaysecs=nnn
+                final Matcher timeoutMatcher = POLL_TIMEOUT_PATTERN.matcher(statement);
+                int timeoutSecs;
+                if (timeoutMatcher.find()) {
+                    timeoutSecs = Integer.parseInt(timeoutMatcher.group(1));
+                } else {
+                    throw new IllegalArgumentException("ERROR: polltimeoutsecs=nnn must be present in poll file");
+                }
+                final Matcher retryDelayMatcher = POLL_DELAY_PATTERN.matcher(statement);
+                int retryDelaySecs = retryDelayMatcher.find() ? Integer.parseInt(timeoutMatcher.group(1)) : 1;
+                long startTime = System.currentTimeMillis();
+                long limitTime = startTime + TimeUnit.SECONDS.toMillis(timeoutSecs);
+                ctx.setType(ctx.getType().substring("poll".length()));
+                Exception finalException;
+                LOGGER.fine("polling for up to " + timeoutSecs + " seconds w/ " + retryDelaySecs  + " second(s) delay");
+                while (true) {
+                    try {
+                        executeTest(testCaseCtx, ctx, statement, isDmlRecoveryTest, pb, cUnit, queryCount,
+                                expectedResultFileCtxs, testFile, actualPath);
+                        finalException = null;
+                        break;
+                    } catch (Exception e) {
+                        if ((System.currentTimeMillis() > limitTime)) {
+                            finalException = e;
+                            break;
+                        }
+                        LOGGER.fine("sleeping " + retryDelaySecs + " second(s) before polling again");
+                        Thread.sleep(TimeUnit.SECONDS.toMillis(retryDelaySecs));
+                    }
+                }
+                if (finalException != null) {
+                    throw new Exception("Poll limit (" + timeoutSecs + "s) exceeded without obtaining expected result",
+                            finalException);
                 }
                 break;
             case "query":
