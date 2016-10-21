@@ -193,7 +193,7 @@ public class FeedDataSource extends AqlDataSource implements IMutationDataSource
             FeedConnectionId feedConnectionId = new FeedConnectionId(getId().getDataverseName(),
                     getId().getDatasourceName(), getTargetDataset());
             FeedCollectOperatorDescriptor feedCollector = new FeedCollectOperatorDescriptor(jobSpec, feedConnectionId,
-                    getSourceFeedId(), feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation());
+                    feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation());
 
             return new Pair<>(feedCollector, new AlgebricksAbsolutePartitionConstraint(getLocations()));
 

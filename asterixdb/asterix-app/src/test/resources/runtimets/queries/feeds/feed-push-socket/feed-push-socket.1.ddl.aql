@@ -51,7 +51,7 @@ create dataset Tweets(TweetMessageType) primary key tweetid;
 
 create feed TweetFeed using socket_adapter
 (
-    ("sockets"="localhost:10001"),
+    ("sockets"="127.0.0.1:10001"),
     ("address-type"="IP"),
     ("type-name"="TweetMessageType"),
     ("format"="adm")

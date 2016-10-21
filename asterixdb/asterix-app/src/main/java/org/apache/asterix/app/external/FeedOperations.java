@@ -243,8 +243,6 @@ public class FeedOperations {
                             opDesc, feedPolicyEntity.getProperties(), FeedRuntimeType.STORE, false, operandId);
                     opId = metaOp.getOperatorId();
                     opDesc.setOperatorId(opId);
-                } else if (opDesc instanceof FeedCollectOperatorDescriptor) {
-                    continue;
                 } else {
                     if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
                         AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
@@ -286,13 +284,14 @@ public class FeedOperations {
                 IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
                 Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
                 Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
+                IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
+                IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
                 if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
-                    IOperatorDescriptor rightDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
-                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, rightDesc,
-                            rightOp.getRight());
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
+                            leftOp.getRight());
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), leftOpDesc, leftOp.getRight(),
+                            rightOpDesc, rightOp.getRight());
                 } else {
-                    IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
-                    IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
                     jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
                 }
             }
