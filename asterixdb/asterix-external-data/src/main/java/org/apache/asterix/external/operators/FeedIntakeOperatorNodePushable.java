@@ -21,11 +21,9 @@ package org.apache.asterix.external.operators;
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.active.message.ActivePartitionMessage;
 import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
-import org.apache.asterix.external.feed.dataflow.DistributeFeedFrameWriter;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
 import org.apache.asterix.external.feed.runtime.IngestionRuntime;
@@ -100,6 +98,7 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
             throw new HyracksDataException(ie);
         } finally {
             if (open) {
+                writer.flush();
                 writer.close();
             }
         }
