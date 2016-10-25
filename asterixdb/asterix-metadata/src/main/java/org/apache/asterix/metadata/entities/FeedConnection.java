@@ -52,7 +52,7 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
         this.datasetName = datasetName;
         this.appliedFunctions = appliedFunctions;
         this.connectionId = feedName + ":" + datasetName;
-        this.policyName = BuiltinFeedPolicies.DEFAULT_POLICY.getPolicyName();
+        this.policyName = policyName;
         this.outputType = outputType;
         this.feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, dataverseName, feedName);
     }

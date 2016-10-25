@@ -193,7 +193,7 @@ public class FeedOperations {
         FeedIntakeOperatorDescriptor firstOp = (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap()
                 .get(new OperatorDescriptorId(0));
         FeedIntakeOperatorDescriptor ingestionOp;
-        if(firstOp.getAdaptorFactory() == null) {
+        if (firstOp.getAdaptorFactory() == null) {
             ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed, firstOp.getAdaptorLibraryName(),
                     firstOp.getAdaptorFactoryClassName(), firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
                     firstOp.getOutputRecordDescriptors()[0]);

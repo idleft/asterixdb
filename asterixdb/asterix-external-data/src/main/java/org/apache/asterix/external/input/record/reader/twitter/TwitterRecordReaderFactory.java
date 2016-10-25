@@ -44,7 +44,7 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
     private static final Logger LOGGER = Logger.getLogger(TwitterRecordReaderFactory.class.getName());
 
     private static final String DEFAULT_INTERVAL = "10"; // 10 seconds
-    private static final int INTAKE_CARDINALITY = ClusterStateManager.INSTANCE.getNumberOfNodes(); // degree of parallelism at intake stage
+    private static final int INTAKE_CARDINALITY = 1; // degree of parallelism at intake stage
 
     private Map<String, String> configuration;
     private boolean pull;

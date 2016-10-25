@@ -49,7 +49,6 @@ import org.apache.hyracks.storage.am.lsm.common.dataflow.LSMTreeIndexInsertUpdat
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class.getName());
     private final List<String> connectedDatasets;
-    private JobId connectionJobId = null;
     private FeedConnectJobInfo cInfo;
     private EntityId entityId;
 
@@ -101,7 +100,6 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     @Override
     public void notifyJobCreation(JobId jobId, JobSpecification spec) {
-        this.connectionJobId = jobId;
         cInfo.setJobId(jobId);
     }
 

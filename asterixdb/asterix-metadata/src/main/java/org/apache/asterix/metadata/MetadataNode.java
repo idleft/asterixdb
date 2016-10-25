@@ -1521,8 +1521,9 @@ public class MetadataNode implements IMetadataNode {
             List<FeedConnection> results = new ArrayList<>();
             IValueExtractor<FeedConnection> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
             searchIndex(jobId, MetadataPrimaryIndexes.FEED_CONNECTION_DATASET, searchKey, valueExtractor, results);
-            if (!results.isEmpty())
+            if (!results.isEmpty()) {
                 return results.get(0);
+            }
             return null;
         } catch (IndexException | IOException e) {
             throw new MetadataException(e);
