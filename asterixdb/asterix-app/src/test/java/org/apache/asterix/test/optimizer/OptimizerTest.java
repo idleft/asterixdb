@@ -41,6 +41,7 @@ import org.apache.asterix.external.util.IdentitiyResolverFactory;
 import org.apache.asterix.test.base.AsterixTestHelper;
 import org.apache.asterix.test.common.TestHelper;
 import org.apache.asterix.test.runtime.HDFSCluster;
+import org.apache.asterix.translator.IStatementExecutorFactory;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.junit.AfterClass;
 import org.junit.Assume;
@@ -66,15 +67,17 @@ public class OptimizerTest {
             + "optimizerts" + SEPARATOR;
     private static final String PATH_QUERIES = PATH_BASE + "queries" + SEPARATOR;
     private static final String PATH_EXPECTED = PATH_BASE + "results" + SEPARATOR;
-    private static final String PATH_ACTUAL = "target" + File.separator + "opttest" + SEPARATOR;
+    protected static final String PATH_ACTUAL = "target" + File.separator + "opttest" + SEPARATOR;
 
     private static final ArrayList<String> ignore = AsterixTestHelper.readFile(FILENAME_IGNORE, PATH_BASE);
     private static final ArrayList<String> only = AsterixTestHelper.readFile(FILENAME_ONLY, PATH_BASE);
-    private static final String TEST_CONFIG_FILE_NAME = "asterix-build-configuration.xml";
+    protected static String TEST_CONFIG_FILE_NAME = "asterix-build-configuration.xml";
     private static final ILangCompilationProvider aqlCompilationProvider = new AqlCompilationProvider();
     private static final ILangCompilationProvider sqlppCompilationProvider = new SqlppCompilationProvider();
+    protected static ILangCompilationProvider extensionLangCompilationProvider = null;
+    protected static IStatementExecutorFactory statementExecutorFactory = new DefaultStatementExecutorFactory();
 
-    private static AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
+    protected static AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -171,9 +174,11 @@ public class OptimizerTest {
             PrintWriter plan = new PrintWriter(actualFile);
             ILangCompilationProvider provider = queryFile.getName().endsWith("aql") ? aqlCompilationProvider
                     : sqlppCompilationProvider;
+            if (extensionLangCompilationProvider != null) {
+                provider = extensionLangCompilationProvider;
+            }
             IHyracksClientConnection hcc = integrationUtil.getHyracksClientConnection();
-            AsterixJavaClient asterix = new AsterixJavaClient(hcc, query, plan, provider,
-                    new DefaultStatementExecutorFactory(null));
+            AsterixJavaClient asterix = new AsterixJavaClient(hcc, query, plan, provider, statementExecutorFactory);
             try {
                 asterix.compile(true, false, false, true, true, false, false);
             } catch (AsterixException e) {

@@ -35,9 +35,10 @@ public class ServletUtil {
         CONNECTOR("/connector"),
         SHUTDOWN("/admin/shutdown"),
         VERSION("/admin/version"),
-        CLUSTER_STATE("/admin/cluster"),
+        CLUSTER_STATE("/admin/cluster/*"),
         CLUSTER_STATE_NODE_DETAIL("/admin/cluster/node/*"),
-        CLUSTER_STATE_CC_DETAIL("/admin/cluster/cc/*");
+        CLUSTER_STATE_CC_DETAIL("/admin/cluster/cc/*"),
+        DIAGNOSTICS("/admin/diagnostics");
 
         private final String path;
 

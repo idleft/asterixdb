@@ -66,6 +66,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
 import org.apache.http.util.EntityUtils;
+import org.apache.hyracks.util.StorageUtil;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -85,6 +86,7 @@ public class TestExecutor {
     private static final Pattern POLL_TIMEOUT_PATTERN =
             Pattern.compile("polltimeoutsecs=(\\d+)(\\D|$)", Pattern.MULTILINE);
     private static final Pattern POLL_DELAY_PATTERN = Pattern.compile("polldelaysecs=(\\d+)(\\D|$)", Pattern.MULTILINE);
+    public static final int TRUNCATE_THRESHOLD = 16384;
 
     private static Method managixExecuteMethod = null;
     private static final HashMap<Integer, ITestServer> runningTestServers = new HashMap<>();
@@ -136,7 +138,8 @@ public class TestExecutor {
                 runScriptAndCompareWithResultRegex(scriptFile, expectedFile, actualFile);
                 return;
             } else if (actualFile.toString().endsWith(".regexadm")) {
-                regex = true;
+                runScriptAndCompareWithResultRegexAdm(scriptFile, expectedFile, actualFile);
+                return;
             }
             String lineExpected, lineActual;
             int num = 1;
@@ -147,30 +150,24 @@ public class TestExecutor {
                     if (lineExpected.isEmpty()) {
                         continue;
                     }
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected + "\n> ");
+                    throwLineChanged(scriptFile, lineExpected, "<EOF>", num);
                 }
 
                 // Comparing result equality but ignore "Time"-prefixed fields. (for metadata tests.)
                 String[] lineSplitsExpected = lineExpected.split("Time");
                 String[] lineSplitsActual = lineActual.split("Time");
                 if (lineSplitsExpected.length != lineSplitsActual.length) {
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected
-                                    + "\n> " + lineActual);
+                    throwLineChanged(scriptFile, lineExpected, lineActual, num);
                 }
                 if (!equalStrings(lineSplitsExpected[0], lineSplitsActual[0], regex)) {
-                    throw new ComparisonException(
-                            "Result for " + scriptFile + " changed at line " + num + ":\n< " + lineExpected
-                                    + "\n> " + lineActual);
+                    throwLineChanged(scriptFile, lineExpected, lineActual, num);
                 }
 
                 for (int i = 1; i < lineSplitsExpected.length; i++) {
                     String[] splitsByCommaExpected = lineSplitsExpected[i].split(",");
                     String[] splitsByCommaActual = lineSplitsActual[i].split(",");
                     if (splitsByCommaExpected.length != splitsByCommaActual.length) {
-                        throw new ComparisonException("Result for " + scriptFile + " changed at line " + num + ":\n< "
-                                + lineExpected + "\n> " + lineActual);
+                        throwLineChanged(scriptFile, lineExpected, lineActual, num);
                     }
                     for (int j = 1; j < splitsByCommaExpected.length; j++) {
                         if (splitsByCommaExpected[j].indexOf("DatasetId") >= 0) {
@@ -179,9 +176,7 @@ public class TestExecutor {
                             continue;
                         }
                         if (!equalStrings(splitsByCommaExpected[j], splitsByCommaActual[j], regex)) {
-                            throw new ComparisonException(
-                                    "Result for " + scriptFile + " changed at line " + num + ":\n< "
-                                            + lineExpected + "\n> " + lineActual);
+                            throwLineChanged(scriptFile, lineExpected, lineActual, num);
                         }
                     }
                 }
@@ -201,6 +196,25 @@ public class TestExecutor {
             readerActual.close();
         }
 
+    }
+
+    private void throwLineChanged(File scriptFile, String lineExpected, String lineActual, int num)
+            throws ComparisonException {
+        throw new ComparisonException(
+                "Result for " + scriptFile + " changed at line " + num + ":\n< "
+                        + truncateIfLong(lineExpected) + "\n> " + truncateIfLong(lineActual));
+    }
+
+    private String truncateIfLong(String string) {
+        if (string.length() < TRUNCATE_THRESHOLD) {
+            return string;
+        }
+        final StringBuilder truncatedString = new StringBuilder(string);
+        truncatedString.setLength(TRUNCATE_THRESHOLD);
+        truncatedString.append("\n<truncated ")
+                .append(StorageUtil.toHumanReadableSize(string.length() - TRUNCATE_THRESHOLD))
+                .append("...>");
+        return truncatedString.toString();
     }
 
     private boolean equalStrings(String expected, String actual, boolean regexMatch) {
@@ -341,6 +355,18 @@ public class TestExecutor {
             throw e;
         }
 
+    }
+
+    public void runScriptAndCompareWithResultRegexAdm(File scriptFile, File expectedFile, File actualFile)
+            throws Exception {
+        StringWriter actual = new StringWriter();
+        StringWriter expected = new StringWriter();
+        IOUtils.copy(new FileInputStream(actualFile), actual, StandardCharsets.UTF_8);
+        IOUtils.copy(new FileInputStream(expectedFile), expected, StandardCharsets.UTF_8);
+        Pattern pattern = Pattern.compile(expected.toString(), Pattern.DOTALL | Pattern.MULTILINE);
+        if (!pattern.matcher(actual.toString()).matches()) {
+            throw new Exception("Result for " + scriptFile + ": actual file did not match expected result");
+        }
     }
 
     // For tests where you simply want the byte-for-byte output.
@@ -486,7 +512,7 @@ public class TestExecutor {
         return builder.build();
     }
 
-    public InputStream executeClusterStateQuery(OutputFormat fmt, String url) throws Exception {
+    public InputStream executeJSONGet(OutputFormat fmt, String url) throws Exception {
         HttpUriRequest request = RequestBuilder.get(url).setHeader("Accept", fmt.mimeType()).build();
 
         HttpResponse response = executeAndCheckHttpRequest(request);
@@ -836,7 +862,7 @@ public class TestExecutor {
             case "cstate": // cluster state query
                 fmt = OutputFormat.forCompilationUnit(cUnit);
                 String extra = stripJavaComments(statement).trim();
-                resultStream = executeClusterStateQuery(fmt, getEndpoint(Servlets.CLUSTER_STATE) + extra);
+                resultStream = executeJSONGet(fmt, getEndpoint(Servlets.CLUSTER_STATE) + extra);
                 expectedResultFile = expectedResultFileCtxs.get(queryCount.intValue()).getFile();
                 actualResultFile = testCaseCtx.getActualResultFile(cUnit, expectedResultFile, new File(actualPath));
                 actualResultFile.getParentFile().mkdirs();
@@ -847,7 +873,19 @@ public class TestExecutor {
                 break;
             case "version": // version servlet
                 fmt = OutputFormat.forCompilationUnit(cUnit);
-                resultStream = executeClusterStateQuery(fmt, getEndpoint(Servlets.VERSION));
+                resultStream = executeJSONGet(fmt, getEndpoint(Servlets.VERSION));
+                expectedResultFile = expectedResultFileCtxs.get(queryCount.intValue()).getFile();
+                actualResultFile = testCaseCtx.getActualResultFile(cUnit, expectedResultFile, new File(actualPath));
+                actualResultFile.getParentFile().mkdirs();
+                writeOutputToFile(actualResultFile, resultStream);
+                runScriptAndCompareWithResult(testFile, new PrintWriter(System.err), expectedResultFile,
+                        actualResultFile);
+                queryCount.increment();
+                break;
+            case "httpapi": // http api
+                fmt = OutputFormat.forCompilationUnit(cUnit);
+                extra = stripJavaComments(statement).trim();
+                resultStream = executeJSONGet(fmt, "http://" + host + ":" + port + extra);
                 expectedResultFile = expectedResultFileCtxs.get(queryCount.intValue()).getFile();
                 actualResultFile = testCaseCtx.getActualResultFile(cUnit, expectedResultFile, new File(actualPath));
                 actualResultFile.getParentFile().mkdirs();
@@ -1017,7 +1055,7 @@ public class TestExecutor {
     }
 
     protected String getEndpoint(Servlets servlet) {
-        return "http://" + host + ":" + port + getPath(servlet);
+        return "http://" + host + ":" + port + getPath(servlet).replaceAll("/\\*$", "");
     }
 
     public static String stripJavaComments(String text) {

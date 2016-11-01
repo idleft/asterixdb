@@ -34,11 +34,11 @@ import org.apache.hyracks.algebricks.core.algebra.expressions.VariableReferenceE
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AggregateOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AssignOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DataSourceScanOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.logical.DelegateOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DistinctOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DistributeResultOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.EmptyTupleSourceOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExchangeOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExtensionOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.GroupByOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.IndexInsertDeleteUpsertOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.InnerJoinOperator;
@@ -295,7 +295,12 @@ public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void
 
     @Override
     public Void visitInsertDeleteUpsertOperator(InsertDeleteUpsertOperator op, Void arg) throws AlgebricksException {
-        standardLayout(op);
+        // produced first
+        VariableUtilities.getProducedVariables(op, schemaVariables);
+        // then propagated
+        for (Mutable<ILogicalOperator> c : op.getInputs()) {
+            VariableUtilities.getLiveVariables(c.getValue(), schemaVariables);
+        }
         return null;
     }
 
@@ -319,7 +324,7 @@ public class SchemaVariableVisitor implements ILogicalOperatorVisitor<Void, Void
     }
 
     @Override
-    public Void visitExtensionOperator(ExtensionOperator op, Void arg) throws AlgebricksException {
+    public Void visitDelegateOperator(DelegateOperator op, Void arg) throws AlgebricksException {
         standardLayout(op);
         return null;
     }
