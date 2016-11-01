@@ -109,6 +109,8 @@ public class ExternalDataConstants {
     public static final String KEY_HTTP_PROXY_PORT = "http-proxy-port";
     public static final String KEY_HTTP_PROXY_USER = "http-proxy-user";
     public static final String KEY_HTTP_PROXY_PASSWORD = "http-proxy-password";
+    public static final String KEY_DOCUMENT_COLLECTION = "collection";
+    public static final String KEY_PKEY_MAPPING = "primary-key-mapping";
     /**
      * HDFS class names
      */
@@ -159,7 +161,7 @@ public class ExternalDataConstants {
     public static final String FORMAT_LINE_SEPARATED = "line-separated";
     public static final String FORMAT_HDFS_WRITABLE = "hdfs-writable";
     public static final String FORMAT_KV = "kv";
-    public static final String FORMAT_XML = "xml";
+    public static final String FORMAT_CAP_MESSAGE = "cap";
 
     /**
      * input streams

@@ -27,7 +27,7 @@ import org.apache.asterix.external.input.record.reader.stream.LineRecordReader;
 import org.apache.asterix.external.input.record.reader.stream.QuotedLineRecordReader;
 import org.apache.asterix.external.input.record.reader.stream.SemiStructuredRecordReader;
 import org.apache.asterix.external.input.record.reader.stream.StreamRecordReader;
-import org.apache.asterix.external.input.record.reader.stream.XMLFileRecordReader;
+import org.apache.asterix.external.input.record.reader.stream.CAPMessageRecordReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -37,7 +37,7 @@ public class StreamRecordReaderProvider {
         SEMISTRUCTURED,
         CSV,
         LINE_SEPARATED,
-        XML_FILE
+        CAP_MESSAGE
     }
 
     public static Format getReaderFormat(Map<String, String> configuration) throws AsterixException {
@@ -53,8 +53,8 @@ public class StreamRecordReaderProvider {
                 case ExternalDataConstants.FORMAT_DELIMITED_TEXT:
                 case ExternalDataConstants.FORMAT_CSV:
                     return Format.CSV;
-                case ExternalDataConstants.FORMAT_XML:
-                    return Format.XML_FILE;
+                case ExternalDataConstants.FORMAT_CAP_MESSAGE:
+                    return Format.CAP_MESSAGE;
             }
             throw new AsterixException("Unknown format: " + format);
         }
@@ -78,8 +78,9 @@ public class StreamRecordReaderProvider {
                 return new SemiStructuredRecordReader(inputStream,
                         configuration.get(ExternalDataConstants.KEY_RECORD_START),
                         configuration.get(ExternalDataConstants.KEY_RECORD_END));
-            case XML_FILE:
-                return new XMLFileRecordReader(inputStream);
+            case CAP_MESSAGE:
+                return new CAPMessageRecordReader(inputStream,
+                        configuration.get(ExternalDataConstants.KEY_DOCUMENT_COLLECTION));
             default:
                 throw new HyracksDataException("Unknown format: " + format);
         }

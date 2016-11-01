@@ -16,5 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse xml_feeds;
-disconnect feed XML_Alert_Feeds from dataset XML_Alerts;
+
+drop dataverse document_feeds if exists;
+create dataverse document_feeds;
+use dataverse document_feeds;
+
+create type MedlineCitation as open{
+ document_id: string
+}
+
+create dataset MedlineCitations(MedlineCitation)
+primary key document_id;
+
+create feed MedlineCitationFeed using localfs
+(("path"="asterix_nc1://data/document_with_records_collection.xml"),
+("format"="cap"),
+("primary-key-mapping"="MedlineCitation.PMID"),
+("type-name"="MedlineCitation"),
+("collection"="true"),
+("tuple-interval"="10"));

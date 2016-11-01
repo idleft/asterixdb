@@ -267,8 +267,13 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="feeds">
-      <compilation-unit name="xml-adaptor">
-        <output-dir compare="Text">xml-adaptor</output-dir>
+      <compilation-unit name="caps-adaptor-no-collection">
+        <output-dir compare="Text">cap-adaptor-no-collection</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="caps-adaptor-collection">
+        <output-dir compare="Text">cap-adaptor-collection</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
@@ -6622,6 +6627,11 @@
     <test-case FilePath="load">
       <compilation-unit name="utf8">
         <output-dir compare="Text">utf8</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="load">
+      <compilation-unit name="load-cap-messages">
+        <output-dir compare="Text">load-cap-messages</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

@@ -16,5 +16,3 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse test;
-for $i in dataset XML_Alerts return $i.identifier

@@ -16,7 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse test;
-
-load dataset XML_Alerts using localfs
-(("path"="asterix_nc1://data/xml/"),("format"="xml"));
+2000

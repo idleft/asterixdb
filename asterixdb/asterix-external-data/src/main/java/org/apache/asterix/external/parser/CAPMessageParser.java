@@ -23,29 +23,49 @@ import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.om.types.ARecordType;
+import org.apache.hadoop.yarn.webapp.hamlet.HamletSpec;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.XML;
+import org.mortbay.util.ajax.JSON;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class XMLFileParser extends AbstractDataParser implements IRecordDataParser<char[]> {
+public class CAPMessageParser extends AbstractDataParser implements IRecordDataParser<char[]> {
 
-    ARecordType recordType;
-    ADMDataParser admDataParser;
-    CharArrayRecord charArrayRecord;
+    private ADMDataParser admDataParser;
+    private CharArrayRecord charArrayRecord;
+    private String DOCUMENT_HEADER = "<?xml version = \"1.0\" encoding = \"UTF-8\"?>\n";
+    private String[] pkeyPath;
+    private String primaryKeyName;
 
-    public XMLFileParser(ARecordType recordType, ADMDataParser admDataParser) {
-        this.recordType = recordType;
+    public CAPMessageParser(ARecordType recordType, ADMDataParser admDataParser, String primaryKeyMappingPath) {
         this.admDataParser = admDataParser;
         charArrayRecord = new CharArrayRecord();
+        primaryKeyName = recordType.getFieldNames().length == 0 ? null : recordType.getFieldNames()[0];
+        pkeyPath = primaryKeyMappingPath == null ? null : primaryKeyMappingPath.split("\\.");
+    }
+
+    private void appendPrimaryKey(JSONObject xmlRecord) throws JSONException {
+        Object curElement = xmlRecord;
+        for (String curElementName : pkeyPath) {
+            curElement = ((JSONObject) curElement).get(curElementName);
+        }
+        if (curElement instanceof JSONObject) {
+            xmlRecord.getJSONObject(pkeyPath[0]).put(primaryKeyName, ((JSONObject) curElement).getString("content"));
+        } else {
+            xmlRecord.getJSONObject(pkeyPath[0]).put(primaryKeyName, curElement);
+        }
     }
 
     @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
         try {
-            JSONObject xmlObj = XML.toJSONObject(record.toString());
+            JSONObject xmlObj = XML.toJSONObject(DOCUMENT_HEADER + record.toString());
+            if (pkeyPath != null) {
+                appendPrimaryKey(xmlObj);
+            }
             String jsonStr = xmlObj.getJSONObject(xmlObj.names().getString(0)).toString();
             charArrayRecord.set(jsonStr.toCharArray());
             charArrayRecord.endRecord();

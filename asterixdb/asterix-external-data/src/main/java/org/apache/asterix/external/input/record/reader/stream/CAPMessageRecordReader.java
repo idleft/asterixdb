@@ -24,15 +24,21 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 
 import java.io.IOException;
 
-public class XMLFileRecordReader extends StreamRecordReader {
+public class CAPMessageRecordReader extends StreamRecordReader {
 
     protected boolean newRecordFormed;
     private int curLvl;
+    private int recordLvl;
 
-    public XMLFileRecordReader(AsterixInputStream inputStream) {
+    public CAPMessageRecordReader(AsterixInputStream inputStream, String collection) {
         super(inputStream);
         bufferPosn = 0;
         curLvl = 0;
+        if (collection != null) {
+            this.recordLvl = collection.equals("true") ? 1 : 0;
+        } else {
+            this.recordLvl = 0;
+        }
     }
 
     @Override
@@ -76,7 +82,7 @@ public class XMLFileRecordReader extends StreamRecordReader {
                     } else if (curStatus == 7) {
                         // schema definition
                     }
-                    if (curLvl == 0 && curStatus != 6 && curStatus != 7) {
+                    if (curLvl == recordLvl && curStatus ==5) {
                         int appendLength = bufferPosn + 1 - startPos;
                         record.append(inputBuffer, startPos, appendLength);
                         record.endRecord();
@@ -86,7 +92,6 @@ public class XMLFileRecordReader extends StreamRecordReader {
                     break;
                 case '?':
                     if (curStatus == 1) {
-                        startPos = bufferPosn - 1;
                         curStatus = 3;
                     } else if (curStatus == 6) {
                         // in document head, do nothing.
@@ -99,6 +104,9 @@ public class XMLFileRecordReader extends StreamRecordReader {
                     break;
                 default:
                     if (curStatus == 1) {
+                        if (curLvl == recordLvl) {
+                            startPos = bufferPosn - 1;
+                        }
                         curStatus = 4; // in start element name
                     } else if (curStatus == 2) {
                         curStatus = 5; // in end element name

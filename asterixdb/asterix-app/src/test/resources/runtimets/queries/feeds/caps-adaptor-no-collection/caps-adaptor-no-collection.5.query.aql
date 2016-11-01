@@ -16,17 +16,5 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-drop dataverse xml_feeds if exists;
-create dataverse xml_feeds;
-use dataverse xml_feeds;
-
-create type XML_Alert as open{
- identifier: string
-}
-
-create dataset XML_Alerts(XML_Alert)
-primary key identifier;
-
-create feed XML_Alert_Feeds using localfs
-(("path"="asterix_nc1://data/xml/"),("format"="xml"),("type-name"="XML_Alert"),("tuple-interval"="10"));
+use dataverse document_feeds;
+for $i in dataset CAP_Alerts return $i.identifier

@@ -16,5 +16,17 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse xml_feeds;
-connect feed XML_Alert_Feeds to dataset XML_Alerts;
+
+drop dataverse document_feeds if exists;
+create dataverse document_feeds;
+use dataverse document_feeds;
+
+create type CAP_Alert as open{
+ identifier: string
+}
+
+create dataset CAP_Alerts(CAP_Alert)
+primary key identifier;
+
+create feed CAP_Alert_Feeds using localfs
+(("path"="asterix_nc1://data/cap_messages/"),("format"="cap"),("type-name"="CAP_Alert"),("tuple-interval"="10"));

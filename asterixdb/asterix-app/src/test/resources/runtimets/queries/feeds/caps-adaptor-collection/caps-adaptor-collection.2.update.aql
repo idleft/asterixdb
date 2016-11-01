@@ -16,13 +16,5 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-drop dataverse test if exists;
-create dataverse test;
-use dataverse test;
-
-create type XML_Alert as open{
-identifier: string
-}
-
-create dataset XML_Alerts(XML_Alert)
-primary key identifier;
+use dataverse document_feeds;
+connect feed MedlineCitationFeed to dataset MedlineCitations;
