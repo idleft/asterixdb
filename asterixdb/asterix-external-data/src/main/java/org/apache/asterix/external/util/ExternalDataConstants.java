@@ -105,7 +105,6 @@ public class ExternalDataConstants {
     public static final String KEY_HTTP_PROXY_USER = "http-proxy-user";
     public static final String KEY_HTTP_PROXY_PASSWORD = "http-proxy-password";
     public static final String KEY_DOCUMENT_COLLECTION = "collection";
-    public static final String KEY_PKEY_MAPPING = "primary-key-mapping";
     /**
      * HDFS class names
      */

@@ -37,35 +37,16 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private ADMDataParser admDataParser;
     private CharArrayRecord charArrayRecord;
     private String DOCUMENT_HEADER = "<?xml version = \"1.0\" encoding = \"UTF-8\"?>\n";
-    private String[] pkeyPath;
-    private String primaryKeyName;
 
-    public CAPMessageParser(ARecordType recordType, ADMDataParser admDataParser, String primaryKeyMappingPath) {
+    public CAPMessageParser(ADMDataParser admDataParser) {
         this.admDataParser = admDataParser;
         charArrayRecord = new CharArrayRecord();
-        primaryKeyName = recordType.getFieldNames().length == 0 ? null : recordType.getFieldNames()[0];
-        pkeyPath = primaryKeyMappingPath == null ? null : primaryKeyMappingPath.split("\\.");
-    }
-
-    private void appendPrimaryKey(JSONObject xmlRecord) throws JSONException {
-        Object curElement = xmlRecord;
-        for (String curElementName : pkeyPath) {
-            curElement = ((JSONObject) curElement).get(curElementName);
-        }
-        if (curElement instanceof JSONObject) {
-            xmlRecord.getJSONObject(pkeyPath[0]).put(primaryKeyName, ((JSONObject) curElement).getString("content"));
-        } else {
-            xmlRecord.getJSONObject(pkeyPath[0]).put(primaryKeyName, curElement);
-        }
     }
 
     @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws IOException {
         try {
             JSONObject xmlObj = XML.toJSONObject(DOCUMENT_HEADER + record.toString());
-            if (pkeyPath != null) {
-                appendPrimaryKey(xmlObj);
-            }
             String jsonStr = xmlObj.getJSONObject(xmlObj.names().getString(0)).toString();
             charArrayRecord.set(jsonStr.toCharArray());
             charArrayRecord.endRecord();
