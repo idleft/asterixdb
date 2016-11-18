@@ -39,8 +39,7 @@ public class CAPMessageParserFactory implements IRecordDataParserFactory<char[]>
 
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
-        return new CAPMessageParser(new ADMDataParser(recordType, ExternalDataUtils.getDataSourceType(configuration)
-                .equals(IExternalDataSourceFactory.DataSourceType.STREAM)));
+        return new CAPMessageParser(recordType);
     }
 
     @Override
