@@ -21,17 +21,19 @@ drop dataverse document_feeds if exists;
 create dataverse document_feeds;
 use dataverse document_feeds;
 
-create type PMIDType as open {
-  Version: int32,
-  content: int
+create type MedlineDate as closed{
+  Year: string,
+  Month: int32,
+  Day: int64
 }
 
 create type MedlineCitation as open{
- PMID: PMIDType
+  PMID: int,
+  DateCreated: MedlineDate
 }
 
 create dataset MedlineCitations(MedlineCitation)
-primary key PMID.content;
+primary key PMID;
 
 create feed MedlineCitationFeed using localfs
 (("path"="asterix_nc1://data/document_with_records_collection.xml"),

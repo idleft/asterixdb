@@ -17,4 +17,4 @@
  * under the License.
  */
 use dataverse document_feeds;
-for $i in dataset MedlineCitations order by $i.PMID.content return $i.PMID.content
+for $i in dataset MedlineCitations order by $i.PMID return $i
