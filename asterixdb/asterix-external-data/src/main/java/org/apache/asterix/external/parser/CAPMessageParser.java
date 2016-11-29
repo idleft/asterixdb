@@ -267,12 +267,16 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 bufferList.add(getTempBuffer());
                 rbList.add(getRecordBuilder());
             }
-            bufferList.get(curLvl).reset();
-            rbList.get(curLvl).reset(null);
-            rbList.get(curLvl).init();
-            recordTypeMarker.push(true);
             curFieldType = curFieldType == null ? null : ((ARecordType) curFieldType).getFieldType(qName);
             fieldTypeTracker.push(curFieldType);
+            bufferList.get(curLvl).reset();
+            if (curFieldType instanceof ARecordType) {
+                rbList.get(curLvl).reset((ARecordType) curFieldType);
+            } else {
+                rbList.get(curLvl).reset(null);
+            }
+            rbList.get(curLvl).init();
+            recordTypeMarker.push(true);
         }
 
         @Override
@@ -315,21 +319,27 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             }
         }
 
-        private void handleNestedOrderedList(String fullPathName) throws HyracksDataException {
+        private void handleNestedOrderedList(String fullPathName, int fieldNameIdx) throws HyracksDataException {
             if (nestedListTracker.size() == 0 || !nestedListTracker.peek().equals(fullPathName)) {
                 nestedListTracker.push(fullPathName);
                 if (listBuilder.size() < nestedListTracker.size()) {
+                    // expand listbuilder list
                     listBuilder.add(getOrderedListBuilder());
                     listBuilder.get(listBuilder.size() - 1).reset(null);
                 }
             }
             listBuilder.get(nestedListTracker.size() - 1).addItem(bufferList.get(curLvl));
-            listElementNames.put(fullPathName, listElementNames.get(fullPathName) - 1);
+            listElementNames.put(fullPathName, listElementNames.get(fullPathName) - 1); //update list element counter
             if (listElementNames.get(fullPathName) == 0) {
+                // if it's the last element of list, write to upper lvl
                 bufferList.get(curLvl).reset();
                 listBuilder.get(nestedListTracker.size() - 1).write(bufferList.get(curLvl).getDataOutput(), true);
                 listBuilder.get(nestedListTracker.size() - 1).reset(null);
-                rbList.get(curLvl - 1).addField(fieldNameBuffer, bufferList.get(curLvl));
+                if (fieldNameIdx < 0) {
+                    rbList.get(curLvl - 1).addField(fieldNameBuffer, bufferList.get(curLvl));
+                } else {
+                    rbList.get(curLvl - 1).addField(fieldNameIdx, bufferList.get(curLvl));
+                }
             }
         }
 
@@ -341,23 +351,24 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     return;
                 }
                 fieldTypeTracker.pop();
+                // this is parent record type. Current field type is not important here.
                 curFieldType = fieldTypeTracker.peek();
                 aString.setValue(qName);
                 fieldNameBuffer.reset();
                 stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
-                Boolean curRecordType = recordTypeMarker.pop();
-                Integer fieldNameIdx = ((ARecordType)curFieldType).getFieldIndex(qName);
-                if (qName.equals(recordType.getFieldNames()[0]))
-                    rbList.get(curLvl - 1).addField(0, bufferList.get(curLvl));
-                else {
-                    if (curRecordType) {
-                        rbList.get(curLvl).write(bufferList.get(curLvl).getDataOutput(), true);
-                    }
-                    curFullPathName = String.join(".", curPathStack);
-                    if (listElementNames.keySet().contains(curFullPathName)) {
-                        handleNestedOrderedList(curFullPathName);
-                    } else {
+                boolean curRecordType = recordTypeMarker.pop();
+                int fieldNameIdx = curFieldType == null ? -1 : ((ARecordType) curFieldType).getFieldIndex(qName);
+                if (curRecordType) {
+                    rbList.get(curLvl).write(bufferList.get(curLvl).getDataOutput(), true);
+                }
+                curFullPathName = String.join(".", curPathStack);
+                if (listElementNames.keySet().contains(curFullPathName)) {
+                    handleNestedOrderedList(curFullPathName, fieldNameIdx);
+                } else {
+                    if (fieldNameIdx < 0) {
                         rbList.get(curLvl - 1).addField(fieldNameBuffer, bufferList.get(curLvl));
+                    } else {
+                        rbList.get(curLvl - 1).addField(fieldNameIdx, bufferList.get(curLvl));
                     }
                 }
                 curPathStack.pop();
