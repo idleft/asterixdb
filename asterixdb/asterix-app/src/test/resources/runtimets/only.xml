@@ -19,15 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="feeds">
-      <compilation-unit name="caps-adaptor-collection">
-        <output-dir compare="Text">cap-adaptor-collection</output-dir>
-      </compilation-unit>
-    </test-case>
-    <test-case FilePath="feeds">
-      <compilation-unit name="caps-adaptor-no-collection">
-        <output-dir compare="Text">cap-adaptor-no-collection</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>

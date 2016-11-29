@@ -33,6 +33,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
+import com.google.common.primitives.Doubles;
 import org.apache.asterix.builders.AbvsBuilderFactory;
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.IAsterixListBuilder;
@@ -54,12 +55,11 @@ import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-import com.google.common.primitives.Doubles;
-import com.google.common.primitives.Ints;
-
 public class CAPMessageParser extends AbstractDataParser implements IRecordDataParser<char[]> {
 
     private static final String CAP_DATETIME_REGEX = "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d[-,+]\\d\\d:\\d\\d";
+    private static final String CAP_DOUBLE_REGEX = "\\d+\\.\\d+";
+    private static final String CAP_INTEGER_REGEX = "^[1-9]\\d*";
     private static final String CAP_BOOLEAN_TRUE = "true";
     private static final String CAP_BOOLEAN_FALSE = "false";
     private final IObjectPool<IARecordBuilder, ATypeTag> recordBuilderPool = new ListObjectPool<>(
@@ -290,11 +290,11 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 if (curFieldType != null) {
                     setValueBasedOnTypeTag(content, curFieldType.getTypeTag(), bufferList.get(curLvl).getDataOutput());
                 } else {
-                    if (Ints.tryParse(content) != null) {
+                    if (Pattern.matches(CAP_INTEGER_REGEX, content)) {
                         // ints
                         aInt32.setValue(Integer.valueOf(content));
                         int32Serde.serialize(aInt32, bufferList.get(curLvl).getDataOutput());
-                    } else if (Doubles.tryParse(content) != null) {
+                    } else if (Pattern.matches(CAP_DOUBLE_REGEX, content)) {
                         // doubles
                         aDouble.setValue(Double.valueOf(content));
                         doubleSerde.serialize(aDouble, bufferList.get(curLvl).getDataOutput());
