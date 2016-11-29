@@ -19,9 +19,6 @@
 
 package org.apache.hyracks.examples.btree.client;
 
-import org.kohsuke.args4j.CmdLineParser;
-import org.kohsuke.args4j.Option;
-
 import org.apache.hyracks.api.client.HyracksConnection;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.constraints.PartitionConstraintHelper;
@@ -54,6 +51,8 @@ import org.apache.hyracks.storage.am.common.dataflow.TreeIndexInsertUpdateDelete
 import org.apache.hyracks.storage.am.common.impls.NoOpOperationCallbackFactory;
 import org.apache.hyracks.storage.am.common.ophelpers.IndexOperation;
 import org.apache.hyracks.storage.common.IStorageManagerInterface;
+import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.Option;
 
 // This example will insert tuples into the primary and secondary index using an insert pipeline
 

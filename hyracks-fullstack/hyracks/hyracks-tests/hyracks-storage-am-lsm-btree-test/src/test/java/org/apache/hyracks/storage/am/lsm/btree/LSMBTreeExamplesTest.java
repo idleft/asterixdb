@@ -21,15 +21,10 @@ package org.apache.hyracks.storage.am.lsm.btree;
 
 import java.util.logging.Level;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
 import org.apache.hyracks.api.dataflow.value.ITypeTraits;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.data.std.accessors.PointableBinaryComparatorFactory;
 import org.apache.hyracks.data.std.primitive.IntegerPointable;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
@@ -43,6 +38,9 @@ import org.apache.hyracks.storage.am.common.api.ITreeIndex;
 import org.apache.hyracks.storage.am.common.api.TreeIndexException;
 import org.apache.hyracks.storage.am.lsm.btree.util.LSMBTreeTestHarness;
 import org.apache.hyracks.storage.am.lsm.btree.util.LSMBTreeUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class LSMBTreeExamplesTest extends OrderedIndexExamplesTest {
     private final LSMBTreeTestHarness harness = new LSMBTreeTestHarness();
@@ -50,8 +48,9 @@ public class LSMBTreeExamplesTest extends OrderedIndexExamplesTest {
     @Override
     protected ITreeIndex createTreeIndex(ITypeTraits[] typeTraits, IBinaryComparatorFactory[] cmpFactories,
             int[] bloomFilterKeyFields, ITypeTraits[] filterTypeTraits, IBinaryComparatorFactory[] filterCmpFactories,
-            int[] btreeFields, int[] filterFields) throws TreeIndexException {
-        return LSMBTreeUtils.createLSMTree(harness.getVirtualBufferCaches(), harness.getFileReference(),
+            int[] btreeFields, int[] filterFields) throws TreeIndexException, HyracksDataException {
+        return LSMBTreeUtils.createLSMTree(harness.getIOManager(), harness.getVirtualBufferCaches(), harness
+                .getFileReference(),
                 harness.getDiskBufferCache(), harness.getDiskFileMapProvider(), typeTraits, cmpFactories,
                 bloomFilterKeyFields, harness.getBoomFilterFalsePositiveRate(), harness.getMergePolicy(),
                 harness.getOperationTracker(), harness.getIOScheduler(), harness.getIOOperationCallback(), true,
@@ -59,7 +58,7 @@ public class LSMBTreeExamplesTest extends OrderedIndexExamplesTest {
     }
 
     @Before
-    public void setUp() throws HyracksException {
+    public void setUp() throws HyracksDataException {
         harness.setUp();
     }
 

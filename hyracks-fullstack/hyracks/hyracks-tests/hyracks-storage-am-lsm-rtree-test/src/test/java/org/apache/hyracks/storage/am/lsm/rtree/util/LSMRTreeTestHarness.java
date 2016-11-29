@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.api.io.IODeviceHandle;
 import org.apache.hyracks.control.nc.io.IOManager;
@@ -97,17 +96,17 @@ public class LSMRTreeTestHarness {
         this.numMutableComponents = AccessMethodTestsConfig.LSM_RTREE_NUM_MUTABLE_COMPONENTS;
     }
 
-    public void setUp() throws HyracksException {
+    public void setUp() throws HyracksDataException {
         ioManager = TestStorageManagerComponentHolder.getIOManager();
         ioDeviceId = 0;
-        onDiskDir = ioManager.getIODevices().get(ioDeviceId).getPath() + sep + "lsm_rtree_"
+        onDiskDir = ioManager.getIODevices().get(ioDeviceId).getMount() + sep + "lsm_rtree_"
                 + simpleDateFormat.format(new Date()) + sep;
-        file = new FileReference(new File(onDiskDir));
+        file = ioManager.resolveAbsolutePath(onDiskDir);
         ctx = TestUtils.create(getHyracksFrameSize());
         TestStorageManagerComponentHolder.init(diskPageSize, diskNumPages, diskMaxOpenFiles);
         diskBufferCache = TestStorageManagerComponentHolder.getBufferCache(ctx);
         diskFileMapProvider = TestStorageManagerComponentHolder.getFileMapProvider(ctx);
-        virtualBufferCaches = new ArrayList<IVirtualBufferCache>();
+        virtualBufferCaches = new ArrayList<>();
         for (int i = 0; i < numMutableComponents; i++) {
             IVirtualBufferCache virtualBufferCache = new VirtualBufferCache(new HeapBufferAllocator(), memPageSize,
                     memNumPages / numMutableComponents);
@@ -119,8 +118,9 @@ public class LSMRTreeTestHarness {
     public void tearDown() throws HyracksDataException {
         diskBufferCache.close();
         IODeviceHandle dev = ioManager.getIODevices().get(ioDeviceId);
-        File dir = new File(dev.getPath(), onDiskDir);
+        File dir = new File(dev.getMount(), onDiskDir);
         FilenameFilter filter = new FilenameFilter() {
+            @Override
             public boolean accept(File dir, String name) {
                 return !name.startsWith(".");
             }
