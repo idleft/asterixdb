@@ -1,0 +1,19 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
+    <identifier>TRI13970876.3</identifier>
+    <info>
+        <category>Geo</category>
+        <parameter>
+            <valueName>EventID</valueName>
+            <value>13970876</value>
+        </parameter>
+        <parameter>
+            <valueName>Magnitude</valueName>
+            <value>3.4 Ml</value>
+        </parameter>
+        <area>
+            <areaDesc>1 mi. WSW of Brawley, CA; 11 mi. N of El Centro, CA; 30 mi. E of OCOTILLO (quarry); 1 mi. N of the Imperial Fault</areaDesc>
+            <circle>32.9525,-115.5527 0</circle>
+        </area>
+    </info>
+</alert>

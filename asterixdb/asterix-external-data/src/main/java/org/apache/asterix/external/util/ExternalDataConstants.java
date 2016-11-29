@@ -27,6 +27,8 @@ public class ExternalDataConstants {
     public static final String KEY_STREAM = "stream";
     // used to specify the dataverse of the adapter
     public static final String KEY_DATAVERSE = "dataverse";
+    // optional schema provided by datasource, used for data type inference
+    public static final String KEY_DATASOURCE_SCHEMA = "datasource-schema";
     // used to specify the socket addresses when reading data from sockets
     public static final String KEY_SOCKETS = "sockets";
     // specify whether the socket address points to an NC or an IP
@@ -102,6 +104,7 @@ public class ExternalDataConstants {
     public static final String KEY_HTTP_PROXY_PORT = "http-proxy-port";
     public static final String KEY_HTTP_PROXY_USER = "http-proxy-user";
     public static final String KEY_HTTP_PROXY_PASSWORD = "http-proxy-password";
+    public static final String KEY_DOCUMENT_COLLECTION = "collection";
     /**
      * HDFS class names
      */
@@ -153,6 +156,7 @@ public class ExternalDataConstants {
     public static final String FORMAT_LINE_SEPARATED = "line-separated";
     public static final String FORMAT_HDFS_WRITABLE = "hdfs-writable";
     public static final String FORMAT_KV = "kv";
+    public static final String FORMAT_CAP_MESSAGE = "cap";
 
     /**
      * input streams
@@ -196,6 +200,10 @@ public class ExternalDataConstants {
     public static final char TAB = '\t';
     public static final char LF = '\n';
     public static final char CR = '\r';
+    public static final char LT = '<';
+    public static final char SLASH = '/';
+    public static final char GT = '>';
+    public static final char QUESTION_MARK = '?';
     public static final char DEFAULT_RECORD_START = '{';
     public static final char DEFAULT_RECORD_END = '}';
 

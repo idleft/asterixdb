@@ -68,8 +68,17 @@ public class LocalFileSystemUtils {
         });
     }
 
+    private static boolean fileNotExistsInList(LinkedList<File> files, Path path) {
+        for (File file : files) {
+            if (file.getPath().equals(path.toString())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static void validateAndAdd(Path path, String expression, LinkedList<File> files) {
-        if (expression == null || Pattern.matches(expression, path.toString())) {
+        if ((expression == null || Pattern.matches(expression, path.toString())) && fileNotExistsInList(files, path)) {
             files.add(new File(path.toString()));
         }
     }

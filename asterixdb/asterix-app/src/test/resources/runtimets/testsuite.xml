@@ -266,6 +266,16 @@
         <output-dir compare="Text">issue_230_feeds</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="caps-adaptor-no-collection">
+        <output-dir compare="Text">cap-adaptor-no-collection</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="caps-adaptor-collection">
+        <output-dir compare="Text">cap-adaptor-collection</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="upsert">
     <test-case FilePath="upsert">
@@ -6660,6 +6670,11 @@
     <test-case FilePath="load">
       <compilation-unit name="utf8">
         <output-dir compare="Text">utf8</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="load">
+      <compilation-unit name="load-cap-messages">
+        <output-dir compare="Text">load-cap-messages</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

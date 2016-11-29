@@ -34,7 +34,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Level;
@@ -53,7 +52,6 @@ public class FileSystemWatcher {
     private final boolean isFeed;
     private boolean done;
     private final LinkedList<Path> dirs;
-    private final ReentrantLock lock = new ReentrantLock();
 
     public FileSystemWatcher(List<Path> inputResources, String expression, boolean isFeed) throws HyracksDataException {
         this.isFeed = isFeed;
@@ -142,7 +140,7 @@ public class FileSystemWatcher {
         return (WatchEvent<T>) event;
     }
 
-    private void handleEvents(WatchKey key) throws IOException {
+    private synchronized void handleEvents(WatchKey key) throws IOException {
         // get dir associated with the key
         Path dir = keys.get(key);
         if (dir == null) {
@@ -169,7 +167,7 @@ public class FileSystemWatcher {
             Path name = ev.context();
             Path child = dir.resolve(name);
             // if directory is created then register it and its sub-directories
-            if ((kind == StandardWatchEventKinds.ENTRY_CREATE)) {
+            if (kind == StandardWatchEventKinds.ENTRY_CREATE) {
                 try {
                     if (Files.isDirectory(child, LinkOption.NOFOLLOW_LINKS)) {
                         register(child);
@@ -226,7 +224,7 @@ public class FileSystemWatcher {
     }
 
     // take is blocking
-    public synchronized File take() throws IOException {
+    public File take() throws IOException {
         File next = poll();
         if (next != null) {
             return next;
@@ -235,36 +233,31 @@ public class FileSystemWatcher {
             return null;
         }
         // No file was found, wait for the filesystem to push events
-        WatchKey key = null;
-        lock.lock();
-        try {
-            while (!it.hasNext()) {
-                try {
-                    key = watcher.take();
-                } catch (InterruptedException x) {
-                    if (LOGGER.isEnabledFor(Level.WARN)) {
-                        LOGGER.warn("Feed Closed");
-                    }
-                    if (watcher == null) {
-                        return null;
-                    }
-                    continue;
-                } catch (ClosedWatchServiceException e) {
-                    if (LOGGER.isEnabledFor(Level.WARN)) {
-                        LOGGER.warn("The watcher has exited");
-                    }
-                    if (watcher == null) {
-                        return null;
-                    }
-                    continue;
+        WatchKey key;
+        while (!it.hasNext()) {
+            try {
+                key = watcher.take();
+            } catch (InterruptedException x) {
+                if (LOGGER.isEnabledFor(Level.WARN)) {
+                    LOGGER.warn("Feed Closed");
                 }
-                handleEvents(key);
-                if (endOfEvents(key)) {
+                if (watcher == null) {
                     return null;
                 }
+                continue;
+            } catch (ClosedWatchServiceException e) {
+                if (LOGGER.isEnabledFor(Level.WARN)) {
+                    LOGGER.warn("The watcher has exited");
+                }
+                if (watcher == null) {
+                    return null;
+                }
+                continue;
             }
-        } finally {
-            lock.unlock();
+            handleEvents(key);
+            if (endOfEvents(key)) {
+                return null;
+            }
         }
         // files were found, re-create the iterator and move it one step
         return it.next();
