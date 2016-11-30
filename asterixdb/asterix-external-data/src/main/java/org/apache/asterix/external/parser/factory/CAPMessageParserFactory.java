@@ -35,7 +35,6 @@ import java.util.Map;
 public class CAPMessageParserFactory implements IRecordDataParserFactory<char[]> {
 
     private ARecordType recordType;
-    private Map<String, String> configuration;
 
     @Override
     public IRecordDataParser<char[]> createRecordParser(IHyracksTaskContext ctx) throws HyracksDataException {
@@ -44,7 +43,7 @@ public class CAPMessageParserFactory implements IRecordDataParserFactory<char[]>
 
     @Override
     public void configure(Map<String, String> configuration) {
-        this.configuration = configuration;
+        // Nothing to be configured
     }
 
     @Override

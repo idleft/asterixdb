@@ -6677,6 +6677,11 @@
         <output-dir compare="Text">load-cap-messages</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="load">
+      <compilation-unit name="load-cap-collection">
+        <output-dir compare="Text">load-cap-collection</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="hints">
     <test-case FilePath="hints">

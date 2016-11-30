@@ -25,15 +25,17 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
-import java.util.Stack;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 
-import com.google.common.primitives.Doubles;
 import org.apache.asterix.builders.AbvsBuilderFactory;
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.IAsterixListBuilder;
@@ -57,7 +59,8 @@ import org.xml.sax.helpers.DefaultHandler;
 
 public class CAPMessageParser extends AbstractDataParser implements IRecordDataParser<char[]> {
 
-    private static final String CAP_DATETIME_REGEX = "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:\\d\\d:\\d\\d[-,+]\\d\\d:\\d\\d";
+    private static final String CAP_DATETIME_REGEX = "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:"
+            + "\\d\\d:\\d\\d[-,+]\\d\\d:\\d\\d";
     private static final String CAP_DOUBLE_REGEX = "\\d+\\.\\d+";
     private static final String CAP_INTEGER_REGEX = "^[1-9]\\d*";
     private static final String CAP_BOOLEAN_TRUE = "true";
@@ -69,8 +72,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private final IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool = new ListObjectPool<>(
             new AbvsBuilderFactory());
     private ARecordType recordType;
-    private SAXParserFactory capMessageParserFactory;
-    private SAXParser capMessageParser;
+    private SAXParserFactory capMessageSAXParserFactory;
+    private SAXParser capMessageSAXParser;
     private ArrayBackedValueStorage fieldNameBuffer;
     private ArrayList<IARecordBuilder> rbList;
     private ArrayList<ArrayBackedValueStorage> bufferList;
@@ -88,8 +91,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         listElementHandler = new ListElementHandler(listElementNames);
         capMessageHandler = new CAPMessageHandler(recordType, bufferList, rbList);
         try {
-            capMessageParserFactory = SAXParserFactory.newInstance();
-            capMessageParser = capMessageParserFactory.newSAXParser();
+            capMessageSAXParserFactory = SAXParserFactory.newInstance();
+            capMessageSAXParser = capMessageSAXParserFactory.newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
             throw new HyracksDataException(e);
         }
@@ -101,11 +104,10 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         abvsBuilderPool.reset();
     }
 
-    public void getElementNameList(IRawRecord<? extends char[]> record)
-            throws IOException, SAXException {
+    public void getElementNameList(IRawRecord<? extends char[]> record) throws IOException, SAXException {
         listElementNames.clear();
         listElementHandler.init();
-        capMessageParser.parse(new ByteArrayInputStream(record.toString().getBytes()), listElementHandler);
+        capMessageSAXParser.parse(new ByteArrayInputStream(record.toString().getBytes()), listElementHandler);
     }
 
     private void clearBufferInit() {
@@ -124,7 +126,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             rbList.add(getRecordBuilder());
             rbList.get(0).reset(recordType);
             rbList.get(0).init();
-            capMessageParser.parse(new ByteArrayInputStream(record.toString().getBytes()), capMessageHandler);
+            capMessageSAXParser.parse(new ByteArrayInputStream(record.toString().getBytes()), capMessageHandler);
             rbList.get(0).write(out, true);
         } catch (SAXException | IOException e) {
             throw new HyracksDataException(e);
@@ -135,55 +137,21 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         return recordBuilderPool.allocate(ATypeTag.RECORD);
     }
 
-    private IAsterixListBuilder getOrderedListBuilder() {
-        return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
-    }
-
     private ArrayBackedValueStorage getTempBuffer() {
         return (ArrayBackedValueStorage) abvsBuilderPool.allocate(ATypeTag.BINARY);
     }
 
-    private void setValueBasedOnTypeTag(String content, ATypeTag fieldTypeTag, DataOutput out)
-            throws HyracksDataException {
-        try {
-            switch (fieldTypeTag) {
-                case STRING:
-                    aString.setValue(content);
-                    stringSerde.serialize(aString, out);
-                    break;
-                case INT64:
-                    aInt64.setValue(Long.valueOf(content));
-                    int64Serde.serialize(aInt64, out);
-                    break;
-                case INT32:
-                    aInt32.setValue(Integer.valueOf(content));
-                    int32Serde.serialize(aInt32, out);
-                    out.write(BuiltinType.AINT32.getTypeTag().serialize());
-                    break;
-                case DOUBLE:
-                    aDouble.setValue(Double.valueOf(content));
-                    doubleSerde.serialize(aDouble, out);
-                    break;
-                case BOOLEAN:
-                    booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)), out);
-                    break;
-            }
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
-    }
-
     private class ListElementHandler extends DefaultHandler {
 
-        public HashMap<String, Integer> listElementNames;
-        Stack<String> curPathStack;
+        Deque<String> curPathStack;
         String fullPathName;
         String preElementName;
+        private Map<String, Integer> listElementNames;
 
-        public ListElementHandler(HashMap<String, Integer> listElementNames) {
+        public ListElementHandler(Map<String, Integer> listElementNames) {
             preElementName = "";
             this.listElementNames = listElementNames;
-            curPathStack = new Stack<>();
+            curPathStack = new LinkedList<>();
         }
 
         private void init() {
@@ -214,29 +182,29 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     private class CAPMessageHandler extends DefaultHandler {
 
-        ArrayList<ArrayBackedValueStorage> bufferList;
+        List<ArrayBackedValueStorage> bufferList;
         ARecordType recordType;
-        ArrayList<IARecordBuilder> rbList;
+        List<IARecordBuilder> rbList;
         String curEleName;
         String curFullPathName;
         IAType curFieldType;
-        Stack<Boolean> recordTypeMarker;
-        Stack<IAType> fieldTypeTracker;
-        Stack<String> nestedListTracker;
-        Stack<String> curPathStack;
+        Deque<Boolean> recordTypeMarker;
+        Deque<IAType> fieldTypeTracker;
+        Deque<String> nestedListTracker;
+        Deque<String> curPathStack;
         ArrayList<IAsterixListBuilder> listBuilder;
         int skipLvl;
         int curLvl;
 
-        public CAPMessageHandler(ARecordType recordType, ArrayList<ArrayBackedValueStorage> bufferList,
-                ArrayList<IARecordBuilder> rbList) throws HyracksDataException {
+        public CAPMessageHandler(ARecordType recordType, List<ArrayBackedValueStorage> bufferList,
+                List<IARecordBuilder> rbList) throws HyracksDataException {
             this.bufferList = bufferList;
             this.recordType = recordType;
             this.rbList = rbList;
-            recordTypeMarker = new Stack<>();
-            nestedListTracker = new Stack<>();
-            fieldTypeTracker = new Stack<>();
-            curPathStack = new Stack<>();
+            recordTypeMarker = new LinkedList<>();
+            nestedListTracker = new LinkedList<>();
+            fieldTypeTracker = new LinkedList<>();
+            curPathStack = new LinkedList<>();
             listBuilder = new ArrayList<>();
             fieldTypeTracker.push(recordType);
             curLvl = 0;
@@ -252,6 +220,45 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             fieldTypeTracker.push(recordType);
             curLvl = 0;
             curFieldType = recordType;
+        }
+
+        private IAsterixListBuilder getOrderedListBuilder() {
+            return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
+        }
+
+        private void setValueBasedOnTypeTag(String content, ATypeTag fieldTypeTag, DataOutput out)
+                throws HyracksDataException {
+            try {
+                switch (fieldTypeTag) {
+                    case STRING:
+                        aString.setValue(content);
+                        stringSerde.serialize(aString, out);
+                        break;
+                    case INT64:
+                        aInt64.setValue(Long.valueOf(content));
+                        int64Serde.serialize(aInt64, out);
+                        break;
+                    case INT32:
+                        aInt32.setValue(Integer.valueOf(content));
+                        int32Serde.serialize(aInt32, out);
+                        out.write(BuiltinType.AINT32.getTypeTag().serialize());
+                        break;
+                    case DOUBLE:
+                        aDouble.setValue(Double.valueOf(content));
+                        doubleSerde.serialize(aDouble, out);
+                        break;
+                    case BOOLEAN:
+                        booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)), out);
+                        break;
+                    case DATETIME:
+                        aDateTime.setValue(dateFormat.parse(content).getTime());
+                        datetimeSerde.serialize(aDateTime, out);
+                    default:
+                        throw new HyracksDataException("Data type not supported");
+                }
+            } catch (ParseException | IOException e) {
+                throw new HyracksDataException(e);
+            }
         }
 
         @Override
@@ -320,7 +327,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         }
 
         private void handleNestedOrderedList(String fullPathName, int fieldNameIdx) throws HyracksDataException {
-            if (nestedListTracker.size() == 0 || !nestedListTracker.peek().equals(fullPathName)) {
+            if (nestedListTracker.isEmpty() || !nestedListTracker.peek().equals(fullPathName)) {
                 nestedListTracker.push(fullPathName);
                 if (listBuilder.size() < nestedListTracker.size()) {
                     // expand listbuilder list

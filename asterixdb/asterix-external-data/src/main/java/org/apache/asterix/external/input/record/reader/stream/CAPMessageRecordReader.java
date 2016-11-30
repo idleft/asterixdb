@@ -35,7 +35,7 @@ public class CAPMessageRecordReader extends StreamRecordReader {
         bufferPosn = 0;
         curLvl = 0;
         if (collection != null) {
-            this.recordLvl = collection.equals("true") ? 1 : 0;
+            this.recordLvl = "true".equals(collection) ? 1 : 0;
         } else {
             this.recordLvl = 0;
         }
@@ -82,7 +82,7 @@ public class CAPMessageRecordReader extends StreamRecordReader {
                     } else if (curStatus == 7) {
                         // schema definition
                     }
-                    if (curLvl == recordLvl && curStatus ==5) {
+                    if (curLvl == recordLvl && curStatus == 5) {
                         int appendLength = bufferPosn + 1 - startPos;
                         record.append(inputBuffer, startPos, appendLength);
                         record.endRecord();
