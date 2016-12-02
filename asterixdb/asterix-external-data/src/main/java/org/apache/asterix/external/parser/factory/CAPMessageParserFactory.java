@@ -19,18 +19,14 @@
 
 package org.apache.asterix.external.parser.factory;
 
-import org.apache.asterix.external.api.IExternalDataSourceFactory;
+import java.util.Map;
+
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
-import org.apache.asterix.external.parser.ADMDataParser;
 import org.apache.asterix.external.parser.CAPMessageParser;
-import org.apache.asterix.external.util.ExternalDataConstants;
-import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-
-import java.util.Map;
 
 public class CAPMessageParserFactory implements IRecordDataParserFactory<char[]> {
 

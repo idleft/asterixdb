@@ -46,12 +46,12 @@ import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.om.base.ABoolean;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.ATypeTag;
-import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.asterix.om.util.container.ListObjectPool;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IMutableValueStorage;
+import org.apache.hyracks.data.std.api.IValueReference;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
@@ -65,6 +65,11 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private static final String CAP_INTEGER_REGEX = "^[1-9]\\d*";
     private static final String CAP_BOOLEAN_TRUE = "true";
     private static final String CAP_BOOLEAN_FALSE = "false";
+
+    public final int SMART_BUILDER_STATE_RECORD = 1;
+    public final int SMART_BUILDER_STATE_LIST = 2;
+    public final int SMART_BUILDER_STATE_VALUE = 3;
+
     private final IObjectPool<IARecordBuilder, ATypeTag> recordBuilderPool = new ListObjectPool<>(
             new RecordBuilderFactory());
     private final IObjectPool<IAsterixListBuilder, ATypeTag> listBuilderPool = new ListObjectPool<>(
@@ -72,11 +77,9 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private final IObjectPool<IMutableValueStorage, ATypeTag> abvsBuilderPool = new ListObjectPool<>(
             new AbvsBuilderFactory());
     private ARecordType recordType;
-    private SAXParserFactory capMessageSAXParserFactory;
     private SAXParser capMessageSAXParser;
-    private ArrayBackedValueStorage fieldNameBuffer;
-    private ArrayList<IARecordBuilder> rbList;
-    private ArrayList<ArrayBackedValueStorage> bufferList;
+    private ComplexBuilder complexBuilder;
+    private ArrayList<ComplexBuilder> builderList;
     private ListElementHandler listElementHandler;
     private CAPMessageHandler capMessageHandler;
     private HashMap<String, Integer> listElementNames;
@@ -84,15 +87,12 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     public CAPMessageParser(ARecordType recordType) throws HyracksDataException {
         this.recordType = recordType;
-        bufferList = new ArrayList<>();
-        rbList = new ArrayList<>();
+        builderList = new ArrayList<>();
         listElementNames = new HashMap<>();
-        fieldNameBuffer = getTempBuffer();
         listElementHandler = new ListElementHandler(listElementNames);
-        capMessageHandler = new CAPMessageHandler(recordType, bufferList, rbList);
+        capMessageHandler = new CAPMessageHandler(recordType, builderList);
         try {
-            capMessageSAXParserFactory = SAXParserFactory.newInstance();
-            capMessageSAXParser = capMessageSAXParserFactory.newSAXParser();
+            capMessageSAXParser = SAXParserFactory.newInstance().newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
             throw new HyracksDataException(e);
         }
@@ -112,8 +112,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     private void clearBufferInit() {
         resetPools();
-        bufferList.clear();
-        rbList.clear();
+        builderList.clear();
         capMessageHandler.clear();
     }
 
@@ -122,12 +121,11 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         try {
             clearBufferInit();
             getElementNameList(record);
-            bufferList.add(getTempBuffer());
-            rbList.add(getRecordBuilder());
-            rbList.get(0).reset(recordType);
-            rbList.get(0).init();
+            builderList.add(new ComplexBuilder());
+            complexBuilder = builderList.get(0);
+            complexBuilder.setState(SMART_BUILDER_STATE_RECORD, recordType);
             capMessageSAXParser.parse(new ByteArrayInputStream(record.toString().getBytes()), capMessageHandler);
-            rbList.get(0).write(out, true);
+            complexBuilder.write(out);
         } catch (SAXException | IOException e) {
             throw new HyracksDataException(e);
         }
@@ -135,6 +133,10 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     private IARecordBuilder getRecordBuilder() {
         return recordBuilderPool.allocate(ATypeTag.RECORD);
+    }
+
+    private IAsterixListBuilder getOrderedListBuilder() {
+        return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
     }
 
     private ArrayBackedValueStorage getTempBuffer() {
@@ -146,6 +148,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         Deque<String> curPathStack;
         String fullPathName;
         String preElementName;
+        String parentPath;
         private Map<String, Integer> listElementNames;
 
         public ListElementHandler(Map<String, Integer> listElementNames) {
@@ -159,15 +162,17 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             curPathStack.clear();
         }
 
-        private String getFullPathName() {
+        private String getFullPath() {
             return String.join(".", curPathStack);
         }
 
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attrs) {
-            curPathStack.push(qName);
+            parentPath = String.join(".", curPathStack);
+            curPathStack
+                    .push(qName + (listElementNames.containsKey(parentPath) ? listElementNames.get(parentPath) : 1));
             if (qName.equals(preElementName)) {
-                fullPathName = getFullPathName();
+                fullPathName = getFullPath();
                 listElementNames.put(fullPathName,
                         listElementNames.get(fullPathName) == null ? 2 : listElementNames.get(fullPathName) + 1);
             }
@@ -182,48 +187,36 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     private class CAPMessageHandler extends DefaultHandler {
 
-        List<ArrayBackedValueStorage> bufferList;
-        ARecordType recordType;
-        List<IARecordBuilder> rbList;
-        String curEleName;
-        String curFullPathName;
-        IAType curFieldType;
-        Deque<Boolean> recordTypeMarker;
-        Deque<IAType> fieldTypeTracker;
-        Deque<String> nestedListTracker;
-        Deque<String> curPathStack;
-        ArrayList<IAsterixListBuilder> listBuilder;
+        private ArrayBackedValueStorage elementContentBuffer;
+        private ARecordType recordType;
+        private List<ComplexBuilder> builderList;
+        private String curFullPathName;
+        private IAType curFieldType;
+        private String parentPath;
+        private Deque<String> curPathStack;
+        private ArrayBackedValueStorage fieldNameBuffer;
+        // In order to handle nested list. This gives each list element an unique path
+        private Map<String, Integer> listElementCounter;
+
         int skipLvl;
         int curLvl;
 
-        public CAPMessageHandler(ARecordType recordType, List<ArrayBackedValueStorage> bufferList,
-                List<IARecordBuilder> rbList) throws HyracksDataException {
-            this.bufferList = bufferList;
+        public CAPMessageHandler(ARecordType recordType, List<ComplexBuilder> builderList) throws HyracksDataException {
             this.recordType = recordType;
-            this.rbList = rbList;
-            recordTypeMarker = new LinkedList<>();
-            nestedListTracker = new LinkedList<>();
-            fieldTypeTracker = new LinkedList<>();
+            this.builderList = builderList;
             curPathStack = new LinkedList<>();
-            listBuilder = new ArrayList<>();
-            fieldTypeTracker.push(recordType);
+            listElementCounter = new HashMap<>();
+            elementContentBuffer = new ArrayBackedValueStorage();
+            fieldNameBuffer = new ArrayBackedValueStorage();
             curLvl = 0;
             skipLvl = 1;
         }
 
         public void clear() {
-            recordTypeMarker.clear();
-            nestedListTracker.clear();
             curPathStack.clear();
-            listBuilder.clear();
-            fieldTypeTracker.clear();
-            fieldTypeTracker.push(recordType);
+            listElementCounter.clear();
             curLvl = 0;
             curFieldType = recordType;
-        }
-
-        private IAsterixListBuilder getOrderedListBuilder() {
-            return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
         }
 
         private void setValueBasedOnTypeTag(String content, ATypeTag fieldTypeTag, DataOutput out)
@@ -241,7 +234,6 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     case INT32:
                         aInt32.setValue(Integer.valueOf(content));
                         int32Serde.serialize(aInt32, out);
-                        out.write(BuiltinType.AINT32.getTypeTag().serialize());
                         break;
                     case DOUBLE:
                         aDouble.setValue(Double.valueOf(content));
@@ -253,6 +245,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     case DATETIME:
                         aDateTime.setValue(dateFormat.parse(content).getTime());
                         datetimeSerde.serialize(aDateTime, out);
+                        break;
                     default:
                         throw new HyracksDataException("Data type not supported");
                 }
@@ -264,26 +257,32 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
-            curPathStack.push(qName);
+            parentPath = String.join(".", curPathStack);
+            curPathStack.push(
+                    qName + (listElementCounter.containsKey(parentPath) ? listElementCounter.get(parentPath) : 1));
             if (curPathStack.size() <= skipLvl) {
                 return;
             }
+            // initialize the buffer and builder
             curLvl++;
-            curEleName = qName;
-            if (bufferList.size() < curLvl + 1) {
-                bufferList.add(getTempBuffer());
-                rbList.add(getRecordBuilder());
+            curFullPathName = String.join(".", curPathStack);
+            listElementCounter.put(curFullPathName,
+                    listElementCounter.containsKey(curFullPathName) ? listElementCounter.get(curFullPathName) + 1 : 1);
+            if (builderList.size() <= curLvl) {
+                builderList.add(new ComplexBuilder());
             }
-            curFieldType = curFieldType == null ? null : ((ARecordType) curFieldType).getFieldType(qName);
-            fieldTypeTracker.push(curFieldType);
-            bufferList.get(curLvl).reset();
-            if (curFieldType instanceof ARecordType) {
-                rbList.get(curLvl).reset((ARecordType) curFieldType);
-            } else {
-                rbList.get(curLvl).reset(null);
+            elementContentBuffer.reset();
+            try {
+                // assign builder type if any
+                curFieldType = curFieldType == null ? null : ((ARecordType) curFieldType).getFieldType(qName);
+                if (listElementNames.containsKey(curFullPathName)) {
+                    builderList.get(curLvl).setState(SMART_BUILDER_STATE_LIST, curFieldType);
+                } else {
+                    builderList.get(curLvl).setState(SMART_BUILDER_STATE_RECORD, curFieldType);
+                }
+            } catch (HyracksDataException e) {
+                throw new SAXException(e);
             }
-            rbList.get(curLvl).init();
-            recordTypeMarker.push(true);
         }
 
         @Override
@@ -294,59 +293,34 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 return;
             }
             try {
+                builderList.get(curLvl).setState(SMART_BUILDER_STATE_VALUE, curFieldType);
                 if (curFieldType != null) {
-                    setValueBasedOnTypeTag(content, curFieldType.getTypeTag(), bufferList.get(curLvl).getDataOutput());
+                    setValueBasedOnTypeTag(content, curFieldType.getTypeTag(), elementContentBuffer.getDataOutput());
                 } else {
                     if (Pattern.matches(CAP_INTEGER_REGEX, content)) {
                         // ints
                         aInt32.setValue(Integer.valueOf(content));
-                        int32Serde.serialize(aInt32, bufferList.get(curLvl).getDataOutput());
+                        int32Serde.serialize(aInt32, elementContentBuffer.getDataOutput());
                     } else if (Pattern.matches(CAP_DOUBLE_REGEX, content)) {
                         // doubles
                         aDouble.setValue(Double.valueOf(content));
-                        doubleSerde.serialize(aDouble, bufferList.get(curLvl).getDataOutput());
+                        doubleSerde.serialize(aDouble, elementContentBuffer.getDataOutput());
                     } else if (content.equals(CAP_BOOLEAN_TRUE) || content.equals(CAP_BOOLEAN_FALSE)) {
                         // boolean
                         booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)),
-                                bufferList.get(curLvl).getDataOutput());
+                                elementContentBuffer.getDataOutput());
                     } else if (Pattern.matches(CAP_DATETIME_REGEX, content)) {
                         // datetime
                         aDateTime.setValue(dateFormat.parse(content).getTime());
-                        datetimeSerde.serialize(aDateTime, bufferList.get(curLvl).getDataOutput());
+                        datetimeSerde.serialize(aDateTime, elementContentBuffer.getDataOutput());
                     } else {
                         // string
                         aString.setValue(content);
-                        stringSerde.serialize(aString, bufferList.get(curLvl).getDataOutput());
+                        stringSerde.serialize(aString, elementContentBuffer.getDataOutput());
                     }
                 }
-                recordTypeMarker.pop();
-                recordTypeMarker.push(false);
             } catch (IOException | ParseException | NullPointerException e) {
                 throw new SAXException(e);
-            }
-        }
-
-        private void handleNestedOrderedList(String fullPathName, int fieldNameIdx) throws HyracksDataException {
-            if (nestedListTracker.isEmpty() || !nestedListTracker.peek().equals(fullPathName)) {
-                nestedListTracker.push(fullPathName);
-                if (listBuilder.size() < nestedListTracker.size()) {
-                    // expand listbuilder list
-                    listBuilder.add(getOrderedListBuilder());
-                    listBuilder.get(listBuilder.size() - 1).reset(null);
-                }
-            }
-            listBuilder.get(nestedListTracker.size() - 1).addItem(bufferList.get(curLvl));
-            listElementNames.put(fullPathName, listElementNames.get(fullPathName) - 1); //update list element counter
-            if (listElementNames.get(fullPathName) == 0) {
-                // if it's the last element of list, write to upper lvl
-                bufferList.get(curLvl).reset();
-                listBuilder.get(nestedListTracker.size() - 1).write(bufferList.get(curLvl).getDataOutput(), true);
-                listBuilder.get(nestedListTracker.size() - 1).reset(null);
-                if (fieldNameIdx < 0) {
-                    rbList.get(curLvl - 1).addField(fieldNameBuffer, bufferList.get(curLvl));
-                } else {
-                    rbList.get(curLvl - 1).addField(fieldNameIdx, bufferList.get(curLvl));
-                }
             }
         }
 
@@ -357,33 +331,139 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     curPathStack.pop();
                     return;
                 }
-                fieldTypeTracker.pop();
-                // this is parent record type. Current field type is not important here.
-                curFieldType = fieldTypeTracker.peek();
+                ComplexBuilder curBuilder = builderList.get(curLvl);
+                ComplexBuilder parentBuilder = builderList.get(curLvl - 1);
                 aString.setValue(qName);
                 fieldNameBuffer.reset();
                 stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
-                boolean curRecordType = recordTypeMarker.pop();
+                curFieldType = parentBuilder.getDataType();
                 int fieldNameIdx = curFieldType == null ? -1 : ((ARecordType) curFieldType).getFieldIndex(qName);
-                if (curRecordType) {
-                    rbList.get(curLvl).write(bufferList.get(curLvl).getDataOutput(), true);
-                }
                 curFullPathName = String.join(".", curPathStack);
-                if (listElementNames.keySet().contains(curFullPathName)) {
-                    handleNestedOrderedList(curFullPathName, fieldNameIdx);
+                if (listElementNames.containsKey(curFullPathName)) {
+                    handleNestedOrderedList(curFullPathName, fieldNameIdx, fieldNameBuffer, elementContentBuffer);
+                } else if (curBuilder.getState() == SMART_BUILDER_STATE_VALUE) {
+                    parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, elementContentBuffer);
                 } else {
-                    if (fieldNameIdx < 0) {
-                        rbList.get(curLvl - 1).addField(fieldNameBuffer, bufferList.get(curLvl));
-                    } else {
-                        rbList.get(curLvl - 1).addField(fieldNameIdx, bufferList.get(curLvl));
-                    }
+                    curBuilder.write();
+                    parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, curBuilder.getBuffer());
+                    curBuilder.setResetFlag();
                 }
+                elementContentBuffer.reset();
                 curPathStack.pop();
                 curLvl--;
             } catch (HyracksDataException e) {
                 throw new SAXException(e);
             }
+        }
 
+        /*
+        * OrderedList Handling in CAP Message
+        *
+        * In order to process list easier, we scan the document twice. First pass finds all list elements. Second
+        * pass construct list elements using list builder. Once all elements in one list are consumed, add this list
+        * to its parent's record builder. Each list element is assigned a unique path to handle nested list case.
+        * */
+
+        private void handleNestedOrderedList(String fullPathName, int fieldNameIdx, IValueReference fieldNameBuffer,
+                IValueReference contentBuffer) throws HyracksDataException {
+            builderList.get(curLvl).addListElement(contentBuffer);
+            listElementNames.put(fullPathName, listElementNames.get(fullPathName) - 1); //update list element counter
+            if (listElementNames.get(fullPathName) == 0) {
+                // if it's the last element of list, write to upper lvl
+                builderList.get(curLvl).flushListToBuffer();
+                builderList.get(curLvl - 1).addAttribute(fieldNameIdx, fieldNameBuffer,
+                        builderList.get(curLvl).getBuffer());
+            }
+        }
+    }
+
+    private class ComplexBuilder {
+
+        private IARecordBuilder recordBuilder;
+        private IAsterixListBuilder listBuilder;
+        private ArrayBackedValueStorage buffer;
+        private IAType dataType;
+        private boolean resetRecordFlag, resetListFlag;
+
+        private int state;
+
+        public ComplexBuilder() {
+            this.buffer = getTempBuffer();
+            state = SMART_BUILDER_STATE_VALUE;
+            dataType = null;
+            resetRecordFlag = true;
+            resetListFlag = true;
+        }
+
+        public void setState(int state, IAType dataType) throws HyracksDataException {
+            this.state = state;
+            this.dataType = dataType;
+        }
+
+        public int getState() {
+            return this.state;
+        }
+
+        public IAType getDataType() {
+            return this.dataType;
+        }
+
+        public void addAttribute(int fieldIdx, IValueReference fieldNameBuffer, IValueReference fieldValueBuffer)
+                throws HyracksDataException {
+            if (recordBuilder == null) {
+                recordBuilder = getRecordBuilder();
+            }
+            if (resetRecordFlag) {
+                recordBuilder.reset((ARecordType) dataType);
+                recordBuilder.init();
+                resetRecordFlag = false;
+            }
+            if (fieldIdx == -1) {
+                recordBuilder.addField(fieldNameBuffer, fieldValueBuffer);
+            } else {
+                recordBuilder.addField(fieldIdx, fieldValueBuffer);
+            }
+        }
+
+        public void flushListToBuffer() throws HyracksDataException {
+            buffer.reset();
+            listBuilder.write(buffer.getDataOutput(), true);
+            setResetFlag();
+        }
+
+        public void addListElement(IValueReference fieldValueBuffer) throws HyracksDataException {
+            if (listBuilder == null) {
+                listBuilder = getOrderedListBuilder();
+            }
+            if (resetListFlag) {
+                listBuilder.reset(null);
+                resetListFlag = false;
+            }
+            if (fieldValueBuffer.getLength() == 0) {
+                write();
+                listBuilder.addItem(buffer);
+                resetRecordFlag = true;
+            } else {
+                listBuilder.addItem(fieldValueBuffer);
+            }
+        }
+
+        public void write() throws HyracksDataException {
+            buffer.reset();
+            recordBuilder.write(buffer.getDataOutput(), true);
+        }
+
+        public void write(DataOutput output) throws HyracksDataException {
+            recordBuilder.write(output, true);
+        }
+
+        public IValueReference getBuffer() {
+            return this.buffer;
+        }
+
+        public void setResetFlag() {
+            resetRecordFlag = true;
+            resetListFlag = true;
         }
     }
 

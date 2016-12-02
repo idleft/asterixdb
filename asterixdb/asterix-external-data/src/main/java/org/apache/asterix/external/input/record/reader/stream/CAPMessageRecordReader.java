@@ -26,7 +26,6 @@ import java.io.IOException;
 
 public class CAPMessageRecordReader extends StreamRecordReader {
 
-    protected boolean newRecordFormed;
     private int curLvl;
     private int recordLvl;
 
@@ -43,10 +42,19 @@ public class CAPMessageRecordReader extends StreamRecordReader {
 
     @Override
     public boolean hasNext() throws IOException {
-        newRecordFormed = false;
+        final int INIT_STATE = 0;
+        final int START_OF_ELEMENT_NAME = 1;
+        final int END_OF_ELEMENT_NAME = 2;
+        final int START_OF_PROLOG = 3;
+        final int IN_START_OF_ELEMENT_NAME = 4;
+        final int IN_END_OF_ELEMENT_NAME = 5;
+        final int IN_PROLOG = 6;
+        final int IN_SCHEMA_DEFINITION = 7;
+        boolean newRecordFormed = false;
+
         record.reset();
         int startPos = bufferPosn;
-        Integer curStatus = 0;
+        int state = INIT_STATE;
         do {
             // chk whether there is enough data in buffer
             if (bufferPosn >= bufferLength) {
@@ -63,56 +71,56 @@ public class CAPMessageRecordReader extends StreamRecordReader {
             // TODO: simplify the state numbers (xikui)
             switch (inputBuffer[bufferPosn]) {
                 case '<':
-                    curStatus = 1;
+                    state = START_OF_ELEMENT_NAME;
                     break;
                 case '/':
-                    if (curStatus == 1) {
-                        curStatus = 2;
+                    if (state == START_OF_ELEMENT_NAME) {
+                        state = END_OF_ELEMENT_NAME;
                     }
                     break;
                 case '>':
-                    if (curStatus == 4) {
+                    if (state == IN_START_OF_ELEMENT_NAME) {
                         // add lvl
                         curLvl++;
-                    } else if (curStatus == 5) {
+                    } else if (state == IN_END_OF_ELEMENT_NAME) {
                         // decrease lvl
                         curLvl--;
-                    } else if (curStatus == 3) {
+                    } else if (state == START_OF_PROLOG) {
                         // document head
-                    } else if (curStatus == 7) {
+                    } else if (state == IN_SCHEMA_DEFINITION) {
                         // schema definition
                     }
-                    if (curLvl == recordLvl && curStatus == 5) {
+                    if (curLvl == recordLvl && state == IN_END_OF_ELEMENT_NAME) {
                         int appendLength = bufferPosn + 1 - startPos;
                         record.append(inputBuffer, startPos, appendLength);
                         record.endRecord();
                         newRecordFormed = true;
                     }
-                    curStatus = 0;
+                    state = INIT_STATE;
                     break;
                 case '?':
-                    if (curStatus == 1) {
-                        curStatus = 3;
-                    } else if (curStatus == 6) {
+                    if (state == START_OF_ELEMENT_NAME) {
+                        state = START_OF_PROLOG;
+                    } else if (state == IN_PROLOG) {
                         // in document head, do nothing.
                     }
                     break;
                 case '!':
-                    if (curStatus == 1) {
-                        curStatus = 7; // in schema definition
+                    if (state == START_OF_ELEMENT_NAME) {
+                        state = IN_SCHEMA_DEFINITION; // in schema definition
                     }
                     break;
                 default:
-                    if (curStatus == 1) {
+                    if (state == START_OF_ELEMENT_NAME) {
                         if (curLvl == recordLvl) {
                             startPos = bufferPosn - 1;
                         }
-                        curStatus = 4; // in start element name
-                    } else if (curStatus == 2) {
-                        curStatus = 5; // in end element name
-                    } else if (curStatus == 3) {
+                        state = IN_START_OF_ELEMENT_NAME; // in start element name
+                    } else if (state == END_OF_ELEMENT_NAME) {
+                        state = IN_END_OF_ELEMENT_NAME; // in end element name
+                    } else if (state == START_OF_PROLOG) {
                         // inside document head
-                        curStatus = 6;
+                        state = IN_PROLOG;
                     }
             }
             bufferPosn++;

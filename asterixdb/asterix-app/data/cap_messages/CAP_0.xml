@@ -1,0 +1,29 @@
+<?xml version = "1.0" encoding = "UTF-8"?>
+<alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
+    <identifier>TrickyTestCase001</identifier>
+    <references>This test case doesn't comply to CAP schema</references>
+    <info>
+        <list1>111</list1>
+        <list1>222</list1>
+        <list2>
+            <valueName>EventID</valueName>
+            <value>13970876</value>
+        </list2>
+        <list2>
+            <valueName>Version</valueName>
+            <value>1</value>
+        </list2>
+        <list3>
+            <valueName>EventID</valueName>
+            <value>1</value>
+            <value>2</value>
+        </list3>
+        <list3>
+            <valueName>Version</valueName>
+            <value>3</value>
+            <value>4</value>
+            <value>5</value>
+        </list3>
+        <category>Geo</category>
+    </info>
+</alert>

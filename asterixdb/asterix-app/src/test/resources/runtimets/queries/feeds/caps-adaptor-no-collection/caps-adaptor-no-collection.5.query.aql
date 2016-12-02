@@ -17,4 +17,4 @@
  * under the License.
  */
 use dataverse document_feeds;
-for $i in dataset CAP_Alerts return $i.identifier
+for $i in dataset CAP_Alerts order by $i.identifier return $i.identifier
