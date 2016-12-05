@@ -43,7 +43,7 @@ import org.apache.asterix.common.transactions.ITransactionContext;
 import org.apache.asterix.common.transactions.ITransactionSubsystem;
 import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.external.indexing.ExternalFile;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.api.ExtensionMetadataDataset;
 import org.apache.asterix.metadata.api.ExtensionMetadataDatasetId;
 import org.apache.asterix.metadata.api.IExtensionMetadataEntity;
@@ -406,7 +406,7 @@ public class MetadataNode implements IMetadataNode {
     private void insertTupleIntoIndex(JobId jobId, IMetadataIndex metadataIndex, ITupleReference tuple)
             throws ACIDException, HyracksDataException, IndexException {
         long resourceID = metadataIndex.getResourceID();
-        String resourceName = metadataIndex.getFile().toString();
+        String resourceName = metadataIndex.getFile().getRelativePath();
         ILSMIndex lsmIndex = (ILSMIndex) datasetLifecycleManager.get(resourceName);
         try {
             datasetLifecycleManager.open(resourceName);
@@ -673,7 +673,7 @@ public class MetadataNode implements IMetadataNode {
     private void deleteTupleFromIndex(JobId jobId, IMetadataIndex metadataIndex, ITupleReference tuple)
             throws ACIDException, HyracksDataException, IndexException {
         long resourceID = metadataIndex.getResourceID();
-        String resourceName = metadataIndex.getFile().toString();
+        String resourceName = metadataIndex.getFile().getRelativePath();
         ILSMIndex lsmIndex = (ILSMIndex) datasetLifecycleManager.get(resourceName);
         try {
             datasetLifecycleManager.open(resourceName);
@@ -1079,7 +1079,7 @@ public class MetadataNode implements IMetadataNode {
                 while (rangeCursor.hasNext()) {
                     rangeCursor.next();
                     sb.append(TupleUtils.printTuple(rangeCursor.getTuple(),
-                            new ISerializerDeserializer[] { AqlSerializerDeserializerProvider.INSTANCE
+                            new ISerializerDeserializer[] { SerializerDeserializerProvider.INSTANCE
                                     .getSerializerDeserializer(BuiltinType.ASTRING) }));
                 }
             } finally {
@@ -1102,9 +1102,9 @@ public class MetadataNode implements IMetadataNode {
                     rangeCursor.next();
                     sb.append(TupleUtils.printTuple(rangeCursor.getTuple(),
                             new ISerializerDeserializer[] {
-                                    AqlSerializerDeserializerProvider.INSTANCE
+                                    SerializerDeserializerProvider.INSTANCE
                                             .getSerializerDeserializer(BuiltinType.ASTRING),
-                                    AqlSerializerDeserializerProvider.INSTANCE
+                                    SerializerDeserializerProvider.INSTANCE
                                             .getSerializerDeserializer(BuiltinType.ASTRING) }));
                 }
             } finally {
@@ -1126,9 +1126,9 @@ public class MetadataNode implements IMetadataNode {
                 while (rangeCursor.hasNext()) {
                     rangeCursor.next();
                     sb.append(TupleUtils.printTuple(rangeCursor.getTuple(), new ISerializerDeserializer[] {
-                            AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ASTRING),
-                            AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ASTRING),
-                            AqlSerializerDeserializerProvider.INSTANCE
+                            SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ASTRING),
+                            SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ASTRING),
+                            SerializerDeserializerProvider.INSTANCE
                                     .getSerializerDeserializer(BuiltinType.ASTRING) }));
                 }
             } finally {
@@ -1148,7 +1148,7 @@ public class MetadataNode implements IMetadataNode {
         if (index.getFile() == null) {
             throw new MetadataException("No file for Index " + index.getDataverseName() + "." + index.getIndexName());
         }
-        String resourceName = index.getFile().toString();
+        String resourceName = index.getFile().getRelativePath();
         IIndex indexInstance = datasetLifecycleManager.get(resourceName);
         datasetLifecycleManager.open(resourceName);
         IIndexAccessor indexAccessor = indexInstance.createAccessor(NoOpOperationCallback.INSTANCE,
@@ -1186,7 +1186,7 @@ public class MetadataNode implements IMetadataNode {
     public void initializeDatasetIdFactory(JobId jobId) throws MetadataException, RemoteException {
         int mostRecentDatasetId = MetadataIndexImmutableProperties.FIRST_AVAILABLE_USER_DATASET_ID;
         try {
-            String resourceName = MetadataPrimaryIndexes.DATASET_DATASET.getFile().toString();
+            String resourceName = MetadataPrimaryIndexes.DATASET_DATASET.getFile().getRelativePath();
             IIndex indexInstance = datasetLifecycleManager.get(resourceName);
             datasetLifecycleManager.open(resourceName);
             try {
@@ -1229,7 +1229,7 @@ public class MetadataNode implements IMetadataNode {
     // Hyracks version.
     public static ITupleReference createTuple(String... fields) {
         @SuppressWarnings("unchecked")
-        ISerializerDeserializer<AString> stringSerde = AqlSerializerDeserializerProvider.INSTANCE
+        ISerializerDeserializer<AString> stringSerde = SerializerDeserializerProvider.INSTANCE
                 .getSerializerDeserializer(BuiltinType.ASTRING);
         AMutableString aString = new AMutableString("");
         ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(fields.length);
@@ -1622,9 +1622,9 @@ public class MetadataNode implements IMetadataNode {
     @SuppressWarnings("unchecked")
     public ITupleReference createExternalFileSearchTuple(String dataverseName, String datasetName, int fileNumber)
             throws HyracksDataException {
-        ISerializerDeserializer<AString> stringSerde = AqlSerializerDeserializerProvider.INSTANCE
+        ISerializerDeserializer<AString> stringSerde = SerializerDeserializerProvider.INSTANCE
                 .getSerializerDeserializer(BuiltinType.ASTRING);
-        ISerializerDeserializer<AInt32> intSerde = AqlSerializerDeserializerProvider.INSTANCE
+        ISerializerDeserializer<AInt32> intSerde = SerializerDeserializerProvider.INSTANCE
                 .getSerializerDeserializer(BuiltinType.AINT32);
 
         AMutableString aString = new AMutableString("");

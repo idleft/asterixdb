@@ -38,7 +38,7 @@ import org.apache.hyracks.storage.am.rtree.dataflow.RTreeSearchOperatorNodePusha
 public class ExternalRTreeSearchOperatorNodePushable extends RTreeSearchOperatorNodePushable {
 
     public ExternalRTreeSearchOperatorNodePushable(AbstractTreeIndexOperatorDescriptor opDesc, IHyracksTaskContext ctx,
-            int partition, IRecordDescriptorProvider recordDescProvider, int[] keyFields) {
+            int partition, IRecordDescriptorProvider recordDescProvider, int[] keyFields) throws HyracksDataException {
         super(opDesc, ctx, partition, recordDescProvider, keyFields, null, null);
     }
 
@@ -55,24 +55,32 @@ public class ExternalRTreeSearchOperatorNodePushable extends RTreeSearchOperator
             nonMatchTupleBuild = new ArrayTupleBuilder(fieldCount);
             DataOutput out = nonMatchTupleBuild.getDataOutput();
             for (int i = 0; i < fieldCount; i++) {
-                nonMatchWriter.writeMissing(out);
+                try {
+                    nonMatchWriter.writeMissing(out);
+                } catch (IOException e) {
+                    throw new HyracksDataException(e);
+                }
                 nonMatchTupleBuild.addFieldEndOffset();
             }
         } else {
             nonMatchTupleBuild = null;
         }
         ExternalRTree rTreeIndex = (ExternalRTree) index;
-        searchPred = createSearchPredicate();
-        tb = new ArrayTupleBuilder(recordDesc.getFieldCount());
-        dos = tb.getDataOutput();
-        appender = new FrameTupleAppender(new VSizeFrame(ctx));
-        ISearchOperationCallback searchCallback = opDesc.getSearchOpCallbackFactory()
-                .createSearchOperationCallback(indexHelper.getResourceID(), ctx, null);
-        // The next line is the reason we override this method
-        indexAccessor = rTreeIndex.createAccessor(searchCallback, rTreeDataflowHelper.getTargetVersion());
-        cursor = createCursor();
-        if (retainInput) {
-            frameTuple = new FrameTupleReference();
+        try {
+            searchPred = createSearchPredicate();
+            tb = new ArrayTupleBuilder(recordDesc.getFieldCount());
+            dos = tb.getDataOutput();
+            appender = new FrameTupleAppender(new VSizeFrame(ctx));
+            ISearchOperationCallback searchCallback = opDesc.getSearchOpCallbackFactory()
+                    .createSearchOperationCallback(indexHelper.getResource().getId(), ctx, null);
+            // The next line is the reason we override this method
+            indexAccessor = rTreeIndex.createAccessor(searchCallback, rTreeDataflowHelper.getTargetVersion());
+            cursor = createCursor();
+            if (retainInput) {
+                frameTuple = new FrameTupleReference();
+            }
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
         }
     }
 

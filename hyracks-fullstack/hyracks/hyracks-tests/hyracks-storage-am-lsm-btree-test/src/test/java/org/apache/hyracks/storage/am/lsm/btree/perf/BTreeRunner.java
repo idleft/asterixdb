@@ -35,7 +35,7 @@ public class BTreeRunner extends InMemoryBTreeRunner {
     protected static final int HYRACKS_FRAME_SIZE = 128;
 
     public BTreeRunner(int numTuples, int pageSize, int numPages, ITypeTraits[] typeTraits,
-            IBinaryComparatorFactory[] cmpFactories) throws HyracksDataException, BTreeException {
+            IBinaryComparatorFactory[] cmpFactories) throws BTreeException, HyracksDataException {
         super(numTuples, pageSize, numPages, typeTraits, cmpFactories);
     }
 
