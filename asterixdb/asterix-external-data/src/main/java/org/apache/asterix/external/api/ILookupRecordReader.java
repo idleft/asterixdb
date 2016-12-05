@@ -22,19 +22,20 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.asterix.external.indexing.RecordId;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public interface ILookupRecordReader<T> {
 
-    public void configure(Map<String, String> configuration) throws Exception;
+    public void configure(Map<String, String> configuration) throws HyracksDataException;
 
-    public Class<?> getRecordClass() throws IOException;
+    public Class<?> getRecordClass() throws HyracksDataException;
 
-    public IRawRecord<T> read(RecordId rid) throws IOException, Exception;
+    public IRawRecord<T> read(RecordId rid) throws HyracksDataException;
 
-    public void open() throws IOException;
+    public void open() throws HyracksDataException;
 
-    public void fail() throws IOException;
+    public void fail() throws HyracksDataException;
 
-    public void close() throws IOException;
+    public void close() throws HyracksDataException;
 
 }

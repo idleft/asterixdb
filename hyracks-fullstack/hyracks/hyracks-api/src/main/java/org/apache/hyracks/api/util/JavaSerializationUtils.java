@@ -18,6 +18,8 @@
  */
 package org.apache.hyracks.api.util;
 
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -30,13 +32,18 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 
 public class JavaSerializationUtils {
-    public static byte[] serialize(Serializable jobSpec) throws IOException {
+    public static byte[] serialize(Serializable jobSpec) throws HyracksDataException {
         if (jobSpec instanceof byte[]) {
             return (byte[]) jobSpec;
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(jobSpec);
+        ObjectOutputStream oos;
+        try {
+            oos = new ObjectOutputStream(baos);
+            oos.writeObject(jobSpec);
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
         return baos.toByteArray();
     }
 

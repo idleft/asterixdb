@@ -134,7 +134,7 @@ public class HDFSInputStream extends AsterixInputStream implements IIndexingData
     }
 
     @Override
-    public boolean stop() throws Exception {
+    public boolean stop() throws HyracksDataException {
         return false;
     }
 

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 import org.apache.asterix.external.api.AsterixInputStream;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class BasicInputStream extends AsterixInputStream {
     private final InputStream in;
@@ -77,7 +78,7 @@ public class BasicInputStream extends AsterixInputStream {
     }
 
     @Override
-    public boolean stop() throws Exception {
+    public boolean stop() throws HyracksDataException {
         return false;
     }
 

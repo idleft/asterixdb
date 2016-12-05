@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.external.api.IDataParserFactory;
 import org.apache.asterix.external.api.IExternalDataSourceFactory.DataSourceType;
@@ -30,7 +32,9 @@ import org.apache.asterix.external.api.IRecordReaderFactory;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.AUnionType;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.exceptions.NotImplementedException;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.data.parsers.DoubleParserFactory;
 import org.apache.hyracks.dataflow.common.data.parsers.FloatParserFactory;
 import org.apache.hyracks.dataflow.common.data.parsers.IValueParserFactory;
@@ -127,14 +131,14 @@ public class ExternalDataUtils {
     }
 
     public static IInputStreamFactory createExternalInputStreamFactory(ILibraryManager libraryManager, String dataverse,
-            String stream) throws AsterixException {
+            String stream) throws HyracksDataException {
         try {
             String libraryName = getLibraryName(stream);
             String className = getExternalClassName(stream);
             ClassLoader classLoader = getClassLoader(libraryManager, dataverse, libraryName);
             return ((IInputStreamFactory) (classLoader.loadClass(className).newInstance()));
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            throw new AsterixException("Failed to create stream factory", e);
+            throw new RuntimeDataException(ErrorCode.ERROR_FAIL_CREATE_STREAM_FACTORY, e);
         }
     }
 
@@ -211,7 +215,7 @@ public class ExternalDataUtils {
     }
 
     public static IRecordReaderFactory<?> createExternalRecordReaderFactory(ILibraryManager libraryManager,
-            Map<String, String> configuration) throws AsterixException {
+            Map<String, String> configuration) throws AlgebricksException {
         String readerFactory = configuration.get(ExternalDataConstants.KEY_READER_FACTORY);
         if (readerFactory == null) {
             throw new AsterixException("to use " + ExternalDataConstants.EXTERNAL + " reader, the parameter "

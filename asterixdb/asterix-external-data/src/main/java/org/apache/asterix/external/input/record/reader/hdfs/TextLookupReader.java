@@ -25,6 +25,7 @@ import org.apache.asterix.external.indexing.RecordId;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Logger;
 
 public class TextLookupReader extends AbstractCharRecordLookupReader {
@@ -37,9 +38,13 @@ public class TextLookupReader extends AbstractCharRecordLookupReader {
     private HDFSTextLineReader reader;
 
     @Override
-    protected void readRecord(RecordId rid) throws IOException {
-        reader.seek(rid.getOffset());
-        reader.readLine(value);
+    protected void readRecord(RecordId rid) throws HyracksDataException {
+        try {
+            reader.seek(rid.getOffset());
+            reader.readLine(value);
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 
     @Override

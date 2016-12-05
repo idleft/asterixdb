@@ -21,7 +21,9 @@ package org.apache.asterix.common.library;
 
 import java.util.List;
 
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public interface ILibraryManager {
 
@@ -33,7 +35,8 @@ public interface ILibraryManager {
      * @param libraryName
      * @param classLoader
      */
-    public void registerLibraryClassLoader(String dataverseName, String libraryName, ClassLoader classLoader);
+    public void registerLibraryClassLoader(String dataverseName, String libraryName, ClassLoader classLoader)
+            throws HyracksDataException;
 
     /**
      * @return all registered libraries.

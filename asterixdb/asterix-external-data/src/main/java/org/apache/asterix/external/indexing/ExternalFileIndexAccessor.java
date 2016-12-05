@@ -42,6 +42,7 @@ import org.apache.hyracks.storage.am.btree.impls.RangePredicate;
 import org.apache.hyracks.storage.am.btree.util.BTreeUtils;
 import org.apache.hyracks.storage.am.common.api.IIndexCursor;
 import org.apache.hyracks.storage.am.common.api.ISearchOperationCallback;
+import org.apache.hyracks.storage.am.common.api.IndexException;
 import org.apache.hyracks.storage.am.common.ophelpers.MultiComparator;
 import org.apache.hyracks.storage.am.lsm.btree.dataflow.ExternalBTreeDataflowHelper;
 import org.apache.hyracks.storage.am.lsm.btree.impls.ExternalBTree;
@@ -97,30 +98,34 @@ public class ExternalFileIndexAccessor implements Serializable {
         fileIndexSearchCursor = fileIndexAccessor.createSearchCursor(false);
     }
 
-    public void lookup(int fileId, ExternalFile file) throws Exception {
+    public void lookup(int fileId, ExternalFile file) throws HyracksDataException {
         // Set search parameters
-        currentFileNumber.setValue(fileId);
-        searchKeyTupleBuilder.reset();
-        searchKeyTupleBuilder.addField(intSerde, currentFileNumber);
-        searchKey.reset(searchKeyTupleBuilder.getFieldEndOffsets(), searchKeyTupleBuilder.getByteArray());
-        fileIndexSearchCursor.reset();
+        try {
+            currentFileNumber.setValue(fileId);
+            searchKeyTupleBuilder.reset();
+            searchKeyTupleBuilder.addField(intSerde, currentFileNumber);
+            searchKey.reset(searchKeyTupleBuilder.getFieldEndOffsets(), searchKeyTupleBuilder.getByteArray());
+            fileIndexSearchCursor.reset();
 
-        // Perform search
-        fileIndexAccessor.search(fileIndexSearchCursor, searchPredicate);
-        if (fileIndexSearchCursor.hasNext()) {
-            fileIndexSearchCursor.next();
-            ITupleReference tuple = fileIndexSearchCursor.getTuple();
-            // Deserialize
-            byte[] serRecord = tuple.getFieldData(FilesIndexDescription.FILE_PAYLOAD_INDEX);
-            int recordStartOffset = tuple.getFieldStart(FilesIndexDescription.FILE_PAYLOAD_INDEX);
-            int recordLength = tuple.getFieldLength(FilesIndexDescription.FILE_PAYLOAD_INDEX);
-            ByteArrayInputStream stream = new ByteArrayInputStream(serRecord, recordStartOffset, recordLength);
-            DataInput in = new DataInputStream(stream);
-            ARecord externalFileRecord = (ARecord) filesIndexDescription.EXTERNAL_FILE_RECORD_SERDE.deserialize(in);
-            setFile(externalFileRecord, file);
-        } else {
-            // This should never happen
-            throw new HyracksDataException("Was not able to find a file in the files index");
+            // Perform search
+            fileIndexAccessor.search(fileIndexSearchCursor, searchPredicate);
+            if (fileIndexSearchCursor.hasNext()) {
+                fileIndexSearchCursor.next();
+                ITupleReference tuple = fileIndexSearchCursor.getTuple();
+                // Deserialize
+                byte[] serRecord = tuple.getFieldData(FilesIndexDescription.FILE_PAYLOAD_INDEX);
+                int recordStartOffset = tuple.getFieldStart(FilesIndexDescription.FILE_PAYLOAD_INDEX);
+                int recordLength = tuple.getFieldLength(FilesIndexDescription.FILE_PAYLOAD_INDEX);
+                ByteArrayInputStream stream = new ByteArrayInputStream(serRecord, recordStartOffset, recordLength);
+                DataInput in = new DataInputStream(stream);
+                ARecord externalFileRecord = (ARecord) filesIndexDescription.EXTERNAL_FILE_RECORD_SERDE.deserialize(in);
+                setFile(externalFileRecord, file);
+            } else {
+                // This should never happen
+                throw new HyracksDataException("Was not able to find a file in the files index");
+            }
+        } catch (IndexException e) {
+            throw new HyracksDataException(e);
         }
     }
 

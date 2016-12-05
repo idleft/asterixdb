@@ -21,6 +21,8 @@ package org.apache.asterix.external.provider;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.external.api.IExternalDataSourceFactory;
 import org.apache.asterix.external.api.IExternalDataSourceFactory.DataSourceType;
@@ -35,6 +37,8 @@ import org.apache.asterix.external.input.stream.factory.SocketClientInputStreamF
 import org.apache.asterix.external.input.stream.factory.SocketServerInputStreamFactory;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class DatasourceFactoryProvider {
 
@@ -42,7 +46,7 @@ public class DatasourceFactoryProvider {
     }
 
     public static IExternalDataSourceFactory getExternalDataSourceFactory(ILibraryManager libraryManager,
-            Map<String, String> configuration) throws AsterixException {
+            Map<String, String> configuration) throws HyracksDataException {
         if (ExternalDataUtils.getDataSourceType(configuration).equals(DataSourceType.RECORDS)) {
             String reader = configuration.get(ExternalDataConstants.KEY_READER);
             return DatasourceFactoryProvider.getRecordReaderFactory(libraryManager, reader, configuration);
@@ -54,7 +58,7 @@ public class DatasourceFactoryProvider {
     }
 
     public static IInputStreamFactory getInputStreamFactory(ILibraryManager libraryManager, String streamSource,
-            Map<String, String> configuration) throws AsterixException {
+            Map<String, String> configuration) throws HyracksDataException {
         IInputStreamFactory streamSourceFactory;
         if (ExternalDataUtils.isExternal(streamSource)) {
             String dataverse = ExternalDataUtils.getDataverse(configuration);
@@ -75,8 +79,8 @@ public class DatasourceFactoryProvider {
                 default:
                     try {
                         streamSourceFactory = (IInputStreamFactory) Class.forName(streamSource).newInstance();
-                    } catch (Exception e) {
-                        throw new AsterixException("unknown input stream factory: " + streamSource, e);
+                    } catch (ClassNotFoundException|IllegalAccessException|InstantiationException e) {
+                        throw new RuntimeDataException(ErrorCode.ERROR_PROVIDER_DATASOURCE_FACTORY_UNKNOWN_INPUT_STREAM_FACTORY, e, streamSource);
                     }
             }
         }
@@ -84,9 +88,14 @@ public class DatasourceFactoryProvider {
     }
 
     public static IRecordReaderFactory<?> getRecordReaderFactory(ILibraryManager libraryManager, String reader,
-            Map<String, String> configuration) throws AsterixException {
+            Map<String, String> configuration) throws HyracksDataException {
         if (reader.equals(ExternalDataConstants.EXTERNAL)) {
-            return ExternalDataUtils.createExternalRecordReaderFactory(libraryManager, configuration);
+            try {
+                return ExternalDataUtils.createExternalRecordReaderFactory(libraryManager, configuration);
+            } catch (AlgebricksException e) {
+                // TODO: handle AlgebricksException properly (xikui)
+                throw new HyracksDataException(e);
+            }
         }
         switch (reader) {
             case ExternalDataConstants.READER_HDFS:
@@ -111,7 +120,7 @@ public class DatasourceFactoryProvider {
                     return (IRecordReaderFactory<?>) Class.forName(reader).newInstance();
                 } catch (IllegalAccessException | ClassNotFoundException | InstantiationException
                         | ClassCastException e) {
-                    throw new AsterixException("Unknown record reader factory: " + reader, e);
+                    throw new RuntimeDataException(ErrorCode.ERROR_UNKNOWN_RECORD_READER_FACTORY, e,reader);
                 }
         }
     }

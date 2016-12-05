@@ -54,7 +54,7 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
     private final int partition;
 
     public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, FeedRuntimeType feedRuntimeType,
-            int partition) throws IOException {
+            int partition) throws HyracksDataException {
         this.feedId = feedId;
         this.frameDistributor = new FrameDistributor();
         this.feedRuntimeType = feedRuntimeType;

@@ -18,8 +18,10 @@
  */
 package org.apache.asterix.external.api;
 
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+
 public interface IExternalScalarFunction extends IExternalFunction {
 
-    public void evaluate(IFunctionHelper functionHelper) throws Exception;
+    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException;
 
 }

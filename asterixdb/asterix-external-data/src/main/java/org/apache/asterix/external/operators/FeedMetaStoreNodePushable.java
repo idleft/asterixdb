@@ -119,7 +119,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         }
     }
 
-    private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws Exception {
+    private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws HyracksDataException {
         fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
         insertOperator.setOutputFrameWriter(0, writer, recordDesc);
         if (insertOperator instanceof AsterixLSMInsertDeleteOperatorNodePushable) {

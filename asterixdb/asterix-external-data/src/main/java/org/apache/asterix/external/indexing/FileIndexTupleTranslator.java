@@ -30,6 +30,7 @@ import org.apache.asterix.om.base.AMutableString;
 import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleReference;
@@ -54,7 +55,7 @@ public class FileIndexTupleTranslator {
             .getSerializerDeserializer(BuiltinType.AINT64);
     private ArrayTupleReference tuple = new ArrayTupleReference();
 
-    public ITupleReference getTupleFromFile(ExternalFile file) throws IOException, AsterixException {
+    public ITupleReference getTupleFromFile(ExternalFile file) throws HyracksDataException {
         tupleBuilder.reset();
         //File Number
         aInt32.setValue(file.getFileNumber());

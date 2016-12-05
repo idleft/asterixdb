@@ -37,7 +37,7 @@ public class FeedWithMetaDataFlowController<T> extends FeedRecordDataFlowControl
     }
 
     @Override
-    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
+    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
         ((IRecordWithMetadataParser<T>) dataParser).parseMeta(tb.getDataOutput());
         tb.addFieldEndOffset();
     }

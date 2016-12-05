@@ -26,6 +26,8 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveMessage;
 import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.feed.api.ISubscribableRuntime;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.message.EndFeedMessage;
@@ -94,7 +96,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
     }
 
-    private void handleDiscontinueFeedTypeMessage(EndFeedMessage endFeedMessage) throws Exception {
+    private void handleDiscontinueFeedTypeMessage(EndFeedMessage endFeedMessage) throws HyracksDataException {
         EntityId sourceFeedId = endFeedMessage.getSourceFeedId();
         ActiveRuntimeId subscribableRuntimeId =
                 new ActiveRuntimeId(sourceFeedId, FeedRuntimeType.INTAKE.toString(), partition);
@@ -106,7 +108,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
     }
 
-    private void hanldeDisconnectFeedTypeMessage(EndFeedMessage endFeedMessage) throws Exception {
+    private void hanldeDisconnectFeedTypeMessage(EndFeedMessage endFeedMessage) throws HyracksDataException {
         if (LOGGER.isLoggable(Level.INFO)) {
             LOGGER.info("Ending feed:" + endFeedMessage.getFeedConnectionId());
         }
@@ -124,7 +126,8 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                     runtimeType = FeedRuntimeType.COMPUTE_COLLECT;
                     break;
                 default:
-                    throw new IllegalStateException("Invalid subscribable runtime type " + subscribableRuntimeType);
+                    throw new RuntimeDataException(ErrorCode.ERROR_INVALID_SUBSCRIBABLE_RUNTIME,
+                            subscribableRuntimeType);
             }
 
             runtimeId = new ActiveRuntimeId(endFeedMessage.getSourceFeedId(), runtimeType.toString(), partition);
@@ -142,7 +145,8 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 case INTAKE:
                     // illegal state as data hand-off from one feed to another does not happen at
                     // intake
-                    throw new IllegalStateException("Illegal State, invalid runtime type  " + subscribableRuntimeType);
+                    throw new RuntimeDataException(ErrorCode.ERROR_INVALID_SUBSCRIBABLE_RUNTIME,
+                            subscribableRuntimeType);
                 case COMPUTE:
                     // feed could be primary or secondary, doesn't matter
                     ActiveRuntimeId feedSubscribableRuntimeId = new ActiveRuntimeId(connectionId.getFeedId(),

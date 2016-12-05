@@ -22,6 +22,8 @@ import java.io.IOException;
 
 import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.external.api.IExternalFunction;
 import org.apache.asterix.external.api.IFunctionFactory;
@@ -86,7 +88,8 @@ public abstract class ExternalFunction implements IExternalFunction {
             externalFunctionFactory = (IFunctionFactory) clazz.newInstance();
             externalFunction = externalFunctionFactory.getExternalFunction();
         } catch (Exception e) {
-            throw new HyracksDataException(" Unable to load/instantiate class " + classname, e);
+            throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNABLE_TO_LOAD_CLASS, e,
+                    classname);
         }
     }
 

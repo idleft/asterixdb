@@ -28,6 +28,8 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.log4j.Logger;
 
+import java.io.IOException;
+
 public class RecordDataFlowController<T> extends AbstractDataFlowController {
 
     private static final Logger LOGGER = Logger.getLogger(RecordDataFlowController.class.getName());
@@ -59,11 +61,11 @@ public class RecordDataFlowController<T> extends AbstractDataFlowController {
             }
             tupleForwarder.close();
             recordReader.close();
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e) {
             throw new HyracksDataException(e);
         }
     }
 
-    protected void appendOtherTupleFields(ArrayTupleBuilder tb) throws Exception {
+    protected void appendOtherTupleFields(ArrayTupleBuilder tb) throws HyracksDataException {
     }
 }

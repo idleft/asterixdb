@@ -73,7 +73,7 @@ public class RSSRecordReader implements IRecordReader<SyndEntryImpl> {
     }
 
     @Override
-    public boolean hasNext() throws Exception {
+    public boolean hasNext() throws IOException {
         return !done;
     }
 

@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.api;
 
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
@@ -31,7 +32,7 @@ public interface IFunctionHelper {
 
     public boolean isValidResult();
 
-    public IJObject getObject(JTypeTag jtypeTag);
+    public IJObject getObject(JTypeTag jtypeTag) throws HyracksDataException;
 
     public void reset();
 }

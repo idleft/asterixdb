@@ -31,6 +31,7 @@ import org.apache.hadoop.hive.ql.io.RCFile.Reader;
 import org.apache.hadoop.hive.serde2.columnar.BytesRefArrayWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Writable;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Logger;
 
 public class RCLookupReader extends AbstractHDFSLookupRecordReader<BytesRefArrayWritable> {
@@ -47,28 +48,32 @@ public class RCLookupReader extends AbstractHDFSLookupRecordReader<BytesRefArray
     private int row;
 
     @Override
-    public Class<?> getRecordClass() throws IOException {
+    public Class<?> getRecordClass() throws HyracksDataException {
         return Writable.class;
     }
 
     @Override
-    protected IRawRecord<BytesRefArrayWritable> lookup(RecordId rid) throws IOException {
-        if (rid.getOffset() != offset) {
-            offset = rid.getOffset();
-            if (reader.getPosition() != offset)
-                reader.seek(offset);
-            reader.resetBuffer();
-            row = -1;
-        }
+    protected IRawRecord<BytesRefArrayWritable> lookup(RecordId rid) throws HyracksDataException {
+        try {
+            if (rid.getOffset() != offset) {
+                offset = rid.getOffset();
+                if (reader.getPosition() != offset)
+                    reader.seek(offset);
+                reader.resetBuffer();
+                row = -1;
+            }
 
-        // skip rows to the record row
-        while (row < rid.getRow()) {
-            reader.next(key);
-            reader.getCurrentRow(value);
-            row++;
+            // skip rows to the record row
+            while (row < rid.getRow()) {
+                reader.next(key);
+                reader.getCurrentRow(value);
+                row++;
+            }
+            record.set(value);
+            return record;
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
         }
-        record.set(value);
-        return record;
     }
 
     @Override
@@ -84,8 +89,12 @@ public class RCLookupReader extends AbstractHDFSLookupRecordReader<BytesRefArray
     }
 
     @Override
-    protected void openFile() throws IllegalArgumentException, IOException {
-        reader = new Reader(fs, new Path(file.getFileName()), conf);
+    protected void openFile() throws HyracksDataException {
+        try {
+            reader = new Reader(fs, new Path(file.getFileName()), conf);
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
         offset = -1;
         row = -1;
     }

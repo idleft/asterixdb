@@ -52,7 +52,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
                 int tupleIndex = (int) (th.getParams()[0]);
                 try {
                     logExceptionCausingTuple(tupleIndex, th);
-                } catch (Exception ex) {
+                } catch (HyracksDataException ex) {
                     ex.addSuppressed(th);
                     if (LOGGER.isLoggable(Level.WARNING)) {
                         LOGGER.warning("Unable to log exception causing tuple due to..." + ex.getMessage());
@@ -63,8 +63,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
             } else {
                 return null;
             }
-        } catch (Exception exception) {
-            exception.printStackTrace();
+        } catch (HyracksDataException exception) {
             if (LOGGER.isLoggable(Level.WARNING)) {
                 LOGGER.warning("Unable to handle exception " + exception.getMessage());
             }
@@ -73,7 +72,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
     }
 
     // TODO: Fix logging of exceptions
-    private void logExceptionCausingTuple(int tupleIndex, Throwable e) throws HyracksDataException, AsterixException {
+    private void logExceptionCausingTuple(int tupleIndex, Throwable e) throws HyracksDataException{
         LOGGER.log(Level.WARNING, e.getMessage(), e);
     }
 }

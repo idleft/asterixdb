@@ -34,6 +34,8 @@ import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.RecordBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
 import org.apache.asterix.dataflow.data.nontagged.serde.ACircleSerializerDeserializer;
 import org.apache.asterix.dataflow.data.nontagged.serde.ADateSerializerDeserializer;
@@ -990,18 +992,18 @@ public class JObjects {
             this.openFields = openFields;
         }
 
-        public void addField(String fieldName, IJObject fieldValue) throws AsterixException {
+        public void addField(String fieldName, IJObject fieldValue) throws HyracksDataException {
             int pos = getFieldPosByName(fieldName);
             if (pos >= 0) {
-                throw new AsterixException("field already defined in closed part");
+                throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_FIELD_ALREADY_DEFINED, "closed");
             }
             if (openFields.get(fieldName) != null) {
-                throw new AsterixException("field already defined in open part");
+                throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_FIELD_ALREADY_DEFINED, "open");
             }
             openFields.put(fieldName, fieldValue);
         }
 
-        public IJObject getValueByName(String fieldName) throws AsterixException, IOException {
+        public IJObject getValueByName(String fieldName) throws HyracksDataException {
             // check closed part
             int fieldPos = getFieldPosByName(fieldName);
             if (fieldPos >= 0) {
@@ -1010,7 +1012,7 @@ public class JObjects {
                 // check open part
                 IJObject fieldValue = openFields.get(fieldName);
                 if (fieldValue == null) {
-                    throw new AsterixException("unknown field: " + fieldName);
+                    throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_UNKNOWN_FIELD, fieldName);
                 }
                 return fieldValue;
             }
@@ -1025,7 +1027,7 @@ public class JObjects {
             return recordType.getTypeTag();
         }
 
-        public void setField(String fieldName, IJObject fieldValue) throws AsterixException {
+        public void setField(String fieldName, IJObject fieldValue) throws HyracksDataException {
             int pos = getFieldPosByName(fieldName);
             if (pos >= 0) {
                 fields[pos] = fieldValue;
@@ -1033,7 +1035,7 @@ public class JObjects {
                 if (openFields.get(fieldName) != null) {
                     openFields.put(fieldName, fieldValue);
                 } else {
-                    throw new AsterixException("unknown field: " + fieldName);
+                    throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_UNKNOWN_FIELD, fieldName);
                 }
             }
         }

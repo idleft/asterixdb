@@ -30,7 +30,8 @@ import org.apache.asterix.active.ActiveJob;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
-import org.apache.asterix.common.exceptions.ACIDException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.feed.api.FeedOperationCounter;
 import org.apache.asterix.external.feed.api.IFeedJoint;
 import org.apache.asterix.external.feed.api.IFeedJoint.State;
@@ -98,12 +99,12 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                     LOGGER.warn("Unknown Feed Event" + event);
                     break;
             }
-        } catch (Exception e) {
+        } catch (HyracksDataException e) {
             LOGGER.error("Unhandled Exception", e);
         }
     }
 
-    private synchronized void handleJobStartEvent(ActiveEvent message) throws Exception {
+    private synchronized void handleJobStartEvent(ActiveEvent message) throws HyracksDataException {
         ActiveJob jobInfo = jobs.get(message.getJobId().getId());
         JobType jobType = (JobType) jobInfo.getJobObject();
         switch (jobType) {
@@ -117,7 +118,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private synchronized void handleJobFinishEvent(ActiveEvent message) throws Exception {
+    private synchronized void handleJobFinishEvent(ActiveEvent message) throws HyracksDataException {
         ActiveJob jobInfo = jobs.get(message.getJobId().getId());
         JobType jobType = (JobType) jobInfo.getJobObject();
         switch (jobType) {
@@ -165,18 +166,18 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    public synchronized void registerFeedJoint(IFeedJoint feedJoint, int numOfPrividers) {
-        Pair<FeedOperationCounter, List<IFeedJoint>> feedJointsOnPipeline =
-                feedPipeline.get(feedJoint.getOwnerFeedId());
+    public synchronized void registerFeedJoint(IFeedJoint feedJoint, int numOfPrividers) throws HyracksDataException {
+        Pair<FeedOperationCounter, List<IFeedJoint>> feedJointsOnPipeline = feedPipeline
+                .get(feedJoint.getOwnerFeedId());
         if (feedJointsOnPipeline == null) {
-            feedJointsOnPipeline = new Pair<>(new FeedOperationCounter(numOfPrividers), new ArrayList<IFeedJoint>());
+            feedJointsOnPipeline = new Pair<>(new FeedOperationCounter(numOfPrividers), new ArrayList<>());
             feedPipeline.put(feedJoint.getOwnerFeedId(), feedJointsOnPipeline);
             feedJointsOnPipeline.second.add(feedJoint);
         } else {
             if (!feedJointsOnPipeline.second.contains(feedJoint)) {
                 feedJointsOnPipeline.second.add(feedJoint);
             } else {
-                throw new IllegalArgumentException("Feed joint " + feedJoint + " already registered");
+                throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENT_LISTENER_FEED_JOINT_REGISTERED, feedJoint);
             }
         }
     }
@@ -192,7 +193,8 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private static synchronized void handleIntakeJobStartMessage(FeedIntakeInfo intakeJobInfo) throws Exception {
+    private static synchronized void handleIntakeJobStartMessage(FeedIntakeInfo intakeJobInfo)
+            throws HyracksDataException {
         List<OperatorDescriptorId> intakeOperatorIds = new ArrayList<>();
         Map<OperatorDescriptorId, IOperatorDescriptor> operators = intakeJobInfo.getSpec().getOperatorMap();
         for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operators.entrySet()) {
@@ -203,7 +205,13 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
 
         IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
-        JobInfo info = hcc.getJobInfo(intakeJobInfo.getJobId());
+        JobInfo info = null;
+        try {
+            // TODO: fix after hcc change(xikui)
+            info = hcc.getJobInfo(intakeJobInfo.getJobId());
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
+        }
         List<String> intakeLocations = new ArrayList<>();
         for (OperatorDescriptorId intakeOperatorId : intakeOperatorIds) {
             Map<Integer, String> operatorLocations = info.getOperatorLocations().get(intakeOperatorId);
@@ -228,13 +236,13 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     public synchronized void registerFeedIntakeJob(EntityId feedId, JobId jobId, JobSpecification jobSpec)
             throws HyracksDataException {
         if (entity2Intake.get(feedId) != null) {
-            throw new IllegalStateException("Feed already has an intake job");
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENTS_LISTENER_ALREADY_HAVE_INTAKE_JOB);
         }
         if (intakeJobs.get(jobId.getId()) != null) {
-            throw new IllegalStateException("Feed job already registered in intake jobs");
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENTS_LISTENER_INTAKE_JOB_REGISTERED);
         }
         if (jobs.get(jobId.getId()) != null) {
-            throw new IllegalStateException("Feed job already registered in all jobs");
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
 
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
@@ -258,18 +266,17 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 LOGGER.info("Registered feed intake [" + jobId + "]" + " for feed " + feedId);
             }
         } else {
-            throw new HyracksDataException(
-                    "Could not register feed intake job [" + jobId + "]" + " for feed  " + feedId);
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENT_REGISTER_INTAKE_JOB_FAIL, jobId, feedId);
         }
     }
 
     public synchronized void registerFeedCollectionJob(EntityId sourceFeedId, FeedConnectionId connectionId,
-            JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) {
+            JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) throws HyracksDataException{
         if (jobs.get(jobId.getId()) != null) {
-            throw new IllegalStateException("Feed job already registered");
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
         if (connectJobInfos.containsKey(jobId.getId())) {
-            throw new IllegalStateException("Feed job already registered");
+            throw new RuntimeDataException(ErrorCode.ERROR_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
 
         List<IFeedJoint> feedJoints = feedPipeline.get(sourceFeedId).second;
@@ -321,7 +328,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     public synchronized List<String> getConnectionLocations(IFeedJoint feedJoint, final FeedConnectionRequest request)
-            throws Exception {
+            throws HyracksDataException {
         List<String> locations = null;
         switch (feedJoint.getType()) {
             case COMPUTE:
@@ -348,9 +355,15 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     private synchronized void handleFeedIntakeJobFinishMessage(FeedIntakeInfo intakeInfo, ActiveEvent message)
-            throws Exception {
+            throws HyracksDataException {
         IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
-        JobInfo info = hcc.getJobInfo(message.getJobId());
+        JobInfo info = null;
+        try {
+            // TODO: fix after hcc change (xikui)
+            info = hcc.getJobInfo(message.getJobId());
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
+        }
         JobStatus status = info.getStatus();
         EntityId feedId = intakeInfo.getFeedId();
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
@@ -366,11 +379,17 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 : ActiveLifecycleEvent.FEED_INTAKE_ENDED);
     }
 
-    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws Exception {
+    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws HyracksDataException {
         FeedConnectionId connectionId = cInfo.getConnectionId();
 
         IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
-        JobInfo info = hcc.getJobInfo(cInfo.getJobId());
+        JobInfo info = null;
+        try {
+            // TODO: fix after hcc change (xikui)
+            info = hcc.getJobInfo(cInfo.getJobId());
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
+        }
         JobStatus status = info.getStatus();
         boolean failure = status != null && status.equals(JobStatus.FAILURE);
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(cInfo.getFeedPolicy());
@@ -594,7 +613,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         return connectJobInfos.get(connectionId);
     }
 
-    private void handleCollectJobStartMessage(FeedConnectJobInfo cInfo) throws ACIDException {
+    private void handleCollectJobStartMessage(FeedConnectJobInfo cInfo) throws HyracksDataException {
         // set locations of feed sub-operations (intake, compute, store)
         setLocations(cInfo);
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(cInfo.getConnectionId().getFeedId());

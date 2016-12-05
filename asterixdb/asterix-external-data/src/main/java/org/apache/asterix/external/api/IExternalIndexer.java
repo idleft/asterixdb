@@ -21,6 +21,7 @@ package org.apache.asterix.external.api;
 import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 
 /**
@@ -36,7 +37,7 @@ public interface IExternalIndexer extends Serializable {
      *            the new reader
      * @throws Exception
      */
-    public void reset(IIndexingDatasource reader) throws IOException;
+    public void reset(IIndexingDatasource reader) throws HyracksDataException;
 
     /**
      * This method is called by the dataflow controller with each tuple. the indexer is expected to append record ids to the tuple.
@@ -44,7 +45,7 @@ public interface IExternalIndexer extends Serializable {
      * @param tb
      * @throws Exception
      */
-    public void index(ArrayTupleBuilder tb) throws IOException;
+    public void index(ArrayTupleBuilder tb) throws HyracksDataException;
 
     /**
      * This method returns the number of fields in the record id. It is used by tuple appender at the initialization step.
@@ -52,5 +53,5 @@ public interface IExternalIndexer extends Serializable {
      * @return
      * @throws Exception
      */
-    public int getNumberOfFields() throws IOException;
+    public int getNumberOfFields() throws HyracksDataException;
 }

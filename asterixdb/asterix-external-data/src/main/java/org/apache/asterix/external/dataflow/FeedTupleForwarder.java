@@ -20,6 +20,7 @@ package org.apache.asterix.external.dataflow;
 
 import java.io.IOException;
 
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.ITupleForwarder;
 import org.apache.asterix.external.util.DataflowUtils;
 import org.apache.asterix.external.util.FeedLogManager;
@@ -34,6 +35,8 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAppender;
 import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.dataflow.common.io.MessagingFrameTupleAppender;
 import org.apache.hyracks.dataflow.common.util.TaskUtils;
+
+import javax.ws.rs.ext.RuntimeDelegate;
 
 public class FeedTupleForwarder implements ITupleForwarder {
 

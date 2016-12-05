@@ -62,7 +62,7 @@ public class IngestionRuntime extends SubscribableRuntime {
     }
 
     @Override
-    public synchronized void unsubscribe(CollectionRuntime collectionRuntime) throws InterruptedException {
+    public synchronized void unsubscribe(CollectionRuntime collectionRuntime) throws HyracksDataException {
         numSubscribers--;
         if (numSubscribers == 0) {
             stop();
@@ -91,7 +91,7 @@ public class IngestionRuntime extends SubscribableRuntime {
     }
 
     @Override
-    public void stop() throws InterruptedException {
+    public void stop() throws HyracksDataException {
         adapterRuntimeManager.stop();
     }
 }

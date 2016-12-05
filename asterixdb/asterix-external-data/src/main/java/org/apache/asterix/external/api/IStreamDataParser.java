@@ -18,6 +18,8 @@
  */
 package org.apache.asterix.external.api;
 
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +40,7 @@ public interface IStreamDataParser extends IDataParser {
      *            DataOutput instance that for writing the parser output.
      * @throws IOException
      */
-    public boolean parse(DataOutput out) throws IOException;
+    public boolean parse(DataOutput out) throws HyracksDataException;
 
     /**
      * reset the parser state. this is called when a failure takes place
@@ -48,5 +50,5 @@ public interface IStreamDataParser extends IDataParser {
      * @return true if reset was successful, false, otherwise
      * @throws IOException
      */
-    public boolean reset(InputStream in) throws IOException;
+    public boolean reset(InputStream in) throws HyracksDataException;
 }

@@ -81,7 +81,7 @@ public class HDFSRecordReader<K, V extends Writable> implements IRecordReader<Wr
     }
 
     @Override
-    public boolean hasNext() throws Exception {
+    public boolean hasNext() throws IOException {
         if (reader.next(key, value)) {
             return true;
         }

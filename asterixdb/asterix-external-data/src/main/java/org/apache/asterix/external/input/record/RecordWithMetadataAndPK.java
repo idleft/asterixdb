@@ -21,6 +21,8 @@ package org.apache.asterix.external.input.record;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IDataParser;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.util.ExternalDataUtils;
@@ -143,8 +145,7 @@ public class RecordWithMetadataAndPK<T> extends RecordWithPK<T> {
             throws IOException {
         if (length == 0) {
             if (!NonTaggedFormatUtil.isOptional(metaTypes[index])) {
-                throw new HyracksDataException(
-                        "Field " + index + " of meta record is not an optional type so it cannot accept null value. ");
+                throw new RuntimeDataException(ErrorCode.ERROR_READER_RECORD_W_META_PK_NULL_IN_NON_OPTIONAL, index);
             }
             fieldValueBufferOutputs[index].writeByte(ATypeTag.SERIALIZED_NULL_TYPE_TAG);
         } else {
@@ -154,12 +155,12 @@ public class RecordWithMetadataAndPK<T> extends RecordWithPK<T> {
     }
 
     @Override
-    public void appendPrimaryKeyToTuple(final ArrayTupleBuilder tb) throws IOException {
+    public void appendPrimaryKeyToTuple(final ArrayTupleBuilder tb) throws HyracksDataException {
         for (int i = 0; i < pkIndexes.length; i++) {
             if (keyIndicator[i] == 1) {
                 tb.addField(getMetadata(pkIndexes[i]));
             } else {
-                throw new HyracksDataException("Can't get PK from record part");
+                throw new RuntimeDataException(ErrorCode.ERROR_READER_RECORD_W_META_PK_GET_PKEY);
             }
         }
     }

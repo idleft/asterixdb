@@ -105,7 +105,7 @@ public class KVTestReader implements IRecordReader<DCPRequest> {
     }
 
     @Override
-    public boolean hasNext() throws Exception {
+    public boolean hasNext() throws IOException {
         return !stopped;
     }
 

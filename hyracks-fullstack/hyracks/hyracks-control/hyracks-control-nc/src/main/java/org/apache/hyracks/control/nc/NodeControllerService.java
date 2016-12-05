@@ -48,6 +48,7 @@ import org.apache.hyracks.api.client.NodeControllerInfo;
 import org.apache.hyracks.api.comm.NetworkAddress;
 import org.apache.hyracks.api.dataset.IDatasetPartitionManager;
 import org.apache.hyracks.api.deployment.DeploymentId;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.IODeviceHandle;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.lifecycle.ILifeCycleComponentManager;
@@ -82,6 +83,7 @@ import org.apache.hyracks.ipc.api.IPCPerformanceCounters;
 import org.apache.hyracks.ipc.impl.IPCSystem;
 import org.apache.hyracks.net.protocols.muxdemux.FullFrameChannelInterfaceFactory;
 import org.apache.hyracks.net.protocols.muxdemux.MuxDemuxPerformanceCounters;
+import org.w3c.dom.html.HTMLDirectoryElement;
 
 public class NodeControllerService implements IControllerService {
     private static final Logger LOGGER = Logger.getLogger(NodeControllerService.class.getName());
@@ -491,7 +493,7 @@ public class NodeControllerService implements IControllerService {
         }
     }
 
-    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId) throws Exception {
+    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId) throws HyracksDataException {
         ccs.sendApplicationMessageToCC(data, deploymentId, id);
     }
 

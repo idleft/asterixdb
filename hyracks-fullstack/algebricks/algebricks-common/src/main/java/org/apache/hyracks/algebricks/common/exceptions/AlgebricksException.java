@@ -18,21 +18,45 @@
  */
 package org.apache.hyracks.algebricks.common.exceptions;
 
+import java.io.Serializable;
+
 public class AlgebricksException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public AlgebricksException() {
+    public static final String NONE = "";
+    public static final int UNKNOWN = 0;
+
+    private final String component;
+    private final int errorCode;
+    private final Serializable[] params;
+    private final String nodeId;
+
+    public AlgebricksException(String component, int errorCode, String message, Throwable cause, String nodeId,
+            Serializable... params) {
+        super(message, cause);
+        this.errorCode = errorCode;
+        this.component = component;
+        this.nodeId = nodeId;
+        this.params = params;
+    }
+
+    public AlgebricksException(String component, int errorCode, String message, Serializable... params) {
+        this(component, errorCode, message, null, null, params);
+    }
+
+    public AlgebricksException(String component, int errorCode, Throwable cause, Serializable... params) {
+        this(component, errorCode, cause.getMessage(), cause, null, params);
     }
 
     public AlgebricksException(String message) {
-        super(message);
+        this(NONE, UNKNOWN, message, (Throwable) null, (String) null);
     }
 
     public AlgebricksException(Throwable cause) {
-        super(cause);
+        this(NONE, UNKNOWN, cause.getMessage(), cause, (String) null);
     }
 
     public AlgebricksException(String message, Throwable cause) {
-        super(message, cause);
+        this(NONE,UNKNOWN, message, cause, (String) null);
     }
 }

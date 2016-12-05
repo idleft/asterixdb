@@ -29,6 +29,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.LinkedList;
 import java.util.regex.Pattern;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class LocalFileSystemUtils {
@@ -37,7 +39,8 @@ public class LocalFileSystemUtils {
             final LinkedList<Path> dirs) throws IOException {
         final Path path = root.toPath();
         if (!Files.exists(path)) {
-            throw new HyracksDataException(path + ": path not found");
+            throw new RuntimeDataException(ErrorCode.ERROR_UTIL_LOCAL_FILE_SYSTEM_UTILS_PATH_NOT_FOUND,
+                    path.toString());
         }
         if (!Files.isDirectory(path)) {
             validateAndAdd(path, expression, files);

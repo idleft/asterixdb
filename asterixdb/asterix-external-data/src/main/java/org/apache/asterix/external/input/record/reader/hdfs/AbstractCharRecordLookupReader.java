@@ -32,6 +32,7 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.io.Text;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public abstract class AbstractCharRecordLookupReader extends AbstractHDFSLookupRecordReader<char[]> {
     public AbstractCharRecordLookupReader(ExternalFileIndexAccessor snapshotAccessor, FileSystem fs,
@@ -46,21 +47,21 @@ public abstract class AbstractCharRecordLookupReader extends AbstractHDFSLookupR
     protected CharBuffer reusableCharBuffer = CharBuffer.allocate(ExternalDataConstants.DEFAULT_BUFFER_SIZE);
 
     @Override
-    public Class<?> getRecordClass() throws IOException {
+    public Class<?> getRecordClass() throws HyracksDataException {
         return char[].class;
     }
 
     @Override
-    protected IRawRecord<char[]> lookup(RecordId rid) throws IOException {
+    protected IRawRecord<char[]> lookup(RecordId rid) throws HyracksDataException {
         record.reset();
         readRecord(rid);
         writeRecord();
         return record;
     }
 
-    protected abstract void readRecord(RecordId rid) throws IOException;
+    protected abstract void readRecord(RecordId rid) throws HyracksDataException;
 
-    private void writeRecord() throws IOException {
+    private void writeRecord() throws HyracksDataException {
         reusableByteBuffer.clear();
         if (reusableByteBuffer.remaining() < value.getLength()) {
             reusableByteBuffer = ByteBuffer
@@ -68,12 +69,17 @@ public abstract class AbstractCharRecordLookupReader extends AbstractHDFSLookupR
         }
         reusableByteBuffer.put(value.getBytes(), 0, value.getLength());
         reusableByteBuffer.flip();
+
+        try {
         while (reusableByteBuffer.hasRemaining()) {
             reusableCharBuffer.clear();
             decoder.decode(reusableByteBuffer, reusableCharBuffer, false);
             reusableCharBuffer.flip();
-            record.append(reusableCharBuffer);
+                record.append(reusableCharBuffer);
         }
-        record.endRecord();
+            record.endRecord();
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 }

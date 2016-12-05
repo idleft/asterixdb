@@ -148,8 +148,12 @@ public class SocketServerInputStream extends AsterixInputStream {
     }
 
     @Override
-    public boolean stop() throws Exception {
-        close();
+    public boolean stop() throws HyracksDataException {
+        try {
+            close();
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
         return true;
     }
 

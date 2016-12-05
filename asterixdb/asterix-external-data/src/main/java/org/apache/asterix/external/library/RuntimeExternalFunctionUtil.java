@@ -22,6 +22,8 @@ import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.om.base.AMutableInt32;
 import org.apache.asterix.om.base.AMutableString;
 import org.apache.asterix.om.base.IAObject;
@@ -36,11 +38,12 @@ public class RuntimeExternalFunctionUtil {
 
     private static Map<String, ClassLoader> libraryClassLoaders = new HashMap<String, ClassLoader>();
 
-    public static void registerLibraryClassLoader(String dataverseName, String libraryName, ClassLoader classLoader) {
+    public static void registerLibraryClassLoader(String dataverseName, String libraryName, ClassLoader classLoader)
+            throws RuntimeDataException {
         String key = dataverseName + "." + libraryName;
         synchronized (libraryClassLoaders) {
             if (libraryClassLoaders.get(dataverseName) != null) {
-                throw new IllegalStateException("library class loader already registered!");
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_LIBRARY_CLASS_REGISTERED);
             }
             libraryClassLoaders.put(key, classLoader);
         }
@@ -53,15 +56,14 @@ public class RuntimeExternalFunctionUtil {
         }
     }
 
-    public static IFunctionDescriptor getFunctionDescriptor(IFunctionInfo finfo) {
+    public static IFunctionDescriptor getFunctionDescriptor(IFunctionInfo finfo) throws RuntimeDataException {
         switch (((IExternalFunctionInfo) finfo).getKind()) {
             case SCALAR:
                 return getScalarFunctionDescriptor(finfo);
             case AGGREGATE:
             case UNNEST:
             case STATEFUL:
-                throw new NotImplementedException("External " + finfo.getFunctionIdentifier().getName()
-                        + " not supported");
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_NAME,finfo.getFunctionIdentifier().getName());
         }
         return null;
     }

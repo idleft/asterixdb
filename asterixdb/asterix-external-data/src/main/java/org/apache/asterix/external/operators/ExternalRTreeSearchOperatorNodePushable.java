@@ -55,32 +55,24 @@ public class ExternalRTreeSearchOperatorNodePushable extends RTreeSearchOperator
             nonMatchTupleBuild = new ArrayTupleBuilder(fieldCount);
             DataOutput out = nonMatchTupleBuild.getDataOutput();
             for (int i = 0; i < fieldCount; i++) {
-                try {
-                    nonMatchWriter.writeMissing(out);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                nonMatchWriter.writeMissing(out);
                 nonMatchTupleBuild.addFieldEndOffset();
             }
         } else {
             nonMatchTupleBuild = null;
         }
         ExternalRTree rTreeIndex = (ExternalRTree) index;
-        try {
-            searchPred = createSearchPredicate();
-            tb = new ArrayTupleBuilder(recordDesc.getFieldCount());
-            dos = tb.getDataOutput();
-            appender = new FrameTupleAppender(new VSizeFrame(ctx));
-            ISearchOperationCallback searchCallback = opDesc.getSearchOpCallbackFactory()
-                    .createSearchOperationCallback(indexHelper.getResourceID(), ctx, null);
-            // The next line is the reason we override this method
-            indexAccessor = rTreeIndex.createAccessor(searchCallback, rTreeDataflowHelper.getTargetVersion());
-            cursor = createCursor();
-            if (retainInput) {
-                frameTuple = new FrameTupleReference();
-            }
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
+        searchPred = createSearchPredicate();
+        tb = new ArrayTupleBuilder(recordDesc.getFieldCount());
+        dos = tb.getDataOutput();
+        appender = new FrameTupleAppender(new VSizeFrame(ctx));
+        ISearchOperationCallback searchCallback = opDesc.getSearchOpCallbackFactory()
+                .createSearchOperationCallback(indexHelper.getResourceID(), ctx, null);
+        // The next line is the reason we override this method
+        indexAccessor = rTreeIndex.createAccessor(searchCallback, rTreeDataflowHelper.getTargetVersion());
+        cursor = createCursor();
+        if (retainInput) {
+            frameTuple = new FrameTupleReference();
         }
     }
 

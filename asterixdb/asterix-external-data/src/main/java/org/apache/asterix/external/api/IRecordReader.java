@@ -37,7 +37,7 @@ public interface IRecordReader<T> extends Closeable {
      * @throws Exception
      *             if an error takes place
      */
-    public boolean hasNext() throws Exception;
+    public boolean hasNext() throws IOException;
 
     /**
      * @return the object representing the next record.

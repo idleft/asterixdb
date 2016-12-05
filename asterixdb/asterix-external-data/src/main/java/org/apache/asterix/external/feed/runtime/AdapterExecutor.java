@@ -20,6 +20,7 @@ package org.apache.asterix.external.feed.runtime;
 
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.hyracks.api.comm.IFrameWriter;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Logger;
 
 /**
@@ -55,7 +56,7 @@ public class AdapterExecutor implements Runnable {
                 adapter.start(partition, writer);
                 // Adapter has completed execution
                 continueIngestion = false;
-            } catch (Exception e) {
+            } catch (HyracksDataException e) {
                 LOGGER.error("Exception during feed ingestion ", e);
                 continueIngestion = adapter.handleException(e);
                 failedIngestion = !continueIngestion;

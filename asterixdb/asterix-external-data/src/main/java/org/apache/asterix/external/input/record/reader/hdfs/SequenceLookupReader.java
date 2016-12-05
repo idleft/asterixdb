@@ -30,6 +30,7 @@ import org.apache.hadoop.io.SequenceFile.Reader;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.util.ReflectionUtils;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Logger;
 
 public class SequenceLookupReader extends AbstractCharRecordLookupReader {
@@ -43,9 +44,13 @@ public class SequenceLookupReader extends AbstractCharRecordLookupReader {
     private Writable key;
 
     @Override
-    protected void readRecord(RecordId rid) throws IOException {
-        reader.seek(rid.getOffset());
-        reader.next(key, value);
+    protected void readRecord(RecordId rid) throws HyracksDataException {
+        try {
+            reader.seek(rid.getOffset());
+            reader.next(key, value);
+        } catch (IOException e) {
+            new HyracksDataException(e);
+        }
     }
 
     @Override

@@ -25,6 +25,8 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 
+import java.io.IOException;
+
 public class StreamDataFlowController extends AbstractDataFlowController {
     private final IStreamDataParser dataParser;
 
@@ -48,7 +50,7 @@ public class StreamDataFlowController extends AbstractDataFlowController {
                 tupleForwarder.addTuple(tb);
             }
             tupleForwarder.close();
-        } catch (Exception e) {
+        } catch (IOException e) {
             throw new HyracksDataException(e);
         }
     }

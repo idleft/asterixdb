@@ -142,10 +142,14 @@ public class LocalFSInputStream extends AsterixInputStream {
     }
 
     @Override
-    public boolean stop() throws Exception {
-        closeFile();
-        watcher.close();
-        return true;
+    public boolean stop() throws HyracksDataException {
+        try {
+            closeFile();
+            watcher.close();
+            return true;
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 
     @Override

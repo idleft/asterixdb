@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.Arrays;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.util.ExternalDataConstants;
 
@@ -66,8 +68,8 @@ public class CharArrayRecord implements IRawRecord<char[]> {
     private void ensureCapacity(int len) throws IOException {
         if (value.length < len) {
             if (len > ExternalDataConstants.MAX_RECORD_SIZE) {
-                throw new IOException(
-                        "Record is too large!. Maximum record size is " + ExternalDataConstants.MAX_RECORD_SIZE);
+                // Should we change all IOException in reader to HDE?
+                throw new RuntimeDataException(ErrorCode.ERROR_RECORD_READER_CHAR_ARRAY_RECORD_TOO_LARGE, ExternalDataConstants.MAX_RECORD_SIZE);
             }
             int newSize = Math.min((int) (len * ExternalDataConstants.DEFAULT_BUFFER_INCREMENT_FACTOR),
                     ExternalDataConstants.MAX_RECORD_SIZE);

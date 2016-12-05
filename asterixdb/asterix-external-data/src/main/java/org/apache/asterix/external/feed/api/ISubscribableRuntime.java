@@ -38,5 +38,5 @@ public interface ISubscribableRuntime extends IActiveRuntime {
      * @throws InterruptedException
      * @throws Exception
      */
-    public void unsubscribe(CollectionRuntime collectionRuntime) throws HyracksDataException, InterruptedException;
+    public void unsubscribe(CollectionRuntime collectionRuntime) throws HyracksDataException;
 }

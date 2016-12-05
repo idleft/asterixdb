@@ -23,6 +23,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.api.IJObject;
 import org.apache.asterix.external.library.java.JObjectPointableVisitor;
@@ -119,7 +121,8 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 jObject = pointableVisitor.visit((AListVisitablePointable) pointable, getTypeInfo(index, type));
                 break;
             case ANY:
-                throw new IllegalStateException("Cannot handle a function argument of type " + type.getTypeTag());
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_CANNOT_HANDLE_ARGU_TYPE,
+                        type.getTypeTag());
             default:
                 pointable = pointableAllocator.allocateFieldValue(type);
                 pointable.set(valueReference);
@@ -147,7 +150,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
     }
 
     @Override
-    public IJObject getObject(JTypeTag jtypeTag) {
+    public IJObject getObject(JTypeTag jtypeTag) throws RuntimeDataException {
         IJObject retValue = null;
         switch (jtypeTag) {
             case INT:
@@ -163,12 +166,8 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 retValue = JNull.INSTANCE;
                 break;
             default:
-                try {
-                    throw new NotImplementedException("Object of type " + jtypeTag.name() + " not supported.");
-                } catch (IllegalStateException e) {
-                    e.printStackTrace();
-                }
-                break;
+                // here needs extra examine.
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED, jtypeTag.name());
         }
         return retValue;
     }

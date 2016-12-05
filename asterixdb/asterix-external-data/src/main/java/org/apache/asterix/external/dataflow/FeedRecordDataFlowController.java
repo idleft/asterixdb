@@ -72,6 +72,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         try {
             failed = false;
             tupleForwarder.initialize(ctx, writer);
+            // TODO: to decide whether throw IOException or HyracksDataException for readers (xikui)
             while (recordReader.hasNext()) {
                 // synchronized on mutex before we call next() so we don't a marker before its record
                 synchronized (mutex) {
@@ -89,7 +90,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             //TODO: Find out what could cause an interrupted exception beside termination of a job/feed
             LOGGER.warn("Feed has been interrupted. Closing the feed", e);
             Thread.currentThread().interrupt();
-        } catch (Exception e) {
+        } catch (IOException e) {
             failed = true;
             tupleForwarder.flush();
             LOGGER.warn("Failure while operating a feed source", e);
@@ -117,7 +118,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         }
     }
 
-    private void parseAndForward(IRawRecord<? extends T> record) throws IOException {
+    private void parseAndForward(IRawRecord<? extends T> record) throws HyracksDataException {
         synchronized (dataParser) {
             try {
                 dataParser.parse(record, tb.getDataOutput());
@@ -134,10 +135,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         }
     }
 
-    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
+    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
     }
 
-    protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
+    protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
     }
 
     private void startDataflowMarker() {

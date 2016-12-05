@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.generator.TweetGenerator;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class TwitterFirehoseInputStream extends AsterixInputStream {
 
@@ -51,7 +52,7 @@ public class TwitterFirehoseInputStream extends AsterixInputStream {
     }
 
     @Override
-    public boolean stop() throws IOException {
+    public boolean stop() throws HyracksDataException {
         dataProvider.stop();
         return true;
     }
