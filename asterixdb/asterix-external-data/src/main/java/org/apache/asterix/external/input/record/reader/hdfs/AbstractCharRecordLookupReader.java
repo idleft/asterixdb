@@ -75,7 +75,7 @@ public abstract class AbstractCharRecordLookupReader extends AbstractHDFSLookupR
             reusableCharBuffer.clear();
             decoder.decode(reusableByteBuffer, reusableCharBuffer, false);
             reusableCharBuffer.flip();
-                record.append(reusableCharBuffer);
+            record.append(reusableCharBuffer);
         }
             record.endRecord();
         } catch (IOException e) {

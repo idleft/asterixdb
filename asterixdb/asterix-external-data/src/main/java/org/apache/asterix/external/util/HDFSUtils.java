@@ -45,12 +45,13 @@ import org.apache.hadoop.mapred.SequenceFileInputFormat;
 import org.apache.hadoop.mapred.TextInputFormat;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.api.context.ICCContext;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.hdfs.scheduler.Scheduler;
 
 public class HDFSUtils {
 
-    public static Scheduler initializeHDFSScheduler() throws RuntimeDataException {
+    public static Scheduler initializeHDFSScheduler() throws HyracksDataException {
         ICCContext ccContext = AsterixAppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
         Scheduler scheduler = null;
         try {
@@ -62,7 +63,7 @@ public class HDFSUtils {
         return scheduler;
     }
 
-    public static IndexingScheduler initializeIndexingHDFSScheduler() throws RuntimeDataException {
+    public static IndexingScheduler initializeIndexingHDFSScheduler() throws HyracksDataException {
         ICCContext ccContext = AsterixAppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
         IndexingScheduler scheduler = null;
         try {

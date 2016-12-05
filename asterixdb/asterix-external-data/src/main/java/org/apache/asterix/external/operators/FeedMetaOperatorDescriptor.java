@@ -103,7 +103,7 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
                         coreOperator, feedConnectionId, feedPolicyProperties, operandId, this);
                 break;
             default:
-                throw new RuntimeDataException(ErrorCode.ERROR_OPERATOR_FEED_META_OPERATOR_DESCRIPTOR_INVALID_RUNTIME,
+                throw new RuntimeDataException(ErrorCode.ERROR_OPERATORS_FEED_META_OPERATOR_DESCRIPTOR_INVALID_RUNTIME,
                         runtimeType);
         }
         return nodePushable;

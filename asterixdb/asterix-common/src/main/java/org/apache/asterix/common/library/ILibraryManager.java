@@ -21,7 +21,6 @@ package org.apache.asterix.common.library;
 
 import java.util.List;
 
-import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 

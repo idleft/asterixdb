@@ -178,9 +178,12 @@ public class ADMDataParser extends AbstractDataParser implements IStreamDataPars
     }
 
     @Override
-    public void setInputStream(InputStream in) throws IOException {
-        // need to transform to HDE?
-        admLexer = new AdmLexer(new java.io.InputStreamReader(in));
+    public void setInputStream(InputStream in) throws HyracksDataException {
+        try {
+            admLexer = new AdmLexer(new java.io.InputStreamReader(in));
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 
     protected boolean parseAdmInstance(IAType objectType, DataOutput out) throws IOException {

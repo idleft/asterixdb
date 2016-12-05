@@ -72,7 +72,6 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         try {
             failed = false;
             tupleForwarder.initialize(ctx, writer);
-            // TODO: to decide whether throw IOException or HyracksDataException for readers (xikui)
             while (recordReader.hasNext()) {
                 // synchronized on mutex before we call next() so we don't a marker before its record
                 synchronized (mutex) {

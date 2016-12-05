@@ -126,7 +126,7 @@ public abstract class ExternalFunction implements IExternalFunction {
     }
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws Exception {
+    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException {
         externalFunction.initialize(functionHelper);
     }
 

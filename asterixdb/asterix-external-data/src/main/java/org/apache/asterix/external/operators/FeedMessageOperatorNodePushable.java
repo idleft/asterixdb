@@ -126,7 +126,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                     runtimeType = FeedRuntimeType.COMPUTE_COLLECT;
                     break;
                 default:
-                    throw new RuntimeDataException(ErrorCode.ERROR_INVALID_SUBSCRIBABLE_RUNTIME,
+                    throw new RuntimeDataException(ErrorCode.ERROR_OPERATORS_FEED_MESSAGE_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
                             subscribableRuntimeType);
             }
 
@@ -145,7 +145,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 case INTAKE:
                     // illegal state as data hand-off from one feed to another does not happen at
                     // intake
-                    throw new RuntimeDataException(ErrorCode.ERROR_INVALID_SUBSCRIBABLE_RUNTIME,
+                    throw new RuntimeDataException(ErrorCode.ERROR_OPERATORS_FEED_MESSAGE_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
                             subscribableRuntimeType);
                 case COMPUTE:
                     // feed could be primary or secondary, doesn't matter

@@ -112,7 +112,7 @@ public class CounterTimerTupleForwarder implements ITupleForwarder {
             tuplesInFrame = 0;
             appender.reset(frame, true);
             if (!appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
-                throw new RuntimeDataException(ErrorCode.ERROR_ILLEGAL_STATE);
+                throw new RuntimeDataException(ErrorCode.ERROR_DATAFLOW_ILLEGAL_STATE);
             }
         }
     }

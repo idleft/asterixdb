@@ -65,8 +65,12 @@ public class ErrorCode {
 
 
 
-    public static final String ERROR_MESSAGE_ERROR_PARSER_DELIMITED_PARSING = "At record: %1$s, field#: %2$s - "
+    private static final String ERROR_MESSAGE_ERROR_PARSER_DELIMITED_PARSING = "At record: %1$s, field#: %2$s - "
             + "a quote enclosing a field needs to be placed in the beginning of that field.";
+
+    static {
+        errorMessageMap.put(ERROR_PARSER_DELIMITED_PARSING, ERROR_MESSAGE_ERROR_PARSER_DELIMITED_PARSING);
+    }
 
 
     private ErrorCode() {

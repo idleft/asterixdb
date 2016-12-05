@@ -97,7 +97,7 @@ public class DCPMessageToRecordConverter implements IRecordToRecordWithMetadataA
                 recordWithMetadata.reset();
                 recordWithMetadata.setMetadata(0, key);
             } else {
-                throw new RuntimeDataException(ErrorCode.ERROR_RECORD_CONVERTER_UNKNOWN_DCP_REQUEST,
+                throw new RuntimeDataException(ErrorCode.ERROR_INPUT_RECORD_CONVERTER_DCP_MESSAGE_TO_RECORD_CONVERTER_UNKNOWN_DCP_REQUEST,
                         dcpRequest.toString());
             }
         } catch (IOException e) {

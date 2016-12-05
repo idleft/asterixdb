@@ -138,7 +138,7 @@ public class ExternalDataUtils {
             ClassLoader classLoader = getClassLoader(libraryManager, dataverse, libraryName);
             return ((IInputStreamFactory) (classLoader.loadClass(className).newInstance()));
         } catch (InstantiationException | IllegalAccessException | ClassNotFoundException e) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FAIL_CREATE_STREAM_FACTORY, e);
+            throw new RuntimeDataException(ErrorCode.ERROR_UTIL_EXTERNAL_DATA_UTILS_FAIL_CREATE_STREAM_FACTORY, e);
         }
     }
 

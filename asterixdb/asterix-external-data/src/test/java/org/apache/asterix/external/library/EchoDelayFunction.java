@@ -23,6 +23,7 @@ import java.util.Random;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JObjects.JRecord;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class EchoDelayFunction implements IExternalScalarFunction {
 
@@ -43,10 +44,14 @@ public class EchoDelayFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception {
+    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         long sleepInterval = rand.nextInt(range);
-        Thread.sleep(sleepInterval);
+        try {
+            Thread.sleep(sleepInterval);
+        } catch (InterruptedException e) {
+            throw new HyracksDataException(e);
+        }
         functionHelper.setResult(inputRecord);
     }
 }

@@ -18,7 +18,6 @@
  */
 package org.apache.asterix.external.api;
 
-import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 

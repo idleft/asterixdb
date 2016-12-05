@@ -101,7 +101,6 @@ public class ExternalFilesIndexOperatorDescriptor extends AbstractTreeIndexOpera
                         }
                         bulkLoader.end();
                     } catch (IndexException | IOException e) {
-                        // TODO: handle indexException properly (xikui)
                         throw new HyracksDataException(e);
                     } finally {
                         indexHelper.close();

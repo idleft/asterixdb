@@ -18,10 +18,7 @@
  */
 package org.apache.asterix.external.indexing;
 
-import java.io.IOException;
-
 import org.apache.asterix.builders.RecordBuilder;
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AMutableDateTime;
 import org.apache.asterix.om.base.AMutableInt32;

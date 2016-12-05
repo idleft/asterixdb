@@ -21,6 +21,7 @@ package org.apache.asterix.external.library;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JObjects.JInt;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class SumFunction implements IExternalScalarFunction {
 
@@ -32,7 +33,7 @@ public class SumFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception {
+    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
         int arg0 = ((JInt) functionHelper.getArgument(0)).getValue();
         int arg1 = ((JInt) functionHelper.getArgument(1)).getValue();
         result.setValue(arg0 + arg1);

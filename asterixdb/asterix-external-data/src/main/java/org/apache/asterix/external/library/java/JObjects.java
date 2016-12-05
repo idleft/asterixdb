@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.RecordBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
@@ -995,10 +994,10 @@ public class JObjects {
         public void addField(String fieldName, IJObject fieldValue) throws HyracksDataException {
             int pos = getFieldPosByName(fieldName);
             if (pos >= 0) {
-                throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_FIELD_ALREADY_DEFINED, "closed");
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_JOBJECTS_FIELD_ALREADY_DEFINED, "closed");
             }
             if (openFields.get(fieldName) != null) {
-                throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_FIELD_ALREADY_DEFINED, "open");
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_JOBJECTS_FIELD_ALREADY_DEFINED, "open");
             }
             openFields.put(fieldName, fieldValue);
         }
@@ -1012,7 +1011,7 @@ public class JObjects {
                 // check open part
                 IJObject fieldValue = openFields.get(fieldName);
                 if (fieldValue == null) {
-                    throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_UNKNOWN_FIELD, fieldName);
+                    throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_JOBJECTS_UNKNOWN_FIELD, fieldName);
                 }
                 return fieldValue;
             }
@@ -1035,7 +1034,7 @@ public class JObjects {
                 if (openFields.get(fieldName) != null) {
                     openFields.put(fieldName, fieldValue);
                 } else {
-                    throw new RuntimeDataException(ErrorCode.ERROR_EXTERNAL_FUNC_JOBJECTS_UNKNOWN_FIELD, fieldName);
+                    throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_JOBJECTS_UNKNOWN_FIELD, fieldName);
                 }
             }
         }

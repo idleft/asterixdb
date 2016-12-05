@@ -24,13 +24,14 @@ import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class ParseTweetFunction implements IExternalScalarFunction {
 
     private JUnorderedList list = null;
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) {
+    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException{
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
     }
 
@@ -39,7 +40,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception {
+    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
         list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString id = (JString) inputRecord.getValueByName("id");

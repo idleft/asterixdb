@@ -66,7 +66,8 @@ public class ActiveLifecycleEventSubscriber implements IActiveLifecycleEventSubs
     private void assertNoFailure(ActiveLifecycleEvent e) throws HyracksDataException {
         if (e.equals(ActiveLifecycleEvent.FEED_INTAKE_FAILURE) || e.equals(ActiveLifecycleEvent.FEED_COLLECT_FAILURE)
                 || e.equals(ActiveLifecycleEvent.ACTIVE_JOB_FAILED)) {
-            throw new RuntimeDataException(ErrorCode.ERROR_ACTIVE_JOB_FAILURE);
+            throw new RuntimeDataException(
+                    ErrorCode.ERROR_FEED_MANAGEMENT_ACTIVE_LIFE_CYCLE_EVENT_SUBSCRIBER_ACTIVE_JOB_FAILURE);
         }
     }
 }

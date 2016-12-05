@@ -81,7 +81,6 @@ import org.apache.hyracks.ipc.api.IPCPerformanceCounters;
 import org.apache.hyracks.ipc.impl.IPCSystem;
 import org.apache.hyracks.net.protocols.muxdemux.FullFrameChannelInterfaceFactory;
 import org.apache.hyracks.net.protocols.muxdemux.MuxDemuxPerformanceCounters;
-import org.w3c.dom.html.HTMLDirectoryElement;
 
 public class NodeControllerService implements IControllerService {
     private static final Logger LOGGER = Logger.getLogger(NodeControllerService.class.getName());
