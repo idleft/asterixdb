@@ -20,10 +20,9 @@
 package org.apache.asterix.metadata.entitytupletranslators;
 
 import org.apache.asterix.builders.IARecordBuilder;
-import org.apache.asterix.builders.OrderedListBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.common.functions.FunctionSignature;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
 import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
@@ -50,7 +49,7 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
 
     public static final int FEED_CONN_PAYLOAD_TUPLE_FIELD_INDEX = 3;
 
-    private ISerializerDeserializer<ARecord> recordSerDes = AqlSerializerDeserializerProvider.INSTANCE
+    private ISerializerDeserializer<ARecord> recordSerDes = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(MetadataRecordTypes.FEED_CONNECTION_RECORDTYPE);
 
     public FeedConnectionTupleTranslator(boolean getTuple) {

@@ -20,10 +20,16 @@
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
     <test-case FilePath="feeds">
-    <compilation-unit name="stop-stopped-feed">
-      <output-dir compare="Text">stop-stopped-feed</output-dir>
-      <expected-error>org.apache.hyracks.algebricks.common.exceptions.AlgebricksException: Feed TweetFeedis not started.</expected-error>
-    </compilation-unit>
-  </test-case>
+      <compilation-unit name="start-started-feed">
+        <output-dir compare="Text">start-started-feed</output-dir>
+        <expected-error>Feed TweetFeed is started already.</expected-error>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="stop-stopped-feed">
+        <output-dir compare="Text">stop-stopped-feed</output-dir>
+        <expected-error>Feed TweetFeed is not started.</expected-error>
+      </compilation-unit>
+    </test-case>
   </test-group>
 </test-suite>

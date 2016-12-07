@@ -2142,15 +2142,15 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         // not sure this local variable
         ILangCompilationProvider compilationProvider = new AqlCompilationProvider();
         DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory();
+        FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
+                .getActiveEntityListener(entityId);
+        if (listener != null) {
+            throw new AlgebricksException("Feed " + feedName + " is started already.");
+        }
         // Start
         try {
             MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, feedConnections);
             // Prepare policy
-            FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
-                    .getActiveEntityListener(entityId);
-            if (listener != null) {
-                throw new AlgebricksException("Feed " + feedName + " is started already.");
-            }
             listener = new FeedEventsListener(entityId);
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,

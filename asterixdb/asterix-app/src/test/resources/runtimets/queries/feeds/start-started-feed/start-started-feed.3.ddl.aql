@@ -16,13 +16,5 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.feed.api;
 
-/**
- * Represents a feed management task. The task is executed asynchronously.
- */
-public interface IFeedWork {
-
-    public Runnable getRunnable();
-
-}
+ drop dataverse experiments;
