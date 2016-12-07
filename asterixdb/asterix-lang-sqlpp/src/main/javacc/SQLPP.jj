@@ -1136,6 +1136,7 @@ Statement ConnectionStatement() throws ParseException:
     <CONNECT> stmt = ConnectStatement()
   | <DISCONNECT> stmt = DisconnectStatement()
   | <START> stmt = StartStatement()
+  | <STOP> stmt = StopStatement()
   )
   {
     return stmt;
@@ -1155,6 +1156,21 @@ Statement StartStatement() throws ParseException:
     return stmt;
   }
 }
+
+Statement StopStatement () throws ParseException:
+{
+  Pair<Identifier,Identifier> feedNameComponents = null;
+
+  Statement stmt = null;
+}
+{
+  <FEED> feedNameComponents = QualifiedName()
+  {
+    stmt = new StopFeedStatement (feedNameComponents);
+    return stmt;
+  }
+}
+
 
 Statement DisconnectStatement() throws ParseException:
 {
@@ -3140,6 +3156,7 @@ TOKEN [IGNORE_CASE]:
   | <SET : "set">
   | <SOME : "some">
   | <START : "start">
+  | <STOP : "stop">
   | <TEMPORARY : "temporary">
   | <THEN : "then">
   | <TYPE : "type">

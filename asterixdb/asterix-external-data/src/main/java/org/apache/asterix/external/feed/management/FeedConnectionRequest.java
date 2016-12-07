@@ -42,8 +42,6 @@ public class FeedConnectionRequest implements Serializable {
     /** Target dataset associated with the connection request **/
     private final String targetDataset;
     private final EntityId receivingFeedId;
-    /** Status associated with the subscription. */
-    private ConnectionStatus connectionStatus;
 
     public FeedConnectionRequest(FeedRuntimeType connectionLocation, List<FunctionSignature> functionsToApply,
             String targetDataset, String policy, EntityId receivingFeedId) {
@@ -52,15 +50,6 @@ public class FeedConnectionRequest implements Serializable {
         this.targetDataset = targetDataset;
         this.policy = policy;
         this.receivingFeedId = receivingFeedId;
-        this.connectionStatus = ConnectionStatus.INITIALIZED;
-    }
-
-    public ConnectionStatus getConnectionStatus() {
-        return connectionStatus;
-    }
-
-    public void setSubscriptionStatus(ConnectionStatus connectionStatus) {
-        this.connectionStatus = connectionStatus;
     }
 
     public String getPolicy() {
@@ -87,20 +76,6 @@ public class FeedConnectionRequest implements Serializable {
     public String toString() {
         return "Feed Connection Request " + receivingFeedId + " [" + connectionLocation + "]" + " Apply ("
                 + StringUtils.join(functionsToApply, ",") + ")";
-    }
-
-    public enum ConnectionStatus {
-        /** initial state upon creating a connection request **/
-        INITIALIZED,
-
-        /** connection establish; feed is receiving data **/
-        ACTIVE,
-
-        /** connection removed; feed is not receiving data **/
-        INACTIVE,
-
-        /** connection request failed **/
-        FAILED
     }
 
 }

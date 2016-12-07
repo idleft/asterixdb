@@ -21,7 +21,6 @@ package org.apache.asterix.app.external;
 import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -40,7 +39,6 @@ import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
-import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
@@ -49,7 +47,6 @@ import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
-import org.apache.asterix.external.operators.FeedMessageOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
@@ -113,9 +110,6 @@ public class FeedOperations {
 
     static final Logger LOGGER = Logger.getLogger(FeedOperations.class.getName());
 
-    private static final ILangCompilationProvider compilationProvider = new AqlCompilationProvider();
-    private static final DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory(null);
-
     private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
             AqlMetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
@@ -157,7 +151,8 @@ public class FeedOperations {
     }
 
     private static JobSpecification getConnectionJob(AqlMetadataProvider metadataProvider,
-            FeedConnection feedConnection, String[] locations)
+            FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
+            DefaultStatementExecutorFactory qtFactory)
             throws AlgebricksException, RemoteException, ACIDException, JSONException {
         PrintWriter writer = new PrintWriter(System.err, true);
         SessionConfig pc = new SessionConfig(writer, SessionConfig.OutputFormat.ADM);
@@ -366,9 +361,8 @@ public class FeedOperations {
     }
 
     public static JobSpecification buildStartFeedJob(AqlMetadataProvider metadataProvider, Feed feed,
-            List<FeedConnection> feedConnections) throws Exception {
-        JobSpecification feedJob;
-        String[] ingestionLocations;
+            List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
+            DefaultStatementExecutorFactory qtFactory) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
         // TODO: Change the default Datasource to use all possible partitions
         Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
@@ -377,52 +371,15 @@ public class FeedOperations {
         // Construct the ingestion Job
         JobSpecification intakeJob = intakeInfo.getLeft();
         IAdapterFactory ingestionAdaptorFactory = intakeInfo.getRight();
-        ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
+        String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, ingestionLocations);
+            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, ingestionLocations,
+                    compilationProvider, qtFactory);
             jobsList.add(connectionJob);
         }
-        feedJob = combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+        return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
                 ingestionLocations);
-        return feedJob;
-    }
-
-    private static Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> buildSendFeedMessageRuntime(
-            JobSpecification jobSpec, EntityId feedId, String runtimeType, byte messageType,
-            Collection<String> locations) throws AlgebricksException {
-        AlgebricksPartitionConstraint partitionConstraint = new AlgebricksAbsolutePartitionConstraint(
-                locations.toArray(new String[] {}));
-        FeedMessageOperatorDescriptor feedMessenger = new FeedMessageOperatorDescriptor(jobSpec, feedId, runtimeType,
-                messageType);
-        return Pair.of(feedMessenger, partitionConstraint);
-    }
-
-    private static Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> buildDisconnectFeedMessengerRuntime(
-            JobSpecification jobSpec, EntityId feedId, List<String> locations) throws AlgebricksException {
-        return buildSendFeedMessageRuntime(jobSpec, feedId, FeedRuntimeType.INTAKE.toString(),
-                ActiveManagerMessage.STOP_ACTIVITY, locations);
-    }
-
-    public static JobSpecification buildStopFeedJob(EntityId feedId, List<String> intakeNodeLocations)
-            throws AlgebricksException {
-        JobSpecification jobSpec = JobSpecificationUtils.createJobSpecification();
-        AlgebricksPartitionConstraint messengerPc;
-        IOperatorDescriptor feedMessenger;
-
-        Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> p = buildDisconnectFeedMessengerRuntime(jobSpec,
-                feedId, intakeNodeLocations);
-
-        feedMessenger = p.getLeft();
-        messengerPc = p.getRight();
-
-        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, feedMessenger, messengerPc);
-        NullSinkOperatorDescriptor nullSink = new NullSinkOperatorDescriptor(jobSpec);
-        AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(jobSpec, nullSink, messengerPc);
-        jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), feedMessenger, 0, nullSink, 0);
-        jobSpec.addRoot(nullSink);
-
-        return jobSpec;
     }
 
     public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation, Integer ioDeviceIdx)

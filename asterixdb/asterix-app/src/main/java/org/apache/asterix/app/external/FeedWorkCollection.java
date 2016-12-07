@@ -105,25 +105,6 @@ public class FeedWorkCollection {
             }
         }
 
-        public static class FeedSubscribeWorkEventListener implements IFeedWorkEventListener {
-
-            @Override
-            public void workFailed(IFeedWork work, Exception e) {
-                if (LOGGER.isEnabledFor(Level.WARN)) {
-                    LOGGER.warn(" Feed subscription request " + ((SubscribeFeedWork) work).request
-                            + " failed with exception " + e);
-                }
-            }
-
-            @Override
-            public void workCompleted(IFeedWork work) {
-                ((SubscribeFeedWork) work).request.setSubscriptionStatus(ConnectionStatus.ACTIVE);
-                if (LOGGER.isEnabledFor(Level.INFO)) {
-                    LOGGER.info(" Feed subscription request " + ((SubscribeFeedWork) work).request + " completed ");
-                }
-            }
-        }
-
         public FeedConnectionRequest getRequest() {
             return request;
         }

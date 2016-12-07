@@ -62,6 +62,7 @@ import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
@@ -2139,17 +2140,22 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 metadataProvider.getMetadataTxnContext());
         List<FeedConnection> feedConnections = MetadataManager.INSTANCE
                 .getFeedConections(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
+        // not sure this local variable
+        ILangCompilationProvider compilationProvider = new AqlCompilationProvider();
+        DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory(null);
         // Start
         try {
             MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, feedConnections);
             // Prepare policy
             FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                     .getActiveEntityListener(entityId);
-            if (listener == null) {
-                listener = new FeedEventsListener(entityId);
+            if (listener != null) {
+                throw new AlgebricksException("Feed " + feedName + " is started already.");
             }
+            listener = new FeedEventsListener(entityId);
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
-            JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections);
+            JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
+                    compilationProvider, qtFactory);
             FeedConnectJobInfo cInfo = new FeedConnectJobInfo(entityId, null, ActivityState.CREATED, feedJob);
             listener.setFeedConnectJobInfo(cInfo);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
@@ -2173,6 +2179,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         // Obtain runtime info from ActiveListener
         FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                 .getActiveEntityListener(feedId);
+        if (listener == null) {
+            throw new AlgebricksException("Feed " + feedName + "is not started.");
+        }
         intakeNodeLocations = listener.getIntakeLocations();
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();

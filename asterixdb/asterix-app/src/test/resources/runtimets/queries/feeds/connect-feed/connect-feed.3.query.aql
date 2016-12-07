@@ -17,4 +17,4 @@
  * under the License.
  */
 use dataverse Metadata;
-count(for $x in dataset Metadata.FeedConnection return $x)
+for $x in dataset Metadata.FeedConnection return $x.DatasetName
