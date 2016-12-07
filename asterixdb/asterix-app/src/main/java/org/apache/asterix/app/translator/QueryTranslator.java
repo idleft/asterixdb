@@ -65,7 +65,7 @@ import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
-import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
+import org.apache.asterix.external.feed.watch.FeedJob;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.file.DatasetOperations;
@@ -2155,7 +2155,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
                     compilationProvider, qtFactory);
-            FeedConnectJobInfo cInfo = new FeedConnectJobInfo(entityId, null, ActivityState.CREATED, feedJob);
+            FeedJob cInfo = new FeedJob(entityId, null, ActivityState.CREATED, feedJob);
             listener.setFeedConnectJobInfo(cInfo);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
             JobUtils.runJob(hcc, feedJob,

@@ -18,21 +18,16 @@
  */
 package org.apache.asterix.external.feed.watch;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.asterix.active.ActiveJob;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.external.feed.api.IFeedJoint;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.util.FeedUtils.JobType;
-import org.apache.avro.generic.GenericData;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 
-public class FeedConnectJobInfo extends ActiveJob {
+public class FeedJob extends ActiveJob {
 
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +36,7 @@ public class FeedConnectJobInfo extends ActiveJob {
     private List<String> storageLocations;
     private List<Integer> intakePartitions;
 
-    public FeedConnectJobInfo(EntityId entityId, JobId jobId, ActivityState state, JobSpecification spec) {
+    public FeedJob(EntityId entityId, JobId jobId, ActivityState state, JobSpecification spec) {
         super(entityId, jobId, state, JobType.FEED_CONNECT, spec);
     }
 

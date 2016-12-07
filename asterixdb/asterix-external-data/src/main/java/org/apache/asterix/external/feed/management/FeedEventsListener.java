@@ -29,7 +29,7 @@ import org.apache.asterix.active.ActiveEvent;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
-import org.apache.asterix.external.feed.watch.FeedConnectJobInfo;
+import org.apache.asterix.external.feed.watch.FeedJob;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
@@ -49,7 +49,7 @@ import org.apache.hyracks.storage.am.lsm.common.dataflow.LSMTreeIndexInsertUpdat
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class.getName());
     private final List<String> connectedDatasets;
-    private FeedConnectJobInfo cInfo;
+    private FeedJob cInfo;
     private EntityId entityId;
 
     public FeedEventsListener(EntityId entityId) {
@@ -90,7 +90,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         cInfo.setState(ActivityState.INACTIVE);
     }
 
-    public void setFeedConnectJobInfo(FeedConnectJobInfo info) {
+    public void setFeedConnectJobInfo(FeedJob info) {
         this.cInfo = info;
     }
 
@@ -103,7 +103,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         cInfo.setJobId(jobId);
     }
 
-    private void setLocations(FeedConnectJobInfo cInfo) {
+    private void setLocations(FeedJob cInfo) {
         JobSpecification jobSpec = cInfo.getSpec();
 
         List<OperatorDescriptorId> computeOperatorIds = new ArrayList<>();
