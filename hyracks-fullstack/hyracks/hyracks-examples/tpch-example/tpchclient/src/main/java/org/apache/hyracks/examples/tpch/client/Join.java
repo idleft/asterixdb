@@ -36,6 +36,7 @@ import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFamily;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
@@ -52,7 +53,6 @@ import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.file.ConstantFileSplitProvider;
 import org.apache.hyracks.dataflow.std.file.DelimitedDataTupleParserFactory;
 import org.apache.hyracks.dataflow.std.file.FileScanOperatorDescriptor;
-import org.apache.hyracks.dataflow.std.file.FileSplit;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 import org.apache.hyracks.dataflow.std.file.PlainFileWriterOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.group.HashSpillableTableFactory;
@@ -61,7 +61,6 @@ import org.apache.hyracks.dataflow.std.group.aggregators.FloatSumFieldAggregator
 import org.apache.hyracks.dataflow.std.group.aggregators.IntSumFieldAggregatorFactory;
 import org.apache.hyracks.dataflow.std.group.aggregators.MultiFieldsAggregatorFactory;
 import org.apache.hyracks.dataflow.std.group.external.ExternalGroupOperatorDescriptor;
-import org.apache.hyracks.dataflow.std.join.GraceHashJoinOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.join.InMemoryHashJoinOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.join.JoinComparatorFactory;
 import org.apache.hyracks.dataflow.std.join.NestedLoopJoinOperatorDescriptor;
@@ -155,13 +154,13 @@ public class Join {
         IFileSplitProvider custSplitsProvider = new ConstantFileSplitProvider(customerSplits);
         long custFileSize = 0;
         for (int i = 0; i < customerSplits.length; i++) {
-            custFileSize += customerSplits[i].getLocalFile().getFile().length();
+            custFileSize += customerSplits[i].getFile(null).length();
         }
 
         IFileSplitProvider ordersSplitsProvider = new ConstantFileSplitProvider(orderSplits);
         long orderFileSize = 0;
         for (int i = 0; i < orderSplits.length; i++) {
-            orderFileSize += orderSplits[i].getLocalFile().getFile().length();
+            orderFileSize += orderSplits[i].getFile(null).length();
         }
 
         FileScanOperatorDescriptor ordScanner = new FileScanOperatorDescriptor(spec, ordersSplitsProvider,
@@ -195,14 +194,6 @@ public class Join {
                     new JoinComparatorFactory(PointableBinaryComparatorFactory.of(UTF8StringPointable.FACTORY), 0, 1),
                     new JoinComparatorFactory(PointableBinaryComparatorFactory.of(UTF8StringPointable.FACTORY), 1, 0),
                     null);
-
-        } else if ("grace".equalsIgnoreCase(algo)) {
-            join = new GraceHashJoinOperatorDescriptor(spec, memSize, graceInputSize, graceRecordsPerFrame, graceFactor,
-                    new int[] { 0 }, new int[] { 1 },
-                    new IBinaryHashFunctionFactory[] {
-                            PointableBinaryHashFunctionFactory.of(UTF8StringPointable.FACTORY) },
-                    new IBinaryComparatorFactory[] { PointableBinaryComparatorFactory.of(UTF8StringPointable.FACTORY) },
-                    Common.custOrderJoinDesc, null);
 
         } else {
             System.err.println("unknown algorithm:" + algo);

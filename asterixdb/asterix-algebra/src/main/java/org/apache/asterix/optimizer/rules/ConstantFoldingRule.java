@@ -23,18 +23,17 @@ import java.io.DataInputStream;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-import org.apache.asterix.om.util.ConstantExpressionUtil;
 import org.apache.asterix.common.config.GlobalConfig;
-import org.apache.asterix.dataflow.data.common.AqlExpressionTypeComputer;
+import org.apache.asterix.dataflow.data.common.ExpressionTypeComputer;
 import org.apache.asterix.dataflow.data.nontagged.AqlMissingWriterFactory;
-import org.apache.asterix.formats.nontagged.AqlADMPrinterFactoryProvider;
-import org.apache.asterix.formats.nontagged.AqlBinaryBooleanInspectorImpl;
-import org.apache.asterix.formats.nontagged.AqlBinaryComparatorFactoryProvider;
-import org.apache.asterix.formats.nontagged.AqlBinaryHashFunctionFactoryProvider;
-import org.apache.asterix.formats.nontagged.AqlBinaryHashFunctionFamilyProvider;
-import org.apache.asterix.formats.nontagged.AqlBinaryIntegerInspector;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
-import org.apache.asterix.formats.nontagged.AqlTypeTraitProvider;
+import org.apache.asterix.formats.nontagged.ADMPrinterFactoryProvider;
+import org.apache.asterix.formats.nontagged.BinaryBooleanInspector;
+import org.apache.asterix.formats.nontagged.BinaryComparatorFactoryProvider;
+import org.apache.asterix.formats.nontagged.BinaryHashFunctionFactoryProvider;
+import org.apache.asterix.formats.nontagged.BinaryHashFunctionFamilyProvider;
+import org.apache.asterix.formats.nontagged.BinaryIntegerInspector;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.TypeTraitProvider;
 import org.apache.asterix.jobgen.QueryLogicalExpressionJobGen;
 import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.constants.AsterixConstantValue;
@@ -43,6 +42,7 @@ import org.apache.asterix.om.typecomputer.base.TypeCastUtils;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.AbstractCollectionType;
+import org.apache.asterix.om.util.ConstantExpressionUtil;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
@@ -117,17 +117,17 @@ public class ConstantFoldingRule implements IAlgebraicRewriteRule {
 
         @Override
         public Object getType(ILogicalExpression expr) throws AlgebricksException {
-            return AqlExpressionTypeComputer.INSTANCE.getType(expr, null, this);
+            return ExpressionTypeComputer.INSTANCE.getType(expr, null, this);
         }
     };
 
     private static final JobGenContext _jobGenCtx = new JobGenContext(null, null, null,
-            AqlSerializerDeserializerProvider.INSTANCE, AqlBinaryHashFunctionFactoryProvider.INSTANCE,
-            AqlBinaryHashFunctionFamilyProvider.INSTANCE, AqlBinaryComparatorFactoryProvider.INSTANCE,
-            AqlTypeTraitProvider.INSTANCE, AqlBinaryBooleanInspectorImpl.FACTORY, AqlBinaryIntegerInspector.FACTORY,
-            AqlADMPrinterFactoryProvider.INSTANCE, AqlMissingWriterFactory.INSTANCE, null,
+            SerializerDeserializerProvider.INSTANCE, BinaryHashFunctionFactoryProvider.INSTANCE,
+            BinaryHashFunctionFamilyProvider.INSTANCE, BinaryComparatorFactoryProvider.INSTANCE,
+            TypeTraitProvider.INSTANCE, BinaryBooleanInspector.FACTORY, BinaryIntegerInspector.FACTORY,
+            ADMPrinterFactoryProvider.INSTANCE, AqlMissingWriterFactory.INSTANCE, null,
             new LogicalExpressionJobGenToExpressionRuntimeProviderAdapter(QueryLogicalExpressionJobGen.INSTANCE),
-            AqlExpressionTypeComputer.INSTANCE, null, null, null, null, GlobalConfig.DEFAULT_FRAME_SIZE, null);
+            ExpressionTypeComputer.INSTANCE, null, null, null, null, GlobalConfig.DEFAULT_FRAME_SIZE, null);
 
     private static final IOperatorSchema[] _emptySchemas = new IOperatorSchema[] {};
 
@@ -214,20 +214,20 @@ public class ConstantFoldingRule implements IAlgebraicRewriteRule {
 
             IScalarEvaluatorFactory fact = _jobGenCtx.getExpressionRuntimeProvider().createEvaluatorFactory(expr,
                     _emptyTypeEnv, _emptySchemas, _jobGenCtx);
-            IScalarEvaluator eval = fact.createScalarEvaluator(null);
-            eval.evaluate(null, p);
-            Object t = _emptyTypeEnv.getType(expr);
-
-            @SuppressWarnings("rawtypes")
-            ISerializerDeserializer serde = _jobGenCtx.getSerializerDeserializerProvider().getSerializerDeserializer(t);
-            bbis.setByteBuffer(ByteBuffer.wrap(p.getByteArray(), p.getStartOffset(), p.getLength()), 0);
-            IAObject o;
             try {
-                o = (IAObject) serde.deserialize(dis);
+                IScalarEvaluator eval = fact.createScalarEvaluator(null);
+                eval.evaluate(null, p);
+                Object t = _emptyTypeEnv.getType(expr);
+
+                @SuppressWarnings("rawtypes")
+                ISerializerDeserializer serde = _jobGenCtx.getSerializerDeserializerProvider()
+                        .getSerializerDeserializer(t);
+                bbis.setByteBuffer(ByteBuffer.wrap(p.getByteArray(), p.getStartOffset(), p.getLength()), 0);
+                IAObject o = (IAObject) serde.deserialize(dis);
+                return new Pair<>(true, new ConstantExpression(new AsterixConstantValue(o)));
             } catch (HyracksDataException e) {
                 throw new AlgebricksException(e);
             }
-            return new Pair<Boolean, ILogicalExpression>(true, new ConstantExpression(new AsterixConstantValue(o)));
         }
 
         @Override

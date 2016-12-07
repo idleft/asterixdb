@@ -21,8 +21,8 @@ package org.apache.asterix.runtime.evaluators.constructors;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.asterix.formats.nontagged.AqlBinaryComparatorFactoryProvider;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.BinaryComparatorFactoryProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ADouble;
 import org.apache.asterix.om.base.AMutableDouble;
 import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
@@ -31,13 +31,15 @@ import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.InvalidDataFormatException;
+import org.apache.asterix.runtime.exceptions.TypeMismatchException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IPointable;
 import org.apache.hyracks.data.std.primitive.UTF8StringPointable;
 import org.apache.hyracks.data.std.primitive.VoidPointable;
@@ -60,27 +62,26 @@ public class ADoubleConstructorDescriptor extends AbstractScalarFunctionDynamicD
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws HyracksDataException {
                 return new IScalarEvaluator() {
                     private final ArrayBackedValueStorage resultStorage = new ArrayBackedValueStorage();
                     private final DataOutput out = resultStorage.getDataOutput();
                     private final IPointable inputArg = new VoidPointable();
                     private IScalarEvaluator eval = args[0].createScalarEvaluator(ctx);
-                    private String errorMessage = "This can not be an instance of double";
                     private final byte[] POSITIVE_INF = UTF8StringUtil.writeStringToBytes("INF");
                     private final byte[] NEGATIVE_INF = UTF8StringUtil.writeStringToBytes("-INF");
                     private final byte[] NAN = UTF8StringUtil.writeStringToBytes("NaN");
-                    IBinaryComparator utf8BinaryComparator = AqlBinaryComparatorFactoryProvider.UTF8STRING_POINTABLE_INSTANCE
-                            .createBinaryComparator();
+                    IBinaryComparator utf8BinaryComparator =
+                            BinaryComparatorFactoryProvider.UTF8STRING_POINTABLE_INSTANCE.createBinaryComparator();
                     private AMutableDouble aDouble = new AMutableDouble(0);
                     @SuppressWarnings("unchecked")
-                    private ISerializerDeserializer<ADouble> doubleSerde = AqlSerializerDeserializerProvider.INSTANCE
+                    private ISerializerDeserializer<ADouble> doubleSerde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.ADOUBLE);
 
                     private final UTF8StringPointable utf8Ptr = new UTF8StringPointable();
 
                     @Override
-                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
                         try {
                             resultStorage.reset();
                             eval.evaluate(tuple, inputArg);
@@ -104,11 +105,13 @@ public class ADoubleConstructorDescriptor extends AbstractScalarFunctionDynamicD
                                 }
                                 doubleSerde.serialize(aDouble, out);
                             } else {
-                                throw new AlgebricksException(errorMessage);
+                                throw new TypeMismatchException(getIdentifier(), 0, serString[offset],
+                                        ATypeTag.SERIALIZED_STRING_TYPE_TAG);
                             }
                             result.set(resultStorage);
-                        } catch (IOException e1) {
-                            throw new AlgebricksException(errorMessage);
+                        } catch (IOException e) {
+                            throw new InvalidDataFormatException(getIdentifier(), e,
+                                    ATypeTag.SERIALIZED_DATETIME_TYPE_TAG);
                         }
                     }
                 };

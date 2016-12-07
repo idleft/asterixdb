@@ -18,7 +18,6 @@
  */
 package org.apache.asterix.test.dataflow;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
@@ -27,7 +26,6 @@ import org.apache.asterix.app.data.gen.TestTupleCounterFrameWriter;
 import org.apache.asterix.app.data.gen.TupleGenerator;
 import org.apache.asterix.app.data.gen.TupleGenerator.GenerationFunction;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
-import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.dataflow.AsterixLSMInsertDeleteOperatorNodePushable;
 import org.apache.asterix.common.transactions.DatasetId;
 import org.apache.asterix.common.transactions.ILogRecord;
@@ -39,8 +37,8 @@ import org.apache.asterix.metadata.entities.InternalDatasetDetails.PartitioningS
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.test.common.TestHelper;
 import org.apache.asterix.transaction.management.service.logging.LogReader;
-import org.apache.commons.io.FileUtils;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntime;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -63,12 +61,11 @@ import org.junit.Test;
 
 public class LogMarkerTest {
 
-    private static final String TEST_CONFIG_FILE_NAME = "asterix-build-configuration.xml";
     private static final IAType[] KEY_TYPES = { BuiltinType.AINT32 };
     private static final ARecordType RECORD_TYPE = new ARecordType("TestRecordType", new String[] { "key", "value" },
             new IAType[] { BuiltinType.AINT32, BuiltinType.AINT64 }, false);
-    private static final GenerationFunction[] RECORD_GEN_FUNCTION =
-            { GenerationFunction.DETERMINISTIC, GenerationFunction.DETERMINISTIC };
+    private static final GenerationFunction[] RECORD_GEN_FUNCTION = { GenerationFunction.DETERMINISTIC,
+            GenerationFunction.DETERMINISTIC };
     private static final boolean[] UNIQUE_RECORD_FIELDS = { true, false };
     private static final ARecordType META_TYPE = null;
     private static final GenerationFunction[] META_GEN_FUNCTION = null;
@@ -78,7 +75,6 @@ public class LogMarkerTest {
     private static final int NUM_OF_RECORDS = 100000;
     private static final int SNAPSHOT_SIZE = 1000;
     private static final int DATASET_ID = 101;
-    private static final String SPILL_AREA = "target" + File.separator + "spill_area";
     private static final String DATAVERSE_NAME = "TestDV";
     private static final String DATASET_NAME = "TestDS";
     private static final String DATA_TYPE_NAME = "DUMMY";
@@ -86,37 +82,20 @@ public class LogMarkerTest {
 
     @Before
     public void setUp() throws Exception {
-        System.setProperty(GlobalConfig.CONFIG_FILE_PROPERTY, TEST_CONFIG_FILE_NAME);
         System.out.println("SetUp: ");
-        File f = new File(System.getProperty("user.dir") + File.separator + "target" + File.separator + "txnLogDir");
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
-        f = new File(System.getProperty("user.dir") + File.separator + "target" + File.separator + "IODevice");
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
-        f = new File(System.getProperty("user.dir") + File.separator + SPILL_AREA);
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
+        TestHelper.deleteExistingInstanceFiles();
     }
 
     @After
     public void tearDown() throws Exception {
         System.out.println("TearDown");
-        File f = new File(System.getProperty("user.dir") + File.separator + "target" + File.separator + "txnLogDir");
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
-        f = new File(System.getProperty("user.dir") + File.separator + "target" + File.separator + "IODevice");
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
-        f = new File(System.getProperty("user.dir") + File.separator + SPILL_AREA);
-        FileUtils.deleteQuietly(f);
-        System.out.println("Dir " + f.getName() + " deleted");
+        TestHelper.deleteExistingInstanceFiles();
     }
 
     @Test
     public void testInsertWithSnapshot() {
         try {
-            TestNodeController nc = new TestNodeController();
+            TestNodeController nc = new TestNodeController(null, false);
             nc.init();
             Dataset dataset = new Dataset(DATAVERSE_NAME, DATASET_NAME, DATAVERSE_NAME, DATA_TYPE_NAME,
                     NODE_GROUP_NAME, null, null, new InternalDatasetDetails(null, PartitioningStrategy.HASH,
@@ -125,7 +104,7 @@ public class LogMarkerTest {
             try {
                 nc.createPrimaryIndex(dataset, KEY_TYPES, RECORD_TYPE, META_TYPE, new NoMergePolicyFactory(), null,
                         null);
-                IHyracksTaskContext ctx = nc.createTestContext();
+                IHyracksTaskContext ctx = nc.createTestContext(true);
                 nc.newJobId();
                 ITransactionContext txnCtx = nc.getTransactionManager().getTransactionContext(nc.getTxnJobId(), true);
                 AsterixLSMInsertDeleteOperatorNodePushable insertOp = nc.getInsertPipeline(ctx, dataset, KEY_TYPES,

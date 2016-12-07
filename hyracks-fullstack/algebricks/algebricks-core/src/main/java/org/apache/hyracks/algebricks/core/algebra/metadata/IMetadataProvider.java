@@ -19,6 +19,7 @@
 package org.apache.hyracks.algebricks.core.algebra.metadata;
 
 import java.util.List;
+import java.util.Map;
 
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
@@ -193,7 +194,7 @@ public interface IMetadataProvider<S, I> {
     public IFunctionInfo lookupFunction(FunctionIdentifier fid);
 
     public Pair<IOperatorDescriptor, AlgebricksPartitionConstraint> getUpsertRuntime(IDataSource<S> dataSource,
-            IOperatorSchema propagatedSchema, IVariableTypeEnvironment typeEnv, List<LogicalVariable> keys,
+            IOperatorSchema inputSchema, IVariableTypeEnvironment typeEnv, List<LogicalVariable> keys,
             LogicalVariable payLoadVar, List<LogicalVariable> additionalFilterFields,
             List<LogicalVariable> additionalNonFilteringFields, RecordDescriptor recordDesc, JobGenContext context,
             JobSpecification jobSpec) throws AlgebricksException;
@@ -205,4 +206,5 @@ public interface IMetadataProvider<S, I> {
             List<LogicalVariable> prevSecondaryKeys, LogicalVariable prevAdditionalFilteringKeys,
             RecordDescriptor inputDesc, JobGenContext context, JobSpecification spec) throws AlgebricksException;
 
+    public Map<String, String> getConfig();
 }

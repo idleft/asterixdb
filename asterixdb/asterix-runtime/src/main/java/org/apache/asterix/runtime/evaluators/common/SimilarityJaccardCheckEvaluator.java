@@ -22,13 +22,12 @@ import java.io.IOException;
 
 import org.apache.asterix.builders.OrderedListBuilder;
 import org.apache.asterix.dataflow.data.nontagged.serde.AFloatSerializerDeserializer;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ABoolean;
 import org.apache.asterix.om.types.AOrderedListType;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.EnumDeserializer;
 import org.apache.asterix.runtime.evaluators.functions.BinaryHashMap.BinaryEntry;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -49,12 +48,12 @@ public class SimilarityJaccardCheckEvaluator extends SimilarityJaccardEvaluator 
     protected OrderedListBuilder listBuilder;
     protected ArrayBackedValueStorage inputVal;
     @SuppressWarnings("unchecked")
-    protected final ISerializerDeserializer<ABoolean> booleanSerde = AqlSerializerDeserializerProvider.INSTANCE
+    protected final ISerializerDeserializer<ABoolean> booleanSerde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.ABOOLEAN);
     protected final AOrderedListType listType = new AOrderedListType(BuiltinType.ANY, "list");
 
     public SimilarityJaccardCheckEvaluator(IScalarEvaluatorFactory[] args, IHyracksTaskContext context)
-            throws AlgebricksException {
+            throws HyracksDataException {
         super(args, context);
         jaccThreshEval = args[2].createScalarEvaluator(context);
         listBuilder = new OrderedListBuilder();
@@ -62,7 +61,7 @@ public class SimilarityJaccardCheckEvaluator extends SimilarityJaccardEvaluator 
     }
 
     @Override
-    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
         resultStorage.reset();
 
         firstOrdListEval.evaluate(tuple, argPtr1);
@@ -86,7 +85,7 @@ public class SimilarityJaccardCheckEvaluator extends SimilarityJaccardEvaluator 
             result.set(resultStorage);
             return;
         }
-        if (prepareLists(argPtr1, argPtr2, firstTypeTag)) {
+        if (prepareLists(argPtr1, argPtr2)) {
             jaccSim = computeResult();
         } else {
             jaccSim = 0.0f;
@@ -94,7 +93,7 @@ public class SimilarityJaccardCheckEvaluator extends SimilarityJaccardEvaluator 
         try {
             writeResult(jaccSim);
         } catch (IOException e) {
-            throw new AlgebricksException(e);
+            throw new HyracksDataException(e);
         }
         result.set(resultStorage);
     }

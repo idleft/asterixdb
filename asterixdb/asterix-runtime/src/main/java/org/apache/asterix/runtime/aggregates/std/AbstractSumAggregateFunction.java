@@ -26,7 +26,7 @@ import org.apache.asterix.dataflow.data.nontagged.serde.AInt16SerializerDeserial
 import org.apache.asterix.dataflow.data.nontagged.serde.AInt32SerializerDeserializer;
 import org.apache.asterix.dataflow.data.nontagged.serde.AInt64SerializerDeserializer;
 import org.apache.asterix.dataflow.data.nontagged.serde.AInt8SerializerDeserializer;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AMutableDouble;
 import org.apache.asterix.om.base.AMutableFloat;
 import org.apache.asterix.om.base.AMutableInt16;
@@ -34,17 +34,19 @@ import org.apache.asterix.om.base.AMutableInt32;
 import org.apache.asterix.om.base.AMutableInt64;
 import org.apache.asterix.om.base.AMutableInt8;
 import org.apache.asterix.om.base.ANull;
+import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.EnumDeserializer;
 import org.apache.asterix.om.types.hierachy.ATypeHierarchy;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
-import org.apache.hyracks.algebricks.common.exceptions.NotImplementedException;
+import org.apache.asterix.runtime.exceptions.IncompatibleTypeException;
+import org.apache.asterix.runtime.exceptions.UnsupportedItemTypeException;
 import org.apache.hyracks.algebricks.runtime.base.IAggregateEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IPointable;
 import org.apache.hyracks.data.std.primitive.VoidPointable;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
@@ -66,18 +68,18 @@ public abstract class AbstractSumAggregateFunction implements IAggregateEvaluato
     protected ISerializerDeserializer serde;
 
     public AbstractSumAggregateFunction(IScalarEvaluatorFactory[] args, IHyracksTaskContext context)
-            throws AlgebricksException {
+            throws HyracksDataException {
         eval = args[0].createScalarEvaluator(context);
     }
 
     @Override
-    public void init() {
+    public void init() throws HyracksDataException {
         aggType = ATypeTag.SYSTEM_NULL;
         sum = 0.0;
     }
 
     @Override
-    public void step(IFrameTupleReference tuple) throws AlgebricksException {
+    public void step(IFrameTupleReference tuple) throws HyracksDataException {
         if (skipStep()) {
             return;
         }
@@ -92,8 +94,7 @@ public abstract class AbstractSumAggregateFunction implements IAggregateEvaluato
         } else if (aggType == ATypeTag.SYSTEM_NULL) {
             aggType = typeTag;
         } else if (typeTag != ATypeTag.SYSTEM_NULL && !ATypeHierarchy.isCompatible(typeTag, aggType)) {
-            throw new AlgebricksException("Unexpected type " + typeTag
-                    + " in aggregation input stream. Expected type (or a promotable type to)" + aggType + ".");
+            throw new IncompatibleTypeException(AsterixBuiltinFunctions.SUM, typeTag.serialize(), aggType.serialize());
         }
 
         if (ATypeHierarchy.canPromote(aggType, typeTag)) {
@@ -136,55 +137,55 @@ public abstract class AbstractSumAggregateFunction implements IAggregateEvaluato
                 break;
             }
             default: {
-                throw new NotImplementedException("Cannot compute SUM for values of type " + typeTag + ".");
+                throw new UnsupportedItemTypeException(AsterixBuiltinFunctions.SUM, aggType.serialize());
             }
         }
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void finish(IPointable result) throws AlgebricksException {
+    public void finish(IPointable result) throws HyracksDataException {
         resultStorage.reset();
         try {
             switch (aggType) {
                 case INT8: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT8);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT8);
                     aInt8.setValue((byte) sum);
                     serde.serialize(aInt8, resultStorage.getDataOutput());
                     break;
                 }
                 case INT16: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT16);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT16);
                     aInt16.setValue((short) sum);
                     serde.serialize(aInt16, resultStorage.getDataOutput());
                     break;
                 }
                 case INT32: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT32);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT32);
                     aInt32.setValue((int) sum);
                     serde.serialize(aInt32, resultStorage.getDataOutput());
                     break;
                 }
                 case INT64: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT64);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AINT64);
                     aInt64.setValue((long) sum);
                     serde.serialize(aInt64, resultStorage.getDataOutput());
                     break;
                 }
                 case FLOAT: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AFLOAT);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.AFLOAT);
                     aFloat.setValue((float) sum);
                     serde.serialize(aFloat, resultStorage.getDataOutput());
                     break;
                 }
                 case DOUBLE: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ADOUBLE);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ADOUBLE);
                     aDouble.setValue(sum);
                     serde.serialize(aDouble, resultStorage.getDataOutput());
                     break;
                 }
                 case NULL: {
-                    serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
+                    serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
                     serde.serialize(ANull.NULL, resultStorage.getDataOutput());
                     break;
                 }
@@ -193,17 +194,16 @@ public abstract class AbstractSumAggregateFunction implements IAggregateEvaluato
                     break;
                 }
                 default:
-                    throw new AlgebricksException(
-                            "SumAggregationFunction: incompatible type for the result (" + aggType + "). ");
+                    throw new UnsupportedItemTypeException(AsterixBuiltinFunctions.SUM, aggType.serialize());
             }
         } catch (IOException e) {
-            throw new AlgebricksException(e);
+            throw new HyracksDataException(e);
         }
         result.set(resultStorage);
     }
 
     @Override
-    public void finishPartial(IPointable result) throws AlgebricksException {
+    public void finishPartial(IPointable result) throws HyracksDataException {
         finish(result);
     }
 
@@ -213,7 +213,7 @@ public abstract class AbstractSumAggregateFunction implements IAggregateEvaluato
 
     protected abstract void processNull();
 
-    protected abstract void processSystemNull() throws AlgebricksException;
+    protected abstract void processSystemNull() throws HyracksDataException;
 
     protected abstract void finishSystemNull() throws IOException;
 }

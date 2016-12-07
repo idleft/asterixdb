@@ -22,8 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.asterix.lang.common.util.FunctionUtil;
-import org.apache.asterix.metadata.declared.AqlDataSource;
-import org.apache.asterix.metadata.declared.AqlDataSource.AqlDataSourceType;
+import org.apache.asterix.metadata.declared.DataSource;
 import org.apache.asterix.metadata.declared.IMutationDataSource;
 import org.apache.asterix.om.constants.AsterixConstantValue;
 import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
@@ -79,16 +78,16 @@ public class MetaFunctionToMetaVariableRule implements IAlgebraicRewriteRule {
         if (op.getOperatorTag() == LogicalOperatorTag.DATASOURCESCAN) {
             DataSourceScanOperator scanOp = (DataSourceScanOperator) op;
             ILogicalExpressionReferenceTransformWithCondition inputTransfomer = visit(op.getInputs().get(0));
-            AqlDataSource dataSource = (AqlDataSource) scanOp.getDataSource();
+            DataSource dataSource = (DataSource) scanOp.getDataSource();
             List<ILogicalExpressionReferenceTransformWithCondition> transformers = null;
             List<LogicalVariable> allVars = scanOp.getVariables();
             LogicalVariable dataVar = dataSource.getDataRecordVariable(allVars);
             LogicalVariable metaVar = dataSource.getMetaVariable(allVars);
             LogicalExpressionReferenceTransform currentTransformer = null;
             // https://issues.apache.org/jira/browse/ASTERIXDB-1618
-            if (dataSource.getDatasourceType() != AqlDataSourceType.EXTERNAL_DATASET
-                    && dataSource.getDatasourceType() != AqlDataSourceType.INTERNAL_DATASET
-                    && dataSource.getDatasourceType() != AqlDataSourceType.LOADABLE) {
+            if (dataSource.getDatasourceType() != DataSource.Type.EXTERNAL_DATASET
+                    && dataSource.getDatasourceType() != DataSource.Type.INTERNAL_DATASET
+                    && dataSource.getDatasourceType() != DataSource.Type.LOADABLE) {
                 IMutationDataSource mds = (IMutationDataSource) dataSource;
                 if (mds.isChange()) {
                     transformers = new ArrayList<>();
@@ -225,7 +224,7 @@ class LogicalExpressionReferenceTransform implements ILogicalExpressionReference
         // The user query provides zero parameter for the meta function.
         if (variableRequired) {
             throw new AlgebricksException("Cannot resolve to ambiguity on the meta function call --"
-                    + " there are more than once dataset choices!");
+                    + " there are more than one dataset choices!");
         }
         exprRef.setValue(new VariableReferenceExpression(metaVar));
         return true;

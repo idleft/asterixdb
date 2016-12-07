@@ -20,14 +20,14 @@ package org.apache.asterix.runtime.evaluators.comparisons;
 
 import java.io.DataOutput;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ABoolean;
 import org.apache.asterix.om.base.ANull;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.EnumDeserializer;
 import org.apache.asterix.om.types.hierachy.ATypeHierarchy;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.UnsupportedTypeException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -52,20 +52,20 @@ public abstract class AbstractComparisonEvaluator implements IScalarEvaluator {
     private ComparisonHelper ch = new ComparisonHelper();
 
     @SuppressWarnings("unchecked")
-    protected ISerializerDeserializer<ABoolean> serde = AqlSerializerDeserializerProvider.INSTANCE
+    protected ISerializerDeserializer<ABoolean> serde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.ABOOLEAN);
     @SuppressWarnings("unchecked")
-    protected ISerializerDeserializer<ANull> nullSerde = AqlSerializerDeserializerProvider.INSTANCE
+    protected ISerializerDeserializer<ANull> nullSerde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.ANULL);
 
     public AbstractComparisonEvaluator(IScalarEvaluatorFactory evalLeftFactory,
-            IScalarEvaluatorFactory evalRightFactory, IHyracksTaskContext context) throws AlgebricksException {
+            IScalarEvaluatorFactory evalRightFactory, IHyracksTaskContext context) throws HyracksDataException {
         this.evalLeft = evalLeftFactory.createScalarEvaluator(context);
         this.evalRight = evalRightFactory.createScalarEvaluator(context);
     }
 
     @Override
-    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
         resultStorage.reset();
 
         // Evaluates input args.
@@ -80,19 +80,15 @@ public abstract class AbstractComparisonEvaluator implements IScalarEvaluator {
             checkTotallyOrderable();
         }
 
-        try {
-            // Checks whether two types are comparable
-            if (comparabilityCheck()) {
-                // Two types can be compared
-                int r = compareResults();
-                ABoolean b = getComparisonResult(r) ? ABoolean.TRUE : ABoolean.FALSE;
-                serde.serialize(b, out);
-            } else {
-                // result:NULL - two types cannot be compared.
-                nullSerde.serialize(ANull.NULL, out);
-            }
-        } catch (HyracksDataException e) {
-            throw new AlgebricksException(e);
+        // Checks whether two types are comparable
+        if (comparabilityCheck()) {
+            // Two types can be compared
+            int r = compareResults();
+            ABoolean b = getComparisonResult(r) ? ABoolean.TRUE : ABoolean.FALSE;
+            serde.serialize(b, out);
+        } else {
+            // result:NULL - two types cannot be compared.
+            nullSerde.serialize(ANull.NULL, out);
         }
         result.set(resultStorage);
     }
@@ -103,7 +99,7 @@ public abstract class AbstractComparisonEvaluator implements IScalarEvaluator {
 
     // checks whether we can apply >, >=, <, and <= operations to the given type since
     // these operations can not be defined for certain types.
-    protected void checkTotallyOrderable() throws AlgebricksException {
+    protected void checkTotallyOrderable() throws HyracksDataException {
         if (argLeft.getLength() != 0) {
             ATypeTag typeTag = EnumDeserializer.ATYPETAGDESERIALIZER.deserialize(argLeft.getTag());
             switch (typeTag) {
@@ -115,8 +111,7 @@ public abstract class AbstractComparisonEvaluator implements IScalarEvaluator {
                 case POLYGON:
                 case CIRCLE:
                 case RECTANGLE:
-                    throw new AlgebricksException(
-                            "Comparison operations (GT, GE, LT, and LE) for the " + typeTag + " type are not defined.");
+                    throw new UnsupportedTypeException(ComparisonHelper.COMPARISON, argLeft.getTag());
                 default:
                     return;
             }

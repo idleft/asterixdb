@@ -19,12 +19,11 @@
 
 package org.apache.asterix.runtime.evaluators.functions.binary;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AInt64;
 import org.apache.asterix.om.base.AMutableInt64;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
@@ -42,45 +41,37 @@ public abstract class AbstractFindBinaryEvaluator extends AbstractBinaryScalarEv
     protected final ByteArrayPointable wordPtr = new ByteArrayPointable();
 
     @SuppressWarnings("unchecked")
-    protected ISerializerDeserializer<AInt64> intSerde = AqlSerializerDeserializerProvider.INSTANCE
+    protected ISerializerDeserializer<AInt64> intSerde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.AINT64);
 
     public AbstractFindBinaryEvaluator(IHyracksTaskContext context, IScalarEvaluatorFactory[] copyEvaluatorFactories,
-            String functionName) throws AlgebricksException {
+            String functionName) throws HyracksDataException {
         super(context, copyEvaluatorFactories);
         this.functionName = functionName;
     }
 
     @Override
-    public void evaluate(IFrameTupleReference tuple, IPointable resultPointable) throws AlgebricksException {
+    public void evaluate(IFrameTupleReference tuple, IPointable resultPointable) throws HyracksDataException {
         resultStorage.reset();
         for (int i = 0; i < pointables.length; ++i) {
             evaluators[i].evaluate(tuple, pointables[i]);
         }
 
         int fromOffset = getFromOffset(tuple);
-        try {
-            ATypeTag textTag = ATypeTag.VALUE_TYPE_MAPPING[pointables[0].getByteArray()[pointables[0]
-                    .getStartOffset()]];
-            ATypeTag wordTag = ATypeTag.VALUE_TYPE_MAPPING[pointables[1].getByteArray()[pointables[1]
-                    .getStartOffset()]];
+        ATypeTag textTag = ATypeTag.VALUE_TYPE_MAPPING[pointables[0].getByteArray()[pointables[0].getStartOffset()]];
+        ATypeTag wordTag = ATypeTag.VALUE_TYPE_MAPPING[pointables[1].getByteArray()[pointables[1].getStartOffset()]];
 
-            checkTypeMachingThrowsIfNot(functionName, EXPECTED_INPUT_TAG, textTag, wordTag);
-            textPtr.set(pointables[0].getByteArray(), pointables[0].getStartOffset() + 1,
-                    pointables[0].getLength() - 1);
-            wordPtr.set(pointables[1].getByteArray(), pointables[0].getStartOffset() + 1,
-                    pointables[1].getLength() - 1);
-            result.setValue(1L + indexOf(textPtr.getByteArray(), textPtr.getContentStartOffset(),
-                    textPtr.getContentLength(), wordPtr.getByteArray(), wordPtr.getContentStartOffset(),
-                    wordPtr.getContentLength(), fromOffset));
-            intSerde.serialize(result, dataOutput);
-        } catch (HyracksDataException e) {
-            throw new AlgebricksException(e);
-        }
+        checkTypeMachingThrowsIfNot(functionName, EXPECTED_INPUT_TAG, textTag, wordTag);
+        textPtr.set(pointables[0].getByteArray(), pointables[0].getStartOffset() + 1, pointables[0].getLength() - 1);
+        wordPtr.set(pointables[1].getByteArray(), pointables[0].getStartOffset() + 1, pointables[1].getLength() - 1);
+        result.setValue(1L + indexOf(textPtr.getByteArray(), textPtr.getContentStartOffset(),
+                textPtr.getContentLength(), wordPtr.getByteArray(), wordPtr.getContentStartOffset(),
+                wordPtr.getContentLength(), fromOffset));
+        intSerde.serialize(result, dataOutput);
         resultPointable.set(resultStorage);
     }
 
-    protected abstract int getFromOffset(IFrameTupleReference tuple) throws AlgebricksException;
+    protected abstract int getFromOffset(IFrameTupleReference tuple) throws HyracksDataException;
 
     // copy from String.indexOf(String)
     private int indexOf(byte[] source, int sourceOffset, int sourceCount, byte[] target, int targetOffset,

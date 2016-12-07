@@ -21,17 +21,16 @@ package org.apache.asterix.runtime.evaluators.functions.temporal;
 import java.io.DataOutput;
 
 import org.apache.asterix.dataflow.data.nontagged.serde.ADateTimeSerializerDeserializer;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AInt64;
 import org.apache.asterix.om.base.AMutableInt64;
+import org.apache.asterix.runtime.exceptions.TypeMismatchException;
 import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
 import org.apache.asterix.om.functions.IFunctionDescriptor;
 import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
-import org.apache.asterix.om.types.EnumDeserializer;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
@@ -54,14 +53,12 @@ public class UnixTimeFromDatetimeInMsDescriptor extends AbstractScalarFunctionDy
     };
 
     @Override
-    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args)
-            throws AlgebricksException {
+    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args) {
         return new IScalarEvaluatorFactory() {
-
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws HyracksDataException {
                 return new IScalarEvaluator() {
 
                     private ArrayBackedValueStorage resultStorage = new ArrayBackedValueStorage();
@@ -72,28 +69,23 @@ public class UnixTimeFromDatetimeInMsDescriptor extends AbstractScalarFunctionDy
                     // possible returning types
                     private AMutableInt64 aInt64 = new AMutableInt64(0);
                     @SuppressWarnings("unchecked")
-                    private ISerializerDeserializer<AInt64> int64Serde = AqlSerializerDeserializerProvider.INSTANCE
+                    private ISerializerDeserializer<AInt64> int64Serde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.AINT64);
 
                     @Override
-                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
                         resultStorage.reset();
                         eval.evaluate(tuple, argPtr);
                         byte[] bytes = argPtr.getByteArray();
                         int offset = argPtr.getStartOffset();
 
-                        try {
-                            if (bytes[offset] != ATypeTag.SERIALIZED_DATETIME_TYPE_TAG) {
-                                throw new AlgebricksException(
-                                        getIdentifier().getName() + ": expects input type DATETIME/NULL but got "
-                                                + EnumDeserializer.ATYPETAGDESERIALIZER.deserialize(bytes[offset]));
-                            }
-                            long datetimeChronon = ADateTimeSerializerDeserializer.getChronon(bytes, offset + 1);
-                            aInt64.setValue(datetimeChronon);
-                            int64Serde.serialize(aInt64, out);
-                        } catch (HyracksDataException hex) {
-                            throw new AlgebricksException(hex);
+                        if (bytes[offset] != ATypeTag.SERIALIZED_DATETIME_TYPE_TAG) {
+                            throw new TypeMismatchException(getIdentifier(), 0, bytes[offset],
+                                    ATypeTag.SERIALIZED_DATETIME_TYPE_TAG);
                         }
+                        long datetimeChronon = ADateTimeSerializerDeserializer.getChronon(bytes, offset + 1);
+                        aInt64.setValue(datetimeChronon);
+                        int64Serde.serialize(aInt64, out);
                         result.set(resultStorage);
                     }
                 };

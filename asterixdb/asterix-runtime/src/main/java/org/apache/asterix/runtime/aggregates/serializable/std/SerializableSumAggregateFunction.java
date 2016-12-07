@@ -21,20 +21,22 @@ package org.apache.asterix.runtime.aggregates.serializable.std;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ANull;
+import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.EnumDeserializer;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.UnsupportedItemTypeException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class SerializableSumAggregateFunction extends AbstractSerializableSumAggregateFunction {
     private final boolean isLocalAgg;
 
     public SerializableSumAggregateFunction(IScalarEvaluatorFactory[] args, boolean isLocalAgg,
-            IHyracksTaskContext context) throws AlgebricksException {
+            IHyracksTaskContext context) throws HyracksDataException {
         super(args, context);
         this.isLocalAgg = isLocalAgg;
     }
@@ -51,12 +53,13 @@ public class SerializableSumAggregateFunction extends AbstractSerializableSumAgg
     }
 
     @Override
-    protected void processSystemNull() throws AlgebricksException {
+    protected void processSystemNull() throws HyracksDataException {
         // For global aggregates simply ignore system null here,
         // but if all input value are system null, then we should return
         // null in finish().
         if (isLocalAgg) {
-            throw new AlgebricksException("Type SYSTEM_NULL encountered in local aggregate.");
+            throw new UnsupportedItemTypeException(AsterixBuiltinFunctions.SUM,
+                    ATypeTag.SERIALIZED_SYSTEM_NULL_TYPE_TAG);
         }
     }
 
@@ -67,7 +70,7 @@ public class SerializableSumAggregateFunction extends AbstractSerializableSumAgg
         if (isLocalAgg) {
             out.writeByte(ATypeTag.SYSTEM_NULL.serialize());
         } else {
-            serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
+            serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
             serde.serialize(ANull.NULL, out);
         }
     }

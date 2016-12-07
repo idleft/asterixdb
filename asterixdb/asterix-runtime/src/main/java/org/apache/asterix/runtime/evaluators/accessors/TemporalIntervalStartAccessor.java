@@ -22,7 +22,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.asterix.dataflow.data.nontagged.serde.AIntervalSerializerDeserializer;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ADate;
 import org.apache.asterix.om.base.ADateTime;
 import org.apache.asterix.om.base.AMutableDate;
@@ -34,14 +34,15 @@ import org.apache.asterix.om.functions.IFunctionDescriptor;
 import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
-import org.apache.asterix.om.types.EnumDeserializer;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.InvalidDataFormatException;
+import org.apache.asterix.runtime.exceptions.TypeMismatchException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IPointable;
 import org.apache.hyracks.data.std.primitive.VoidPointable;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
@@ -60,13 +61,12 @@ public class TemporalIntervalStartAccessor extends AbstractScalarFunctionDynamic
     };
 
     @Override
-    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args)
-            throws AlgebricksException {
+    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args) {
         return new IScalarEvaluatorFactory() {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws HyracksDataException {
                 return new IScalarEvaluator() {
                     private final ArrayBackedValueStorage resultStorage = new ArrayBackedValueStorage();
                     private final DataOutput out = resultStorage.getDataOutput();
@@ -75,20 +75,20 @@ public class TemporalIntervalStartAccessor extends AbstractScalarFunctionDynamic
 
                     // possible output
                     @SuppressWarnings("unchecked")
-                    private final ISerializerDeserializer<ADate> dateSerde = AqlSerializerDeserializerProvider.INSTANCE
+                    private final ISerializerDeserializer<ADate> dateSerde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.ADATE);
                     private final AMutableDate aDate = new AMutableDate(0);
                     @SuppressWarnings("unchecked")
-                    private final ISerializerDeserializer<ADateTime> datetimeSerde = AqlSerializerDeserializerProvider.INSTANCE
-                            .getSerializerDeserializer(BuiltinType.ADATETIME);
+                    private final ISerializerDeserializer<ADateTime> datetimeSerde =
+                            SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ADATETIME);
                     private final AMutableDateTime aDateTime = new AMutableDateTime(0);
                     @SuppressWarnings("unchecked")
-                    private final ISerializerDeserializer<ATime> timeSerde = AqlSerializerDeserializerProvider.INSTANCE
+                    private final ISerializerDeserializer<ATime> timeSerde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.ATIME);
                     private final AMutableTime aTime = new AMutableTime(0);
 
                     @Override
-                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
                         eval.evaluate(tuple, argPtr);
                         byte[] bytes = argPtr.getByteArray();
                         int startOffset = argPtr.getStartOffset();
@@ -109,13 +109,16 @@ public class TemporalIntervalStartAccessor extends AbstractScalarFunctionDynamic
                                 } else if (timeType == ATypeTag.SERIALIZED_DATETIME_TYPE_TAG) {
                                     aDateTime.setValue(startTime);
                                     datetimeSerde.serialize(aDateTime, out);
+                                } else {
+                                    throw new InvalidDataFormatException(getIdentifier(),
+                                            ATypeTag.SERIALIZED_INTERVAL_TYPE_TAG);
                                 }
                             } else {
-                                throw new AlgebricksException(FID.getName() + ": expects NULL/INTERVAL, but got "
-                                        + EnumDeserializer.ATYPETAGDESERIALIZER.deserialize(bytes[startOffset]));
+                                throw new TypeMismatchException(getIdentifier(), 0, bytes[startOffset],
+                                        ATypeTag.SERIALIZED_INTERVAL_TYPE_TAG);
                             }
                         } catch (IOException e) {
-                            throw new AlgebricksException(e);
+                            throw new HyracksDataException(e);
                         }
                         result.set(resultStorage);
                     }

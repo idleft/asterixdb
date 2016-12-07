@@ -20,19 +20,21 @@ package org.apache.asterix.runtime.aggregates.std;
 
 import java.io.IOException;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ANull;
+import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.UnsupportedItemTypeException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class SumAggregateFunction extends AbstractSumAggregateFunction {
     private final boolean isLocalAgg;
 
     public SumAggregateFunction(IScalarEvaluatorFactory[] args, IHyracksTaskContext context, boolean isLocalAgg)
-            throws AlgebricksException {
+            throws HyracksDataException {
         super(args, context);
         this.isLocalAgg = isLocalAgg;
     }
@@ -48,12 +50,13 @@ public class SumAggregateFunction extends AbstractSumAggregateFunction {
     }
 
     @Override
-    protected void processSystemNull() throws AlgebricksException {
+    protected void processSystemNull() throws HyracksDataException {
         // For global aggregates simply ignore system null here,
         // but if all input value are system null, then we should return
         // null in finish().
         if (isLocalAgg) {
-            throw new AlgebricksException("Type SYSTEM_NULL encountered in local aggregate.");
+            throw new UnsupportedItemTypeException(AsterixBuiltinFunctions.SUM,
+                    ATypeTag.SERIALIZED_SYSTEM_NULL_TYPE_TAG);
         }
     }
 
@@ -64,7 +67,7 @@ public class SumAggregateFunction extends AbstractSumAggregateFunction {
         if (isLocalAgg) {
             resultStorage.getDataOutput().writeByte(ATypeTag.SYSTEM_NULL.serialize());
         } else {
-            serde = AqlSerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
+            serde = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(BuiltinType.ANULL);
             serde.serialize(ANull.NULL, resultStorage.getDataOutput());
         }
     }

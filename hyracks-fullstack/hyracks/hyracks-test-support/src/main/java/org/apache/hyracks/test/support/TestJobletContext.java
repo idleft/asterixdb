@@ -44,7 +44,7 @@ public class TestJobletContext implements IHyracksJobletContext {
         this.frameSize = frameSize;
         this.appContext = appContext;
         this.jobId = jobId;
-        fileFactory = new WorkspaceFileFactory(this, (IOManager) getIOManager());
+        fileFactory = new WorkspaceFileFactory(this, (IIOManager) getIOManager());
         this.frameManger = new FrameManager(frameSize);
     }
 
@@ -69,7 +69,7 @@ public class TestJobletContext implements IHyracksJobletContext {
     }
 
     public IIOManager getIOManager() {
-        return appContext.getRootContext().getIOManager();
+        return appContext.getIoManager();
     }
 
     @Override

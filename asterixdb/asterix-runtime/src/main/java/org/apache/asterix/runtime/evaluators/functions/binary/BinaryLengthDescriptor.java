@@ -19,7 +19,7 @@
 
 package org.apache.asterix.runtime.evaluators.functions.binary;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AInt64;
 import org.apache.asterix.om.base.AMutableInt64;
 import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
@@ -28,7 +28,6 @@ import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
@@ -51,36 +50,31 @@ public class BinaryLengthDescriptor extends AbstractScalarFunctionDynamicDescrip
     private static final ATypeTag[] EXPECTED_TAGS = { ATypeTag.BINARY };
 
     @Override
-    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args)
-            throws AlgebricksException {
+    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args) {
         return new IScalarEvaluatorFactory() {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws HyracksDataException {
                 return new AbstractBinaryScalarEvaluator(ctx, args) {
 
                     private AMutableInt64 result = new AMutableInt64(0);
                     @SuppressWarnings("unchecked")
-                    private ISerializerDeserializer<AInt64> intSerde = AqlSerializerDeserializerProvider.INSTANCE
+                    private ISerializerDeserializer<AInt64> intSerde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.AINT64);
 
                     @Override
                     public void evaluate(IFrameTupleReference tuple, IPointable resultPointable)
-                            throws AlgebricksException {
+                            throws HyracksDataException {
                         resultStorage.reset();
                         evaluators[0].evaluate(tuple, pointables[0]);
                         ATypeTag tag = ATypeTag.VALUE_TYPE_MAPPING[pointables[0].getByteArray()[pointables[0]
                                 .getStartOffset()]];
-                        try {
-                            checkTypeMachingThrowsIfNot(getIdentifier().getName(), EXPECTED_TAGS, tag);
-                            int len = ByteArrayPointable.getContentLength(pointables[0].getByteArray(),
+                        checkTypeMachingThrowsIfNot(getIdentifier().getName(), EXPECTED_TAGS, tag);
+                        int len = ByteArrayPointable.getContentLength(pointables[0].getByteArray(),
                                     pointables[0].getStartOffset() + 1);
-                            result.setValue(len);
-                            intSerde.serialize(result, dataOutput);
-                        } catch (HyracksDataException e) {
-                            throw new AlgebricksException(e);
-                        }
+                        result.setValue(len);
+                        intSerde.serialize(result, dataOutput);
                         resultPointable.set(resultStorage);
                     }
                 };

@@ -21,13 +21,6 @@ package org.apache.asterix.algebra.base;
 
 import org.apache.asterix.common.api.IExtension;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.commons.lang3.mutable.Mutable;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
-import org.apache.hyracks.algebricks.core.algebra.base.ILogicalExpression;
-import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
-import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
-import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression;
-import org.apache.hyracks.algebricks.core.algebra.operators.logical.UnnestOperator;
 
 /**
  * An interface for language extensions
@@ -45,20 +38,4 @@ public interface ILangExtension extends IExtension {
     }
 
     ILangCompilationProvider getLangCompilationProvider(Language lang);
-
-    //TODO(amoudi/yingyi) this is not a good way to extend re-write rules. introduce rewrite-rule-provider.
-    /**
-     * Called by the compiler when the unnest function is an extension function.
-     * Provides a way to add additional types of datasources
-     *
-     * @param opRef
-     * @param context
-     * @param unnestOp
-     * @param unnestExpr
-     * @param functionCallExpr
-     * @return true if transformation was successful, false otherwise
-     * @throws AlgebricksException
-     */
-    boolean unnestToDataScan(Mutable<ILogicalOperator> opRef, IOptimizationContext context, UnnestOperator unnestOp,
-            ILogicalExpression unnestExpr, AbstractFunctionCallExpression functionCallExpr) throws AlgebricksException;
 }

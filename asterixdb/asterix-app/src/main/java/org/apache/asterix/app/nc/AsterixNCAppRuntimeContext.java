@@ -167,11 +167,11 @@ public class AsterixNCAppRuntimeContext implements IAsterixAppRuntimeContext, IA
         Logger.getLogger("org.apache.asterix").setLevel(externalProperties.getLogLevel());
         Logger.getLogger("org.apache.hyracks").setLevel(externalProperties.getLogLevel());
 
+        ioManager = ncApplicationContext.getIoManager();
         threadExecutor = new AsterixThreadExecutor(ncApplicationContext.getThreadFactory());
-        fileMapManager = new AsterixFileMapManager();
+        fileMapManager = new AsterixFileMapManager(ioManager);
         ICacheMemoryAllocator allocator = new HeapBufferAllocator();
         IPageCleanerPolicy pcp = new DelayPageCleanerPolicy(600000);
-        ioManager = ncApplicationContext.getRootContext().getIOManager();
         IPageReplacementStrategy prs = new ClockPageReplacementStrategy(allocator,
                 storageProperties.getBufferCachePageSize(), storageProperties.getBufferCacheNumPages());
 

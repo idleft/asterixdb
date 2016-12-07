@@ -21,7 +21,7 @@ package org.apache.asterix.runtime.evaluators.functions;
 import java.io.DataOutput;
 
 import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ABoolean;
 import org.apache.asterix.om.functions.AsterixBuiltinFunctions;
 import org.apache.asterix.om.functions.IFunctionDescriptor;
@@ -29,7 +29,7 @@ import org.apache.asterix.om.functions.IFunctionDescriptorFactory;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.asterix.runtime.exceptions.TypeMismatchException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
@@ -56,13 +56,12 @@ public class NotDescriptor extends AbstractScalarFunctionDynamicDescriptor {
     }
 
     @Override
-    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args)
-            throws AlgebricksException {
+    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args) {
         return new IScalarEvaluatorFactory() {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws HyracksDataException {
 
                 return new IScalarEvaluator() {
 
@@ -71,30 +70,24 @@ public class NotDescriptor extends AbstractScalarFunctionDynamicDescriptor {
                     private IPointable argPtr = new VoidPointable();
                     private IScalarEvaluator eval = args[0].createScalarEvaluator(ctx);
 
-                    private String errorMessage = AsterixBuiltinFunctions.NOT.getName()
-                            + ": expects input type BOOLEAN/NULL";
                     @SuppressWarnings("unchecked")
-                    private ISerializerDeserializer<ABoolean> booleanSerde = AqlSerializerDeserializerProvider.INSTANCE
+                    private ISerializerDeserializer<ABoolean> booleanSerde = SerializerDeserializerProvider.INSTANCE
                             .getSerializerDeserializer(BuiltinType.ABOOLEAN);
 
                     @Override
-                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws AlgebricksException {
+                    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
                         resultStorage.reset();
                         eval.evaluate(tuple, argPtr);
 
                         byte[] bytes = argPtr.getByteArray();
                         int offset = argPtr.getStartOffset();
-
-                        try {
-                            if (bytes[offset] == ATypeTag.SERIALIZED_BOOLEAN_TYPE_TAG) {
-                                boolean argRes = ABooleanSerializerDeserializer.getBoolean(bytes, offset + 1);
-                                ABoolean aResult = argRes ? (ABoolean.FALSE) : (ABoolean.TRUE);
-                                booleanSerde.serialize(aResult, out);
-                            } else {
-                                throw new AlgebricksException(errorMessage);
-                            }
-                        } catch (HyracksDataException hde) {
-                            throw new AlgebricksException(hde);
+                        if (bytes[offset] == ATypeTag.SERIALIZED_BOOLEAN_TYPE_TAG) {
+                            boolean argRes = ABooleanSerializerDeserializer.getBoolean(bytes, offset + 1);
+                            ABoolean aResult = argRes ? ABoolean.FALSE : ABoolean.TRUE;
+                            booleanSerde.serialize(aResult, out);
+                        } else {
+                            throw new TypeMismatchException(getIdentifier(), 0,
+                                    bytes[offset], ATypeTag.SERIALIZED_BOOLEAN_TYPE_TAG);
                         }
                         result.set(resultStorage);
                     }

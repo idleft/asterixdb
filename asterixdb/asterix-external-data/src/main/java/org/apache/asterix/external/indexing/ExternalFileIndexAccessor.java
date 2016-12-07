@@ -25,7 +25,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import org.apache.asterix.external.operators.ExternalLookupOperatorDescriptor;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ADateTime;
 import org.apache.asterix.om.base.AInt64;
 import org.apache.asterix.om.base.AMutableInt32;
@@ -65,7 +65,7 @@ public class ExternalFileIndexAccessor implements Serializable {
     private ArrayTupleReference searchKey;
     private MultiComparator searchCmp;
     private AMutableInt32 currentFileNumber = new AMutableInt32(-1);
-    private ISerializerDeserializer intSerde = AqlSerializerDeserializerProvider.INSTANCE
+    private ISerializerDeserializer intSerde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.AINT32);
     private RangePredicate searchPredicate;
     private ILSMIndexAccessorInternal fileIndexAccessor;
@@ -92,7 +92,7 @@ public class ExternalFileIndexAccessor implements Serializable {
 
         // create the accessor  and the cursor using the passed version
         ISearchOperationCallback searchCallback = opDesc.getSearchOpCallbackFactory()
-                .createSearchOperationCallback(indexDataflowHelper.getResourceID(), ctx, null);
+                .createSearchOperationCallback(indexDataflowHelper.getResource().getId(), ctx, null);
         fileIndexAccessor = index.createAccessor(searchCallback, indexDataflowHelper.getVersion());
         fileIndexSearchCursor = fileIndexAccessor.createSearchCursor(false);
     }

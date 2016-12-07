@@ -103,9 +103,9 @@ import org.apache.asterix.lang.common.struct.OperatorType;
 import org.apache.asterix.lang.common.struct.QuantifiedPair;
 import org.apache.asterix.lang.common.struct.UnaryExprType;
 import org.apache.asterix.lang.common.util.FunctionUtil;
-import org.apache.asterix.metadata.declared.AqlMetadataProvider;
 import org.apache.asterix.metadata.declared.FileSplitDataSink;
 import org.apache.asterix.metadata.declared.FileSplitSinkId;
+import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.utils.DatasetUtils;
 import org.apache.asterix.om.base.AString;
@@ -217,16 +217,14 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     private TranslationContext context;
     private String outputDatasetName;
     private ICompiledDmlStatement stmt;
-    private AqlMetadataProvider metadataProvider;
 
     private MetaScopeLogicalVariable metaScopeExp = new MetaScopeLogicalVariable();
     private MetaScopeILogicalOperator metaScopeOp = new MetaScopeILogicalOperator();
     private static LogicalVariable METADATA_DUMMY_VAR = new LogicalVariable(-1);
 
-    public AqlPlusExpressionToPlanTranslator(JobId jobId, AqlMetadataProvider metadataProvider,
+    public AqlPlusExpressionToPlanTranslator(JobId jobId, MetadataProvider metadataProvider,
             Counter currentVarCounter, String outputDatasetName, ICompiledDmlStatement stmt) {
         this.jobId = jobId;
-        this.metadataProvider = metadataProvider;
         this.context = new TranslationContext(currentVarCounter);
         this.outputDatasetName = outputDatasetName;
         this.stmt = stmt;
@@ -241,7 +239,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
         return translate(expr, null);
     }
 
-    public ILogicalPlan translate(Query expr, AqlMetadataProvider metadata)
+    public ILogicalPlan translate(Query expr, MetadataProvider metadata)
             throws AlgebricksException, AsterixException {
         IDataFormat format = metadata.getFormat();
         if (format == null) {

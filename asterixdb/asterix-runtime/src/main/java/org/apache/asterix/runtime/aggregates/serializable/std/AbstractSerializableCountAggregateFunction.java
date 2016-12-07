@@ -21,14 +21,14 @@ package org.apache.asterix.runtime.aggregates.serializable.std;
 import java.io.DataOutput;
 import java.io.IOException;
 
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.AInt64;
 import org.apache.asterix.om.base.AMutableInt64;
 import org.apache.asterix.om.base.ANull;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.EnumDeserializer;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.algebricks.runtime.base.ISerializedAggregateEvaluator;
@@ -47,31 +47,31 @@ public abstract class AbstractSerializableCountAggregateFunction implements ISer
 
     private AMutableInt64 result = new AMutableInt64(-1);
     @SuppressWarnings("unchecked")
-    private ISerializerDeserializer<AInt64> int64Serde = AqlSerializerDeserializerProvider.INSTANCE
+    private ISerializerDeserializer<AInt64> int64Serde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.AINT64);
     @SuppressWarnings("unchecked")
-    private ISerializerDeserializer<ANull> nullSerde = AqlSerializerDeserializerProvider.INSTANCE
+    private ISerializerDeserializer<ANull> nullSerde = SerializerDeserializerProvider.INSTANCE
             .getSerializerDeserializer(BuiltinType.ANULL);
     private IPointable inputVal = new VoidPointable();
     private IScalarEvaluator eval;
 
     public AbstractSerializableCountAggregateFunction(IScalarEvaluatorFactory[] args, IHyracksTaskContext context)
-            throws AlgebricksException {
+            throws HyracksDataException {
         eval = args[0].createScalarEvaluator(context);
     }
 
     @Override
-    public void init(DataOutput state) throws AlgebricksException {
+    public void init(DataOutput state) throws HyracksDataException {
         try {
             state.writeBoolean(false);
             state.writeLong(0);
         } catch (IOException e) {
-            throw new AlgebricksException(e);
+            throw new HyracksDataException(e);
         }
     }
 
     @Override
-    public void step(IFrameTupleReference tuple, byte[] state, int start, int len) throws AlgebricksException {
+    public void step(IFrameTupleReference tuple, byte[] state, int start, int len) throws HyracksDataException {
         boolean metNull = BufferSerDeUtil.getBoolean(state, start);
         long cnt = BufferSerDeUtil.getLong(state, start + 1);
         eval.evaluate(tuple, inputVal);
@@ -87,7 +87,7 @@ public abstract class AbstractSerializableCountAggregateFunction implements ISer
     }
 
     @Override
-    public void finish(byte[] state, int start, int len, DataOutput out) throws AlgebricksException {
+    public void finish(byte[] state, int start, int len, DataOutput out) throws HyracksDataException {
         boolean metNull = BufferSerDeUtil.getBoolean(state, start);
         long cnt = BufferSerDeUtil.getLong(state, start + 1);
         try {
@@ -98,12 +98,12 @@ public abstract class AbstractSerializableCountAggregateFunction implements ISer
                 int64Serde.serialize(result, out);
             }
         } catch (IOException e) {
-            throw new AlgebricksException(e);
+            throw new HyracksDataException(e);
         }
     }
 
     @Override
-    public void finishPartial(byte[] state, int start, int len, DataOutput out) throws AlgebricksException {
+    public void finishPartial(byte[] state, int start, int len, DataOutput out) throws HyracksDataException {
         finish(state, start, len, out);
     }
 

@@ -57,7 +57,7 @@ import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.statement.DataverseDecl;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.util.FunctionUtil;
-import org.apache.asterix.metadata.declared.AqlMetadataProvider;
+import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
@@ -92,12 +92,12 @@ import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
-import org.apache.hyracks.dataflow.std.file.FileSplit;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 import org.apache.hyracks.dataflow.std.misc.NullSinkOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
@@ -111,7 +111,7 @@ public class FeedOperations {
     static final Logger LOGGER = Logger.getLogger(FeedOperations.class.getName());
 
     private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
-            AqlMetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
+            MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
         spec.setFrameSize(FeedConstants.JobConstants.DEFAULT_FRAME_SIZE);
         IAdapterFactory adapterFactory;
@@ -150,7 +150,7 @@ public class FeedOperations {
         return spec;
     }
 
-    private static JobSpecification getConnectionJob(AqlMetadataProvider metadataProvider,
+    private static JobSpecification getConnectionJob(MetadataProvider metadataProvider,
             FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
             DefaultStatementExecutorFactory qtFactory)
             throws AlgebricksException, RemoteException, ACIDException, JSONException {
@@ -178,7 +178,7 @@ public class FeedOperations {
         return translator.rewriteCompileQuery(metadataProvider, subscribeStmt.getQuery(), csfs);
     }
 
-    private static JobSpecification combineIntakeCollectJobs(AqlMetadataProvider metadataProvider, Feed feed,
+    private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
             String[] intakeLocations)
             throws AlgebricksException, HyracksDataException {
@@ -360,7 +360,7 @@ public class FeedOperations {
         return jobSpec;
     }
 
-    public static JobSpecification buildStartFeedJob(AqlMetadataProvider metadataProvider, Feed feed,
+    public static JobSpecification buildStartFeedJob(MetadataProvider metadataProvider, Feed feed,
             List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
             DefaultStatementExecutorFactory qtFactory) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());

@@ -27,7 +27,7 @@
   <parent>
     <groupId>org.apache</groupId>
     <artifactId>apache</artifactId>
-    <version>16</version>
+    <version>18</version>
     <relativePath />
   </parent>
 
@@ -60,7 +60,6 @@
     <failsafe.test.excludes>**/DmlRecoveryIT.java</failsafe.test.excludes>
     <cluster.test.excludes>**/AsterixClusterLifeCycleIT.java</cluster.test.excludes>
     <cluster.extest.excludes>**/ClusterExecutionIT.java</cluster.extest.excludes>
-    <replication.test.excludes>**/ReplicationIT.java</replication.test.excludes>
 
     <!-- Versions under dependencymanagement or used in many projects via properties -->
     <algebricks.version>0.2.18-SNAPSHOT</algebricks.version>
@@ -115,7 +114,6 @@
             <exclude>${failsafe.test.excludes}</exclude>
             <exclude>${cluster.test.excludes}</exclude>
             <exclude>${cluster.extest.excludes}</exclude>
-            <exclude>${replication.test.excludes}</exclude>
           </excludes>
         </configuration>
         <executions>
@@ -637,7 +635,7 @@
       <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
-        <version>2.2.1</version>
+        <version>3.3.9</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -663,6 +661,16 @@
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-common</artifactId>
         <version>${hadoop.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>algebricks-common</artifactId>
+        <version>${algebricks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>algebricks-core</artifactId>
+        <version>${algebricks.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hyracks</groupId>
@@ -721,12 +729,27 @@
       </dependency>
       <dependency>
         <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-dataflow-common</artifactId>
+        <version>${hyracks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
         <artifactId>hyracks-dataflow-hadoop</artifactId>
         <version>${hyracks.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-storage-common</artifactId>
+        <version>${hyracks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
         <artifactId>hyracks-storage-am-btree</artifactId>
+        <version>${hyracks.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>hyracks-storage-am-bloomfilter</artifactId>
         <version>${hyracks.version}</version>
       </dependency>
       <dependency>
@@ -811,6 +834,16 @@
         <groupId>args4j</groupId>
         <artifactId>args4j</artifactId>
         <version>2.33</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpclient</artifactId>
+        <version>4.5.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.httpcomponents</groupId>
+        <artifactId>httpcore</artifactId>
+        <version>4.4</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

@@ -18,8 +18,7 @@
  */
 package org.apache.asterix.optimizer.rules;
 
-import org.apache.asterix.metadata.declared.AqlDataSource;
-import org.apache.asterix.metadata.declared.AqlDataSource.AqlDataSourceType;
+import org.apache.asterix.metadata.declared.DataSource;
 import org.apache.asterix.metadata.declared.FeedDataSource;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
@@ -55,8 +54,8 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
         }
 
         DataSourceScanOperator scanOp = (DataSourceScanOperator) opChild;
-        AqlDataSource dataSource = (AqlDataSource) scanOp.getDataSource();
-        if (dataSource.getDatasourceType() != AqlDataSourceType.FEED) {
+        DataSource dataSource = (DataSource) scanOp.getDataSource();
+        if (dataSource.getDatasourceType() != DataSource.Type.FEED) {
             return false;
         }
 

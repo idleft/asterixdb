@@ -20,14 +20,15 @@ package org.apache.asterix.optimizer.rules.am;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
-import org.apache.asterix.dataflow.data.common.AqlExpressionTypeComputer;
+import org.apache.asterix.dataflow.data.common.ExpressionTypeComputer;
 import org.apache.asterix.metadata.api.IMetadataEntity;
-import org.apache.asterix.metadata.declared.AqlMetadataProvider;
+import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.utils.DatasetUtils;
 import org.apache.asterix.om.base.AOrderedList;
@@ -69,7 +70,7 @@ import com.google.common.collect.ImmutableSet;
  */
 public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRewriteRule {
 
-    private AqlMetadataProvider metadataProvider;
+    private MetadataProvider metadataProvider;
 
     // Function Identifier sets that retain the original field variable through each function's arguments
     private final ImmutableSet<FunctionIdentifier> funcIDSetThatRetainFieldName = ImmutableSet.of(
@@ -103,7 +104,7 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
     }
 
     protected void setMetadataDeclarations(IOptimizationContext context) {
-        metadataProvider = (AqlMetadataProvider) context.getMetadataProvider();
+        metadataProvider = (MetadataProvider) context.getMetadataProvider();
     }
 
     protected void fillSubTreeIndexExprs(OptimizableOperatorSubTree subTree,
@@ -145,9 +146,19 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
         return list.isEmpty() ? null : list.get(0);
     }
 
+    /**
+     * Choose all indexes that match the given access method. These indexes will be used as index-search
+     * to replace the given predicates in a SELECT operator. Also, if there are multiple same type of indexes
+     * on the same field, only of them will be chosen. Allowed cases (AccessMethod, IndexType) are:
+     * [BTreeAccessMethod , IndexType.BTREE], [RTreeAccessMethod , IndexType.RTREE],
+     * [InvertedIndexAccessMethod, IndexType.SINGLE_PARTITION_WORD_INVIX || SINGLE_PARTITION_NGRAM_INVIX ||
+     * LENGTH_PARTITIONED_WORD_INVIX || LENGTH_PARTITIONED_NGRAM_INVIX]
+     */
     protected List<Pair<IAccessMethod, Index>> chooseAllIndex(
             Map<IAccessMethod, AccessMethodAnalysisContext> analyzedAMs) {
         List<Pair<IAccessMethod, Index>> result = new ArrayList<Pair<IAccessMethod, Index>>();
+        // Use variables (fields) to the index types map to check which type of indexes are applied for the vars.
+        Map<List<Pair<Integer, Integer>>, List<IndexType>> resultVarsToIndexTypesMap = new HashMap<>();
         Iterator<Map.Entry<IAccessMethod, AccessMethodAnalysisContext>> amIt = analyzedAMs.entrySet().iterator();
         while (amIt.hasNext()) {
             Map.Entry<IAccessMethod, AccessMethodAnalysisContext> amEntry = amIt.next();
@@ -156,15 +167,6 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
                     .iterator();
             while (indexIt.hasNext()) {
                 Map.Entry<Index, List<Pair<Integer, Integer>>> indexEntry = indexIt.next();
-                // To avoid a case where the chosen access method and a chosen
-                // index type is different.
-                // Allowed Case: [BTreeAccessMethod , IndexType.BTREE],
-                //               [RTreeAccessMethod , IndexType.RTREE],
-                //               [InvertedIndexAccessMethod,
-                //                 IndexType.SINGLE_PARTITION_WORD_INVIX ||
-                //                           SINGLE_PARTITION_NGRAM_INVIX ||
-                //                           LENGTH_PARTITIONED_WORD_INVIX ||
-                //                           LENGTH_PARTITIONED_NGRAM_INVIX]
                 IAccessMethod chosenAccessMethod = amEntry.getKey();
                 Index chosenIndex = indexEntry.getKey();
                 IndexType indexType = chosenIndex.getIndexType();
@@ -172,11 +174,21 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
                         || indexType == IndexType.LENGTH_PARTITIONED_NGRAM_INVIX
                         || indexType == IndexType.SINGLE_PARTITION_WORD_INVIX
                         || indexType == IndexType.SINGLE_PARTITION_NGRAM_INVIX;
-
                 if ((chosenAccessMethod == BTreeAccessMethod.INSTANCE && indexType == IndexType.BTREE)
                         || (chosenAccessMethod == RTreeAccessMethod.INSTANCE && indexType == IndexType.RTREE)
                         || (chosenAccessMethod == InvertedIndexAccessMethod.INSTANCE && isKeywordOrNgramIndexChosen)) {
-                    result.add(new Pair<IAccessMethod, Index>(chosenAccessMethod, chosenIndex));
+                    if (resultVarsToIndexTypesMap.containsKey(indexEntry.getValue())) {
+                        List<IndexType> appliedIndexTypes = resultVarsToIndexTypesMap.get(indexEntry.getValue());
+                        if (!appliedIndexTypes.contains(indexType)) {
+                            appliedIndexTypes.add(indexType);
+                            result.add(new Pair<IAccessMethod, Index>(chosenAccessMethod, chosenIndex));
+                        }
+                    } else {
+                        List<IndexType> addedIndexTypes = new ArrayList<>();
+                        addedIndexTypes.add(indexType);
+                        resultVarsToIndexTypesMap.put(indexEntry.getValue(), addedIndexTypes);
+                        result.add(new Pair<IAccessMethod, Index>(chosenAccessMethod, chosenIndex));
+                    }
                 }
             }
         }
@@ -231,16 +243,18 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
                         if (j != exprAndVarIdx.second) {
                             matchedTypes.add(optFuncExpr.getFieldType(j));
                         }
+
                     }
 
                     if (matchedTypes.size() < 2 && optFuncExpr.getNumLogicalVars() == 1) {
-                        matchedTypes.add((IAType) AqlExpressionTypeComputer.INSTANCE.getType(
-                                optFuncExpr.getConstantAtRuntimeExpr(0), context.getMetadataProvider(),
+                        matchedTypes
+                                .add((IAType) ExpressionTypeComputer.INSTANCE.getType(optFuncExpr.getConstantExpr(0),
+                                        context.getMetadataProvider(),
                                 typeEnvironment));
                     }
 
                     //infer type of logicalExpr based on index keyType
-                    matchedTypes.add((IAType) AqlExpressionTypeComputer.INSTANCE.getType(
+                    matchedTypes.add((IAType) ExpressionTypeComputer.INSTANCE.getType(
                             optFuncExpr.getLogicalExpr(exprAndVarIdx.second), null, new IVariableTypeEnvironment() {
 
                                 @Override
@@ -268,7 +282,7 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
 
                                 @Override
                                 public Object getType(ILogicalExpression expr) throws AlgebricksException {
-                                    return AqlExpressionTypeComputer.INSTANCE.getType(expr, null, this);
+                                    return ExpressionTypeComputer.INSTANCE.getType(expr, null, this);
                                 }
 
                                 @Override
@@ -571,9 +585,7 @@ public abstract class AbstractIntroduceAccessMethodRule implements IAlgebraicRew
                     subTree.getRecordType(), optVarIndex,
                     optFuncExpr.getFuncExpr().getArguments().get(optVarIndex).getValue(), datasetRecordVar,
                     subTree.getMetaRecordType(), datasetMetaVar);
-            if (fieldName == null) {
-                continue;
-            }
+
             IAType fieldType = (IAType) context.getOutputTypeEnvironment(assignOp).getVarType(var);
             // Set the fieldName in the corresponding matched
             // function expression.

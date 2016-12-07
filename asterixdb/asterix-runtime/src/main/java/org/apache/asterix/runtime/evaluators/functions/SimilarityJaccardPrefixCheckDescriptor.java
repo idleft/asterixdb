@@ -21,7 +21,7 @@ package org.apache.asterix.runtime.evaluators.functions;
 import java.io.IOException;
 
 import org.apache.asterix.builders.OrderedListBuilder;
-import org.apache.asterix.formats.nontagged.AqlSerializerDeserializerProvider;
+import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.om.base.ABoolean;
 import org.apache.asterix.om.base.AFloat;
 import org.apache.asterix.om.base.AMutableFloat;
@@ -32,12 +32,12 @@ import org.apache.asterix.om.types.AOrderedListType;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
 import org.apache.asterix.runtime.evaluators.common.SimilarityJaccardPrefixEvaluator;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 
 public class SimilarityJaccardPrefixCheckDescriptor extends AbstractScalarFunctionDynamicDescriptor {
@@ -52,13 +52,12 @@ public class SimilarityJaccardPrefixCheckDescriptor extends AbstractScalarFuncti
     };
 
     @Override
-    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args)
-            throws AlgebricksException {
+    public IScalarEvaluatorFactory createEvaluatorFactory(final IScalarEvaluatorFactory[] args) {
         return new IScalarEvaluatorFactory() {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws AlgebricksException {
+            public IScalarEvaluator createScalarEvaluator(final IHyracksTaskContext ctx) throws HyracksDataException {
                 return new SimilarityJaccardPrefixCheckEvaluator(args, ctx);
             }
         };
@@ -74,24 +73,24 @@ public class SimilarityJaccardPrefixCheckDescriptor extends AbstractScalarFuncti
         private final OrderedListBuilder listBuilder;
         private ArrayBackedValueStorage inputVal;
         @SuppressWarnings("unchecked")
-        private final ISerializerDeserializer<ABoolean> booleanSerde = AqlSerializerDeserializerProvider.INSTANCE
+        private final ISerializerDeserializer<ABoolean> booleanSerde = SerializerDeserializerProvider.INSTANCE
                 .getSerializerDeserializer(BuiltinType.ABOOLEAN);
         @SuppressWarnings("unchecked")
-        private final ISerializerDeserializer<AFloat> floatSerde = AqlSerializerDeserializerProvider.INSTANCE
+        private final ISerializerDeserializer<AFloat> floatSerde = SerializerDeserializerProvider.INSTANCE
                 .getSerializerDeserializer(BuiltinType.AFLOAT);
         private final AMutableFloat aFloat = new AMutableFloat(0);
 
         private final AOrderedListType listType = new AOrderedListType(BuiltinType.ANY, "list");
 
         public SimilarityJaccardPrefixCheckEvaluator(IScalarEvaluatorFactory[] args, IHyracksTaskContext context)
-                throws AlgebricksException {
+                throws HyracksDataException {
             super(args, context);
             listBuilder = new OrderedListBuilder();
             inputVal = new ArrayBackedValueStorage();
         }
 
         @Override
-        public void writeResult() throws AlgebricksException, IOException {
+        public void writeResult() throws HyracksDataException, IOException {
             listBuilder.reset(listType);
             boolean matches = (sim <= 0) ? false : true;
             float jaccSim = (matches) ? sim : 0.0f;
@@ -104,7 +103,6 @@ public class SimilarityJaccardPrefixCheckDescriptor extends AbstractScalarFuncti
             aFloat.setValue(jaccSim);
             floatSerde.serialize(aFloat, inputVal.getDataOutput());
             listBuilder.addItem(inputVal);
-
             listBuilder.write(out, true);
         }
     }
