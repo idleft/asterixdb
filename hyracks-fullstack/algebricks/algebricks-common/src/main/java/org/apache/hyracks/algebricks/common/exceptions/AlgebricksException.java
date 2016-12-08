@@ -20,24 +20,53 @@ package org.apache.hyracks.algebricks.common.exceptions;
 
 import java.io.Serializable;
 
+import org.apache.hyracks.api.util.ErrorMessageUtil;
+
 public class AlgebricksException extends Exception {
     private static final long serialVersionUID = 1L;
 
-    public static final String NONE = "";
     public static final int UNKNOWN = 0;
-
     private final String component;
     private final int errorCode;
     private final Serializable[] params;
     private final String nodeId;
+    private transient volatile String msgCache;
 
     public AlgebricksException(String component, int errorCode, String message, Throwable cause, String nodeId,
             Serializable... params) {
         super(message, cause);
-        this.errorCode = errorCode;
         this.component = component;
+        this.errorCode = errorCode;
         this.nodeId = nodeId;
         this.params = params;
+    }
+
+    public AlgebricksException(String message) {
+        this(ErrorMessageUtil.NONE, UNKNOWN, message, null, null);
+    }
+
+    public AlgebricksException(Throwable cause) {
+        this(ErrorMessageUtil.NONE, UNKNOWN, cause.getMessage(), cause, null);
+    }
+
+    public AlgebricksException(Throwable cause, String nodeId) {
+        this(ErrorMessageUtil.NONE, UNKNOWN, cause.getMessage(), cause, nodeId);
+    }
+
+    public AlgebricksException(String message, Throwable cause, String nodeId) {
+        this(ErrorMessageUtil.NONE, UNKNOWN, message, cause, nodeId);
+    }
+
+    public AlgebricksException(String message, Throwable cause) {
+        this(ErrorMessageUtil.NONE, UNKNOWN, message, cause, (String) null);
+    }
+
+    public AlgebricksException(String component, int errorCode, Serializable... params) {
+        this(component, errorCode, null, null, null, params);
+    }
+
+    public AlgebricksException(Throwable cause, int errorCode, Serializable... params) {
+        this(ErrorMessageUtil.NONE, errorCode, cause.getMessage(), cause, null, params);
     }
 
     public AlgebricksException(String component, int errorCode, String message, Serializable... params) {
@@ -48,15 +77,28 @@ public class AlgebricksException extends Exception {
         this(component, errorCode, cause.getMessage(), cause, null, params);
     }
 
-    public AlgebricksException(String message) {
-        this(NONE, UNKNOWN, message, (Throwable) null, (String) null);
+    public AlgebricksException(String component, int errorCode, String message, Throwable cause,
+            Serializable... params) {
+        this(component, errorCode, message, cause, null, params);
     }
 
-    public AlgebricksException(Throwable cause) {
-        this(NONE, UNKNOWN, cause.getMessage(), cause, (String) null);
+    public String getComponent() {
+        return component;
     }
 
-    public AlgebricksException(String message, Throwable cause) {
-        this(NONE,UNKNOWN, message, cause, (String) null);
+    public Object[] getParams() {
+        return params;
+    }
+
+    public String getNodeId() {
+        return nodeId;
+    }
+
+    @Override
+    public String getMessage() {
+        if (msgCache == null) {
+            msgCache = ErrorMessageUtil.formatMessage(component, errorCode, super.getMessage(), params);
+        }
+        return msgCache;
     }
 }

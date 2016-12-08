@@ -48,6 +48,7 @@ import org.apache.hyracks.api.dataset.IDatasetPartitionManager;
 import org.apache.hyracks.api.deployment.DeploymentId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.IODeviceHandle;
+import org.apache.hyracks.api.job.ActivityClusterGraph;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.lifecycle.ILifeCycleComponentManager;
 import org.apache.hyracks.api.lifecycle.LifeCycleComponentManager;
@@ -115,6 +116,8 @@ public class NodeControllerService implements IControllerService {
 
     private final Map<JobId, Joblet> jobletMap;
 
+    private final Map<JobId, ActivityClusterGraph> activityClusterGraphMap;
+
     private ExecutorService executor;
 
     private NodeParameters nodeParameters;
@@ -168,6 +171,7 @@ public class NodeControllerService implements IControllerService {
         lccm = new LifeCycleComponentManager();
         workQueue = new WorkQueue(id, Thread.NORM_PRIORITY); // Reserves MAX_PRIORITY of the heartbeat thread.
         jobletMap = new Hashtable<>();
+        activityClusterGraphMap = new Hashtable<>();
         timer = new Timer(true);
         serverCtx = new ServerContext(ServerContext.ServerType.NODE_CONTROLLER,
                 new File(new File(NodeControllerService.class.getName()), id));
@@ -355,6 +359,10 @@ public class NodeControllerService implements IControllerService {
 
     public Map<JobId, Joblet> getJobletMap() {
         return jobletMap;
+    }
+
+    public Map<JobId, ActivityClusterGraph> getActivityClusterGraphMap() {
+        return activityClusterGraphMap;
     }
 
     public NetworkManager getNetworkManager() {

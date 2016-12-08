@@ -16,16 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * Test case Name  : bulkload.aql
- * Description     : Check that Bulkload LSM component are replicated correclty.
-                     The test goes as follows:
-                     start 2 nodes, bulkload a dataset, query data, kill one node
-                     and wait until the failover complete, query the data again.
- * Expected Result : Success
- * Date            : January 6 2016
+package org.apache.asterix.common.utils;
+
+/**
+ * A static class that stores storage constants
  */
+public class StorageConstants {
+    public static final String METADATA_ROOT = "root_metadata";
 
-use dataverse TinySocial;
-
-count (for $x in dataset FacebookUsers return $x);
+    private StorageConstants() {
+    }
+}

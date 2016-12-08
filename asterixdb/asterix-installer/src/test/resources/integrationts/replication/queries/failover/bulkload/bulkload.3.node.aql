@@ -16,15 +16,13 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.common.utils;
-
-/**
- * A static class that stores asterix constants
+/*
+ * Test case Name  : bulkload.aql
+ * Description     : Check that Bulkload LSM component are replicated correclty.
+                     The test goes as follows:
+                     start 2 nodes, bulkload a dataset, query data, kill one node
+                     and wait until the failover complete, query the data again.
+ * Expected Result : Success
+ * Date            : January 6 2016
  */
-public class AsterixConstants {
-    public static final String ASTERIX_ROOT_METADATA_DIR = "asterix_root_metadata";
-
-    private AsterixConstants() {
-    }
-
-}
+kill asterix_nc2
