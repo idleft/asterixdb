@@ -6556,19 +6556,19 @@
     <test-case FilePath="load">
       <compilation-unit name="csv_05"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_05</output-dir>
-        <expected-error>java.io.IOException: At record:</expected-error>
+        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
       <compilation-unit name="csv_06"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_06</output-dir>
-        <expected-error>java.io.IOException: At record:</expected-error>
+        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
       <compilation-unit name="csv_07"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_07</output-dir>
-        <expected-error>java.io.IOException: At record:</expected-error>
+        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
@@ -6633,7 +6633,7 @@
     <test-case FilePath="load">
       <compilation-unit name="file-not-found">
         <output-dir compare="Text">none</output-dir>
-        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: bla: path not found</expected-error>
+        <expected-error>HYR0002: org.apache.hyracks.api.exceptions.HyracksDataException: ASX3077: bla: path not found</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="user-defined-functions">
