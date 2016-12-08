@@ -61,15 +61,21 @@ public class ErrorCode {
 
     // feed errors
 
-    public static final int ERROR_PARSER_DELIMITED_PARSING = 3004;
+    public static final int ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_BEGINNING = 3001;
+    public static final int ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END = 3002;
 
 
 
-    private static final String ERROR_MESSAGE_ERROR_PARSER_DELIMITED_PARSING = "At record: %1$s, field#: %2$s - "
-            + "a quote enclosing a field needs to be placed in the beginning of that field.";
+    private static final String ERROR_MESSAGE_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE =
+            "At record: %1$s, field#: %2$s - a quote enclosing a field needs to be placed in the beginning of that field.";
+    private static final String ERROR_MESSAGE_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END=
+            "At record: %1$s, field#: %2$s -  A quote enclosing a field needs to be followed by the delimiter.";
 
     static {
-        errorMessageMap.put(ERROR_PARSER_DELIMITED_PARSING, ERROR_MESSAGE_ERROR_PARSER_DELIMITED_PARSING);
+        errorMessageMap.put(ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_BEGINNING,
+                ERROR_MESSAGE_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE);
+        errorMessageMap.put(ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END,
+                ERROR_MESSAGE_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END);
     }
 
 

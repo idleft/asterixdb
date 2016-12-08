@@ -241,7 +241,9 @@ public class FieldCursorForDelimitedDataParser {
                                 startedQuote = true;
                             } else {
                                 // In this case, we don't have a quote in the beginning of a field.
-                                throw new CoreDataException(ErrorCode.ERROR_PARSER_DELIMITED_PARSING, recordCount,fieldCount);
+                                throw new CoreDataException(
+                                        ErrorCode.ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_BEGINNING,
+                                        recordCount, fieldCount);
                             }
                         }
                         // Check double quotes - "". We check [start != p-2]
@@ -282,8 +284,9 @@ public class FieldCursorForDelimitedDataParser {
                                 // There is a quote before the delimiter, however it is not directly placed before the delimiter.
                                 // In this case, we throw an exception.
                                 // quoteCount == doubleQuoteCount * 2 + 2 : only true when we have two quotes except double-quotes.
-                                throw new CoreDataException(ErrorCode.ERROR_PARSER_DELIMITED_PARSING, recordCount,
-                                        fieldCount);
+                                throw new CoreDataException(
+                                        ErrorCode.ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END,
+                                        recordCount, fieldCount);
                             }
                         }
                         // If the control flow reaches here: we have a delimiter in this field and
