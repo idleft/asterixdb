@@ -226,6 +226,7 @@ public class ExternalDataConstants {
     public static final String KEY_READER_FACTORY = "reader-factory";
     public static final String READER_RSS = "rss_feed";
     public static final String FORMAT_CSV = "csv";
+    public static final String READER_KAFKA = "kafka";
 
     public static final String ERROR_PARSE_RECORD = "Parser failed to parse record";
 }
