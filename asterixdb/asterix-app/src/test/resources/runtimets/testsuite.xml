@@ -6556,19 +6556,19 @@
     <test-case FilePath="load">
       <compilation-unit name="csv_05"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_05</output-dir>
-        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
+        <expected-error>a quote enclosing a field needs to be placed in the beginning of that field.</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
       <compilation-unit name="csv_06"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_06</output-dir>
-        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
+        <expected-error>a quote enclosing a field needs to be placed in the beginning of that field.</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
       <compilation-unit name="csv_07"><!-- Someone should check and verify -->
         <output-dir compare="Text">csv_07</output-dir>
-        <expected-error>org.apache.hyracks.api.exceptions.HyracksDataException: HYR3004</expected-error>
+        <expected-error>A quote enclosing a field needs to be followed by the delimiter.</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="load">
