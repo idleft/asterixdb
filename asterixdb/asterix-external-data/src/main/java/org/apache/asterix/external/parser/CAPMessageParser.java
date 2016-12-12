@@ -69,9 +69,9 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private static final String CAP_BOOLEAN_TRUE = "true";
     private static final String CAP_BOOLEAN_FALSE = "false";
 
-    public final int SMART_BUILDER_STATE_RECORD = 1;
-    public final int SMART_BUILDER_STATE_LIST = 2;
-    public final int SMART_BUILDER_STATE_VALUE = 3;
+    public static final int SMART_BUILDER_STATE_RECORD = 1;
+    public static final int SMART_BUILDER_STATE_LIST = 2;
+    public static final int SMART_BUILDER_STATE_VALUE = 3;
 
     private final IObjectPool<IARecordBuilder, ATypeTag> recordBuilderPool = new ListObjectPool<>(
             new RecordBuilderFactory());
@@ -134,18 +134,6 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         } catch (SAXException | IOException e) {
             throw new HyracksDataException(e);
         }
-    }
-
-    private IARecordBuilder getRecordBuilder() {
-        return recordBuilderPool.allocate(ATypeTag.RECORD);
-    }
-
-    private IAsterixListBuilder getOrderedListBuilder() {
-        return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
-    }
-
-    private ArrayBackedValueStorage getTempBuffer() {
-        return (ArrayBackedValueStorage) abvsBuilderPool.allocate(ATypeTag.BINARY);
     }
 
     private class ListElementHandler extends DefaultHandler {
@@ -355,7 +343,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 fieldNameBuffer.reset();
                 stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
                 IAType parentRecordType = parentBuilder.getDataType();
-                int fieldNameIdx = parentRecordType == null ? -1 : ((ARecordType) parentRecordType).getFieldIndex(qName);
+                int fieldNameIdx = parentRecordType == null ? -1
+                        : ((ARecordType) parentRecordType).getFieldIndex(qName);
                 curFullPathName = String.join(".", curPathStack);
                 if (listElementNames.containsKey(curFullPathName)) {
                     handleNestedOrderedList(curFullPathName, fieldNameIdx, fieldNameBuffer, elementContentBuffer);
@@ -376,7 +365,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 elementContentBuffer.reset();
                 curPathStack.pop();
                 curLvl--;
-            } catch (HyracksDataException|ParseException e) {
+            } catch (HyracksDataException | ParseException e) {
                 throw new SAXException(e);
             }
         }
@@ -427,6 +416,18 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
         public int getState() {
             return this.state;
+        }
+
+        private IARecordBuilder getRecordBuilder() {
+            return recordBuilderPool.allocate(ATypeTag.RECORD);
+        }
+
+        private IAsterixListBuilder getOrderedListBuilder() {
+            return listBuilderPool.allocate(ATypeTag.ORDEREDLIST);
+        }
+
+        private ArrayBackedValueStorage getTempBuffer() {
+            return (ArrayBackedValueStorage) abvsBuilderPool.allocate(ATypeTag.BINARY);
         }
 
         public IAType getDataType() {
