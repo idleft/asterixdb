@@ -32,8 +32,14 @@ public class CAPMessageRecordReader extends StreamRecordReader {
     private boolean recordContentFlag;
 
     private enum CAPParserState {
-        INIT_STATE,START_OF_ELEMENT_NAME,END_OF_ELEMENT_NAME,START_OF_PROLOG,IN_START_OF_ELEMENT_NAME,
-        IN_END_OF_ELEMENT_NAME,IN_PROLOG,IN_SCHEMA_DEFINITION
+        INIT_STATE,
+        START_OF_ELEMENT_NAME,
+        END_OF_ELEMENT_NAME,
+        START_OF_PROLOG,
+        IN_START_OF_ELEMENT_NAME,
+        IN_END_OF_ELEMENT_NAME,
+        IN_PROLOG,
+        IN_SCHEMA_DEFINITION
     }
 
     public CAPMessageRecordReader(AsterixInputStream inputStream, String collection) {
@@ -59,8 +65,8 @@ public class CAPMessageRecordReader extends StreamRecordReader {
             // chk whether there is enough data in buffer
             if (bufferPosn >= bufferLength) {
                 if (recordContentFlag) {
-                    if(startPos == -1) {
-                        char[] tempBuffer = ("<"+String.valueOf(inputBuffer)).toCharArray();
+                    if (startPos == -1) {
+                        char[] tempBuffer = ("<" + String.valueOf(inputBuffer)).toCharArray();
                         record.append(tempBuffer, 0, bufferPosn - startPos);
                     } else {
                         record.append(inputBuffer, startPos, bufferPosn - startPos);
