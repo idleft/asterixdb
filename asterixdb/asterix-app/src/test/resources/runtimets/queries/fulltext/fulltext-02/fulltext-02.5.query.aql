@@ -16,15 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.common.utils;
 
-/**
- * A static class that stores asterix constants
- */
-public class AsterixConstants {
-    public static final String ASTERIX_ROOT_METADATA_DIR = "asterix_root_metadata";
+use dataverse test;
 
-    private AsterixConstants() {
-    }
-
-}
+for $o in dataset MyData
+where ftcontains($o.title, {{"object","database"}}, {"mode":"any"})
+order by $o.id
+return {"id":$o.id}

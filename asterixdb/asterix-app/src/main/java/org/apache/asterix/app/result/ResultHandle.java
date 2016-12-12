@@ -16,15 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * Test case Name  : metadata_node_recovery.aql
- * Description     : Check that metadata node failover is done correctly.
-                     The test goes as follows:
-                     start 2 nodes, create a dataset, kill metadata node
-                     and wait until the failover complete, verify the
-                     dataset still exists.
- * Expected Result : Success
- * Date            : January 6 2016
- */
+package org.apache.asterix.app.result;
 
-for $x in dataset Metadata.Dataset where $x.DatasetName ='FacebookUsers' return $x.DatasetName;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.hyracks.algebricks.core.algebra.prettyprint.AlgebricksAppendable;
+import org.apache.hyracks.api.dataset.ResultSetId;
+import org.apache.hyracks.api.job.JobId;
+
+public class ResultHandle {
+    private long jobId;
+    private long resultSetId;
+
+    public ResultHandle(JobId jobId, ResultSetId resultSetId) {
+        this.jobId = jobId.getId();
+        this.resultSetId = resultSetId.getId();
+    }
+
+    public AlgebricksAppendable append(AlgebricksAppendable app) throws AlgebricksException {
+        return app.append("[").append(String.valueOf(jobId)).append(", ").append(String.valueOf(resultSetId))
+                .append("]");
+    }
+}

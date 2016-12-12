@@ -16,17 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-/*
- * Test case Name  : mem_component_recovery.aql
- * Description     : Check that Memory LSM component are replicated and recovered correclty.
-                     The test goes as follows:
-                     start 2 nodes, bulkload a dataset, copy it to in-memory dataset, query
-                     data from memory, kill one node and wait until the failover complete,
-                     query the data again.
- * Expected Result : Success
- * Date            : January 6 2016
- */
 
-use dataverse TinySocial;
+use dataverse test;
 
-count (for $x in dataset FacebookUsersInMemory return $x);
+for $o in dataset MyData
+where ftcontains($o.title, "object database", {"mode":"any"})
+order by $o.id
+return {"id":$o.id}
