@@ -41,14 +41,17 @@ import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.ListBuilderFactory;
 import org.apache.asterix.builders.RecordBuilderFactory;
+import org.apache.asterix.dataflow.data.nontagged.serde.ANullSerializerDeserializer;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.om.base.ABoolean;
+import org.apache.asterix.om.base.ANull;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.asterix.om.util.container.ListObjectPool;
+import org.apache.avro.generic.GenericData;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IMutableValueStorage;
 import org.apache.hyracks.data.std.api.IValueReference;
@@ -124,7 +127,9 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             builderList.add(new ComplexBuilder());
             complexBuilder = builderList.get(0);
             complexBuilder.setState(SMART_BUILDER_STATE_RECORD, recordType);
-            capMessageSAXParser.parse(new ByteArrayInputStream(record.toString().getBytes()), capMessageHandler);
+            capMessageSAXParser.parse(
+                    new ByteArrayInputStream(record.toString().replaceAll("[\\r|\\n|\\r\\n]+", " ").getBytes()),
+                    capMessageHandler);
             complexBuilder.write(out);
         } catch (SAXException | IOException e) {
             throw new HyracksDataException(e);
@@ -200,6 +205,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
         int skipLvl;
         int curLvl;
+        String qName;
+        String content;
 
         public CAPMessageHandler(ARecordType recordType, List<ComplexBuilder> builderList) throws HyracksDataException {
             this.recordType = recordType;
@@ -210,12 +217,14 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             fieldNameBuffer = new ArrayBackedValueStorage();
             curLvl = 0;
             skipLvl = 1;
+            content = "";
         }
 
         public void clear() {
             curPathStack.clear();
             listElementCounter.clear();
             curLvl = 0;
+            content = "";
             curFieldType = recordType;
         }
 
@@ -257,6 +266,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         @Override
         public void startElement(String uri, String localName, String qName, Attributes attributes)
                 throws SAXException {
+            this.qName = qName;
+            this.content = "";
             parentPath = String.join(".", curPathStack);
             curPathStack.push(
                     qName + (listElementCounter.containsKey(parentPath) ? listElementCounter.get(parentPath) : 1));
@@ -287,41 +298,45 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
         @Override
         public void characters(char ch[], int start, int length) throws SAXException {
-            String content = new String(ch, start, length).trim();
+            content = new String(ch, start, length).trim() + content;
             if (content.length() == 0 || curPathStack.size() <= skipLvl) {
                 // skip empty chars before/after element name
                 return;
             }
             try {
                 builderList.get(curLvl).setState(SMART_BUILDER_STATE_VALUE, curFieldType);
-                if (curFieldType != null) {
-                    setValueBasedOnTypeTag(content, curFieldType.getTypeTag(), elementContentBuffer.getDataOutput());
-                } else {
-                    if (Pattern.matches(CAP_INTEGER_REGEX, content)) {
-                        // ints
-                        aInt32.setValue(Integer.valueOf(content));
-                        int32Serde.serialize(aInt32, elementContentBuffer.getDataOutput());
-                    } else if (Pattern.matches(CAP_DOUBLE_REGEX, content)) {
-                        // doubles
-                        aDouble.setValue(Double.valueOf(content));
-                        doubleSerde.serialize(aDouble, elementContentBuffer.getDataOutput());
-                    } else if (content.equals(CAP_BOOLEAN_TRUE) || content.equals(CAP_BOOLEAN_FALSE)) {
-                        // boolean
-                        booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)),
-                                elementContentBuffer.getDataOutput());
-                    } else if (Pattern.matches(CAP_DATETIME_REGEX, content)) {
-                        // datetime
-                        aDateTime.setValue(dateFormat.parse(content).getTime());
-                        datetimeSerde.serialize(aDateTime, elementContentBuffer.getDataOutput());
-                    } else {
-                        // string
-                        aString.setValue(content);
-                        stringSerde.serialize(aString, elementContentBuffer.getDataOutput());
-                    }
-                }
-            } catch (IOException | ParseException | NullPointerException e) {
+            } catch (HyracksDataException e) {
                 throw new SAXException(e);
             }
+        }
+
+        private void processContent() throws HyracksDataException, ParseException {
+            if (curFieldType != null) {
+                setValueBasedOnTypeTag(content, curFieldType.getTypeTag(), elementContentBuffer.getDataOutput());
+            } else {
+                if (Pattern.matches(CAP_INTEGER_REGEX, content)) {
+                    // ints
+                    aInt32.setValue(Integer.valueOf(content));
+                    int32Serde.serialize(aInt32, elementContentBuffer.getDataOutput());
+                } else if (Pattern.matches(CAP_DOUBLE_REGEX, content)) {
+                    // doubles
+                    aDouble.setValue(Double.valueOf(content));
+                    doubleSerde.serialize(aDouble, elementContentBuffer.getDataOutput());
+                } else if (content.equals(CAP_BOOLEAN_TRUE) || content.equals(CAP_BOOLEAN_FALSE)) {
+                    // boolean
+                    booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)),
+                            elementContentBuffer.getDataOutput());
+                } else if (Pattern.matches(CAP_DATETIME_REGEX, content)) {
+                    // datetime
+                    aDateTime.setValue(dateFormat.parse(content).getTime());
+                    datetimeSerde.serialize(aDateTime, elementContentBuffer.getDataOutput());
+                } else {
+                    // string
+                    aString.setValue(content);
+                    stringSerde.serialize(aString, elementContentBuffer.getDataOutput());
+                }
+            }
+            content = "";
         }
 
         @Override
@@ -336,22 +351,31 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 aString.setValue(qName);
                 fieldNameBuffer.reset();
                 stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
-                curFieldType = parentBuilder.getDataType();
-                int fieldNameIdx = curFieldType == null ? -1 : ((ARecordType) curFieldType).getFieldIndex(qName);
+                IAType parentRecordType = parentBuilder.getDataType();
+                int fieldNameIdx = parentRecordType == null ? -1 : ((ARecordType) parentRecordType).getFieldIndex(qName);
                 curFullPathName = String.join(".", curPathStack);
                 if (listElementNames.containsKey(curFullPathName)) {
+                    processContent();
                     handleNestedOrderedList(curFullPathName, fieldNameIdx, fieldNameBuffer, elementContentBuffer);
                 } else if (curBuilder.getState() == SMART_BUILDER_STATE_VALUE) {
+                    processContent();
                     parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, elementContentBuffer);
                 } else {
-                    curBuilder.write();
-                    parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, curBuilder.getBuffer());
-                    curBuilder.setResetFlag();
+                    if (curBuilder.resetRecordFlag) {
+                        elementContentBuffer.reset();
+                        nullSerde.serialize(ANull.NULL, elementContentBuffer.getDataOutput());
+                        parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, elementContentBuffer);
+                    } else {
+                        curBuilder.write();
+                        parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, curBuilder.getBuffer());
+                        curBuilder.setResetFlag();
+                    }
                 }
+                curFieldType = parentRecordType;
                 elementContentBuffer.reset();
                 curPathStack.pop();
                 curLvl--;
-            } catch (HyracksDataException e) {
+            } catch (HyracksDataException|ParseException e) {
                 throw new SAXException(e);
             }
         }

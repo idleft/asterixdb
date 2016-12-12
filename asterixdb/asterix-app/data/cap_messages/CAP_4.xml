@@ -1,43 +1,81 @@
-<?xml version = "1.0" encoding = "UTF-8"?>
-<alert xmlns = "urn:oasis:names:tc:emergency:cap:1.2">
-    <identifier>KSTO1055887203</identifier>
-    <sender>KSTO@NWS.NOAA.GOV</sender>
-    <sent>2003-06-17T14:57:00-07:00</sent>
-    <status>Actual</status>
-    <msgType>Alert</msgType>
-    <scope>Public</scope>
-    <info>
-        <category>Met</category>
-        <event>SEVERE THUNDERSTORM</event>
-        <responseType>Shelter</responseType>
-        <urgency>Immediate</urgency>
-        <severity>Severe</severity>
-        <certainty>Observed</certainty>
-        <eventCode>
-            <valueName>SAME</valueName>
-            <value>SVR</value>
-        </eventCode>
-        <expires>2003-06-17T16:00:00-07:00</expires>
-        <senderName>NATIONAL WEATHER SERVICE SACRAMENTO CA</senderName>
-        <headline>SEVERE THUNDERSTORM WARNING</headline>
-        <description> AT 254 PM PDT...NATIONAL WEATHER SERVICE DOPPLER RADAR INDICATED A SEVERE THUNDERSTORM OVER SOUTH CENTRAL ALPINE COUNTY...OR ABOUT 18 MILES SOUTHEAST OF KIRKWOOD...MOVING SOUTHWEST AT 5 MPH. HAIL...INTENSE RAIN AND STRONG DAMAGING WINDS ARE LIKELY WITH THIS STORM.</description>
-        <instruction>TAKE COVER IN A SUBSTANTIAL SHELTER UNTIL THE STORM PASSES.</instruction>
-        <contact>BARUFFALDI/JUSKIE</contact>
-        <area>
-            <areaDesc>EXTREME NORTH CENTRAL TUOLUMNE COUNTY IN CALIFORNIA, EXTREME NORTHEASTERN CALAVERAS COUNTY IN CALIFORNIA, SOUTHWESTERN ALPINE COUNTY IN CALIFORNIA</areaDesc>
-            <polygon>38.47,-120.14 38.34,-119.95 38.52,-119.74 38.62,-119.89 38.47,-120.14</polygon>
-            <geocode>
-                <valueName>SAME</valueName>
-                <value>006109</value>
-            </geocode>
-            <geocode>
-                <valueName>SAME</valueName>
-                <value>006009</value>
-            </geocode>
-            <geocode>
-                <valueName>SAME</valueName>
-                <value>006003</value>
-            </geocode>
-        </area>
-    </info>
+<?xml version = '1.0' encoding = 'UTF-8' standalone = 'yes'?>
+<?xml-stylesheet href='https://alerts.weather.gov/cap/capatomproduct.xsl' type='text/xsl'?>
+
+<!--
+This atom/xml feed is an index to active advisories, watches and warnings
+issued by the National Weather Service.  This index file is not the complete
+Common Alerting Protocol (CAP) alert message.  To obtain the complete CAP
+alert, please follow the links for each entry in this index.  Also note the
+CAP message uses a style sheet to convey the information in a human readable
+format.  Please view the source of the CAP message to see the complete data
+set.  Not all information in the CAP message is contained in this index of
+active alerts.
+-->
+
+<alert xmlns = 'urn:oasis:names:tc:emergency:cap:1.1'>
+
+<!-- http-date = Thu, 03 Nov 2016 11:56:00 GMT -->
+<identifier>KSTO1055887203</identifier>
+<sender>w-nws.webmaster@noaa.gov</sender>
+<sent>2016-11-03T15:56:00-08:00</sent>
+<status>Actual</status>
+<msgType>Alert</msgType>
+<scope>Public</scope>
+<note>Alert for Middle Tanana Valley (Alaska) Issued by the National Weather Service</note>
+<info>
+<category>Met</category>
+<event>Air Quality Alert</event>
+<urgency>Unknown</urgency>
+<severity>Unknown</severity>
+<certainty>Unknown</certainty>
+<eventCode>
+<valueName>SAME</valueName>
+<value></value>
+</eventCode>
+<effective>2016-11-03T15:56:00-08:00</effective>
+<expires>2016-11-04T16:00:00-08:00</expires>
+<senderName>NWS Fairbanks (Northern Alaska - Fairbanks)</senderName>
+<headline>Air Quality Alert issued November 03 at 3:56PM AKDT until November 04 at 4:00PM AKDT by NWS Fairbanks</headline>
+<description>...AIR QUALITY ALERT IN EFFECT UNTIL 5 PM AKDT FRIDAY...
+THE FAIRBANKS NORTH STAR BOROUGH AIR QUALITY DIVISION HAS ISSUED
+AN AIR QUALITY ALERT WHICH IS IN EFFECT UNTIL 5 PM AKDT FRIDAY.
+NORTH POLE HAS A STAGE 2 ALERT.
+FAIRBANKS HAS MODERATE AIR QUALITY.
+FOR ADDITIONAL INFORMATION ABOUT AIR QUALITY IN THE BOROUGH
+PLEASE ACCESS THE BOROUGH WEB SITE AT FNSB.US/AIRQUALITY (ALL
+LOWER CASE).</description>
+<instruction></instruction>
+<parameter>
+<valueName>WMOHEADER</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>UGC</valueName>
+<value>AKZ222</value>
+</parameter>
+<parameter>
+<valueName>VTEC</valueName>
+<value></value>
+</parameter>
+<parameter>
+<valueName>TIME...MOT...LOC</valueName>
+<value></value>
+</parameter>
+<area>
+<areaDesc>Middle Tanana Valley</areaDesc>
+<polygon></polygon>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>002090</value>
+</geocode>
+<geocode>
+<valueName>FIPS6</valueName>
+<value>002290</value>
+</geocode>
+<geocode>
+<valueName>UGC</valueName>
+<value>AKZ222</value>
+</geocode>
+</area>
+</info>
 </alert>
