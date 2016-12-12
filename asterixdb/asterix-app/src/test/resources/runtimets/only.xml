@@ -19,10 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="load">
-      <compilation-unit name="load-cap-messages">
-        <output-dir compare="Text">load-cap-messages</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>

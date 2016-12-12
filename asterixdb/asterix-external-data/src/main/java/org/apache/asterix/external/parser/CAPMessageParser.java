@@ -348,6 +348,9 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 }
                 ComplexBuilder curBuilder = builderList.get(curLvl);
                 ComplexBuilder parentBuilder = builderList.get(curLvl - 1);
+                if (content.length() != 0) {
+                    processContent();
+                }
                 aString.setValue(qName);
                 fieldNameBuffer.reset();
                 stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
@@ -355,10 +358,8 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 int fieldNameIdx = parentRecordType == null ? -1 : ((ARecordType) parentRecordType).getFieldIndex(qName);
                 curFullPathName = String.join(".", curPathStack);
                 if (listElementNames.containsKey(curFullPathName)) {
-                    processContent();
                     handleNestedOrderedList(curFullPathName, fieldNameIdx, fieldNameBuffer, elementContentBuffer);
                 } else if (curBuilder.getState() == SMART_BUILDER_STATE_VALUE) {
-                    processContent();
                     parentBuilder.addAttribute(fieldNameIdx, fieldNameBuffer, elementContentBuffer);
                 } else {
                     if (curBuilder.resetRecordFlag) {
