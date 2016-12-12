@@ -48,7 +48,7 @@ public class CAPMessageRecordReader extends StreamRecordReader {
         curLvl = 0;
         recordContentFlag = false;
         if (collection != null) {
-            this.recordLvl = "true".equals(collection) ? 1 : 0;
+            this.recordLvl = Boolean.parseBoolean(collection) ? 1 : 0;
         } else {
             this.recordLvl = 0;
         }
@@ -90,16 +90,18 @@ public class CAPMessageRecordReader extends StreamRecordReader {
                     }
                     break;
                 case '>':
-                    if (state == CAPParserState.IN_START_OF_ELEMENT_NAME) {
-                        // add lvl
-                        curLvl++;
-                    } else if (state == CAPParserState.IN_END_OF_ELEMENT_NAME) {
-                        // decrease lvl
-                        curLvl--;
-                    } else if (state == CAPParserState.START_OF_PROLOG) {
-                        // document head
-                    } else if (state == CAPParserState.IN_SCHEMA_DEFINITION) {
-                        // schema definition
+                    switch (state) {
+                        case IN_START_OF_ELEMENT_NAME:
+                            curLvl++;
+                            break;
+                        case IN_END_OF_ELEMENT_NAME:
+                            curLvl--;
+                            break;
+                        case IN_SCHEMA_DEFINITION:
+                            //schema definition, do nothing
+                            break;
+                        default:
+                            //do nothing
                     }
                     if (curLvl == recordLvl && state == CAPParserState.IN_END_OF_ELEMENT_NAME) {
                         int appendLength = bufferPosn + 1 - startPos;
@@ -123,22 +125,26 @@ public class CAPMessageRecordReader extends StreamRecordReader {
                     }
                     break;
                 default:
-                    if (state == CAPParserState.START_OF_ELEMENT_NAME) {
-                        if (curLvl == recordLvl) {
-                            startPos = bufferPosn - 1;
-                            recordContentFlag = true;
-                        }
-                        state = CAPParserState.IN_START_OF_ELEMENT_NAME; // in start element name
-                    } else if (state == CAPParserState.END_OF_ELEMENT_NAME) {
-                        state = CAPParserState.IN_END_OF_ELEMENT_NAME; // in end element name
-                    } else if (state == CAPParserState.START_OF_PROLOG) {
-                        // inside document head
-                        state = CAPParserState.IN_PROLOG;
+                    switch (state) {
+                        case START_OF_ELEMENT_NAME:
+                            if (curLvl == recordLvl) {
+                                startPos = bufferPosn - 1;
+                                recordContentFlag = true;
+                            }
+                            state = CAPParserState.IN_START_OF_ELEMENT_NAME; // in start element name
+                            break;
+                        case END_OF_ELEMENT_NAME:
+                            state = CAPParserState.IN_END_OF_ELEMENT_NAME; // in end element name
+                            break;
+                        case START_OF_PROLOG:
+                            state = CAPParserState.IN_PROLOG; // inside document head
+                            break;
+                        default:
+                            // do nothing
                     }
             }
             bufferPosn++;
         } while (!newRecordFormed);
-
-        return newRecordFormed;
+        return true;
     }
 }

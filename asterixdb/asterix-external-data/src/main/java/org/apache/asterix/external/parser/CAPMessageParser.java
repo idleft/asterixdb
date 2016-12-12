@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.TimeZone;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -58,16 +60,17 @@ import org.apache.hyracks.data.std.api.IValueReference;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
+import org.xml.sax.ext.LexicalHandler;
 import org.xml.sax.helpers.DefaultHandler;
 
 public class CAPMessageParser extends AbstractDataParser implements IRecordDataParser<char[]> {
 
-    private static final String CAP_DATETIME_REGEX = "\\d\\d\\d\\d-\\d\\d-\\d\\dT\\d\\d:"
-            + "\\d\\d:\\d\\d[-,+]\\d\\d:\\d\\d";
+    private static final String CAP_DATETIME_REGEX = "<!-- http-date = ([^-]+) -->";
     private static final String CAP_DOUBLE_REGEX = "\\d+\\.\\d+";
     private static final String CAP_INTEGER_REGEX = "^[1-9]\\d*";
     private static final String CAP_BOOLEAN_TRUE = "true";
     private static final String CAP_BOOLEAN_FALSE = "false";
+    private static final String CAP_TIME_FIELD_NAME = "http-date";
 
     public static final int SMART_BUILDER_STATE_RECORD = 1;
     public static final int SMART_BUILDER_STATE_LIST = 2;
@@ -86,14 +89,19 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
     private ListElementHandler listElementHandler;
     private CAPMessageHandler capMessageHandler;
     private HashMap<String, Integer> listElementNames;
-    private SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'hh:mm:ss");
+    private ArrayBackedValueStorage fieldNameBuffer;
+    private ArrayBackedValueStorage elementContentBuffer;
+    private SimpleDateFormat dateFormat = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z");
+    private Pattern messageTimeStampPattern = Pattern.compile(CAP_DATETIME_REGEX);
 
     public CAPMessageParser(ARecordType recordType) throws HyracksDataException {
         this.recordType = recordType;
         builderList = new ArrayList<>();
         listElementNames = new HashMap<>();
         listElementHandler = new ListElementHandler(listElementNames);
+        elementContentBuffer = new ArrayBackedValueStorage();
         capMessageHandler = new CAPMessageHandler(recordType, builderList);
+        fieldNameBuffer = new ArrayBackedValueStorage();
         try {
             capMessageSAXParser = SAXParserFactory.newInstance().newSAXParser();
         } catch (ParserConfigurationException | SAXException e) {
@@ -119,19 +127,37 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
         capMessageHandler.clear();
     }
 
+    private void addPossibleTimeStamp(ComplexBuilder recordBuilder, String stringRecord)
+            throws HyracksDataException, ParseException {
+
+        Matcher matcher = messageTimeStampPattern.matcher(stringRecord);
+        if (matcher.find()) {
+            fieldNameBuffer.reset();
+            elementContentBuffer.reset();
+            aString.setValue(CAP_TIME_FIELD_NAME);
+            stringSerde.serialize(aString, fieldNameBuffer.getDataOutput());
+            aDateTime.setValue(dateFormat.parse(matcher.group(1)).getTime());
+            datetimeSerde.serialize(aDateTime, elementContentBuffer.getDataOutput());
+            recordBuilder.addAttribute(-1, fieldNameBuffer, elementContentBuffer);
+        }
+    }
+
     @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws HyracksDataException {
         try {
-            clearBufferInit();
+            String stringRecord = record.toString().replaceAll("[\\r|\\n|\\r\\n]+", " ");
+            resetPools();
+            builderList.clear();
+            capMessageHandler.clear();
             getElementNameList(record);
             builderList.add(new ComplexBuilder());
             complexBuilder = builderList.get(0);
             complexBuilder.setState(SMART_BUILDER_STATE_RECORD, recordType);
-            capMessageSAXParser.parse(
-                    new ByteArrayInputStream(record.toString().replaceAll("[\\r|\\n|\\r\\n]+", " ").getBytes()),
-                    capMessageHandler);
+            capMessageSAXParser.parse(new ByteArrayInputStream(stringRecord.getBytes()), capMessageHandler);
+            addPossibleTimeStamp(complexBuilder, stringRecord);
+
             complexBuilder.write(out);
-        } catch (SAXException | IOException e) {
+        } catch (SAXException | ParseException | IOException e) {
             throw new HyracksDataException(e);
         }
     }
@@ -180,14 +206,11 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
 
     private class CAPMessageHandler extends DefaultHandler {
 
-        private ArrayBackedValueStorage elementContentBuffer;
         private ARecordType recordType;
         private List<ComplexBuilder> builderList;
         private String curFullPathName;
         private IAType curFieldType;
-        private String parentPath;
         private Deque<String> curPathStack;
-        private ArrayBackedValueStorage fieldNameBuffer;
         // In order to handle nested list. This gives each list element an unique path
         private Map<String, Integer> listElementCounter;
 
@@ -201,8 +224,6 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
             this.builderList = builderList;
             curPathStack = new LinkedList<>();
             listElementCounter = new HashMap<>();
-            elementContentBuffer = new ArrayBackedValueStorage();
-            fieldNameBuffer = new ArrayBackedValueStorage();
             curLvl = 0;
             skipLvl = 1;
             content = "";
@@ -239,14 +260,10 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     case BOOLEAN:
                         booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)), out);
                         break;
-                    case DATETIME:
-                        aDateTime.setValue(dateFormat.parse(content).getTime());
-                        datetimeSerde.serialize(aDateTime, out);
-                        break;
                     default:
                         throw new HyracksDataException("Data type not supported");
                 }
-            } catch (ParseException | IOException e) {
+            } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
@@ -256,7 +273,7 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                 throws SAXException {
             this.qName = qName;
             this.content = "";
-            parentPath = String.join(".", curPathStack);
+            String parentPath = String.join(".", curPathStack);
             curPathStack.push(
                     qName + (listElementCounter.containsKey(parentPath) ? listElementCounter.get(parentPath) : 1));
             if (curPathStack.size() <= skipLvl) {
@@ -314,10 +331,6 @@ public class CAPMessageParser extends AbstractDataParser implements IRecordDataP
                     // boolean
                     booleanSerde.serialize(ABoolean.valueOf(content.equals(CAP_BOOLEAN_TRUE)),
                             elementContentBuffer.getDataOutput());
-                } else if (Pattern.matches(CAP_DATETIME_REGEX, content)) {
-                    // datetime
-                    aDateTime.setValue(dateFormat.parse(content).getTime());
-                    datetimeSerde.serialize(aDateTime, elementContentBuffer.getDataOutput());
                 } else {
                     // string
                     aString.setValue(content);
