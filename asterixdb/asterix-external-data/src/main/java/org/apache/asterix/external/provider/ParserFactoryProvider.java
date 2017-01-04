@@ -18,6 +18,13 @@
  */
 package org.apache.asterix.external.provider;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
@@ -31,8 +38,15 @@ import org.apache.asterix.external.parser.factory.RecordWithMetadataParserFactor
 import org.apache.asterix.external.parser.factory.TweetParserFactory;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
+import org.apache.commons.io.IOUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 public class ParserFactoryProvider {
+
+    private static final String RESOURCE = "META-INF/services/org.apache.asterix.external.api.IDataParserFactory";
+    private static Map<String, Class> factories = null;
 
     private ParserFactoryProvider() {
     }
@@ -54,32 +68,60 @@ public class ParserFactoryProvider {
         return parserFactory;
     }
 
+    protected static IDataParserFactory getInstance(Class clazz) throws AsterixException {
+        try {
+            return (IDataParserFactory) clazz.newInstance();
+        } catch (IllegalAccessException | InstantiationException | ClassCastException e) {
+            throw new AsterixException("Cannot create: " + clazz.getSimpleName(), e);
+        }
+    }
+
     @SuppressWarnings("rawtypes")
     public static IDataParserFactory getDataParserFactory(String parser) throws AsterixException {
-        switch (parser) {
-            case ExternalDataConstants.FORMAT_ADM:
-            case ExternalDataConstants.FORMAT_JSON:
-            case ExternalDataConstants.FORMAT_SEMISTRUCTURED:
-                return new ADMDataParserFactory();
-            case ExternalDataConstants.FORMAT_DELIMITED_TEXT:
-            case ExternalDataConstants.FORMAT_CSV:
-                return new DelimitedDataParserFactory();
-            case ExternalDataConstants.FORMAT_HIVE:
-            case ExternalDataConstants.PARSER_HIVE:
-                return new HiveDataParserFactory();
-            case ExternalDataConstants.FORMAT_TWEET:
-                return new TweetParserFactory();
-            case ExternalDataConstants.FORMAT_RSS:
-                return new RSSParserFactory();
-            case ExternalDataConstants.FORMAT_RECORD_WITH_METADATA:
-                return new RecordWithMetadataParserFactory();
-            default:
-                try {
-                    return (IDataParserFactory) Class.forName(parser).newInstance();
-                } catch (IllegalAccessException | ClassNotFoundException | InstantiationException
-                        | ClassCastException e) {
-                    throw new AsterixException("Unknown format: " + parser, e);
-                }
+
+        if (factories == null) {
+            factories = initFactories();
         }
+
+        if (factories.containsKey(parser)) {
+            return getInstance(factories.get(parser));
+        }
+
+        try {
+            // ideally, this should not happen
+            return (IDataParserFactory) Class.forName(parser).newInstance();
+        } catch (IllegalAccessException | ClassNotFoundException | InstantiationException | ClassCastException e) {
+            throw new AsterixException("Unknown format: " + parser, e);
+        }
+    }
+
+    protected static Map<String, Class> initFactories() throws AsterixException {
+        Map<String, Class> factories = new HashMap<>();
+        ClassLoader cl = ParserFactoryProvider.class.getClassLoader();
+        final Charset encoding = Charset.forName("UTF-8");
+        try {
+            Enumeration<URL> urls = cl.getResources(RESOURCE);
+            for (URL url : Collections.list(urls)) {
+                System.out.println(url);
+                InputStream is = url.openStream();
+                String config = IOUtils.toString(is, encoding);
+                is.close();
+                String[] classNames = config.split("\n");
+                for (String className : classNames) {
+                    final Class<?> clazz = Class.forName(className);
+                    String[] formats = ((IDataParserFactory) clazz.newInstance()).getFormats();
+                    for (String format : formats) {
+                        if (factories.containsKey(format)) {
+                            throw new AsterixException("Duplicate format " + format);
+                        }
+                        factories.put(format, clazz);
+                    }
+                }
+            }
+        } catch (IOException | ClassNotFoundException | InstantiationException
+                | IllegalAccessException e) {
+            throw new AsterixException(e);
+        }
+        return factories;
     }
 }
