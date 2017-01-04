@@ -22,7 +22,7 @@ import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.ActivePartitionMessage;
-import org.apache.asterix.common.api.IAsterixAppRuntimeContext;
+import org.apache.asterix.common.api.IAppRuntimeContext;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IAdapterFactory;
@@ -63,7 +63,7 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
 
     @Override
     public void initialize() throws HyracksDataException {
-        ActiveManager feedManager = (ActiveManager) ((IAsterixAppRuntimeContext) ctx.getJobletContext()
+        ActiveManager feedManager = (ActiveManager) ((IAppRuntimeContext) ctx.getJobletContext()
                 .getApplicationContext().getApplicationObject()).getActiveManager();
         AdapterRuntimeManager adapterRuntimeManager = null;
         DistributeFeedFrameWriter frameDistributor = null;

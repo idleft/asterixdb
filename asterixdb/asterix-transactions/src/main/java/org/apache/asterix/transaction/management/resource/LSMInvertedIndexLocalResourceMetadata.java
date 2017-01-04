@@ -22,8 +22,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.context.BaseOperationTracker;
+import org.apache.asterix.common.dataflow.LSMIndexUtil;
 import org.apache.asterix.common.ioopcallbacks.LSMInvertedIndexIOOperationCallbackFactory;
-import org.apache.asterix.common.transactions.IAsterixAppRuntimeContextProvider;
+import org.apache.asterix.common.transactions.IAppRuntimeContextProvider;
 import org.apache.asterix.common.transactions.Resource;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ITypeTraits;
@@ -76,7 +77,7 @@ public class LSMInvertedIndexLocalResourceMetadata extends Resource {
     }
 
     @Override
-    public ILSMIndex createIndexInstance(IAsterixAppRuntimeContextProvider runtimeContextProvider,
+    public ILSMIndex createIndexInstance(IAppRuntimeContextProvider runtimeContextProvider,
             LocalResource resource) throws HyracksDataException {
         IIOManager ioManager = runtimeContextProvider.getIOManager();
         FileReference file = ioManager.resolve(resource.getPath());
@@ -96,7 +97,8 @@ public class LSMInvertedIndexLocalResourceMetadata extends Resource {
                         runtimeContextProvider.getLSMIOScheduler(),
                         LSMInvertedIndexIOOperationCallbackFactory.INSTANCE.createIOOperationCallback(),
                         invertedIndexFields, filterTypeTraits, filterCmpFactories, filterFields,
-                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true);
+                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true, LSMIndexUtil
+                                .getMetadataPageManagerFactory());
             } else {
                 return InvertedIndexUtils.createLSMInvertedIndex(ioManager, virtualBufferCaches,
                         runtimeContextProvider.getFileMapManager(), invListTypeTraits, invListCmpFactories,
@@ -109,7 +111,8 @@ public class LSMInvertedIndexLocalResourceMetadata extends Resource {
                         runtimeContextProvider.getLSMIOScheduler(),
                         LSMInvertedIndexIOOperationCallbackFactory.INSTANCE.createIOOperationCallback(),
                         invertedIndexFields, filterTypeTraits, filterCmpFactories, filterFields,
-                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true);
+                        filterFieldsForNonBulkLoadOps, invertedIndexFieldsForNonBulkLoadOps, true, LSMIndexUtil
+                                .getMetadataPageManagerFactory());
             }
         } catch (IndexException e) {
             throw new HyracksDataException(e);

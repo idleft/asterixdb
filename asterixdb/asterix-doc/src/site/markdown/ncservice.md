@@ -121,14 +121,11 @@ The following parameters are for the master process, under the "[cc]" section.
 
 | Parameter | Meaning |  Default |
 |----------|--------|-------|
-| compiler.framesize |  The page size (in bytes) for computation  | 32768 |
-| compiler.groupmemory |  The memory budget (in bytes) for a group by operator instance in a partition | 33554432 |
-| compiler.joinmemory | The memory budget (in bytes) for a join operator instance in a partition  | 33554432 |
-| compiler.sortmemory | The memory budget (in bytes) for a sort operator instance in a partition | 33554432 |
 | instance.name  |  The name of the AsterixDB instance   | "DEFAULT_INSTANCE" |
 | max.wait.active.cluster | The max pending time (in seconds) for cluster startup. After the threshold, if the cluster still is not up and running, it is considered unavailable.    | 60 |
 | metadata.callback.port | The port for metadata communication | 0 |
 | cluster.address | The binding IP address for the AsterixDB instance | N/A |
+
 
 The following parameters for slave processes, under "[nc]" sections.
 
@@ -143,7 +140,7 @@ The following parameters for slave processes, under "[nc]" sections.
 | metadata.registration.timeout.secs | The time out threshold (in seconds) for metadata node registration | 60 |
 | port | The port for the NCService that starts the slave process |  N/A |
 | storagedir | The directory for storage files  |  N/A |
-| storage.buffercache.maxopenfiles | The maximum number of open files for the buffer cache.  Note that this is the parameter for the AsterixDB <br/> and setting the operating system parameter is still required. | 2147483647 |
+| storage.buffercache.maxopenfiles | The maximum number of open files for the buffer cache.  Note that this is the parameter for the AsterixDB and setting the operating system parameter is still required. | 2147483647 |
 | storage.buffercache.pagesize |  The page size (in bytes) for the disk buffer cache (for reads) | 131072 |
 | storage.buffercache.size | The overall budget (in bytes) of the disk buffer cache (for reads) | 536870912 |
 | storage.lsm.bloomfilter.falsepositiverate | The false positive rate for the bloom filter for each memory/disk components | 0.01 |
@@ -168,3 +165,8 @@ The following parameter is for both master and slave processes, under the "[app]
 | Parameter | Meaning |  Default |
 |----------|--------|-------|
 | log.level | The logging level for master and slave processes | "INFO" |
+| compiler.framesize |  The page size (in bytes) for computation  | 32768 |
+| compiler.groupmemory |  The memory budget (in bytes) for a group by operator instance in a partition | 33554432 |
+| compiler.joinmemory | The memory budget (in bytes) for a join operator instance in a partition  | 33554432 |
+| compiler.sortmemory | The memory budget (in bytes) for a sort operator instance in a partition | 33554432 |
+| compiler.parallelism | The degree of parallelism for query execution. Zero means to use the storage parallelism as the query execution parallelism, while other integer values dictate the number of query execution parallel partitions. The system will fall back to use the number of all available CPU cores in the cluster as the degree of parallelism if the number set by a user is too large or too small.  | 0 |

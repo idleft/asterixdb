@@ -83,7 +83,7 @@ class AqlExpressionToPlanTranslator extends LangExpressionToPlanTranslator imple
             LogicalVariable pVar = context.newVar(fc.getPosVarExpr());
             // We set the positional variable type as INT64 type.
             returnedOp = new UnnestOperator(v, new MutableObject<ILogicalExpression>(makeUnnestExpression(eo.first)),
-                    pVar, BuiltinType.AINT64, new AqlPositionWriter());
+                    pVar, BuiltinType.AINT64, new PositionWriter());
         }
         returnedOp.getInputs().add(eo.second);
         return new Pair<>(returnedOp, v);
@@ -169,13 +169,16 @@ class AqlExpressionToPlanTranslator extends LangExpressionToPlanTranslator imple
 
     @Override
     protected boolean expressionNeedsNoNesting(Expression expr) {
-        boolean noForFLWOR = false;
-        // No nesting is needed for a FLWOR expression without a FOR clause.
-        if (expr.getKind() == Kind.FLWOGR_EXPRESSION) {
+        boolean isFLWOGR = expr.getKind() == Kind.FLWOGR_EXPRESSION;
+        boolean letOnly = true;
+        // No nesting is needed for a FLWOR expression that only has LETs and RETURN.
+        if (isFLWOGR) {
             FLWOGRExpression flwor = (FLWOGRExpression) expr;
-            noForFLWOR = flwor.noForClause();
+            for (Clause clause : flwor.getClauseList()) {
+                letOnly &= clause.getClauseType() == Clause.ClauseType.LET_CLAUSE;
+            }
         }
-        return noForFLWOR || super.expressionNeedsNoNesting(expr);
+        return (isFLWOGR && letOnly) || super.expressionNeedsNoNesting(expr);
     }
 
     private Pair<ILogicalOperator, LogicalVariable> produceFlworPlan(boolean noForClause, boolean isTop,

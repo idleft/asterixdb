@@ -456,6 +456,7 @@ public class NodeControllerService implements IControllerService {
 
             hbData.diskReads = ioCounter.getReads();
             hbData.diskWrites = ioCounter.getWrites();
+            hbData.numCores = Runtime.getRuntime().availableProcessors();
 
             try {
                 cc.nodeHeartbeat(id, hbData);

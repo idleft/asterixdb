@@ -31,7 +31,7 @@ import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.indexing.IndexingScheduler;
 import org.apache.asterix.external.indexing.RecordId.RecordIdType;
 import org.apache.asterix.external.input.stream.HDFSInputStream;
-import org.apache.asterix.runtime.util.AsterixAppContextInfo;
+import org.apache.asterix.runtime.util.AppContextInfo;
 import org.apache.asterix.runtime.util.ClusterStateManager;
 import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FileStatus;
@@ -51,8 +51,8 @@ import org.apache.hyracks.hdfs.scheduler.Scheduler;
 
 public class HDFSUtils {
 
-    public static Scheduler initializeHDFSScheduler() throws HyracksDataException {
-        ICCContext ccContext = AsterixAppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
+    public static Scheduler initializeHDFSScheduler() throws  HyracksDataException{
+        ICCContext ccContext = AppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
         Scheduler scheduler = null;
         try {
             scheduler = new Scheduler(ccContext.getClusterControllerInfo().getClientNetAddress(),
@@ -64,7 +64,7 @@ public class HDFSUtils {
     }
 
     public static IndexingScheduler initializeIndexingHDFSScheduler() throws HyracksDataException {
-        ICCContext ccContext = AsterixAppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
+        ICCContext ccContext = AppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
         IndexingScheduler scheduler = null;
         try {
             scheduler = new IndexingScheduler(ccContext.getClusterControllerInfo().getClientNetAddress(),
@@ -206,7 +206,7 @@ public class HDFSUtils {
             AlgebricksAbsolutePartitionConstraint clusterLocations) {
         if (clusterLocations == null) {
             ArrayList<String> locs = new ArrayList<>();
-            Map<String, String[]> stores = AsterixAppContextInfo.INSTANCE.getMetadataProperties().getStores();
+            Map<String, String[]> stores = AppContextInfo.INSTANCE.getMetadataProperties().getStores();
             for (String node : stores.keySet()) {
                 int numIODevices = ClusterStateManager.INSTANCE.getIODevices(node).length;
                 for (int k = 0; k < numIODevices; k++) {

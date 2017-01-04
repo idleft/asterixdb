@@ -23,11 +23,11 @@ import org.apache.hyracks.storage.common.buffercache.ICachedPage;
 
 public interface ITreeIndexMetaDataFrame {
 
-    //Storage version #. Change this if you alter any tree frame formats to stop
+    // Storage version #. Change this if you alter any tree frame formats to stop
     // possible corruption from old versions reading new formats.
-    public static final int VERSION = 3;
+    int VERSION = 4;
 
-    public void initBuffer(byte level);
+    public void initBuffer();
 
     public void setPage(ICachedPage page);
 
@@ -37,7 +37,7 @@ public interface ITreeIndexMetaDataFrame {
 
     public void setLevel(byte level);
 
-    public int getNextPage();
+    public int getNextMetadataPage();
 
     public void setNextPage(int nextPage);
 
@@ -78,4 +78,8 @@ public interface ITreeIndexMetaDataFrame {
     void setRootPageNumber(int rootPage);
 
     int getRootPageNumber();
+
+    boolean isMetadataPage();
+
+    boolean isFreePage();
 }

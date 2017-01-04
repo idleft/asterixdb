@@ -44,7 +44,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.JobType;
-import org.apache.asterix.runtime.util.AsterixAppContextInfo;
+import org.apache.asterix.runtime.util.AppContextInfo;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
@@ -205,11 +205,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
             }
         }
 
-        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
+        IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
         JobInfo info = null;
         try {
-            // TODO: fix after hcc change(xikui)
-            info = hcc.getJobInfo(intakeJobInfo.getJobId());
+            hcc.getJobInfo(intakeJobInfo.getJobId());
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -359,11 +358,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     private synchronized void handleFeedIntakeJobFinishMessage(FeedIntakeInfo intakeInfo, ActiveEvent message)
             throws HyracksDataException {
-        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
+        IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
         JobInfo info = null;
         try {
-            // TODO: fix after hcc change (xikui)
-            info = hcc.getJobInfo(message.getJobId());
+            hcc.getJobInfo(message.getJobId());
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -385,11 +383,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws HyracksDataException {
         FeedConnectionId connectionId = cInfo.getConnectionId();
 
-        IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
+        IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
         JobInfo info = null;
         try {
-            // TODO: fix after hcc change (xikui)
-            info = hcc.getJobInfo(cInfo.getJobId());
+            hcc.getJobInfo(cInfo.getJobId());
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -545,7 +542,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
 
         try {
-            IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
+            IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
             JobInfo info = hcc.getJobInfo(cInfo.getJobId());
             List<String> collectLocations = new ArrayList<>();
             for (OperatorDescriptorId collectOpId : collectOperatorIds) {
