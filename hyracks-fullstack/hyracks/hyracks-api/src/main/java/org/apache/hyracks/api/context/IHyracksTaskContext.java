@@ -24,7 +24,6 @@ import java.util.concurrent.ExecutorService;
 import org.apache.hyracks.api.dataflow.TaskAttemptId;
 import org.apache.hyracks.api.dataset.IDatasetPartitionManager;
 import org.apache.hyracks.api.deployment.DeploymentId;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.IWorkspaceFileFactory;
 import org.apache.hyracks.api.job.IOperatorEnvironment;
 import org.apache.hyracks.api.job.profiling.counters.ICounterContext;
@@ -42,9 +41,9 @@ public interface IHyracksTaskContext
 
     public IDatasetPartitionManager getDatasetPartitionManager();
 
-    public void sendApplicationMessageToCC(Serializable message, DeploymentId deploymentId) throws HyracksDataException;
+    public void sendApplicationMessageToCC(Serializable message, DeploymentId deploymentId) throws Exception;
 
-    public void sendApplicationMessageToCC(byte[] message, DeploymentId deploymentId) throws HyracksDataException;
+    public void sendApplicationMessageToCC(byte[] message, DeploymentId deploymentId) throws Exception;
 
     public void setSharedObject(Object object);
 

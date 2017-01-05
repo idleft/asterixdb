@@ -104,14 +104,18 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
 
     @Override
     public boolean parse(DataOutput out) throws HyracksDataException {
-        while (cursor.nextRecord()) {
-            parseRecord();
-            if (!areAllNullFields) {
-                recBuilder.write(out, true);
-                return true;
+        try {
+            while (cursor.nextRecord()) {
+                parseRecord();
+                if (!areAllNullFields) {
+                    recBuilder.write(out, true);
+                    return true;
+                }
             }
+            return false;
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
         }
-        return false;
     }
 
     private void parseRecord() throws HyracksDataException {
@@ -120,8 +124,12 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
         areAllNullFields = true;
 
         for (int i = 0; i < valueParsers.length; ++i) {
-            if (!cursor.nextField()) {
-                break;
+            try {
+                if (!cursor.nextField()) {
+                    break;
+                }
+            } catch (IOException e) {
+                throw new HyracksDataException(e);
             }
             fieldValueBuffer.reset();
 
@@ -161,7 +169,11 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
 
     @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws HyracksDataException {
-        cursor.nextRecord(record.get(), record.size());
+        try {
+            cursor.nextRecord(record.get(), record.size());
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
         parseRecord();
         if (!areAllNullFields) {
             recBuilder.write(out, true);

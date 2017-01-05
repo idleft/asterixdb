@@ -117,7 +117,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         }
     }
 
-    private void parseAndForward(IRawRecord<? extends T> record) throws HyracksDataException {
+    private void parseAndForward(IRawRecord<? extends T> record) throws IOException {
         synchronized (dataParser) {
             try {
                 dataParser.parse(record, tb.getDataOutput());
@@ -134,12 +134,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         }
     }
 
-    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
-        // do nothing
+    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
     }
 
-    protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
-        // do nothing
+    protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
     }
 
     private void startDataflowMarker() {
