@@ -18,11 +18,9 @@
  */
 package org.apache.asterix.external.api;
 
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-
 public interface IExternalFunction {
 
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException;
+    public void initialize(IFunctionHelper functionHelper) throws Exception;
 
     public void deinitialize();
 

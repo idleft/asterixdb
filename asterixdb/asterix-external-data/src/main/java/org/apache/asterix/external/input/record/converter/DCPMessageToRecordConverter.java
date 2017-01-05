@@ -33,7 +33,6 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import com.couchbase.client.core.message.dcp.DCPRequest;
 import com.couchbase.client.core.message.dcp.MutationMessage;
@@ -62,46 +61,42 @@ public class DCPMessageToRecordConverter implements IRecordToRecordWithMetadataA
     }
 
     @Override
-    public RecordWithMetadataAndPK<char[]> convert(final IRawRecord<? extends DCPRequest> input)
-            throws HyracksDataException {
+    public RecordWithMetadataAndPK<char[]> convert(final IRawRecord<? extends DCPRequest> input) throws IOException {
         final DCPRequest dcpRequest = input.get();
-        try {
-            if (dcpRequest instanceof MutationMessage) {
-                final MutationMessage message = (MutationMessage) dcpRequest;
-                try {
-                    final String key = message.key();
-                    final int vbucket = message.partition();
-                    final long seq = message.bySequenceNumber();
-                    final long cas = message.cas();
-                    final int expiration = message.expiration();
-                    final int flags = message.flags();
-                    final long revSeqNumber = message.revisionSequenceNumber();
-                    final int lockTime = message.lockTime();
-                    int i = 0;
-                    recordWithMetadata.reset();
-                    recordWithMetadata.setMetadata(i++, key);
-                    recordWithMetadata.setMetadata(i++, vbucket);
-                    recordWithMetadata.setMetadata(i++, seq);
-                    recordWithMetadata.setMetadata(i++, cas);
-                    recordWithMetadata.setMetadata(i++, expiration);
-                    recordWithMetadata.setMetadata(i++, flags);
-                    recordWithMetadata.setMetadata(i++, revSeqNumber);
-                    recordWithMetadata.setMetadata(i, lockTime);
-                    DCPMessageToRecordConverter.set(message.content(), decoder, bytes, chars, value);
-                } finally {
-                    ReferenceCountUtil.release(message.content());
-                }
-            } else if (dcpRequest instanceof RemoveMessage) {
-                final RemoveMessage message = (RemoveMessage) dcpRequest;
+        if (dcpRequest instanceof MutationMessage) {
+            final MutationMessage message = (MutationMessage) dcpRequest;
+            try {
                 final String key = message.key();
+                final int vbucket = message.partition();
+                final long seq = message.bySequenceNumber();
+                final long cas = message.cas();
+                final int expiration = message.expiration();
+                final int flags = message.flags();
+                final long revSeqNumber = message.revisionSequenceNumber();
+                final int lockTime = message.lockTime();
+                int i = 0;
                 recordWithMetadata.reset();
-                recordWithMetadata.setMetadata(0, key);
-            } else {
-                throw new RuntimeDataException(ErrorCode.ERROR_INPUT_RECORD_CONVERTER_DCP_MESSAGE_TO_RECORD_CONVERTER_UNKNOWN_DCP_REQUEST,
-                        dcpRequest.toString());
+                recordWithMetadata.setMetadata(i++, key);
+                recordWithMetadata.setMetadata(i++, vbucket);
+                recordWithMetadata.setMetadata(i++, seq);
+                recordWithMetadata.setMetadata(i++, cas);
+                recordWithMetadata.setMetadata(i++, expiration);
+                recordWithMetadata.setMetadata(i++, flags);
+                recordWithMetadata.setMetadata(i++, revSeqNumber);
+                recordWithMetadata.setMetadata(i, lockTime);
+                DCPMessageToRecordConverter.set(message.content(), decoder, bytes, chars, value);
+            } finally {
+                ReferenceCountUtil.release(message.content());
             }
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
+        } else if (dcpRequest instanceof RemoveMessage) {
+            final RemoveMessage message = (RemoveMessage) dcpRequest;
+            final String key = message.key();
+            recordWithMetadata.reset();
+            recordWithMetadata.setMetadata(0, key);
+        } else {
+            throw new RuntimeDataException(
+                    ErrorCode.ERROR_INPUT_RECORD_CONVERTER_DCP_MSG_TO_RECORD_CONVERTER_UNKNOWN_DCP_REQUEST,
+                    dcpRequest.toString());
         }
         return recordWithMetadata;
     }

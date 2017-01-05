@@ -105,7 +105,7 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
     @Override
     public boolean parse(DataOutput out) throws HyracksDataException {
         while (cursor.nextRecord()) {
-            parseRecord(out);
+            parseRecord();
             if (!areAllNullFields) {
                 recBuilder.write(out, true);
                 return true;
@@ -114,7 +114,7 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
         return false;
     }
 
-    private void parseRecord(DataOutput out) throws HyracksDataException {
+    private void parseRecord() throws HyracksDataException {
         recBuilder.reset(recordType);
         recBuilder.init();
         areAllNullFields = true;
@@ -162,14 +162,14 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
     @Override
     public void parse(IRawRecord<? extends char[]> record, DataOutput out) throws HyracksDataException {
         cursor.nextRecord(record.get(), record.size());
-        parseRecord(out);
+        parseRecord();
         if (!areAllNullFields) {
             recBuilder.write(out, true);
         }
     }
 
     @Override
-    public void setInputStream(InputStream in) throws HyracksDataException {
+    public void setInputStream(InputStream in) throws IOException {
         cursor = new FieldCursorForDelimitedDataParser(new InputStreamReader(in), fieldDelimiter, quote);
         if (in != null && hasHeader) {
             cursor.nextRecord();
@@ -180,7 +180,7 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
     }
 
     @Override
-    public boolean reset(InputStream in) throws HyracksDataException {
+    public boolean reset(InputStream in) throws IOException {
         cursor = new FieldCursorForDelimitedDataParser(new InputStreamReader(in), fieldDelimiter, quote);
         return true;
     }

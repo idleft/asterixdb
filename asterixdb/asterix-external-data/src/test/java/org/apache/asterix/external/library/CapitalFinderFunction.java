@@ -18,7 +18,6 @@
  */
 package org.apache.asterix.external.library;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
@@ -27,7 +26,6 @@ import org.apache.asterix.external.library.java.JObjects.JString;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class CapitalFinderFunction implements IExternalScalarFunction {
 
@@ -41,7 +39,7 @@ public class CapitalFinderFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         JString country = ((JString) functionHelper.getArgument(0));
         JRecord record = (JRecord) functionHelper.getResultObject();
         String capitalCity = capitalList.getProperty(country.getValue(), NOT_FOUND);
@@ -53,14 +51,10 @@ public class CapitalFinderFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void initialize(IFunctionHelper functionHelper) throws Exception {
         InputStream in = CapitalFinderFunction.class.getClassLoader().getResourceAsStream("data/countriesCapitals.txt");
         capitalList = new Properties();
-        try {
-            capitalList.load(in);
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+        capitalList.load(in);
         capital = (JString) functionHelper.getObject(JTypeTag.STRING);
     }
 

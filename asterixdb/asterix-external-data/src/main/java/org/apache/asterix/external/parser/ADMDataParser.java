@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
-import java.text.ParseException;
 import java.util.BitSet;
 import java.util.List;
 
@@ -40,7 +39,6 @@ import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IStreamDataParser;
 import org.apache.asterix.om.base.ABoolean;
-import org.apache.asterix.om.base.AMutableInterval;
 import org.apache.asterix.om.base.ANull;
 import org.apache.asterix.om.base.temporal.GregorianCalendarSystem;
 import org.apache.asterix.om.types.AOrderedListType;
@@ -57,7 +55,6 @@ import org.apache.asterix.runtime.operators.file.adm.AdmLexer;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IMutableValueStorage;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
-import org.apache.velocity.runtime.directive.Parse;
 
 /**
  * Parser for ADM formatted data.
@@ -173,12 +170,8 @@ public class ADMDataParser extends AbstractDataParser implements IStreamDataPars
     }
 
     @Override
-    public void setInputStream(InputStream in) throws HyracksDataException {
-        try {
-            admLexer = new AdmLexer(new java.io.InputStreamReader(in));
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public void setInputStream(InputStream in) throws IOException {
+        admLexer = new AdmLexer(new java.io.InputStreamReader(in));
     }
 
     protected boolean parseAdmInstance(IAType objectType, DataOutput out) throws IOException {
@@ -1025,7 +1018,6 @@ public class ADMDataParser extends AbstractDataParser implements IStreamDataPars
     }
 
     private void parseInt16(String int16, DataOutput out) throws HyracksDataException {
-        String errorMessage = "This can not be an instance of int16";
         boolean positive = true;
         short value = 0;
         int offset = 0;
@@ -1131,12 +1123,8 @@ public class ADMDataParser extends AbstractDataParser implements IStreamDataPars
     }
 
     @Override
-    public boolean reset(InputStream in) throws HyracksDataException {
-        try {
-            admLexer.reInit(new InputStreamReader(in));
-            return true;
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public boolean reset(InputStream in) throws IOException {
+        admLexer.reInit(new InputStreamReader(in));
+        return true;
     }
 }

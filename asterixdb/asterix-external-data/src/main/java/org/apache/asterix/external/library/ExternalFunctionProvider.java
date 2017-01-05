@@ -41,7 +41,8 @@ public class ExternalFunctionProvider {
                 return new ExternalScalarFunction(finfo, args, context);
             case AGGREGATE:
             case UNNEST:
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_KIND, finfo.getKind());
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_KIND,
+                        finfo.getKind());
             default:
                 throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNKNOWN_KIND, finfo.getKind());
         }
@@ -68,7 +69,6 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
             result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
             functionHelper.reset();
         } catch (Exception e) {
-            e.printStackTrace();
             throw new HyracksDataException(e);
         }
     }

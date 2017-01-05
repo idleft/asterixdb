@@ -142,15 +142,11 @@ public final class LookupAdapter<T> implements IFrameWriter {
         }
     }
 
-    private void propagateInputFields(int idx) throws HyracksDataException {
+    private void propagateInputFields(int idx) throws IOException {
         frameTuple.reset(tupleAccessor, idx);
         for (int i = 0; i < frameTuple.getFieldCount(); i++) {
-            try {
-                tb.getDataOutput().write(frameTuple.getFieldData(i), frameTuple.getFieldStart(i),
-                        frameTuple.getFieldLength(i));
-            } catch (IOException e) {
-                throw new HyracksDataException(e);
-            }
+            tb.getDataOutput().write(frameTuple.getFieldData(i), frameTuple.getFieldStart(i),
+                    frameTuple.getFieldLength(i));
             tb.addFieldEndOffset();
         }
     }

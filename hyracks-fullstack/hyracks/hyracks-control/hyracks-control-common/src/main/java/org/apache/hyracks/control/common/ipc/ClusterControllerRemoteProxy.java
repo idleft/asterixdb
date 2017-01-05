@@ -24,7 +24,6 @@ import org.apache.hyracks.api.comm.NetworkAddress;
 import org.apache.hyracks.api.dataflow.TaskAttemptId;
 import org.apache.hyracks.api.dataset.ResultSetId;
 import org.apache.hyracks.api.deployment.DeploymentId;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.control.common.base.IClusterController;
 import org.apache.hyracks.control.common.controllers.NodeRegistration;
@@ -35,7 +34,6 @@ import org.apache.hyracks.control.common.job.PartitionRequest;
 import org.apache.hyracks.control.common.job.profiling.om.JobProfile;
 import org.apache.hyracks.control.common.job.profiling.om.TaskProfile;
 import org.apache.hyracks.ipc.api.IIPCHandle;
-import org.apache.hyracks.ipc.exceptions.IPCException;
 
 public class ClusterControllerRemoteProxy implements IClusterController {
     private final IIPCHandle ipcHandle;
@@ -112,15 +110,10 @@ public class ClusterControllerRemoteProxy implements IClusterController {
     }
 
     @Override
-    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId, String nodeId) throws
-            HyracksDataException {
+    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId, String nodeId) throws Exception {
         CCNCFunctions.SendApplicationMessageFunction fn = new CCNCFunctions.SendApplicationMessageFunction(data,
                 deploymentId, nodeId);
-        try {
-            ipcHandle.send(-1, fn, null);
-        } catch (IPCException e) {
-            throw new HyracksDataException(e);
-        }
+        ipcHandle.send(-1, fn, null);
     }
 
     @Override

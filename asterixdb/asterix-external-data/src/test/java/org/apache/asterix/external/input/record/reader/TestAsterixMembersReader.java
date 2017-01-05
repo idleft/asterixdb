@@ -53,7 +53,7 @@ public class TestAsterixMembersReader implements IRecordReader<RecordWithPK<char
     }
 
     @Override
-    public boolean hasNext() throws IOException {
+    public boolean hasNext() throws Exception {
         return counter < numOfRecords;
     }
 

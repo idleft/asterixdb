@@ -30,6 +30,7 @@ import org.apache.asterix.active.ActiveJob;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
+import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.feed.api.FeedOperationCounter;
@@ -99,12 +100,12 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                     LOGGER.warn("Unknown Feed Event" + event);
                     break;
             }
-        } catch (HyracksDataException e) {
+        } catch (Exception e) {
             LOGGER.error("Unhandled Exception", e);
         }
     }
 
-    private synchronized void handleJobStartEvent(ActiveEvent message) throws HyracksDataException {
+    private synchronized void handleJobStartEvent(ActiveEvent message) throws Exception {
         ActiveJob jobInfo = jobs.get(message.getJobId().getId());
         JobType jobType = (JobType) jobInfo.getJobObject();
         switch (jobType) {
@@ -118,7 +119,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private synchronized void handleJobFinishEvent(ActiveEvent message) throws HyracksDataException {
+    private synchronized void handleJobFinishEvent(ActiveEvent message) throws Exception {
         ActiveJob jobInfo = jobs.get(message.getJobId().getId());
         JobType jobType = (JobType) jobInfo.getJobObject();
         switch (jobType) {
@@ -170,7 +171,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         Pair<FeedOperationCounter, List<IFeedJoint>> feedJointsOnPipeline = feedPipeline
                 .get(feedJoint.getOwnerFeedId());
         if (feedJointsOnPipeline == null) {
-            feedJointsOnPipeline = new Pair<>(new FeedOperationCounter(numOfPrividers), new ArrayList<>());
+            feedJointsOnPipeline = new Pair<>(new FeedOperationCounter(numOfPrividers), new ArrayList<IFeedJoint>());
             feedPipeline.put(feedJoint.getOwnerFeedId(), feedJointsOnPipeline);
             feedJointsOnPipeline.second.add(feedJoint);
         } else {
@@ -194,8 +195,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private static synchronized void handleIntakeJobStartMessage(FeedIntakeInfo intakeJobInfo)
-            throws HyracksDataException {
+    private static synchronized void handleIntakeJobStartMessage(FeedIntakeInfo intakeJobInfo) throws Exception {
         List<OperatorDescriptorId> intakeOperatorIds = new ArrayList<>();
         Map<OperatorDescriptorId, IOperatorDescriptor> operators = intakeJobInfo.getSpec().getOperatorMap();
         for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operators.entrySet()) {
@@ -206,12 +206,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
 
         IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
-        JobInfo info = null;
-        try {
-            hcc.getJobInfo(intakeJobInfo.getJobId());
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
+        JobInfo info = hcc.getJobInfo(intakeJobInfo.getJobId());
         List<String> intakeLocations = new ArrayList<>();
         for (OperatorDescriptorId intakeOperatorId : intakeOperatorIds) {
             Map<Integer, String> operatorLocations = info.getOperatorLocations().get(intakeOperatorId);
@@ -330,7 +325,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     public synchronized List<String> getConnectionLocations(IFeedJoint feedJoint, final FeedConnectionRequest request)
-            throws HyracksDataException {
+            throws Exception {
         List<String> locations = null;
         switch (feedJoint.getType()) {
             case COMPUTE:
@@ -357,14 +352,9 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     private synchronized void handleFeedIntakeJobFinishMessage(FeedIntakeInfo intakeInfo, ActiveEvent message)
-            throws HyracksDataException {
+            throws Exception {
         IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
-        JobInfo info = null;
-        try {
-            hcc.getJobInfo(message.getJobId());
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
+        JobInfo info = hcc.getJobInfo(message.getJobId());
         JobStatus status = info.getStatus();
         EntityId feedId = intakeInfo.getFeedId();
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
@@ -380,16 +370,11 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 : ActiveLifecycleEvent.FEED_INTAKE_ENDED);
     }
 
-    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws HyracksDataException {
+    private synchronized void handleFeedCollectJobFinishMessage(FeedConnectJobInfo cInfo) throws Exception {
         FeedConnectionId connectionId = cInfo.getConnectionId();
 
         IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
-        JobInfo info = null;
-        try {
-            hcc.getJobInfo(cInfo.getJobId());
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
+        JobInfo info = hcc.getJobInfo(cInfo.getJobId());
         JobStatus status = info.getStatus();
         boolean failure = status != null && status.equals(JobStatus.FAILURE);
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(cInfo.getFeedPolicy());
@@ -613,7 +598,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         return connectJobInfos.get(connectionId);
     }
 
-    private void handleCollectJobStartMessage(FeedConnectJobInfo cInfo) throws HyracksDataException {
+    private void handleCollectJobStartMessage(FeedConnectJobInfo cInfo) throws ACIDException {
         // set locations of feed sub-operations (intake, compute, store)
         setLocations(cInfo);
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(cInfo.getConnectionId().getFeedId());

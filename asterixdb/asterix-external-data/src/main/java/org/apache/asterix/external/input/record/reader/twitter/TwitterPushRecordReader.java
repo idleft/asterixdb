@@ -84,7 +84,7 @@ public class TwitterPushRecordReader implements IRecordReader<String> {
     }
 
     @Override
-    public boolean hasNext() throws IOException {
+    public boolean hasNext() throws Exception {
         return !closed;
     }
 

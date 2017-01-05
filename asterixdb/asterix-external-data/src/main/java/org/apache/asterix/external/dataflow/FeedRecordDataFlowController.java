@@ -89,7 +89,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             //TODO: Find out what could cause an interrupted exception beside termination of a job/feed
             LOGGER.warn("Feed has been interrupted. Closing the feed", e);
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
+        } catch (Exception e) {
             failed = true;
             tupleForwarder.flush();
             LOGGER.warn("Failure while operating a feed source", e);
@@ -135,9 +135,11 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
+        // do nothing
     }
 
     protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
+        // do nothing
     }
 
     private void startDataflowMarker() {

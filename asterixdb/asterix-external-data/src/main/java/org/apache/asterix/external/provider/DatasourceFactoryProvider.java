@@ -20,7 +20,6 @@ package org.apache.asterix.external.provider;
 
 import java.util.Map;
 
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.library.ILibraryManager;
@@ -79,8 +78,10 @@ public class DatasourceFactoryProvider {
                 default:
                     try {
                         streamSourceFactory = (IInputStreamFactory) Class.forName(streamSource).newInstance();
-                    } catch (ClassNotFoundException|IllegalAccessException|InstantiationException e) {
-                        throw new RuntimeDataException(ErrorCode.ERROR_PROVIDER_DATASOURCE_FACTORY_UNKNOWN_INPUT_STREAM_FACTORY, e, streamSource);
+                    } catch (Exception e) {
+                        throw new RuntimeDataException(
+                                ErrorCode.ERROR_PROVIDER_DATASOURCE_FACTORY_UNKNOWN_INPUT_STREAM_FACTORY, e,
+                                streamSource);
                     }
             }
         }
@@ -93,7 +94,7 @@ public class DatasourceFactoryProvider {
             try {
                 return ExternalDataUtils.createExternalRecordReaderFactory(libraryManager, configuration);
             } catch (AlgebricksException e) {
-                // TODO: handle AlgebricksException properly (xikui)
+                // Not sure whether this is the right way to handle AlgebricksException  (xikui)
                 throw new HyracksDataException(e);
             }
         }

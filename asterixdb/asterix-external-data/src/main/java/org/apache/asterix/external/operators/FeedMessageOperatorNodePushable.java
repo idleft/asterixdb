@@ -96,7 +96,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
     }
 
-    private void handleDiscontinueFeedTypeMessage(EndFeedMessage endFeedMessage) throws HyracksDataException {
+    private void handleDiscontinueFeedTypeMessage(EndFeedMessage endFeedMessage) throws Exception {
         EntityId sourceFeedId = endFeedMessage.getSourceFeedId();
         ActiveRuntimeId subscribableRuntimeId =
                 new ActiveRuntimeId(sourceFeedId, FeedRuntimeType.INTAKE.toString(), partition);
@@ -108,7 +108,7 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
     }
 
-    private void hanldeDisconnectFeedTypeMessage(EndFeedMessage endFeedMessage) throws HyracksDataException {
+    private void hanldeDisconnectFeedTypeMessage(EndFeedMessage endFeedMessage) throws Exception {
         if (LOGGER.isLoggable(Level.INFO)) {
             LOGGER.info("Ending feed:" + endFeedMessage.getFeedConnectionId());
         }
@@ -126,7 +126,8 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                     runtimeType = FeedRuntimeType.COMPUTE_COLLECT;
                     break;
                 default:
-                    throw new RuntimeDataException(ErrorCode.ERROR_OPERATORS_FEED_MESSAGE_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
+                    throw new RuntimeDataException(
+                            ErrorCode.ERROR_OPERATORS_FEED_MSG_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
                             subscribableRuntimeType);
             }
 
@@ -145,7 +146,8 @@ public class FeedMessageOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 case INTAKE:
                     // illegal state as data hand-off from one feed to another does not happen at
                     // intake
-                    throw new RuntimeDataException(ErrorCode.ERROR_OPERATORS_FEED_MESSAGE_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
+                    throw new RuntimeDataException(
+                            ErrorCode.ERROR_OPERATORS_FEED_MSG_OPERATOR_NODE_PUSHABLE_INVALID_SUBSCRIBABLE_RUNTIME,
                             subscribableRuntimeType);
                 case COMPUTE:
                     // feed could be primary or secondary, doesn't matter

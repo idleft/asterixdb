@@ -19,7 +19,6 @@
 package org.apache.asterix.external.api;
 
 import java.io.DataOutput;
-import java.io.IOException;
 
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;

@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
-import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IExternalIndexer;
 import org.apache.asterix.external.api.IIndexibleExternalDataSource;
@@ -159,7 +158,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
      * This method initialize the scheduler which assigns responsibility of reading different logical input splits from
      * HDFS
      */
-    private static void init() throws HyracksDataException{
+    private static void init() throws HyracksDataException {
         if (!initialized) {
             synchronized (initLock) {
                 if (!initialized) {

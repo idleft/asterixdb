@@ -22,7 +22,6 @@ import java.nio.ByteBuffer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.IExceptionHandler;
 import org.apache.asterix.external.util.FeedFrameUtil;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -52,7 +51,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
                 int tupleIndex = (int) (th.getParams()[0]);
                 try {
                     logExceptionCausingTuple(tupleIndex, th);
-                } catch (HyracksDataException ex) {
+                } catch (Exception ex) {
                     ex.addSuppressed(th);
                     if (LOGGER.isLoggable(Level.WARNING)) {
                         LOGGER.warning("Unable to log exception causing tuple due to..." + ex.getMessage());
@@ -63,7 +62,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
             } else {
                 return null;
             }
-        } catch (HyracksDataException exception) {
+        } catch (Exception exception) {
             if (LOGGER.isLoggable(Level.WARNING)) {
                 LOGGER.warning("Unable to handle exception " + exception.getMessage());
             }
@@ -72,7 +71,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
     }
 
     // TODO: Fix logging of exceptions
-    private void logExceptionCausingTuple(int tupleIndex, Throwable e) throws HyracksDataException{
+    private void logExceptionCausingTuple(int tupleIndex, Throwable e) throws HyracksDataException {
         LOGGER.log(Level.WARNING, e.getMessage(), e);
     }
 }

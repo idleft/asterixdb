@@ -31,7 +31,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
     private JUnorderedList list = null;
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException{
+    public void initialize(IFunctionHelper functionHelper) throws Exception {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
     }
 
@@ -40,7 +40,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString id = (JString) inputRecord.getValueByName("id");

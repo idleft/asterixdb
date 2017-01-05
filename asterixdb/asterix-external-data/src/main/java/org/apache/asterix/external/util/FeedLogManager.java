@@ -78,7 +78,7 @@ public class FeedLogManager {
         count++;
     }
 
-    public synchronized void endPartition() throws HyracksDataException {
+    public synchronized void endPartition() throws IOException {
         logProgress(END_PREFIX + currentPartition);
         completed.add(currentPartition);
     }
@@ -141,60 +141,44 @@ public class FeedLogManager {
         return true;
     }
 
-    public synchronized boolean destroy() throws HyracksDataException {
-        try {
-            File f = dir.toFile();
-            FileUtils.deleteDirectory(f);
-            return true;
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public synchronized boolean destroy() throws IOException {
+        File f = dir.toFile();
+        FileUtils.deleteDirectory(f);
+        return true;
     }
 
-    public synchronized void logProgress(String log) throws HyracksDataException {
-        try {
-            stringBuilder.setLength(0);
-            stringBuilder.append(df.format((new Date())));
-            stringBuilder.append(' ');
-            stringBuilder.append(log);
-            stringBuilder.append(ExternalDataConstants.LF);
-            progressLogger.write(stringBuilder.toString());
-            progressLogger.flush();
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public synchronized void logProgress(String log) throws IOException {
+        stringBuilder.setLength(0);
+        stringBuilder.append(df.format((new Date())));
+        stringBuilder.append(' ');
+        stringBuilder.append(log);
+        stringBuilder.append(ExternalDataConstants.LF);
+        progressLogger.write(stringBuilder.toString());
+        progressLogger.flush();
     }
 
-    public synchronized void logError(String error, Throwable th) throws HyracksDataException {
-        try {
-            stringBuilder.setLength(0);
-            stringBuilder.append(df.format((new Date())));
-            stringBuilder.append(' ');
-            stringBuilder.append(error);
-            stringBuilder.append(ExternalDataConstants.LF);
-            stringBuilder.append(th.toString());
-            stringBuilder.append(ExternalDataConstants.LF);
-            errorLogger.write(stringBuilder.toString());
-            errorLogger.flush();
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public synchronized void logError(String error, Throwable th) throws IOException {
+        stringBuilder.setLength(0);
+        stringBuilder.append(df.format((new Date())));
+        stringBuilder.append(' ');
+        stringBuilder.append(error);
+        stringBuilder.append(ExternalDataConstants.LF);
+        stringBuilder.append(th.toString());
+        stringBuilder.append(ExternalDataConstants.LF);
+        errorLogger.write(stringBuilder.toString());
+        errorLogger.flush();
     }
 
-    public synchronized void logRecord(String record, String errorMessage) throws HyracksDataException {
-        try {
-            stringBuilder.setLength(0);
-            stringBuilder.append(record);
-            stringBuilder.append(ExternalDataConstants.LF);
-            stringBuilder.append(df.format((new Date())));
-            stringBuilder.append(' ');
-            stringBuilder.append(errorMessage);
-            stringBuilder.append(ExternalDataConstants.LF);
-            recordLogger.write(stringBuilder.toString());
-            recordLogger.flush();
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
-        }
+    public synchronized void logRecord(String record, String errorMessage) throws IOException {
+        stringBuilder.setLength(0);
+        stringBuilder.append(record);
+        stringBuilder.append(ExternalDataConstants.LF);
+        stringBuilder.append(df.format((new Date())));
+        stringBuilder.append(' ');
+        stringBuilder.append(errorMessage);
+        stringBuilder.append(ExternalDataConstants.LF);
+        recordLogger.write(stringBuilder.toString());
+        recordLogger.flush();
     }
 
     public static String getSplitId(String log) {

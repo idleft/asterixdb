@@ -27,7 +27,6 @@ import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.asterix.external.util.Datatypes;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class AddHashTagsFunction implements IExternalScalarFunction {
 
@@ -35,7 +34,7 @@ public class AddHashTagsFunction implements IExternalScalarFunction {
     private JPoint location = null;
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException{
+    public void initialize(IFunctionHelper functionHelper) throws Exception {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
         location = new JPoint(0, 0);
     }
@@ -45,7 +44,7 @@ public class AddHashTagsFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);

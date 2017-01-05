@@ -54,15 +54,11 @@ public class CollectionRuntime implements IActiveRuntime {
         this.frameCollector = frameCollector;
     }
 
-    public void waitTillCollectionOver() throws HyracksDataException {
+    public void waitTillCollectionOver() throws InterruptedException {
         if (!(isCollectionOver())) {
             synchronized (frameCollector) {
                 while (!isCollectionOver()) {
-                    try {
-                        frameCollector.wait();
-                    } catch (InterruptedException e) {
-                        throw new HyracksDataException(e);
-                    }
+                    frameCollector.wait();
                 }
             }
         }

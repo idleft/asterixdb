@@ -23,7 +23,6 @@ import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JObjects.JInt;
 import org.apache.asterix.external.library.java.JObjects.JRecord;
 import org.apache.asterix.external.library.java.JObjects.JString;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 /**
  * Accepts an input record of type Open{ id: int32, text: string }
@@ -42,7 +41,7 @@ public class UpperCaseFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JInt id = (JInt) inputRecord.getValueByName("id");
         id.setValue(id.getValue() * -1); // for maintaining uniqueness

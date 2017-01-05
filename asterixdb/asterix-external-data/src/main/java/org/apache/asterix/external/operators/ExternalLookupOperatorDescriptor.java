@@ -79,12 +79,16 @@ public class ExternalLookupOperatorDescriptor extends AbstractTreeIndexOperatorD
 
             @Override
             public void open() throws HyracksDataException {
-                adapter = adapterFactory.createAdapter(ctx, partition,
-                        recordDescProvider.getInputRecordDescriptor(getActivityId(), 0), snapshotAccessor, writer);
-                // Open the file index accessor here
-                snapshotAccessor.open();
-                indexOpen = true;
-                adapter.open();
+                try {
+                    adapter = adapterFactory.createAdapter(ctx, partition,
+                            recordDescProvider.getInputRecordDescriptor(getActivityId(), 0), snapshotAccessor, writer);
+                    // Open the file index accessor here
+                    snapshotAccessor.open();
+                    indexOpen = true;
+                    adapter.open();
+                } catch (Throwable th) {
+                    throw new HyracksDataException(th);
+                }
             }
 
             @Override
@@ -110,12 +114,20 @@ public class ExternalLookupOperatorDescriptor extends AbstractTreeIndexOperatorD
 
             @Override
             public void fail() throws HyracksDataException {
-                adapter.fail();
+                try {
+                    adapter.fail();
+                } catch (Throwable th) {
+                    throw new HyracksDataException(th);
+                }
             }
 
             @Override
             public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-                adapter.nextFrame(buffer);
+                try {
+                    adapter.nextFrame(buffer);
+                } catch (Throwable th) {
+                    throw new HyracksDataException(th);
+                }
             }
 
             @Override

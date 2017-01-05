@@ -18,7 +18,6 @@
  */
 package org.apache.asterix.external.api;
 
-import java.io.IOException;
 import java.io.Serializable;
 
 import org.apache.hyracks.api.exceptions.HyracksDataException;

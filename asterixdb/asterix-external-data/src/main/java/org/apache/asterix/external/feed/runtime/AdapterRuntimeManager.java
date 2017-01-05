@@ -18,14 +18,12 @@
  */
 package org.apache.asterix.external.feed.runtime;
 
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.log4j.Logger;
 
 /**
@@ -65,7 +63,7 @@ public class AdapterRuntimeManager {
         execution = ctx.getExecutorService().submit(adapterExecutor);
     }
 
-    public void stop() throws HyracksDataException {
+    public void stop() throws InterruptedException {
         try {
             if (feedAdapter.stop()) {
                 // stop() returned true, we wait for the process termination
@@ -76,8 +74,8 @@ public class AdapterRuntimeManager {
             }
         } catch (InterruptedException e) {
             LOGGER.error("Interrupted while waiting for feed adapter to finish its work", e);
-            throw new HyracksDataException(e);
-        } catch (ExecutionException exception) {
+            throw e;
+        } catch (Exception exception) {
             LOGGER.error("Unable to stop adapter " + feedAdapter, exception);
         }
     }

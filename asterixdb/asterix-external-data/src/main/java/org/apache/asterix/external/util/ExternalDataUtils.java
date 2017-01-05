@@ -215,7 +215,7 @@ public class ExternalDataUtils {
     }
 
     public static IRecordReaderFactory<?> createExternalRecordReaderFactory(ILibraryManager libraryManager,
-            Map<String, String> configuration) throws AlgebricksException {
+            Map<String, String> configuration) throws AsterixException {
         String readerFactory = configuration.get(ExternalDataConstants.KEY_READER_FACTORY);
         if (readerFactory == null) {
             throw new AsterixException("to use " + ExternalDataConstants.EXTERNAL + " reader, the parameter "

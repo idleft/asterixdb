@@ -52,11 +52,11 @@ public abstract class AbstractHDFSLookupRecordReader<T> implements ILookupRecord
     }
 
     @Override
-    public void configure(Map<String, String> configurations) throws HyracksDataException {
+    public void configure(Map<String, String> configurations) throws Exception {
     }
 
     @Override
-    public IRawRecord<T> read(RecordId rid) throws HyracksDataException {
+    public IRawRecord<T> read(RecordId rid) throws Exception {
         if (rid.getFileId() != fileId) {
             // close current file
             closeFile();
@@ -74,8 +74,6 @@ public abstract class AbstractHDFSLookupRecordReader<T> implements ILookupRecord
                 }
             } catch (FileNotFoundException e) {
                 replaced = true;
-            } catch (IOException e) {
-                throw new HyracksDataException(e);
             }
         }
         if (replaced) {
@@ -84,7 +82,7 @@ public abstract class AbstractHDFSLookupRecordReader<T> implements ILookupRecord
         return lookup(rid);
     }
 
-    protected abstract IRawRecord<T> lookup(RecordId rid) throws HyracksDataException;
+    protected abstract IRawRecord<T> lookup(RecordId rid) throws IOException;
 
     private void validate() throws IllegalArgumentException, IOException {
         FileStatus fileStatus = fs.getFileStatus(new Path(file.getFileName()));
@@ -101,7 +99,7 @@ public abstract class AbstractHDFSLookupRecordReader<T> implements ILookupRecord
     }
 
     @Override
-    public void close() throws HyracksDataException {
+    public void close() throws IOException {
         try {
             closeFile();
         } finally {

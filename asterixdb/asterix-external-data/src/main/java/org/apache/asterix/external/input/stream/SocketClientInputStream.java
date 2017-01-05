@@ -25,7 +25,6 @@ import java.net.UnknownHostException;
 
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.hyracks.algebricks.common.utils.Pair;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class SocketClientInputStream extends AsterixInputStream {
 
@@ -48,13 +47,9 @@ public class SocketClientInputStream extends AsterixInputStream {
     }
 
     @Override
-    public boolean stop() throws HyracksDataException {
+    public boolean stop() throws Exception {
         if (!socket.isClosed()) {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                throw new HyracksDataException(e);
-            }
+            socket.close();
         }
         return true;
     }

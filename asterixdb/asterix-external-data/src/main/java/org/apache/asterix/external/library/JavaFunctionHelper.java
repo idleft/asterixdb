@@ -40,8 +40,6 @@ import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.util.container.IObjectPool;
 import org.apache.asterix.om.util.container.ListObjectPool;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
-import org.apache.hyracks.algebricks.common.exceptions.NotImplementedException;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IDataOutputProvider;
 import org.apache.hyracks.data.std.api.IValueReference;
@@ -166,8 +164,9 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 retValue = JNull.INSTANCE;
                 break;
             default:
-                // here needs extra examine.
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED, jtypeTag.name());
+                // Changed from throw nothing to throw RuntimeDataException
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED,
+                        jtypeTag.name());
         }
         return retValue;
     }

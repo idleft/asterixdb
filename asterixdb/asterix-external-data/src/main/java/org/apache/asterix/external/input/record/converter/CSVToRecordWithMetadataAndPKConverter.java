@@ -26,7 +26,6 @@ import org.apache.asterix.external.input.record.RecordWithMetadataAndPK;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.std.file.FieldCursorForDelimitedDataParser;
 
 public class CSVToRecordWithMetadataAndPKConverter
@@ -47,31 +46,26 @@ public class CSVToRecordWithMetadataAndPKConverter
     }
 
     @Override
-    public RecordWithMetadataAndPK<char[]> convert(final IRawRecord<? extends char[]> input) throws
-            HyracksDataException {
+    public RecordWithMetadataAndPK<char[]> convert(final IRawRecord<? extends char[]> input) throws IOException {
         record.reset();
         recordWithMetadata.reset();
         cursor.nextRecord(input.get(), input.size());
         int i = 0;
         int j = 0;
-        try {
-            while (cursor.nextField()) {
-                if (cursor.isDoubleQuoteIncludedInThisField) {
-                    cursor.eliminateDoubleQuote(cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
-                    cursor.fEnd -= cursor.doubleQuoteCount;
-                    cursor.isDoubleQuoteIncludedInThisField = false;
-                }
-                if (i == valueIndex) {
-                    record.setValue(cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
-                    record.endRecord();
-                } else {
-                    recordWithMetadata.setRawMetadata(j, cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
-                    j++;
-                }
-                i++;
+        while (cursor.nextField()) {
+            if (cursor.isDoubleQuoteIncludedInThisField) {
+                cursor.eliminateDoubleQuote(cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
+                cursor.fEnd -= cursor.doubleQuoteCount;
+                cursor.isDoubleQuoteIncludedInThisField = false;
             }
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
+            if (i == valueIndex) {
+                record.setValue(cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
+                record.endRecord();
+            } else {
+                recordWithMetadata.setRawMetadata(j, cursor.buffer, cursor.fStart, cursor.fEnd - cursor.fStart);
+                j++;
+            }
+            i++;
         }
         return recordWithMetadata;
     }

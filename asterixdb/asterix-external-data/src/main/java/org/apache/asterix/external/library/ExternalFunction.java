@@ -21,7 +21,6 @@ package org.apache.asterix.external.library;
 import java.io.IOException;
 
 import org.apache.asterix.common.api.IAppRuntimeContext;
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.library.ILibraryManager;
@@ -101,7 +100,7 @@ public abstract class ExternalFunction implements IExternalFunction {
         return finfo;
     }
 
-    public void setArguments(IFrameTupleReference tuple) throws AlgebricksException, IOException, AsterixException {
+    public void setArguments(IFrameTupleReference tuple) throws AlgebricksException, IOException {
         for (int i = 0; i < evaluatorFactories.length; i++) {
             argumentEvaluators[i].evaluate(tuple, inputVal);
 
@@ -126,7 +125,7 @@ public abstract class ExternalFunction implements IExternalFunction {
     }
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void initialize(IFunctionHelper functionHelper) throws Exception {
         externalFunction.initialize(functionHelper);
     }
 

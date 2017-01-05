@@ -489,7 +489,7 @@ public class NodeControllerService implements IControllerService {
         }
     }
 
-    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId) throws HyracksDataException {
+    public void sendApplicationMessageToCC(byte[] data, DeploymentId deploymentId) throws Exception {
         ccs.sendApplicationMessageToCC(data, deploymentId, id);
     }
 

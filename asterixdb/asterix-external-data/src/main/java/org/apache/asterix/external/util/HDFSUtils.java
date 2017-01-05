@@ -51,7 +51,7 @@ import org.apache.hyracks.hdfs.scheduler.Scheduler;
 
 public class HDFSUtils {
 
-    public static Scheduler initializeHDFSScheduler() throws  HyracksDataException{
+    public static Scheduler initializeHDFSScheduler() throws  HyracksDataException {
         ICCContext ccContext = AppContextInfo.INSTANCE.getCCApplicationContext().getCCContext();
         Scheduler scheduler = null;
         try {

@@ -125,7 +125,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         }
     }
 
-    private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws HyracksDataException {
+    private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws Exception {
         fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
         FeedPolicyAccessor fpa = policyEnforcer.getFeedPolicyAccessor();
         coreOperator.setOutputFrameWriter(0, writer, recordDesc);

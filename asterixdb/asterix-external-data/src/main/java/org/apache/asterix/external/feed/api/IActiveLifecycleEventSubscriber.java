@@ -34,7 +34,7 @@ public interface IActiveLifecycleEventSubscriber {
         ACTIVE_JOB_FAILED
     }
 
-    public void assertEvent(ActiveLifecycleEvent event) throws HyracksDataException;
+    public void assertEvent(ActiveLifecycleEvent event) throws HyracksDataException, InterruptedException;
 
     public void handleEvent(ActiveLifecycleEvent event);
 }

@@ -38,14 +38,13 @@ import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class AllTypesFunction implements IExternalScalarFunction {
 
     private JOrderedList newFieldList;
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws HyracksDataException{
+    public void initialize(IFunctionHelper functionHelper) throws Exception {
         newFieldList = new JOrderedList(functionHelper.getObject(JTypeTag.INT));
     }
 
@@ -54,7 +53,7 @@ public class AllTypesFunction implements IExternalScalarFunction {
     }
 
     @Override
-    public void evaluate(IFunctionHelper functionHelper) throws HyracksDataException {
+    public void evaluate(IFunctionHelper functionHelper) throws Exception {
         newFieldList.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JInt id = (JInt) inputRecord.getValueByName("id");

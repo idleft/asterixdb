@@ -40,7 +40,7 @@ public class ActiveLifecycleEventSubscriber implements IActiveLifecycleEventSubs
     }
 
     @Override
-    public void assertEvent(ActiveLifecycleEvent event) throws HyracksDataException {
+    public void assertEvent(ActiveLifecycleEvent event) throws HyracksDataException, InterruptedException {
         boolean eventOccurred = false;
         ActiveLifecycleEvent e;
         Iterator<ActiveLifecycleEvent> eventsSoFar = inbox.iterator();
@@ -51,11 +51,7 @@ public class ActiveLifecycleEventSubscriber implements IActiveLifecycleEventSubs
         }
 
         while (!eventOccurred) {
-            try {
-                e = inbox.take();
-            } catch (InterruptedException e1) {
-                throw new HyracksDataException(e1);
-            }
+            e = inbox.take();
             eventOccurred = e.equals(event);
             if (!eventOccurred) {
                 assertNoFailure(e);

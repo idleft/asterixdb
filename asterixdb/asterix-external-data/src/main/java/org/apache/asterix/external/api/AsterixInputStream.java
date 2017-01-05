@@ -30,7 +30,7 @@ public abstract class AsterixInputStream extends InputStream {
     protected FeedLogManager logManager;
     protected IStreamNotificationHandler notificationHandler;
 
-    public abstract boolean stop() throws HyracksDataException;
+    public abstract boolean stop() throws Exception;
 
     public abstract boolean handleException(Throwable th);
 

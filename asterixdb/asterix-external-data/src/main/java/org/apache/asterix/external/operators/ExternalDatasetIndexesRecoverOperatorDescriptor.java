@@ -21,7 +21,6 @@ package org.apache.asterix.external.operators;
 import java.util.List;
 
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.storage.am.common.dataflow.IIndexDataflowHelperFactory;
@@ -48,7 +47,7 @@ public class ExternalDatasetIndexesRecoverOperatorDescriptor extends AbstractExt
 
     @Override
     protected void performOpOnIndex(IIndexDataflowHelperFactory indexDataflowHelperFactory, IHyracksTaskContext ctx,
-            IndexInfoOperatorDescriptor fileIndexInfo, int partition) throws HyracksDataException {
+            IndexInfoOperatorDescriptor fileIndexInfo, int partition) throws Exception {
         FileReference file = IndexFileNameUtil.getIndexAbsoluteFileRef(fileIndexInfo, partition, ctx.getIOManager());
         AbortRecoverLSMIndexFileManager fileManager = new AbortRecoverLSMIndexFileManager(ctx.getIOManager(), file);
         fileManager.recoverTransaction();

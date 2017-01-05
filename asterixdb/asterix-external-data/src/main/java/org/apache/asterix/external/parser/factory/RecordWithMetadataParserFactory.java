@@ -49,7 +49,6 @@ public class RecordWithMetadataParserFactory<I, O> implements IRecordDataParserF
         // validate first
         String recordFormat = configuration.get(ExternalDataConstants.KEY_RECORD_FORMAT);
         if (recordFormat == null) {
-            // AsterixException ErrorCode with Others?
             throw new AsterixException(ErrorCode.ERROR_UNKNOWN_RECORD_FORMAT_FOR_META_PARSER,
                     ExternalDataConstants.KEY_FORMAT);
         }

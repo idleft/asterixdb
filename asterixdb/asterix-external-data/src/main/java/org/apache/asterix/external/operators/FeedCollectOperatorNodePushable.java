@@ -65,24 +65,28 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
 
     @Override
     public void initialize() throws HyracksDataException {
-        ActiveRuntimeId runtimeId =
-                new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
-        // Does this collector have a handler?
-        FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
-        if (policyAccessor.bufferingEnabled()) {
-            writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
-                    activeManager.getFramePool());
-        } else {
-            writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
+        try {
+            ActiveRuntimeId runtimeId =
+                    new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
+            // Does this collector have a handler?
+            FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
+            if (policyAccessor.bufferingEnabled()) {
+                writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
+                        activeManager.getFramePool());
+            } else {
+                writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
+            }
+            collectRuntime = new CollectionRuntime(connectionId, runtimeId, sourceRuntime, feedPolicy, ctx,
+                    new FeedFrameCollector(policyAccessor, writer, connectionId));
+            activeManager.registerRuntime(collectRuntime);
+            sourceRuntime.subscribe(collectRuntime);
+            // Notify CC that Collection started
+            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
+                    ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED), null);
+            collectRuntime.waitTillCollectionOver();
+            activeManager.deregisterRuntime(collectRuntime.getRuntimeId());
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
         }
-        collectRuntime = new CollectionRuntime(connectionId, runtimeId, sourceRuntime, feedPolicy, ctx,
-                new FeedFrameCollector(policyAccessor, writer, connectionId));
-        activeManager.registerRuntime(collectRuntime);
-        sourceRuntime.subscribe(collectRuntime);
-        // Notify CC that Collection started
-        ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
-                ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED), null);
-        collectRuntime.waitTillCollectionOver();
-        activeManager.deregisterRuntime(collectRuntime.getRuntimeId());
     }
 }

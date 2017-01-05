@@ -63,7 +63,8 @@ public class RuntimeExternalFunctionUtil {
             case AGGREGATE:
             case UNNEST:
             case STATEFUL:
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_NAME,finfo.getFunctionIdentifier().getName());
+                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_NAME,
+                        finfo.getFunctionIdentifier().getName());
         }
         return null;
     }

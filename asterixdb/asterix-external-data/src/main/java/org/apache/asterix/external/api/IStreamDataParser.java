@@ -50,5 +50,5 @@ public interface IStreamDataParser extends IDataParser {
      * @return true if reset was successful, false, otherwise
      * @throws IOException
      */
-    public boolean reset(InputStream in) throws HyracksDataException;
+    public boolean reset(InputStream in) throws IOException;
 }

@@ -18,11 +18,6 @@
  */
 package org.apache.hyracks.dataflow.std.file;
 
-
-import org.apache.hyracks.api.exceptions.CoreDataException;
-import org.apache.hyracks.api.exceptions.ErrorCode;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Arrays;
@@ -86,7 +81,7 @@ public class FieldCursorForDelimitedDataParser {
         fieldCount = 0;
     }
 
-    public void nextRecord(char[] buffer, int recordLength) {
+    public void nextRecord(char[] buffer, int recordLength) throws IOException {
         recordCount++;
         fieldCount = 0;
         start = 0;
@@ -95,7 +90,7 @@ public class FieldCursorForDelimitedDataParser {
         this.buffer = buffer;
     }
 
-    public boolean nextRecord() throws HyracksDataException {
+    public boolean nextRecord() throws IOException {
         recordCount++;
         fieldCount = 0;
         while (true) {
@@ -191,7 +186,7 @@ public class FieldCursorForDelimitedDataParser {
         }
     }
 
-    public boolean nextField() throws HyracksDataException {
+    public boolean nextField() throws IOException {
         fieldCount++;
         switch (state) {
             case INIT:
@@ -241,9 +236,8 @@ public class FieldCursorForDelimitedDataParser {
                                 startedQuote = true;
                             } else {
                                 // In this case, we don't have a quote in the beginning of a field.
-                                throw new CoreDataException(
-                                        ErrorCode.ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_BEGINNING,
-                                        recordCount, fieldCount);
+                                throw new IOException("At record: " + recordCount + ", field#: " + fieldCount
+                                        + " - a quote enclosing a field needs to be placed in the beginning of that field.");
                             }
                         }
                         // Check double quotes - "". We check [start != p-2]
@@ -284,9 +278,8 @@ public class FieldCursorForDelimitedDataParser {
                                 // There is a quote before the delimiter, however it is not directly placed before the delimiter.
                                 // In this case, we throw an exception.
                                 // quoteCount == doubleQuoteCount * 2 + 2 : only true when we have two quotes except double-quotes.
-                                throw new CoreDataException(
-                                        ErrorCode.ERROR_PARSER_DATAFLOW_STD_FILE_FIELD_CURSOR_FOR_DELIMITED_PARSER_QUOTE_END,
-                                        recordCount, fieldCount);
+                                throw new IOException("At record: " + recordCount + ", field#: " + fieldCount
+                                        + " -  A quote enclosing a field needs to be followed by the delimiter.");
                             }
                         }
                         // If the control flow reaches here: we have a delimiter in this field and
@@ -337,27 +330,23 @@ public class FieldCursorForDelimitedDataParser {
         throw new IllegalStateException();
     }
 
-    protected boolean readMore() throws HyracksDataException {
-        try {
-            if (start > 0) {
-                System.arraycopy(buffer, start, buffer, 0, end - start);
-            }
-            end -= start;
-            start = 0;
-
-            if (end == buffer.length) {
-                buffer = Arrays.copyOf(buffer, buffer.length + INCREMENT);
-            }
-
-            int n = in.read(buffer, end, buffer.length - end);
-            if (n < 0) {
-                return false;
-            }
-            end += n;
-            return true;
-        } catch (IOException e) {
-            throw new HyracksDataException(e);
+    protected boolean readMore() throws IOException {
+        if (start > 0) {
+            System.arraycopy(buffer, start, buffer, 0, end - start);
         }
+        end -= start;
+        start = 0;
+
+        if (end == buffer.length) {
+            buffer = Arrays.copyOf(buffer, buffer.length + INCREMENT);
+        }
+
+        int n = in.read(buffer, end, buffer.length - end);
+        if (n < 0) {
+            return false;
+        }
+        end += n;
+        return true;
     }
 
     // Eliminate escaped double quotes("") in a field

@@ -127,7 +127,7 @@ public class FrameSpiller {
                 }
             }
             return frame.getBuffer();
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new HyracksDataException(e);
         } finally {
             synchronized (this) {

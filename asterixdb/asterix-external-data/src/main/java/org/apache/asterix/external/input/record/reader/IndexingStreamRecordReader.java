@@ -54,7 +54,7 @@ public class IndexingStreamRecordReader implements IRecordReader<char[]>, IIndex
     }
 
     @Override
-    public boolean hasNext() throws IOException {
+    public boolean hasNext() throws Exception {
         return reader.hasNext();
     }
 

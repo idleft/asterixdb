@@ -51,5 +51,6 @@ public class RecordWithPKDataParser<T> implements IRecordWithPKDataParser<T> {
 
     @Override
     public void appendKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws HyracksDataException {
+        // do nothing.
     }
 }
