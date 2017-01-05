@@ -268,7 +268,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     }
 
     public synchronized void registerFeedCollectionJob(EntityId sourceFeedId, FeedConnectionId connectionId,
-            JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) throws HyracksDataException{
+            JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) throws HyracksDataException {
         if (jobs.get(jobId.getId()) != null) {
             throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }

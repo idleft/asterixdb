@@ -333,8 +333,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
         orderedListBuilder.write(fieldValueBuffer.getDataOutput(), true);
     }
 
-    private void parseUnorderedList(AUnorderedListType uoltype, Object obj, ListObjectInspector oi)
-            throws IOException {
+    private void parseUnorderedList(AUnorderedListType uoltype, Object obj, ListObjectInspector oi) throws IOException {
         UnorderedListBuilder unorderedListBuilder = getUnorderedListBuilder();
         IAType itemType = null;
         if (uoltype != null)

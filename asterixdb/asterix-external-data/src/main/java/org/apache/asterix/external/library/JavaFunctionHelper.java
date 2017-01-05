@@ -164,9 +164,14 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 retValue = JNull.INSTANCE;
                 break;
             default:
-                // Changed from throw nothing to throw RuntimeDataException
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED,
-                        jtypeTag.name());
+                try {
+                    throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED,
+                            jtypeTag.name());
+                } catch (IllegalStateException e) {
+                    // Exception is not thrown
+                    e.printStackTrace();
+                }
+                break;
         }
         return retValue;
     }
