@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.asterix.common.config.AsterixMetadataProperties;
+import org.apache.asterix.common.config.MetadataProperties;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.transactions.JobId;
@@ -996,7 +996,7 @@ public class MetadataManager implements IMetadataManager {
         rebindMetadataNode = true;
     }
 
-    public static void initialize(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
+    public static void initialize(IAsterixStateProxy proxy, MetadataProperties metadataProperties) {
         INSTANCE = new CCMetadataManagerImpl(proxy, metadataProperties);
     }
 
@@ -1005,9 +1005,9 @@ public class MetadataManager implements IMetadataManager {
     }
 
     private static class CCMetadataManagerImpl extends MetadataManager {
-        private final AsterixMetadataProperties metadataProperties;
+        private final MetadataProperties metadataProperties;
 
-        public CCMetadataManagerImpl(IAsterixStateProxy proxy, AsterixMetadataProperties metadataProperties) {
+        public CCMetadataManagerImpl(IAsterixStateProxy proxy, MetadataProperties metadataProperties) {
             super(proxy);
             this.metadataProperties = metadataProperties;
         }

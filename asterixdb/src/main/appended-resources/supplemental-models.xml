@@ -162,6 +162,21 @@
   </supplement>
   <supplement>
     <project>
+      <groupId>stax</groupId>
+      <artifactId>stax</artifactId>
+      <licenses>
+        <license>
+          <name>The Apache Software License, Version 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+      </licenses>
+      <properties>
+        <verifiedVersions>1.1.1-dev,1.2.0</verifiedVersions>
+      </properties>
+    </project>
+  </supplement>
+  <supplement>
+    <project>
       <groupId>wss4j</groupId>
       <artifactId>wss4j</artifactId>
       <name>Apache WSS4J</name>
@@ -188,7 +203,7 @@
       </organization>
       <licenses>
         <license>
-          <name>Modified Apache Software License</name>
+          <name>an Apache-style open source license</name>
           <url>licenses/jdom.txt</url>
         </license>
       </licenses>
@@ -514,7 +529,7 @@
       </organization>
       <licenses>
         <license>
-          <name>MIT style</name>
+          <name>an MIT-style license</name>
           <url>http://www.slf4j.org/license.html</url>
         </license>
       </licenses>
@@ -531,10 +546,27 @@
       </organization>
       <licenses>
         <license>
-          <name>MIT style</name>
+          <name>an MIT-style license</name>
           <url>http://www.slf4j.org/license.html</url>
         </license>
       </licenses>
+    </project>
+  </supplement>
+  <supplement>
+    <project>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <licenses>
+        <license>
+          <name>an MIT-style license</name>
+          <url>http://www.slf4j.org/license.html</url>
+        </license>
+      </licenses>
+      <!-- not yet used
+      <properties>
+        <verifiedVersions>1.6.1,1.7.5</verifiedVersions>
+      </properties>
+      -->
     </project>
   </supplement>
   <supplement>
@@ -699,7 +731,7 @@
       <artifactId>antlr-runtime</artifactId>
       <licenses>
         <license>
-          <name>MIT style</name>
+          <name>an MIT-style license</name>
           <url>http://www.slf4j.org/license.html</url>
         </license>
       </licenses>
@@ -737,6 +769,23 @@
           <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
         </license>
       </licenses>
+    </project>
+  </supplement>
+  <supplement>
+    <project>
+      <groupId>args4j</groupId>
+      <artifactId>args4j</artifactId>
+      <licenses>
+        <license>
+          <name>an MIT-style license</name>
+          <url>https://raw.githubusercontent.com/kohsuke/args4j/b72102efeedc3f20ab5a998533711d042ba004a8/LICENSE</url>
+        </license>
+      </licenses>
+      <!-- not yet used
+      <properties>
+        <verifiedVersions>2.33</verifiedVersions>
+      </properties>
+      -->
     </project>
   </supplement>
 </supplementalDataModels>

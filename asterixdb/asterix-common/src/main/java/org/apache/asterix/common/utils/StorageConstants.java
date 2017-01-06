@@ -18,11 +18,18 @@
  */
 package org.apache.asterix.common.utils;
 
+import org.apache.hyracks.storage.am.common.api.ITreeIndexMetaDataFrame;
+
 /**
  * A static class that stores storage constants
  */
 public class StorageConstants {
     public static final String METADATA_ROOT = "root_metadata";
+    /** The storage version of AsterixDB related artifacts (e.g. log files, checkpoint files, etc..). */
+    private static final int LOCAL_STORAGE_VERSION = 1;
+
+    /** The storage version of AsterixDB stack. */
+    public static final int VERSION = LOCAL_STORAGE_VERSION + ITreeIndexMetaDataFrame.VERSION;
 
     private StorageConstants() {
     }

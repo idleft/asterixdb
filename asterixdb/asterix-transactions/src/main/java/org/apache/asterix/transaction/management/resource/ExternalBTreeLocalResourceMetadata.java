@@ -21,8 +21,9 @@ package org.apache.asterix.transaction.management.resource;
 import java.util.Map;
 
 import org.apache.asterix.common.context.BaseOperationTracker;
+import org.apache.asterix.common.dataflow.LSMIndexUtil;
 import org.apache.asterix.common.ioopcallbacks.LSMBTreeIOOperationCallbackFactory;
-import org.apache.asterix.common.transactions.IAsterixAppRuntimeContextProvider;
+import org.apache.asterix.common.transactions.IAppRuntimeContextProvider;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.ITypeTraits;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -47,7 +48,7 @@ public class ExternalBTreeLocalResourceMetadata extends LSMBTreeLocalResourceMet
     }
 
     @Override
-    public ILSMIndex createIndexInstance(IAsterixAppRuntimeContextProvider runtimeContextProvider,
+    public ILSMIndex createIndexInstance(IAppRuntimeContextProvider runtimeContextProvider,
             LocalResource resource) throws HyracksDataException {
         IIOManager ioManager = runtimeContextProvider.getIOManager();
         FileReference file = ioManager.resolve(resource.getPath());
@@ -59,7 +60,8 @@ public class ExternalBTreeLocalResourceMetadata extends LSMBTreeLocalResourceMet
                 new BaseOperationTracker(datasetId(),
                         runtimeContextProvider.getDatasetLifecycleManager().getDatasetInfo(datasetId())),
                 runtimeContextProvider.getLSMIOScheduler(),
-                LSMBTreeIOOperationCallbackFactory.INSTANCE.createIOOperationCallback(), -1, true);
+                LSMBTreeIOOperationCallbackFactory.INSTANCE.createIOOperationCallback(), -1, true,
+                LSMIndexUtil.getMetadataPageManagerFactory());
         return lsmBTree;
     }
 }

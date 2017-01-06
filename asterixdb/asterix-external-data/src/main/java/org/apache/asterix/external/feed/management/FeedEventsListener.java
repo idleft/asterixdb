@@ -33,7 +33,7 @@ import org.apache.asterix.external.feed.watch.FeedJob;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
-import org.apache.asterix.runtime.util.AsterixAppContextInfo;
+import org.apache.asterix.runtime.util.AppContextInfo;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
@@ -147,7 +147,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
 
         try {
-            IHyracksClientConnection hcc = AsterixAppContextInfo.INSTANCE.getHcc();
+            IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
             JobInfo info = hcc.getJobInfo(cInfo.getJobId());
 
             // intake operator locations
