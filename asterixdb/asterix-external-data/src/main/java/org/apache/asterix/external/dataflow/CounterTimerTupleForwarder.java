@@ -158,7 +158,7 @@ public class CounterTimerTupleForwarder implements ITupleForwarder {
                     }
                 }
             } catch (HyracksDataException e) {
-                LOGGER.log(Level.WARNING, e.getMessage());
+                e.printStackTrace();
             }
         }
     }

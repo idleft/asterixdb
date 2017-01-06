@@ -20,6 +20,7 @@ package org.apache.asterix.external.parser.factory;
 
 import java.util.Map;
 
+import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.external.api.IExternalDataSourceFactory.DataSourceType;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
@@ -48,7 +49,6 @@ public class HiveDataParserFactory implements IRecordDataParserFactory<Writable>
         this.configuration = configuration;
         hiveSerdeClassName = configuration.get(ExternalDataConstants.KEY_HIVE_SERDE);
         if (hiveSerdeClassName == null) {
-            // should this be a runtime error or compile error?
             throw new IllegalArgumentException("no hive serde provided for hive deserialized records");
         }
     }

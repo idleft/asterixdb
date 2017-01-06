@@ -63,6 +63,7 @@ public class FeedExceptionHandler implements IExceptionHandler {
                 return null;
             }
         } catch (Exception exception) {
+            exception.printStackTrace();
             if (LOGGER.isLoggable(Level.WARNING)) {
                 LOGGER.warning("Unable to handle exception " + exception.getMessage());
             }

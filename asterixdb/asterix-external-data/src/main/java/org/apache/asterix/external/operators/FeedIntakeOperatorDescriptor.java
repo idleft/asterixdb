@@ -122,11 +122,11 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
                 throw new HyracksDataException(e);
             }
         } else {
-            String message = "Unable to create adapter as class loader not configured for library " + adaptorLibraryName
-                    + " in dataverse " + feedId.getDataverse();
-            LOGGER.severe(message);
-            throw new RuntimeDataException(
-                    ErrorCode.ERROR_OPERATORS_FEED_INTAKE_OPERATOR_DESCRIPTOR_CLASSLOADER_NOT_CONFIGURED);
+            RuntimeDataException err = new RuntimeDataException(
+                    ErrorCode.ERROR_OPERATORS_FEED_INTAKE_OPERATOR_DESCRIPTOR_CLASSLOADER_NOT_CONFIGURED,
+                    adaptorLibraryName, feedId.getDataverse());
+            LOGGER.severe(err.getMessage());
+            throw err;
         }
         return adapterFactory;
     }

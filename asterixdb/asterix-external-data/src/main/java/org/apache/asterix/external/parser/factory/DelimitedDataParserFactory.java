@@ -89,7 +89,8 @@ public class DelimitedDataParserFactory extends AbstractRecordStreamParserFactor
         // we only check whether delimiter and quote use the same character
         if (quoteValue.charAt(0) == delimiter) {
             throw new RuntimeDataException(
-                    ErrorCode.ERROR_PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_QUOTE_DELIMITER_MISMATCH);
+                    ErrorCode.ERROR_PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_QUOTE_DELIMITER_MISMATCH, quoteValue,
+                    delimiter);
         }
 
         return quoteValue.charAt(0);
