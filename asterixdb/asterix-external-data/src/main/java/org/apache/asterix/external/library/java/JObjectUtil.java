@@ -390,7 +390,7 @@ public class JObjectUtil {
                 }
 
             default:
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JOBJECT_UTIL_ILLEGAL_ARGU_TYPE, typeTag);
+                throw new RuntimeDataException(ErrorCode.LIBRARY_JOBJECT_UTIL_ILLEGAL_ARGU_TYPE, typeTag);
         }
         return jObject;
     }

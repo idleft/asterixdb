@@ -77,7 +77,7 @@ public class StreamRecordReaderProvider {
                         configuration.get(ExternalDataConstants.KEY_RECORD_START),
                         configuration.get(ExternalDataConstants.KEY_RECORD_END));
             default:
-                throw new RuntimeDataException(ErrorCode.ERROR_PROVIDER_STREAM_RECORD_READER_UNKNOWN_FORMAT, format);
+                throw new RuntimeDataException(ErrorCode.PROVIDER_STREAM_RECORD_READER_UNKNOWN_FORMAT, format);
         }
     }
 }

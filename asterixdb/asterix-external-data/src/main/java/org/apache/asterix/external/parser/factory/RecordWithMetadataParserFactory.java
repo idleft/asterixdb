@@ -49,12 +49,12 @@ public class RecordWithMetadataParserFactory<I, O> implements IRecordDataParserF
         // validate first
         String recordFormat = configuration.get(ExternalDataConstants.KEY_RECORD_FORMAT);
         if (recordFormat == null) {
-            throw new AsterixException(ErrorCode.ERROR_UNKNOWN_RECORD_FORMAT_FOR_META_PARSER,
+            throw new AsterixException(ErrorCode.UNKNOWN_RECORD_FORMAT_FOR_META_PARSER,
                     ExternalDataConstants.KEY_FORMAT);
         }
         String format = configuration.get(ExternalDataConstants.KEY_FORMAT);
         if (format == null) {
-            throw new AsterixException(ErrorCode.ERROR_UNKNOWN_RECORD_FORMAT_FOR_META_PARSER,
+            throw new AsterixException(ErrorCode.UNKNOWN_RECORD_FORMAT_FOR_META_PARSER,
                     ExternalDataConstants.KEY_FORMAT);
         }
         // Create Parser Factory

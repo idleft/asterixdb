@@ -146,7 +146,7 @@ public class RecordWithMetadataAndPK<T> extends RecordWithPK<T> {
         if (length == 0) {
             if (!NonTaggedFormatUtil.isOptional(metaTypes[index])) {
                 throw new RuntimeDataException(
-                        ErrorCode.ERROR_INPUT_RECORD_RECORD_WITH_METADATA_AND_PK_NULL_IN_NON_OPTIONAL, index);
+                        ErrorCode.INPUT_RECORD_RECORD_WITH_METADATA_AND_PK_NULL_IN_NON_OPTIONAL, index);
             }
             fieldValueBufferOutputs[index].writeByte(ATypeTag.SERIALIZED_NULL_TYPE_TAG);
         } else {
@@ -161,7 +161,7 @@ public class RecordWithMetadataAndPK<T> extends RecordWithPK<T> {
             if (keyIndicator[i] == 1) {
                 tb.addField(getMetadata(pkIndexes[i]));
             } else {
-                throw new RuntimeDataException(ErrorCode.ERROR_INPUT_RECORD_RECORD_WITH_METADATA_AND_PK_CANNT_GET_PKEY);
+                throw new RuntimeDataException(ErrorCode.INPUT_RECORD_RECORD_WITH_METADATA_AND_PK_CANNT_GET_PKEY);
             }
         }
     }

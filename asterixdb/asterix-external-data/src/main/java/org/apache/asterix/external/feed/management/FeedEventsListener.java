@@ -179,7 +179,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 feedJointsOnPipeline.second.add(feedJoint);
             } else {
                 throw new RuntimeDataException(
-                        ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENT_LISTENER_FEED_JOINT_REGISTERED, feedJoint);
+                        ErrorCode.FEED_MANAGEMENT_FEED_EVENT_LISTENER_FEED_JOINT_REGISTERED, feedJoint);
             }
         }
     }
@@ -232,13 +232,13 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
             throws HyracksDataException {
         if (entity2Intake.get(feedId) != null) {
             throw new RuntimeDataException(
-                    ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_ALREADY_HAVE_INTAKE_JOB);
+                    ErrorCode.FEED_MANAGEMENT_FEED_EVENTS_LISTENER_ALREADY_HAVE_INTAKE_JOB);
         }
         if (intakeJobs.get(jobId.getId()) != null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_INTAKE_JOB_REGISTERED);
+            throw new RuntimeDataException(ErrorCode.FEED_MANAGEMENT_FEED_EVENTS_LISTENER_INTAKE_JOB_REGISTERED);
         }
         if (jobs.get(jobId.getId()) != null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
+            throw new RuntimeDataException(ErrorCode.FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
 
         Pair<FeedOperationCounter, List<IFeedJoint>> pair = feedPipeline.get(feedId);
@@ -262,7 +262,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
                 LOGGER.info("Registered feed intake [" + jobId + "]" + " for feed " + feedId);
             }
         } else {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENT_REGISTER_INTAKE_JOB_FAIL, jobId,
+            throw new RuntimeDataException(ErrorCode.FEED_MANAGEMENT_FEED_EVENT_REGISTER_INTAKE_JOB_FAIL, jobId,
                     feedId);
         }
     }
@@ -270,10 +270,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     public synchronized void registerFeedCollectionJob(EntityId sourceFeedId, FeedConnectionId connectionId,
             JobId jobId, JobSpecification jobSpec, Map<String, String> feedPolicy) throws HyracksDataException {
         if (jobs.get(jobId.getId()) != null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
+            throw new RuntimeDataException(ErrorCode.FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
         if (connectJobInfos.containsKey(jobId.getId())) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
+            throw new RuntimeDataException(ErrorCode.FEED_MANAGEMENT_FEED_EVENTS_LISTENER_FEED_JOB_REGISTERED);
         }
 
         List<IFeedJoint> feedJoints = feedPipeline.get(sourceFeedId).second;

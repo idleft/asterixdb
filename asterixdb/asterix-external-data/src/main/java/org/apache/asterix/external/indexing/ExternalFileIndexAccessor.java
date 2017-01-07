@@ -123,7 +123,7 @@ public class ExternalFileIndexAccessor implements Serializable {
         } else {
             // This should never happen
             throw new RuntimeDataException(
-                    ErrorCode.ERROR_INDEXING_EXTERNAL_FILE_INDEX_ACCESSOR_UNABLE_TO_FIND_FILE_INDEX);
+                    ErrorCode.INDEXING_EXTERNAL_FILE_INDEX_ACCESSOR_UNABLE_TO_FIND_FILE_INDEX);
         }
     }
 

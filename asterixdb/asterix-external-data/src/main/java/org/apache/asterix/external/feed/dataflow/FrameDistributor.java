@@ -45,7 +45,7 @@ public class FrameDistributor implements IFrameWriter {
 
     public synchronized void registerFrameCollector(FeedFrameCollector frameCollector) throws HyracksDataException {
         if (rootFailureCause != null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_DATAFLOW_FRAME_DISTR_REGISTER_FAILED_DATA_PROVIDER,
+            throw new RuntimeDataException(ErrorCode.FEED_DATAFLOW_FRAME_DISTR_REGISTER_FAILED_DATA_PROVIDER,
                     rootFailureCause);
         }
         // registering a new collector.
@@ -75,7 +75,7 @@ public class FrameDistributor implements IFrameWriter {
 
     public synchronized void deregisterFrameCollector(FeedConnectionId connectionId) throws HyracksDataException {
         if (rootFailureCause != null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_FEED_DATAFLOW_FRAME_DISTR_REGISTER_FAILED_DATA_PROVIDER,
+            throw new RuntimeDataException(ErrorCode.FEED_DATAFLOW_FRAME_DISTR_REGISTER_FAILED_DATA_PROVIDER,
                     rootFailureCause);
         }
         FeedFrameCollector frameCollector = removeFrameCollector(connectionId);

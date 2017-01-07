@@ -31,7 +31,6 @@ import org.apache.asterix.om.functions.IExternalFunctionInfo;
 import org.apache.asterix.om.functions.IFunctionDescriptor;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.runtime.evaluators.base.AbstractScalarFunctionDynamicDescriptor;
-import org.apache.hyracks.algebricks.common.exceptions.NotImplementedException;
 import org.apache.hyracks.algebricks.core.algebra.functions.IFunctionInfo;
 
 public class RuntimeExternalFunctionUtil {
@@ -43,7 +42,7 @@ public class RuntimeExternalFunctionUtil {
         String key = dataverseName + "." + libraryName;
         synchronized (libraryClassLoaders) {
             if (libraryClassLoaders.get(dataverseName) != null) {
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_LIBRARY_CLASS_REGISTERED);
+                throw new RuntimeDataException(ErrorCode.LIBRARY_EXTERNAL_LIBRARY_CLASS_REGISTERED);
             }
             libraryClassLoaders.put(key, classLoader);
         }
@@ -63,7 +62,7 @@ public class RuntimeExternalFunctionUtil {
             case AGGREGATE:
             case UNNEST:
             case STATEFUL:
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_NAME,
+                throw new RuntimeDataException(ErrorCode.LIBRARY_EXTERNAL_FUNCTION_UNSUPPORTED_NAME,
                         finfo.getFunctionIdentifier().getName());
         }
         return null;

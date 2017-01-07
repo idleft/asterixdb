@@ -173,18 +173,18 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
                     break;
                 case ORDEREDLIST:
                     if (primitiveOnly) {
-                        throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NON_PRIMITIVE_LIST_NOT_SUPPORT);
+                        throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NON_PRIMITIVE_LIST_NOT_SUPPORT);
                     }
                     parseOrderedList((AOrderedListType) itemType, value, (ListObjectInspector) foi);
                     break;
                 case UNORDEREDLIST:
                     if (primitiveOnly) {
-                        throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NON_PRIMITIVE_LIST_NOT_SUPPORT);
+                        throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NON_PRIMITIVE_LIST_NOT_SUPPORT);
                     }
                     parseUnorderedList((AUnorderedListType) itemType, value, (ListObjectInspector) foi);
                     break;
                 default:
-                    throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_FIELD_TYPE, itemType.getTypeTag());
+                    throw new RuntimeDataException(ErrorCode.PARSER_HIVE_FIELD_TYPE, itemType.getTypeTag());
             }
         } catch (IOException e) {
             throw new HyracksDataException(e);
@@ -194,7 +194,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
     private Object getColTypes(ARecordType record) throws HyracksDataException {
         int n = record.getFieldTypes().length;
         if (n < 1) {
-            throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_GET_COLUMNS);
+            throw new RuntimeDataException(ErrorCode.PARSER_HIVE_GET_COLUMNS);
         }
         //First Column
         String cols = getHiveTypeString(record.getFieldTypes(), 0);
@@ -206,7 +206,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
 
     private String getCommaDelimitedColNames(ARecordType record) throws HyracksDataException {
         if (record.getFieldNames().length < 1) {
-            throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NO_CLOSED_COLUMNS);
+            throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NO_CLOSED_COLUMNS);
         }
 
         String cols = record.getFieldNames()[0];
@@ -221,12 +221,12 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
         ATypeTag tag = type.getTypeTag();
         if (tag == ATypeTag.UNION) {
             if (NonTaggedFormatUtil.isOptional(type)) {
-                throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NOT_SUPPORT_NON_OP_UNION);
+                throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NOT_SUPPORT_NON_OP_UNION);
             }
             tag = ((AUnionType) type).getActualType().getTypeTag();
         }
         if (tag == null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_MISSING_FIELD_TYPE_INFO, i);
+            throw new RuntimeDataException(ErrorCode.PARSER_HIVE_MISSING_FIELD_TYPE_INFO, i);
         }
         switch (tag) {
             case BOOLEAN:
@@ -256,7 +256,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
             case UNORDEREDLIST:
                 return Constants.LIST_TYPE_NAME;
             default:
-                throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_FIELD_TYPE, tag);
+                throw new RuntimeDataException(ErrorCode.PARSER_HIVE_FIELD_TYPE, tag);
         }
     }
 
@@ -266,7 +266,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
 
     private void parseInt32(Object obj, IntObjectInspector foi, DataOutput dataOutput) throws IOException {
         if (obj == null) {
-            throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NULL_FIELD);
+            throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NULL_FIELD);
         }
         dataOutput.writeInt(foi.get(obj));
     }
@@ -325,7 +325,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
             Object element = foi.getListElement(obj, i);
             ObjectInspector eoi = foi.getListElementObjectInspector();
             if (element == null) {
-                throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NULL_VALUE_IN_LIST);
+                throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NULL_VALUE_IN_LIST);
             }
             parseItem(itemType, element, eoi, listItemBuffer.getDataOutput(), true);
             orderedListBuilder.addItem(listItemBuffer);
@@ -346,7 +346,7 @@ public class HiveRecordParser implements IRecordDataParser<Writable> {
             Object element = oi.getListElement(obj, i);
             ObjectInspector eoi = oi.getListElementObjectInspector();
             if (element == null) {
-                throw new RuntimeDataException(ErrorCode.ERROR_PARSER_HIVE_NULL_VALUE_IN_LIST);
+                throw new RuntimeDataException(ErrorCode.PARSER_HIVE_NULL_VALUE_IN_LIST);
             }
             listItemBuffer.reset();
             final DataOutput dataOutput = listItemBuffer.getDataOutput();

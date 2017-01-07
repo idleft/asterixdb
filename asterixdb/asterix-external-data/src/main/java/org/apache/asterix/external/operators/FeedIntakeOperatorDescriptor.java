@@ -31,7 +31,6 @@ import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.om.types.ARecordType;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -123,7 +122,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             }
         } else {
             RuntimeDataException err = new RuntimeDataException(
-                    ErrorCode.ERROR_OPERATORS_FEED_INTAKE_OPERATOR_DESCRIPTOR_CLASSLOADER_NOT_CONFIGURED,
+                    ErrorCode.OPERATORS_FEED_INTAKE_OPERATOR_DESCRIPTOR_CLASSLOADER_NOT_CONFIGURED,
                     adaptorLibraryName, feedId.getDataverse());
             LOGGER.severe(err.getMessage());
             throw err;

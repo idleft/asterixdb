@@ -117,7 +117,7 @@ public class DataflowControllerProvider {
                                 streamParser);
                     }
                 default:
-                    throw new RuntimeDataException(ErrorCode.ERROR_PROVIDER_DATAFLOW_CONTROLLER_UNKNOWN_DATA_SOURCE,
+                    throw new RuntimeDataException(ErrorCode.PROVIDER_DATAFLOW_CONTROLLER_UNKNOWN_DATA_SOURCE,
                             dataSourceFactory.getDataSourceType());
             }
         } catch (IOException | AsterixException e) {

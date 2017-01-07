@@ -58,7 +58,7 @@ public class HDFSUtils {
             scheduler = new Scheduler(ccContext.getClusterControllerInfo().getClientNetAddress(),
                     ccContext.getClusterControllerInfo().getClientNetPort());
         } catch (HyracksException e) {
-            throw new RuntimeDataException(ErrorCode.ERROR_UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER);
+            throw new RuntimeDataException(ErrorCode.UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER);
         }
         return scheduler;
     }
@@ -70,7 +70,7 @@ public class HDFSUtils {
             scheduler = new IndexingScheduler(ccContext.getClusterControllerInfo().getClientNetAddress(),
                     ccContext.getClusterControllerInfo().getClientNetPort());
         } catch (HyracksException e) {
-            throw new RuntimeDataException(ErrorCode.ERROR_UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER);
+            throw new RuntimeDataException(ErrorCode.UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER);
         }
         return scheduler;
     }

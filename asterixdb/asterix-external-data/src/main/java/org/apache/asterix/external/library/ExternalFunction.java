@@ -87,7 +87,7 @@ public abstract class ExternalFunction implements IExternalFunction {
             externalFunctionFactory = (IFunctionFactory) clazz.newInstance();
             externalFunction = externalFunctionFactory.getExternalFunction();
         } catch (Exception e) {
-            throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_FUNCTION_UNABLE_TO_LOAD_CLASS, e,
+            throw new RuntimeDataException(ErrorCode.LIBRARY_EXTERNAL_FUNCTION_UNABLE_TO_LOAD_CLASS, e,
                     classname);
         }
     }

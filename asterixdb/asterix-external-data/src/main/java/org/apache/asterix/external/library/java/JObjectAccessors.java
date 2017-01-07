@@ -560,7 +560,7 @@ public class JObjectAccessors {
                             listItem = pointableVisitor.visit((AListVisitablePointable) itemPointable, typeInfo);
                             break;
                         case ANY:
-                            throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JOBJECT_ACCESSOR_CANNOT_PARSE_TYPE,
+                            throw new RuntimeDataException(ErrorCode.LIBRARY_JOBJECT_ACCESSOR_CANNOT_PARSE_TYPE,
                                     listType.getTypeTag());
                         default:
                             listItem = pointableVisitor.visit((AFlatValuePointable) itemPointable, typeInfo);

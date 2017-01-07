@@ -39,7 +39,7 @@ public class ExternalLibraryManager implements ILibraryManager {
         String key = getKey(dataverseName, libraryName);
         synchronized (libraryClassLoaders) {
             if (libraryClassLoaders.get(key) != null) {
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_EXTERNAL_LIBRARY_CLASS_REGISTERED);
+                throw new RuntimeDataException(ErrorCode.LIBRARY_EXTERNAL_LIBRARY_CLASS_REGISTERED);
             }
             libraryClassLoaders.put(key, classLoader);
         }

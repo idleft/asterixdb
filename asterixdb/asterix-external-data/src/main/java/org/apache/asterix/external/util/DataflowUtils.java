@@ -40,7 +40,7 @@ public class DataflowUtils {
         if (!appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
             appender.write(writer, true);
             if (!appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
-                throw new RuntimeDataException(ErrorCode.ERROR_UTIL_DATAFLOW_UTILS_TUPLE_TOO_LARGE);
+                throw new RuntimeDataException(ErrorCode.UTIL_DATAFLOW_UTILS_TUPLE_TOO_LARGE);
             }
         }
     }
@@ -67,7 +67,7 @@ public class DataflowUtils {
             case RATE_CONTROLLED:
                 return RateControlledTupleForwarder.create(configuration);
             default:
-                throw new RuntimeDataException(ErrorCode.ERROR_UTIL_DATAFLOW_UTILS_UNKNOWN_FORWARD_POLICY);
+                throw new RuntimeDataException(ErrorCode.UTIL_DATAFLOW_UTILS_UNKNOWN_FORWARD_POLICY);
         }
     }
 
@@ -76,7 +76,7 @@ public class DataflowUtils {
         if (!appender.append(tuple)) {
             appender.write(writer, true);
             if (!appender.append(tuple)) {
-                throw new RuntimeDataException(ErrorCode.ERROR_UTIL_DATAFLOW_UTILS_TUPLE_TOO_LARGE);
+                throw new RuntimeDataException(ErrorCode.UTIL_DATAFLOW_UTILS_TUPLE_TOO_LARGE);
             }
         }
     }

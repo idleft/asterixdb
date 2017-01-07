@@ -69,7 +69,7 @@ public class DelimitedDataParserFactory extends AbstractRecordStreamParserFactor
             delimiterValue = ExternalDataConstants.DEFAULT_DELIMITER;
         } else if (delimiterValue.length() != 1) {
             throw new RuntimeDataException(
-                    ErrorCode.ERROR_PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_NOT_VALID_DELIMITER, delimiterValue);
+                    ErrorCode.PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_NOT_VALID_DELIMITER, delimiterValue);
         }
         return delimiterValue.charAt(0);
     }
@@ -81,7 +81,7 @@ public class DelimitedDataParserFactory extends AbstractRecordStreamParserFactor
         if (quoteValue == null) {
             quoteValue = ExternalDataConstants.DEFAULT_QUOTE;
         } else if (quoteValue.length() != 1) {
-            throw new RuntimeDataException(ErrorCode.ERROR_PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_NOT_VALID_QUOTE,
+            throw new RuntimeDataException(ErrorCode.PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_NOT_VALID_QUOTE,
                     quoteValue);
         }
 
@@ -89,7 +89,7 @@ public class DelimitedDataParserFactory extends AbstractRecordStreamParserFactor
         // we only check whether delimiter and quote use the same character
         if (quoteValue.charAt(0) == delimiter) {
             throw new RuntimeDataException(
-                    ErrorCode.ERROR_PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_QUOTE_DELIMITER_MISMATCH, quoteValue,
+                    ErrorCode.PARSER_FACTORY_DELIMITED_DATA_PARSER_FACTORY_QUOTE_DELIMITER_MISMATCH, quoteValue,
                     delimiter);
         }
 

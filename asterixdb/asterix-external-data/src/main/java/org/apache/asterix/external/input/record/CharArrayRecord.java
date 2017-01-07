@@ -68,7 +68,7 @@ public class CharArrayRecord implements IRawRecord<char[]> {
     private void ensureCapacity(int len) throws IOException {
         if (value.length < len) {
             if (len > ExternalDataConstants.MAX_RECORD_SIZE) {
-                throw new RuntimeDataException(ErrorCode.ERROR_INPUT_RECORD_READER_CHAR_ARRAY_RECORD_TOO_LARGE,
+                throw new RuntimeDataException(ErrorCode.INPUT_RECORD_READER_CHAR_ARRAY_RECORD_TOO_LARGE,
                         ExternalDataConstants.MAX_RECORD_SIZE);
             }
             int newSize = Math.min((int) (len * ExternalDataConstants.DEFAULT_BUFFER_INCREMENT_FACTOR),

@@ -97,7 +97,7 @@ public class FileSystemWatcher {
                     resume();
                 } else {
                     if (files.isEmpty()) {
-                        throw new RuntimeDataException(ErrorCode.ERROR_UTIL_FILE_SYSTEM_WATCHER_NO_FILES_FOUND,
+                        throw new RuntimeDataException(ErrorCode.UTIL_FILE_SYSTEM_WATCHER_NO_FILES_FOUND,
                                 path.toString());
                     }
                 }

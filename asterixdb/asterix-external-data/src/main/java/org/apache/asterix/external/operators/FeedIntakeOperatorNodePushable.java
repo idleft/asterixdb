@@ -98,7 +98,7 @@ public class FeedIntakeOperatorNodePushable extends AbstractUnaryOutputSourceOpe
             // If there was a failure, we need to throw an exception
             if (adapterRuntimeManager.isFailed()) {
                 throw new RuntimeDataException(
-                        ErrorCode.ERROR_OPERATORS_FEED_INTAKE_OPERATOR_NODE_PUSHABLE_FAIL_AT_INGESTION);
+                        ErrorCode.OPERATORS_FEED_INTAKE_OPERATOR_NODE_PUSHABLE_FAIL_AT_INGESTION);
             }
         } catch (Throwable ie) {
             /*

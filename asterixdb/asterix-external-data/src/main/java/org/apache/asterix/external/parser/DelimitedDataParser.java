@@ -89,7 +89,7 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
             fldIds[i] = recBuilder.getFieldId(name);
             if (fldIds[i] < 0) {
                 if (!recordType.isOpen()) {
-                    throw new RuntimeDataException(ErrorCode.ERROR_PARSER_DELIMITED_ILLEGAL_FIELD, name, recordType);
+                    throw new RuntimeDataException(ErrorCode.PARSER_DELIMITED_ILLEGAL_FIELD, name, recordType);
                 } else {
                     nameBuffers[i] = new ArrayBackedValueStorage();
                     str.setValue(name);
@@ -140,7 +140,7 @@ public class DelimitedDataParser extends AbstractDataParser implements IStreamDa
                     // NULL. Note that string type can also process empty field as an
                     // empty string
                     if (!NonTaggedFormatUtil.isOptional(recordType.getFieldTypes()[i])) {
-                        throw new RuntimeDataException(ErrorCode.ERROR_PARSER_DELIMITED_NONOPTIONAL_NULL,
+                        throw new RuntimeDataException(ErrorCode.PARSER_DELIMITED_NONOPTIONAL_NULL,
                                 cursor.recordCount, cursor.fieldCount);
                     }
                     fieldValueBufferOutput.writeByte(ATypeTag.SERIALIZED_NULL_TYPE_TAG);

@@ -31,7 +31,6 @@ import java.util.regex.Pattern;
 
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class LocalFileSystemUtils {
 
@@ -39,7 +38,7 @@ public class LocalFileSystemUtils {
             final LinkedList<Path> dirs) throws IOException {
         final Path path = root.toPath();
         if (!Files.exists(path)) {
-            throw new RuntimeDataException(ErrorCode.ERROR_UTIL_LOCAL_FILE_SYSTEM_UTILS_PATH_NOT_FOUND,
+            throw new RuntimeDataException(ErrorCode.UTIL_LOCAL_FILE_SYSTEM_UTILS_PATH_NOT_FOUND,
                     path.toString());
         }
         if (!Files.isDirectory(path)) {

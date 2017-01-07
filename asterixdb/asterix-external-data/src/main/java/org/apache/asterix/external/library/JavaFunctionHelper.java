@@ -119,7 +119,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 jObject = pointableVisitor.visit((AListVisitablePointable) pointable, getTypeInfo(index, type));
                 break;
             case ANY:
-                throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_CANNOT_HANDLE_ARGU_TYPE,
+                throw new RuntimeDataException(ErrorCode.LIBRARY_JAVA_FUNCTION_HELPER_CANNOT_HANDLE_ARGU_TYPE,
                         type.getTypeTag());
             default:
                 pointable = pointableAllocator.allocateFieldValue(type);
@@ -165,7 +165,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
                 break;
             default:
                 try {
-                    throw new RuntimeDataException(ErrorCode.ERROR_LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED,
+                    throw new RuntimeDataException(ErrorCode.LIBRARY_JAVA_FUNCTION_HELPER_OBJ_TYPE_NOT_SUPPORTED,
                             jtypeTag.name());
                 } catch (IllegalStateException e) {
                     // Exception is not thrown

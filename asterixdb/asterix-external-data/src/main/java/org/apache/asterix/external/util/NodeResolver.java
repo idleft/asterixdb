@@ -62,7 +62,7 @@ public class NodeResolver implements INodeResolver {
                     if (ncs.contains(value)) {
                         return value;
                     } else {
-                        throw new AsterixException(ErrorCode.ERROR_NODE_RESOLVER_COULDNT_RESOLVE_ADDRESS, uhe, value,
+                        throw new AsterixException(ErrorCode.NODE_RESOLVER_COULDNT_RESOLVE_ADDRESS, uhe, value,
                                 ncs.toString());
                     }
                 }
@@ -70,12 +70,12 @@ public class NodeResolver implements INodeResolver {
             }
             Set<String> nodeControllers = ncMap.get(ipAddress);
             if (nodeControllers == null || nodeControllers.isEmpty()) {
-                throw new AsterixException(ErrorCode.ERROR_NODE_RESOLVER_NO_NODE_CONTROLLERS, value);
+                throw new AsterixException(ErrorCode.NODE_RESOLVER_NO_NODE_CONTROLLERS, value);
             }
             String chosenNCId = nodeControllers.toArray(new String[] {})[random.nextInt(nodeControllers.size())];
             return chosenNCId;
         } catch (UnknownHostException e) {
-            throw new AsterixException(ErrorCode.ERROR_NODE_RESOLVER_UNABLE_RESOLVE_HOST, value);
+            throw new AsterixException(ErrorCode.NODE_RESOLVER_UNABLE_RESOLVE_HOST, value);
         } catch (AsterixException ae) {
             throw ae;
         } catch (Exception e) {

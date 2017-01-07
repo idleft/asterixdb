@@ -80,7 +80,7 @@ public class DatasourceFactoryProvider {
                         streamSourceFactory = (IInputStreamFactory) Class.forName(streamSource).newInstance();
                     } catch (Exception e) {
                         throw new RuntimeDataException(
-                                ErrorCode.ERROR_PROVIDER_DATASOURCE_FACTORY_UNKNOWN_INPUT_STREAM_FACTORY, e,
+                                ErrorCode.PROVIDER_DATASOURCE_FACTORY_UNKNOWN_INPUT_STREAM_FACTORY, e,
                                 streamSource);
                     }
             }
@@ -121,7 +121,7 @@ public class DatasourceFactoryProvider {
                     return (IRecordReaderFactory<?>) Class.forName(reader).newInstance();
                 } catch (IllegalAccessException | ClassNotFoundException | InstantiationException
                         | ClassCastException e) {
-                    throw new RuntimeDataException(ErrorCode.ERROR_UNKNOWN_RECORD_READER_FACTORY, e,reader);
+                    throw new RuntimeDataException(ErrorCode.UNKNOWN_RECORD_READER_FACTORY, e,reader);
                 }
         }
     }

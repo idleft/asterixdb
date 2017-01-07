@@ -80,7 +80,7 @@ public class RateControlledTupleForwarder implements ITupleForwarder {
             appender.reset(frame, true);
             success = appender.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize());
             if (!success) {
-                throw new RuntimeDataException(ErrorCode.ERROR_DATAFLOW_ILLEGAL_STATE);
+                throw new RuntimeDataException(ErrorCode.DATAFLOW_ILLEGAL_STATE);
             }
         }
     }
