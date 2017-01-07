@@ -2151,7 +2151,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             listener = new FeedEventsListener(entityId);
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
-                    compilationProvider, qtFactory);
+                    compilationProvider, qtFactory, hcc);
             FeedJob cInfo = new FeedJob(entityId, null, ActivityState.CREATED, feedJob);
             listener.setFeedConnectJobInfo(cInfo);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
@@ -2176,7 +2176,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         FeedEventsListener listener = (FeedEventsListener) ActiveJobNotificationHandler.INSTANCE
                 .getActiveEntityListener(feedId);
         if (listener == null) {
-            throw new AlgebricksException("Feed " + feedName + "is not started.");
+            throw new AlgebricksException("Feed " + feedName + " is not started.");
         }
         intakeNodeLocations = listener.getIntakeLocations();
         // Transaction
@@ -2185,7 +2185,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         MetadataLockManager.INSTANCE.StopFeedBegin(dataverseName, feedName);
         try {
             // validate
-            // TODO: check feed is actually running.
             FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
             // Construct ActiveMessage
             for (String intakeLocation : intakeNodeLocations) {

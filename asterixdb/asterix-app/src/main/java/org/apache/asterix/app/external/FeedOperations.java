@@ -34,7 +34,7 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
-import org.apache.asterix.common.dataflow.AsterixLSMTreeInsertDeleteOperatorDescriptor;
+import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.JobId;
@@ -65,7 +65,7 @@ import org.apache.asterix.metadata.feeds.FeedMetadataUtil;
 import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.runtime.job.listener.MultiTransactionJobletEventListenerFactory;
-import org.apache.asterix.runtime.util.AsterixAppContextInfo;
+import org.apache.asterix.runtime.util.AppContextInfo;
 import org.apache.asterix.runtime.util.ClusterStateManager;
 import org.apache.asterix.translator.CompiledStatements;
 import org.apache.asterix.translator.IStatementExecutor;
@@ -80,6 +80,7 @@ import org.apache.hyracks.algebricks.common.utils.Triple;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.std.StreamSelectRuntimeFactory;
+import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.constraints.Constraint;
 import org.apache.hyracks.api.constraints.PartitionConstraintHelper;
 import org.apache.hyracks.api.constraints.expressions.ConstantExpression;
@@ -152,7 +153,7 @@ public class FeedOperations {
 
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider,
             FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
-            DefaultStatementExecutorFactory qtFactory)
+            DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc)
             throws AlgebricksException, RemoteException, ACIDException, JSONException {
         PrintWriter writer = new PrintWriter(System.err, true);
         SessionConfig pc = new SessionConfig(writer, SessionConfig.OutputFormat.ADM);
@@ -175,7 +176,7 @@ public class FeedOperations {
 
         CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
                 subscribeStmt.getSubscriptionRequest(), subscribeStmt.getVarCounter());
-        return translator.rewriteCompileQuery(metadataProvider, subscribeStmt.getQuery(), csfs);
+        return translator.rewriteCompileQuery(hcc, metadataProvider, subscribeStmt.getQuery(), csfs);
     }
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
@@ -224,9 +225,9 @@ public class FeedOperations {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
                 OperatorDescriptorId opId;
-                if (opDesc instanceof AsterixLSMTreeInsertDeleteOperatorDescriptor
-                        && ((AsterixLSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-                    String operandId = ((AsterixLSMTreeInsertDeleteOperatorDescriptor) opDesc).getIndexName();
+                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
+                    String operandId = ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).getIndexName();
                     FeedMetaOperatorDescriptor metaOp = new FeedMetaOperatorDescriptor(jobSpec,
                             new FeedConnectionId(ingestionOp.getEntityId(),
                                     feedConnections.get(iter1).getDatasetName()),
@@ -362,7 +363,7 @@ public class FeedOperations {
 
     public static JobSpecification buildStartFeedJob(MetadataProvider metadataProvider, Feed feed,
             List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
-            DefaultStatementExecutorFactory qtFactory) throws Exception {
+            DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
         // TODO: Change the default Datasource to use all possible partitions
         Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
@@ -375,7 +376,7 @@ public class FeedOperations {
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
             JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, ingestionLocations,
-                    compilationProvider, qtFactory);
+                    compilationProvider, qtFactory, hcc);
             jobsList.add(connectionJob);
         }
         return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
@@ -390,7 +391,7 @@ public class FeedOperations {
     }
 
     private static void SendActiveMessage(ActiveManagerMessage activeManagerMessage, String nodeId) throws Exception {
-        ICCMessageBroker messageBroker = (ICCMessageBroker) AsterixAppContextInfo.INSTANCE.getCCApplicationContext()
+        ICCMessageBroker messageBroker = (ICCMessageBroker) AppContextInfo.INSTANCE.getCCApplicationContext()
                 .getMessageBroker();
         messageBroker.sendApplicationMessageToNC(activeManagerMessage, nodeId);
     }
