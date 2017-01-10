@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
+import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.api.io.IFileDeviceComputer;
@@ -342,7 +343,7 @@ public class IOManager implements IIOManager {
     public FileReference resolveAbsolutePath(String path) throws HyracksDataException {
         IODeviceHandle devHandle = getDevice(path);
         if (devHandle == null) {
-            throw new HyracksDataException("The file with absolute path: " + path + " is outside all io devices");
+            throw HyracksDataException.create(ErrorCode.RUNTIME_FILE_WITH_ABSOULTE_PATH_NOT_WITHIN_ANY_IO_DEVICE, path);
         }
         String relativePath = devHandle.getRelativePath(path);
         return new FileReference(devHandle, relativePath);

@@ -40,6 +40,7 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.asterix.active.ActiveJobNotificationHandler;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
@@ -187,6 +188,9 @@ import org.apache.hyracks.api.io.UnmanagedFileSplit;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMMergePolicyFactory;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.google.common.collect.Lists;
 
@@ -2393,15 +2397,15 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
     private void handleQueryResult(MetadataProvider metadataProvider, IHyracksClientConnection hcc,
             IHyracksDataset hdc, JobSpecification jobSpec, ResultDelivery resultDelivery, Stats stats)
             throws Exception {
-        if (GlobalConfig.ASTERIX_LOGGER.isLoggable(Level.FINE)) {
-            GlobalConfig.ASTERIX_LOGGER.fine(jobSpec.toJSON().toString(1));
-        }
         JobId jobId = JobUtils.runJob(hcc, jobSpec, false);
 
+        ResultHandle hand;
         switch (resultDelivery) {
             case ASYNC:
-                ResultUtil.printResultHandle(new ResultHandle(jobId, metadataProvider.getResultSetId()), sessionConfig);
+                hand = new ResultHandle(jobId,metadataProvider.getResultSetId());
+                ResultUtil.printResultHandle(hand,sessionConfig);
                 hcc.waitForCompletion(jobId);
+                sessionConfig.out().flush();
                 break;
             case IMMEDIATE:
                 hcc.waitForCompletion(jobId);
@@ -2411,7 +2415,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 break;
             case DEFERRED:
                 hcc.waitForCompletion(jobId);
-                ResultUtil.printResultHandle(new ResultHandle(jobId, metadataProvider.getResultSetId()), sessionConfig);
+                hand = new ResultHandle(jobId,metadataProvider.getResultSetId());
+                ResultUtil.printResultHandle(hand,sessionConfig);
+                sessionConfig.out().flush();
                 break;
             default:
                 break;
