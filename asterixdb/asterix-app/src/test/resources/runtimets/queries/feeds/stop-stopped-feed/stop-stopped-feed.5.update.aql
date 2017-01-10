@@ -17,5 +17,5 @@
  * under the License.
  */
 
-  use dataverse experiments;
-  stop feed TweetFeed;
+use dataverse experiments;
+stop feed TweetFeed;

@@ -2195,6 +2195,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 FeedOperations.SendStopMessageToNode(feedId, intakeLocation,
                         intakeNodeLocations.indexOf(intakeLocation));
             }
+            ActiveJobNotificationHandler.INSTANCE.unregisterListener(listener);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;
