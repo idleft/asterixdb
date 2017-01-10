@@ -20,15 +20,8 @@
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
     <test-case FilePath="feeds">
-      <compilation-unit name="start-started-feed">
-        <output-dir compare="Text">start-started-feed</output-dir>
-        <expected-error>Feed TweetFeed is started already.</expected-error>
-      </compilation-unit>
-    </test-case>
-    <test-case FilePath="feeds">
-      <compilation-unit name="stop-stopped-feed">
-        <output-dir compare="Text">stop-stopped-feed</output-dir>
-        <expected-error>Feed TweetFeed is not started.</expected-error>
+      <compilation-unit name="start-feed">
+        <output-dir compare="Text">start-feed</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

@@ -23,11 +23,37 @@
  * Expected Res : Success
  * Date         : 24th Feb 2016
  */
-
+drop dataverse experiments if exists;
+create dataverse experiments;
 use dataverse experiments;
-set wait-for-completion-feed "false";
 
-connect feed TweetFeed to dataset Tweets1;
-connect feed TweetFeed to dataset Tweets2;
+create type TwitterUserType as closed {
+    screen-name: string,
+    lang: string,
+    friends_count: int32,
+    statuses_count: int32,
+    name: string,
+    followers_count: int32
+}
 
-start feed TweetFeed;
+create type TweetMessageType as closed {
+    tweetid: string,
+    tweetid-copy:string,
+    user: TwitterUserType,
+    sender-location: point,
+    send-time: datetime,
+    send-time-copy:datetime,
+    referred-topics: {{ string }},
+    message-text: string
+}
+
+create dataset Tweets1(TweetMessageType) primary key tweetid;
+create dataset Tweets2(TweetMessageType) primary key tweetid;
+
+create feed TweetFeed using socket_adapter
+(
+    ("sockets"="127.0.0.1:10001"),
+    ("address-type"="IP"),
+    ("type-name"="TweetMessageType"),
+    ("format"="adm")
+);
