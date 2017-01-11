@@ -77,4 +77,8 @@ public class KVTestReaderFactory implements IRecordReaderFactory<DCPRequest> {
     public Class<?> getRecordClass() {
         return DCPRequest.class;
     }
+
+    @Override public String[] getRecordReaderNames() {
+        return new String[0];
+    }
 }

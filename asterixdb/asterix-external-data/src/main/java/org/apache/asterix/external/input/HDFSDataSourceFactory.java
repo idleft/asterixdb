@@ -74,6 +74,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
     private InputSplit[] inputSplits;
     private String nodeName;
     private Format format;
+    private String[] recordReaderNames = { "hdfs" };
 
     @Override
     public void configure(Map<String, String> configuration) throws AsterixException {
@@ -225,5 +226,10 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
     @Override
     public boolean isIndexingOp() {
         return ((files != null) && indexingOp);
+    }
+
+    @Override
+    public String[] getRecordReaderNames() {
+        return recordReaderNames;
     }
 }

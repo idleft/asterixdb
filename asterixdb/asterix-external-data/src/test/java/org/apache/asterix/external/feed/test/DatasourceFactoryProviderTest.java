@@ -16,23 +16,23 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
+package org.apache.asterix.external.feed.test;
 
-import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.external.api.IRecordReaderFactory;
+import org.apache.asterix.external.input.HDFSDataSourceFactory;
+import org.apache.asterix.external.provider.DatasourceFactoryProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.junit.Assert;
+import org.junit.Test;
 
-public interface IRecordReaderFactory<T> extends IExternalDataSourceFactory {
+public class DatasourceFactoryProviderTest {
 
-    public IRecordReader<? extends T> createRecordReader(IHyracksTaskContext ctx, int partition)
-            throws HyracksDataException;
+    IRecordReaderFactory factory = null;
 
-    public Class<?> getRecordClass();
-
-    @Override
-    public default DataSourceType getDataSourceType() {
-        return DataSourceType.RECORDS;
+    @Test
+    public void test() throws HyracksDataException, AsterixException {
+        factory = DatasourceFactoryProvider.getRecordReaderFactory(null, "hdfs", null);
+        Assert.assertTrue(factory instanceof HDFSDataSourceFactory);
     }
-
-    public String[] getRecordReaderNames();
-
 }

@@ -33,6 +33,7 @@ public class RecordWithPKTestReaderFactory implements IRecordReaderFactory<Recor
     private static final long serialVersionUID = 1L;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
 
+
     @Override
     public AlgebricksAbsolutePartitionConstraint getPartitionConstraint() throws AlgebricksException {
         clusterLocations = IExternalDataSourceFactory.getPartitionConstraints(clusterLocations, 1);
@@ -52,5 +53,9 @@ public class RecordWithPKTestReaderFactory implements IRecordReaderFactory<Recor
     @Override
     public Class<?> getRecordClass() {
         return RecordWithPK.class;
+    }
+
+    @Override public String[] getRecordReaderNames() {
+        return new String[0];
     }
 }
