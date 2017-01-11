@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.input.record.reader.twitter;
+package org.apache.asterix.villain.external.input.record.reader.twitter;
 
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -26,18 +26,9 @@ import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.FeedLogManager;
-import org.apache.asterix.external.util.TwitterUtil;
-import twitter4j.DirectMessage;
+import org.apache.asterix.villain.external.util.TwitterUtil;
 import twitter4j.FilterQuery;
-import twitter4j.StallWarning;
-import twitter4j.Status;
-import twitter4j.StatusDeletionNotice;
-import twitter4j.StatusListener;
-import twitter4j.TwitterObjectFactory;
 import twitter4j.TwitterStream;
-import twitter4j.User;
-import twitter4j.UserList;
-import twitter4j.UserStreamListener;
 
 public class TwitterPushRecordReader implements IRecordReader<String> {
     private LinkedBlockingQueue<String> inputQ;
