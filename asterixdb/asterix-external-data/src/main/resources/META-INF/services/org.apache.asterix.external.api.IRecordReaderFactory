@@ -1,4 +1,3 @@
 org.apache.asterix.external.input.HDFSDataSourceFactory
-org.apache.asterix.external.input.record.reader.twitter.TwitterRecordReaderFactory
 org.apache.asterix.external.input.record.reader.stream.StreamRecordReaderFactory
 org.apache.asterix.external.input.record.reader.rss.RSSRecordReaderFactory

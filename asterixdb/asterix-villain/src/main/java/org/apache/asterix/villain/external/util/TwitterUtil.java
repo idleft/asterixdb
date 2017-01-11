@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.util;
+package org.apache.asterix.villain.external.util;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -30,6 +30,7 @@ import java.util.regex.Pattern;
 
 import org.apache.asterix.common.exceptions.AsterixException;
 
+import org.apache.asterix.external.util.ExternalDataConstants;
 import twitter4j.DirectMessage;
 import twitter4j.FilterQuery;
 import twitter4j.StallWarning;

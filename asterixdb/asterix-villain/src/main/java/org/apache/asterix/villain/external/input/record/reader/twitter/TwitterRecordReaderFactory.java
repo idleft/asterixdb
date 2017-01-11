@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.input.record.reader.twitter;
+package org.apache.asterix.villain.external.input.record.reader.twitter;
 
 import java.util.Map;
 import java.util.logging.Level;
@@ -27,9 +27,9 @@ import org.apache.asterix.external.api.IExternalDataSourceFactory;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.api.IRecordReaderFactory;
 import org.apache.asterix.external.util.ExternalDataConstants;
-import org.apache.asterix.external.util.TwitterUtil;
-import org.apache.asterix.external.util.TwitterUtil.AuthenticationConstants;
-import org.apache.asterix.external.util.TwitterUtil.SearchAPIConstants;
+import org.apache.asterix.villain.external.util.TwitterUtil;
+import org.apache.asterix.villain.external.util.TwitterUtil.AuthenticationConstants;
+import org.apache.asterix.villain.external.util.TwitterUtil.SearchAPIConstants;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.context.IHyracksTaskContext;

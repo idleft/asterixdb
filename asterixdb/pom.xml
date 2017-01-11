@@ -630,6 +630,7 @@
     <module>asterix-active</module>
     <module>asterix-client-helper</module>
     <module>asterix-license</module>
+    <module>asterix-villain</module>
   </modules>
 
   <repositories>
