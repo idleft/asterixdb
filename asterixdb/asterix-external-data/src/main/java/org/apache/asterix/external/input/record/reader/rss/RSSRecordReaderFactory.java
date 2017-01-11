@@ -39,6 +39,7 @@ public class RSSRecordReaderFactory implements IRecordReaderFactory<SyndEntryImp
     private static final long serialVersionUID = 1L;
     private final List<String> urls = new ArrayList<String>();
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
+    private static String[] recordReaderNames = { "rss_feed" };
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -87,6 +88,11 @@ public class RSSRecordReaderFactory implements IRecordReaderFactory<SyndEntryImp
     @Override
     public Class<? extends SyndEntryImpl> getRecordClass() {
         return SyndEntryImpl.class;
+    }
+
+    @Override
+    public String[] getRecordReaderNames() {
+        return recordReaderNames;
     }
 
 }
