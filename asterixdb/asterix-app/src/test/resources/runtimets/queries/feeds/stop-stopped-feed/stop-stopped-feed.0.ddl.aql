@@ -18,13 +18,13 @@
  */
 
 drop dataverse experiments if exists;
- create dataverse experiments;
- use dataverse experiments;
+create dataverse experiments;
+use dataverse experiments;
 
- create type TweetMessageType as closed {
-     tweetid: string,
-     tweetid-copy:string
- }
+create type TweetMessageType as closed {
+ tweetid: string,
+ tweetid-copy:string
+}
 
 create dataset Tweets1(TweetMessageType) primary key tweetid;
 create dataset Tweets2(TweetMessageType) primary key tweetid;

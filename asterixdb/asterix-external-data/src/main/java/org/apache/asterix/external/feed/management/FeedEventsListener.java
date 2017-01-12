@@ -29,6 +29,7 @@ import org.apache.asterix.active.ActiveEvent;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
+import org.apache.asterix.external.feed.api.IActiveLifecycleEventSubscriber;
 import org.apache.asterix.external.feed.watch.FeedJob;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
@@ -44,10 +45,12 @@ import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobInfo;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.api.job.JobStatus;
 import org.apache.hyracks.storage.am.lsm.common.dataflow.LSMTreeIndexInsertUpdateDeleteOperatorDescriptor;
 
 public class FeedEventsListener implements IActiveEntityEventsListener {
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class.getName());
+    private final IActiveLifecycleEventSubscriber eventSubscriber;
     private final List<String> connectedDatasets;
     private FeedJob cInfo;
     private EntityId entityId;
@@ -55,6 +58,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
     public FeedEventsListener(EntityId entityId) {
         this.entityId = entityId;
         connectedDatasets = new ArrayList<>();
+        eventSubscriber = new ActiveLifecycleEventSubscriber();
     }
 
     @Override
@@ -62,7 +66,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         try {
             switch (event.getEventKind()) {
                 case JOB_START:
-                    handeStartFeedEvent();
+                    handleJobStartEvent();
                     break;
                 case JOB_FINISH:
                     handleJobFinishEvent();
@@ -79,15 +83,21 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private void handeStartFeedEvent() {
+    private void handleJobStartEvent() {
         LOGGER.log(Level.INFO, "Feed Start " + cInfo.getEntityId());
         setLocations(cInfo);
         cInfo.setState(ActivityState.ACTIVE);
+        notifyFeedEventSubscriber(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_STARTED);
     }
 
-    private synchronized void handleJobFinishEvent() {
+    private synchronized void handleJobFinishEvent() throws Exception {
         LOGGER.log(Level.INFO, "Feed End " + cInfo);
+        IHyracksClientConnection hcc = AppContextInfo.INSTANCE.getHcc();
+        JobStatus status = hcc.getJobStatus(cInfo.getJobId());
         cInfo.setState(ActivityState.INACTIVE);
+        notifyFeedEventSubscriber(status.equals(JobStatus.FAILURE)
+                ? IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_FAILURE
+                : IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_ENDED);
     }
 
     public void setFeedConnectJobInfo(FeedJob info) {
@@ -96,11 +106,16 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
 
     private void handlePartitionStart() {
         cInfo.setState(ActivityState.ACTIVE);
+        notifyFeedEventSubscriber(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_COLLECT_STARTED);
     }
 
     @Override
     public void notifyJobCreation(JobId jobId, JobSpecification spec) {
         cInfo.setJobId(jobId);
+    }
+
+    public IActiveLifecycleEventSubscriber getEventSubscriber() {
+        return this.eventSubscriber;
     }
 
     private void setLocations(FeedJob cInfo) {
@@ -193,6 +208,10 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Error while setting feed active locations", e);
         }
+    }
+
+    private synchronized void notifyFeedEventSubscriber(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent event) {
+        eventSubscriber.handleEvent(event);
     }
 
     public synchronized boolean isConnectedToDataset(String datasetName) {

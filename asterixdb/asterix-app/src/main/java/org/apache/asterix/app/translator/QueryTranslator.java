@@ -65,6 +65,7 @@ import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
+import org.apache.asterix.external.feed.api.IActiveLifecycleEventSubscriber;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
 import org.apache.asterix.external.feed.watch.FeedJob;
@@ -2157,10 +2158,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
                     compilationProvider, qtFactory, hcc);
             FeedJob cInfo = new FeedJob(entityId, null, ActivityState.CREATED, feedJob);
+            IActiveLifecycleEventSubscriber eventSubscriber = listener.getEventSubscriber();
             listener.setFeedConnectJobInfo(cInfo);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
             JobUtils.runJob(hcc, feedJob,
                     Boolean.valueOf(metadataProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION)));
+            eventSubscriber.assertEvent(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_STARTED);
             LOGGER.log(Level.INFO,"Submitted");
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2182,6 +2185,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         if (listener == null) {
             throw new AlgebricksException("Feed " + feedName + " is not started.");
         }
+        IActiveLifecycleEventSubscriber eventSubscriber = listener.getEventSubscriber();
         intakeNodeLocations = listener.getIntakeLocations();
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
@@ -2195,7 +2199,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 FeedOperations.SendStopMessageToNode(feedId, intakeLocation,
                         intakeNodeLocations.indexOf(intakeLocation));
             }
-            ActiveJobNotificationHandler.INSTANCE.unregisterListener(listener);
+            eventSubscriber.assertEvent(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_ENDED);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;
