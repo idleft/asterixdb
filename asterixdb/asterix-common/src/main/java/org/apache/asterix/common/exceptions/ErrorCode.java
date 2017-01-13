@@ -144,6 +144,8 @@ public class ErrorCode {
     public static final int UTIL_FILE_SYSTEM_WATCHER_NO_FILES_FOUND = 3076;
     public static final int UTIL_LOCAL_FILE_SYSTEM_UTILS_PATH_NOT_FOUND = 3077;
     public static final int UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER = 3078;
+    public static final int READER_FACTORY_RECORD_READER_NOT_FOUND = 3079;
+    public static final int PROVIDER_DATASOURCE_FACTORY_DUPLICATE_FORMAT_MAPPING = 3080;
 
     // Loads the map that maps error codes to error message templates.
     private static Map<Integer, String> errorMessageMap = null;

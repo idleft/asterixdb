@@ -18,6 +18,9 @@
  */
 package org.apache.asterix.villain.external.input.record.reader.twitter;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,8 +55,8 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
             ExternalDataConstants.READER_PULL_TWITTER, ExternalDataConstants.READER_USER_STREAM_TWITTER };
 
     @Override
-    public String[] getRecordReaderNames() {
-        return recordReaderNames;
+    public List<String> getRecordReaderNames() {
+        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
     }
 
     @Override

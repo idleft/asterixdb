@@ -20,6 +20,8 @@ package org.apache.asterix.external.input.record.reader.rss;
 
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -91,8 +93,8 @@ public class RSSRecordReaderFactory implements IRecordReaderFactory<SyndEntryImp
     }
 
     @Override
-    public String[] getRecordReaderNames() {
-        return recordReaderNames;
+    public List<String> getRecordReaderNames() {
+        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
     }
 
 }

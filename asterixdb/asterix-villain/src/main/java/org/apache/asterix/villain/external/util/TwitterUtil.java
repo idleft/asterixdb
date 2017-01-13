@@ -49,9 +49,14 @@ import twitter4j.conf.ConfigurationBuilder;
 
 public class TwitterUtil {
 
-    private static Logger LOGGER = Logger.getLogger(TwitterUtil.class.getName());
+    private static Logger logger = Logger.getLogger(TwitterUtil.class.getName());
+
+    private TwitterUtil() {
+    }
 
     public static class ConfigurationConstants {
+        private ConfigurationConstants() {
+        }
         public static final String KEY_LOCATIONS = "locations"; // locations to track
         public static final String KEY_LOCATION = "location"; // location to track
         public static final String LOCATION_US = "US";
@@ -62,17 +67,20 @@ public class TwitterUtil {
     }
 
     public static class GeoConstants {
+        private GeoConstants() {
+        }
         private static final double[][] US = new double[][] { { -124.848974, 24.396308 }, { -66.885444, 49.384358 } };
         private static final double[][] EU = new double[][] { { -29.7, 36.7 }, { 79.2, 72.0 } };
-        public static Map<String, double[][]> boundingBoxes = initializeBoundingBoxes();
+        public static final Map<String, double[][]> boundingBoxes = initializeBoundingBoxes();
+
+        private static Map<String, double[][]> initializeBoundingBoxes() {
+            Map<String, double[][]> boundingBoxes = new HashMap<String, double[][]>();
+            boundingBoxes.put(ConfigurationConstants.LOCATION_US, GeoConstants.US);
+            boundingBoxes.put(ConfigurationConstants.LOCATION_EU, GeoConstants.EU);
+            return boundingBoxes;
+        }
     }
 
-    private static Map<String, double[][]> initializeBoundingBoxes() {
-        Map<String, double[][]> boundingBoxes = new HashMap<String, double[][]>();
-        boundingBoxes.put(ConfigurationConstants.LOCATION_US, GeoConstants.US);
-        boundingBoxes.put(ConfigurationConstants.LOCATION_EU, GeoConstants.EU);
-        return boundingBoxes;
-    }
 
     /**
      * Gets more than one bounding box from a sequences of coordinates
@@ -88,7 +96,8 @@ public class TwitterUtil {
     public static double[][] getBoundingBoxes(String locationValue) throws AsterixException {
         double[][] locations = null;
 
-        String coordRegex = "^((((\\-?\\d+\\.\\d+),\\s*){3}(\\-?\\d+\\.\\d+)|\\w+);\\s*)*(((\\-?\\d+\\.\\d+),\\s*){3}(\\-?\\d+\\.\\d+)|\\w+)$";
+        String coordRegex = "^((((\\-?\\d+\\.\\d+),\\s*){3}(\\-?\\d+\\.\\d+)|\\w+);\\s*)*"
+                + "(((\\-?\\d+\\.\\d+),\\s*){3}(\\-?\\d+\\.\\d+)|\\w+)$";
         Pattern p = Pattern.compile(coordRegex);
         Matcher m = p.matcher(locationValue);
 
@@ -124,7 +133,7 @@ public class TwitterUtil {
     }
 
     public static FilterQuery getFilterQuery(Map<String, String> configuration) throws AsterixException {
-        String locationValue = null;
+        String locationValue;
 
         // For backward compatibility
         if (configuration.containsKey(ConfigurationConstants.KEY_LOCATIONS)) {
@@ -139,7 +148,7 @@ public class TwitterUtil {
 
         // Terms to track
         if (trackValue != null) {
-            String keywords[] = null;
+            String keywords[];
             filterQuery = new FilterQuery();
             if (trackValue.contains(",")) {
                 keywords = trackValue.trim().split(",\\s*");
@@ -192,22 +201,22 @@ public class TwitterUtil {
         try {
             tf = new TwitterFactory(cb.build());
         } catch (Exception e) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
+            if (logger.isLoggable(Level.WARNING)) {
                 StringBuilder builder = new StringBuilder();
                 builder.append("Twitter Adapter requires the following config parameters\n");
                 builder.append(AuthenticationConstants.OAUTH_CONSUMER_KEY + "\n");
                 builder.append(AuthenticationConstants.OAUTH_CONSUMER_SECRET + "\n");
                 builder.append(AuthenticationConstants.OAUTH_ACCESS_TOKEN + "\n");
                 builder.append(AuthenticationConstants.OAUTH_ACCESS_TOKEN_SECRET + "\n");
-                LOGGER.warning(builder.toString());
-                LOGGER.warning(
+                logger.warning(builder.toString());
+                logger.warning(
                         "Unable to configure Twitter adapter due to incomplete/incorrect authentication credentials");
-                LOGGER.warning(
+                logger.warning(
                         "For details on how to obtain OAuth authentication token, visit https://dev.twitter.com/oauth"
                                 + "/overview/application-owner-access-tokens");
             }
         }
-        Twitter twitter = tf.getInstance();
+        Twitter twitter = tf == null ? null : tf.getInstance();
         return twitter;
     }
 
@@ -275,17 +284,20 @@ public class TwitterUtil {
                             prop.getProperty(AuthenticationConstants.OAUTH_ACCESS_TOKEN_SECRET));
                     break;
                 case AuthenticationConstants.AUTHENTICATION_MODE_EXPLICIT:
+                default:
                     break;
             }
         } catch (Exception e) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("unable to load authentication credentials from auth.properties file"
+            if (logger.isLoggable(Level.WARNING)) {
+                logger.warning("unable to load authentication credentials from auth.properties file"
                         + "credential information will be obtained from adapter's configuration");
             }
         }
     }
 
     public static final class AuthenticationConstants {
+        private AuthenticationConstants() {
+        }
         public static final String OAUTH_CONSUMER_KEY = "consumer.key";
         public static final String OAUTH_CONSUMER_SECRET = "consumer.secret";
         public static final String OAUTH_ACCESS_TOKEN = "access.token";
@@ -298,6 +310,8 @@ public class TwitterUtil {
     }
 
     public static final class SearchAPIConstants {
+        private SearchAPIConstants() {
+        }
         public static final String QUERY = "query";
         public static final String INTERVAL = "interval";
     }
