@@ -26,6 +26,7 @@ import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
@@ -103,7 +104,7 @@ public class DatasourceFactoryProvider {
         }
     }
 
-    public static IRecordReaderFactory<?> getRecordReaderFactory(ILibraryManager libraryManager, String adaptorName,
+    public static IRecordReaderFactory getRecordReaderFactory(ILibraryManager libraryManager, String adaptorName,
             Map<String, String> configuration) throws HyracksDataException, AsterixException {
         if (adaptorName.equals(ExternalDataConstants.EXTERNAL)) {
             return ExternalDataUtils.createExternalRecordReaderFactory(libraryManager, configuration);
@@ -137,10 +138,11 @@ public class DatasourceFactoryProvider {
                 String[] classNames = config.split("\n");
                 for (String className : classNames) {
                     final Class<?> clazz = Class.forName(className);
-                    String[] formats = ((IRecordReaderFactory) clazz.newInstance()).getRecordReaderNames();
+                    List<String> formats = ((IRecordReaderFactory) clazz.newInstance()).getRecordReaderNames();
                     for (String format : formats) {
                         if (factories.containsKey(format)) {
-                            throw new AsterixException("Duplicate format " + format);
+                            throw new AsterixException(ErrorCode.PROVIDER_DATASOURCE_FACTORY_DUPLICATE_FORMAT_MAPPING,
+                                    format);
                         }
                         factories.put(format, clazz);
                     }

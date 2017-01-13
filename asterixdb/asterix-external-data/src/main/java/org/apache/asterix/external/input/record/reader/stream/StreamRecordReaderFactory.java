@@ -18,8 +18,13 @@
  */
 package org.apache.asterix.external.input.record.reader.stream;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
+import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.api.IRecordReaderFactory;
@@ -76,6 +81,8 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
             case ExternalDataConstants.STREAM_SOCKET_CLIENT:
                 this.streamFactory = new SocketClientInputStreamFactory();
                 break;
+            default:
+                throw new AsterixException(ErrorCode.READER_FACTORY_RECORD_READER_NOT_FOUND);
         }
         streamFactory.configure(configuration);
         format = StreamRecordReaderProvider.getReaderFormat(configuration);
@@ -89,7 +96,7 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     }
 
     @Override
-    public String[] getRecordReaderNames() {
-        return recordReaderNames;
+    public List<String> getRecordReaderNames() {
+        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
     }
 }

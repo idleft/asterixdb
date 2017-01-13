@@ -20,9 +20,11 @@ package org.apache.asterix.external.input;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Lists;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IExternalIndexer;
@@ -229,7 +231,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
     }
 
     @Override
-    public String[] getRecordReaderNames() {
-        return recordReaderNames;
+    public List<String> getRecordReaderNames() {
+        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
     }
 }

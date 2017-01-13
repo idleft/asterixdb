@@ -65,7 +65,7 @@ public class TwitterPullRecordReader implements IRecordReader<String> {
     @Override
     public IRawRecord<String> next() throws IOException, InterruptedException {
         if (result == null || nextTweetIndex >= result.getTweets().size()) {
-            Thread.sleep(1000 * requestInterval);
+            Thread.sleep(1000L * requestInterval);
             query.setSinceId(lastTweetIdReceived);
             try {
                 result = twitter.search(query);
