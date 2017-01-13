@@ -17,9 +17,9 @@
  * under the License.
  */
 
-drop dataverse experiments if exists;
-create dataverse experiments;
-use dataverse experiments;
+drop dataverse new_experiments if exists;
+create dataverse new_experiments;
+use dataverse new_experiments;
 
 create type TweetMessageType as closed {
  tweetid: string,

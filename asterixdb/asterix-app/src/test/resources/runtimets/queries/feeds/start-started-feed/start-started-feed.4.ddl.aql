@@ -17,4 +17,5 @@
  * under the License.
  */
 
+use dataverse experiments;
 drop dataverse experiments;

@@ -17,5 +17,5 @@
  * under the License.
  */
 
-use dataverse experiments;
+use dataverse new_experiments;
 start feed TweetFeed;
