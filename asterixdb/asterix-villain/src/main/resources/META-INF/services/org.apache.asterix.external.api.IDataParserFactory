@@ -1,0 +1,2 @@
+org.apache.asterix.villain.external.parser.twitter.TweetParserFactory
+org.apache.asterix.villain.external.parser.rss.RSSParserFactory
