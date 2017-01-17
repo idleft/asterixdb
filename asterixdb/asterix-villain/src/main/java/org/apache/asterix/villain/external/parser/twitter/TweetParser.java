@@ -220,7 +220,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
                     }
                 }
             }
-            if (curRecType != null && closedFieldCount < curFNames.length) {
+            if (curRecType != null && curFNames!=null && closedFieldCount < curFNames.length) {
                 throw new HyracksDataException("Non-null field is null");
             }
         }

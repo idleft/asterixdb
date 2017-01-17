@@ -19,8 +19,8 @@
 package org.apache.asterix.villain.external.parser.rss;
 
 import java.io.DataOutput;
-import java.io.IOException;
 
+import com.sun.syndication.feed.synd.SyndEntryImpl;
 import org.apache.asterix.builders.RecordBuilder;
 import org.apache.asterix.external.api.IDataParser;
 import org.apache.asterix.external.api.IRawRecord;
@@ -29,7 +29,6 @@ import org.apache.asterix.om.base.AMutableRecord;
 import org.apache.asterix.om.base.AMutableString;
 import org.apache.asterix.om.types.ARecordType;
 
-import com.sun.syndication.feed.synd.SyndEntryImpl;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class RSSParser implements IRecordDataParser<SyndEntryImpl> {
