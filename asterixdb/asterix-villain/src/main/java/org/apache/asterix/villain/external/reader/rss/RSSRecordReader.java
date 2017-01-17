@@ -135,10 +135,12 @@ public class RSSRecordReader implements IRecordReader<SyndEntryImpl> {
 
     @Override
     public void setFeedLogManager(FeedLogManager feedLogManager) {
+        // do nothing
     }
 
     @Override
     public void setController(AbstractFeedDataFlowController controller) {
+        // do nothing
     }
 
     @Override

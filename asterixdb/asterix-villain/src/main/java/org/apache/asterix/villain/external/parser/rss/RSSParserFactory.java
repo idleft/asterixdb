@@ -57,6 +57,7 @@ public class RSSParserFactory implements IRecordDataParserFactory<SyndEntryImpl>
 
     @Override
     public void setMetaType(ARecordType metaType) {
+        // do nothing
     }
 
     @Override
