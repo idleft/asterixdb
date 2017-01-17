@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.input.record.reader.rss;
+package org.apache.asterix.villain.external.reader.rss;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

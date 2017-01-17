@@ -1,1 +1,2 @@
-org.apache.asterix.villain.external.input.record.reader.twitter.TwitterRecordReaderFactory
+org.apache.asterix.villain.external.reader.twitter.TwitterRecordReaderFactory
+org.apache.asterix.villain.external.reader.rss.RSSRecordReaderFactory

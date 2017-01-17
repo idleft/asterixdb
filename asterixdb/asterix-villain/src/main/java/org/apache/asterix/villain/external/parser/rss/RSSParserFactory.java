@@ -16,22 +16,22 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.parser.factory;
+package org.apache.asterix.villain.external.parser.rss;
 
 import java.util.Map;
 
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
-import org.apache.asterix.external.parser.TweetParser;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.asterix.villain.external.parser.rss.RSSParser;
 
-import twitter4j.Status;
+import com.sun.syndication.feed.synd.SyndEntryImpl;
 
-public class TweetParserFactory implements IRecordDataParserFactory<String> {
+public class RSSParserFactory implements IRecordDataParserFactory<SyndEntryImpl> {
 
     private static final long serialVersionUID = 1L;
-    private static String[] formats = { "twitter-status" };
+    private static String[] formats = { "rss" };
     private ARecordType recordType;
 
     @Override
@@ -45,19 +45,18 @@ public class TweetParserFactory implements IRecordDataParserFactory<String> {
     }
 
     @Override
-    public IRecordDataParser<String> createRecordParser(IHyracksTaskContext ctx) {
-        TweetParser dataParser = new TweetParser(recordType);
+    public IRecordDataParser<SyndEntryImpl> createRecordParser(IHyracksTaskContext ctx) {
+        RSSParser dataParser = new RSSParser(recordType);
         return dataParser;
     }
 
     @Override
-    public Class<? extends String> getRecordClass() {
-        return String.class;
+    public Class<? extends SyndEntryImpl> getRecordClass() {
+        return SyndEntryImpl.class;
     }
 
     @Override
     public void setMetaType(ARecordType metaType) {
-        // do nothing
     }
 
     @Override

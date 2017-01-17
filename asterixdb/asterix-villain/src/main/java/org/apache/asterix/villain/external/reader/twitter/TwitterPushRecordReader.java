@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.villain.external.input.record.reader.twitter;
+package org.apache.asterix.villain.external.reader.twitter;
 
 import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;

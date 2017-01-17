@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.parser;
+package org.apache.asterix.villain.external.parser.rss;
 
 import java.io.DataOutput;
 import java.io.IOException;
