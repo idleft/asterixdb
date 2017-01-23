@@ -16,25 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.feed.api;
+package org.apache.asterix.common.metadata;
 
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+public interface IDataset {
 
-public interface IActiveLifecycleEventSubscriber {
-
-    public enum ActiveLifecycleEvent {
-        FEED_INTAKE_STARTED,
-        FEED_COLLECT_STARTED,
-        FEED_INTAKE_FAILURE,
-        FEED_COLLECT_FAILURE,
-        FEED_INTAKE_ENDED,
-        FEED_COLLECT_ENDED,
-        ACTIVE_JOB_STARTED,
-        ACTIVE_JOB_ENDED,
-        ACTIVE_JOB_FAILED
-    }
-
-    public void assertEvent(ActiveLifecycleEvent event) throws HyracksDataException, InterruptedException;
-
-    public void handleEvent(ActiveLifecycleEvent event);
 }

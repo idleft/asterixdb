@@ -22,16 +22,16 @@ package org.apache.asterix.metadata.entities;
 import java.util.Map;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
+import org.apache.asterix.common.metadata.IDataset;
 import org.apache.asterix.metadata.IDatasetDetails;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.logical.ProjectOperator;
 
 /**
  * Metadata describing a dataset.
  */
-public class Dataset implements IMetadataEntity<Dataset> {
+public class Dataset implements IMetadataEntity<Dataset>, IDataset {
 
     /**
      * Dataset related operations

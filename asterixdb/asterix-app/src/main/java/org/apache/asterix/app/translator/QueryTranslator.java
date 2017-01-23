@@ -40,11 +40,11 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.asterix.active.ActiveJobNotificationHandler;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
+import org.apache.asterix.active.IActiveEventSubscriber;
 import org.apache.asterix.algebra.extension.IExtensionStatement;
 import org.apache.asterix.api.common.APIFramework;
 import org.apache.asterix.api.http.servlet.APIServlet;
@@ -54,31 +54,32 @@ import org.apache.asterix.app.result.ResultHandle;
 import org.apache.asterix.app.result.ResultReader;
 import org.apache.asterix.app.result.ResultUtil;
 import org.apache.asterix.common.config.ClusterProperties;
-import org.apache.asterix.common.config.ExternalProperties;
-import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.ExternalDatasetTransactionState;
 import org.apache.asterix.common.config.DatasetConfig.ExternalFilePendingOp;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
+import org.apache.asterix.common.config.ExternalProperties;
+import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.common.metadata.IDataset;
 import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.asterix.external.feed.api.IActiveLifecycleEventSubscriber;
+import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
-import org.apache.asterix.external.feed.watch.FeedJob;
+import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.file.DatasetOperations;
 import org.apache.asterix.file.DataverseOperations;
 import org.apache.asterix.file.IndexOperations;
 import org.apache.asterix.formats.nontagged.TypeTraitProvider;
+import org.apache.asterix.lang.common.base.IReturningStatement;
 import org.apache.asterix.lang.common.base.IRewriterFactory;
 import org.apache.asterix.lang.common.base.IStatementRewriter;
 import org.apache.asterix.lang.common.base.Statement;
-import org.apache.asterix.lang.common.base.IReturningStatement;
 import org.apache.asterix.lang.common.expression.TypeExpression;
 import org.apache.asterix.lang.common.statement.CompactStatement;
 import org.apache.asterix.lang.common.statement.ConnectFeedStatement;
@@ -189,9 +190,6 @@ import org.apache.hyracks.api.io.UnmanagedFileSplit;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMMergePolicyFactory;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import com.google.common.collect.Lists;
 
@@ -694,11 +692,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    protected void validateIfResourceIsActiveInFeed(String dataverseName, String datasetName) throws AsterixException {
+    protected void validateIfResourceIsActiveInFeed(Dataset dataset) throws AsterixException {
         StringBuilder builder = null;
         IActiveEntityEventsListener[] listeners = ActiveJobNotificationHandler.INSTANCE.getEventListeners();
         for (IActiveEntityEventsListener listener : listeners) {
-            if (listener.isEntityUsingDataset(dataverseName, datasetName)) {
+            if (listener.isEntityUsingDataset(dataset)) {
                 if (builder == null) {
                     builder = new StringBuilder();
                 }
@@ -706,7 +704,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
         }
         if (builder != null) {
-            throw new AsterixException("Dataset " + dataverseName + "." + datasetName + " is currently being "
+            throw new AsterixException("Dataset " + dataset.getDataverseName() + "." + dataset.getDatasetName()
+                    + " is currently being "
                     + "fed into by the following active entities.\n" + builder.toString());
         }
     }
@@ -897,7 +896,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
 
             if (ds.getDatasetType() == DatasetType.INTERNAL) {
-                validateIfResourceIsActiveInFeed(dataverseName, datasetName);
+                validateIfResourceIsActiveInFeed(ds);
             } else {
                 // External dataset
                 // Check if the dataset is indexible
@@ -1409,7 +1408,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             // prepare job spec(s) that would disconnect any active feeds involving the dataset.
             IActiveEntityEventsListener[] activeListeners = ActiveJobNotificationHandler.INSTANCE.getEventListeners();
             for (IActiveEntityEventsListener listener : activeListeners) {
-                if (listener.isEntityUsingDataset(dataverseName, datasetName)) {
+                if (listener.isEntityUsingDataset(ds)) {
                     throw new AsterixException(
                             "Can't drop dataset since it is connected to active entity: " + listener.getEntityId());
                 }
@@ -1531,7 +1530,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             IActiveEntityEventsListener[] listeners = ActiveJobNotificationHandler.INSTANCE.getEventListeners();
             StringBuilder builder = null;
             for (IActiveEntityEventsListener listener : listeners) {
-                if (listener.isEntityUsingDataset(dataverseName, datasetName)) {
+                if (listener.isEntityUsingDataset(ds)) {
                     if (builder == null) {
                         builder = new StringBuilder();
                     }
@@ -2153,17 +2152,26 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         try {
             MetadataLockManager.INSTANCE.startFeedBegin(dataverseName, dataverseName + "." + feedName, feedConnections);
             // Prepare policy
-            listener = new FeedEventsListener(entityId);
-            ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
+            List<IDataset> datasets = new ArrayList<>();
+            for (FeedConnection connection : feedConnections) {
+                datasets.add(MetadataManager.INSTANCE.getDataset(mdTxnCtx, connection.getDataverseName(), connection
+                        .getDatasetName()));
+            }
+
+            org.apache.commons.lang3.tuple.Pair<JobSpecification, IAdapterFactory> intakeInfo = FeedOperations
+                    .buildFeedIntakeJobSpec(feed, metadataProvider, new FeedPolicyAccessor(new HashMap<>()));
+
             JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
-                    compilationProvider, qtFactory, hcc);
-            FeedJob cInfo = new FeedJob(entityId, null, ActivityState.CREATED, feedJob);
-            IActiveLifecycleEventSubscriber eventSubscriber = listener.getEventSubscriber();
-            listener.setFeedConnectJobInfo(cInfo);
-            feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, cInfo);
+                    compilationProvider, qtFactory, hcc, intakeInfo);
+
+            listener = new FeedEventsListener(entityId, datasets, intakeInfo.getRight().getPartitionConstraint()
+                    .getLocations());
+            ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
+            IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STARTED);
+            feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
             JobUtils.runJob(hcc, feedJob,
                     Boolean.valueOf(metadataProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION)));
-            eventSubscriber.assertEvent(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_STARTED);
+            eventSubscriber.sync();
             LOGGER.log(Level.INFO,"Submitted");
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2174,7 +2182,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
     }
 
     private void handleStopFeedStatement(MetadataProvider metadataProvider, Statement stmt) throws Exception {
-        List<String> intakeNodeLocations;
         StopFeedStatement sfst = (StopFeedStatement) stmt;
         String dataverseName = getActiveDataverse(sfst.getDataverseName());
         String feedName = sfst.getFeedName().getValue();
@@ -2185,8 +2192,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         if (listener == null) {
             throw new AlgebricksException("Feed " + feedName + " is not started.");
         }
-        IActiveLifecycleEventSubscriber eventSubscriber = listener.getEventSubscriber();
-        intakeNodeLocations = listener.getIntakeLocations();
+        IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STOPPED);
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
@@ -2195,11 +2201,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             // validate
             FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
             // Construct ActiveMessage
-            for (String intakeLocation : intakeNodeLocations) {
-                FeedOperations.SendStopMessageToNode(feedId, intakeLocation,
-                        intakeNodeLocations.indexOf(intakeLocation));
+            for (int i = 0; i < listener.getSources().length; i++) {
+                String intakeLocation = listener.getSources()[i];
+                FeedOperations.SendStopMessageToNode(feedId, intakeLocation, i);
             }
-            eventSubscriber.assertEvent(IActiveLifecycleEventSubscriber.ActiveLifecycleEvent.FEED_INTAKE_ENDED);
+            eventSubscriber.sync();
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;

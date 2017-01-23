@@ -47,6 +47,7 @@ import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
+import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
@@ -111,7 +112,7 @@ public class FeedOperations {
 
     static final Logger LOGGER = Logger.getLogger(FeedOperations.class.getName());
 
-    private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
+    public static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
             MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
         spec.setFrameSize(FeedConstants.JobConstants.DEFAULT_FRAME_SIZE);
@@ -363,10 +364,8 @@ public class FeedOperations {
 
     public static JobSpecification buildStartFeedJob(MetadataProvider metadataProvider, Feed feed,
             List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
-            DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc) throws Exception {
-        FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
-        // TODO: Change the default Datasource to use all possible partitions
-        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
+            DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc,
+            Pair<JobSpecification, IAdapterFactory> intakeInfo) throws Exception {
         //TODO: Add feed policy accessor
         List<JobSpecification> jobsList = new ArrayList<>();
         // Construct the ingestion Job
@@ -383,10 +382,10 @@ public class FeedOperations {
                 ingestionLocations);
     }
 
-    public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation, Integer ioDeviceIdx)
+    public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation, Integer partition)
             throws Exception {
         ActiveManagerMessage stopFeedMessage = new ActiveManagerMessage(ActiveManagerMessage.STOP_ACTIVITY, "SRC",
-                new ActiveRuntimeId(feedId, FeedUtils.FeedRuntimeType.INTAKE.toString(), ioDeviceIdx));
+                new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         SendActiveMessage(stopFeedMessage, intakeNodeLocation);
     }
 

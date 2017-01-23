@@ -18,45 +18,31 @@
  */
 package org.apache.asterix.active;
 
-import org.apache.asterix.common.metadata.IDataset;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-
-public interface IActiveEntityEventsListener {
+/**
+ * An active event subscriber that subscribe to events related to active entity
+ */
+public interface IActiveEventSubscriber {
 
     /**
-     * Notify the listener that an event related to the entity has taken place
-     * Examples of such events include
-     * 1. Job created
-     * 2. Job completed
-     * 3. Partition event
+     * Notify the subscriber of a new event
      * @param event
-     *            the event that took place
      */
     void notify(ActiveEvent event);
 
     /**
-     * @return the state of the entity
-     */
-    byte getState();
-
-    /**
-     * get a subscriber that waits till state has been reached.
-     * @param state
-     *            the desired state
-     * @throws HyracksDataException
-     *             a failure happened while waiting for the state
-     */
-    IActiveEventSubscriber subscribe(byte state) throws HyracksDataException;
-
-    /**
-     * @return the active entity id
-     */
-    EntityId getEntityId();
-
-    /**
-     * dataset
+     * Checkcs whether the subscriber is done receiving events
      * @return
      */
-    boolean isEntityUsingDataset(IDataset dataset);
+    boolean done();
 
+    /**
+     * Wait until the terminal event has been received
+     * @throws InterruptedException
+     */
+    void sync() throws InterruptedException;
+
+    /**
+     * Stop watching events
+     */
+    void unsubscribe();
 }
