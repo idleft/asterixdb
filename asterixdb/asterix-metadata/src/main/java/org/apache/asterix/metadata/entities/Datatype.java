@@ -19,6 +19,7 @@
 
 package org.apache.asterix.metadata.entities;
 
+import org.apache.asterix.common.metadata.IMetadataCache;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.asterix.om.types.IAType;
@@ -60,12 +61,12 @@ public class Datatype implements IMetadataEntity<Datatype> {
     }
 
     @Override
-    public Datatype addToCache(MetadataCache cache) {
-        return cache.addDatatypeIfNotExists(this);
+    public Datatype addToCache(IMetadataCache cache) {
+        return ((MetadataCache) cache).addDatatypeIfNotExists(this);
     }
 
     @Override
-    public Datatype dropFromCache(MetadataCache cache) {
-        return cache.dropDatatype(this);
+    public Datatype dropFromCache(IMetadataCache cache) {
+        return ((MetadataCache) cache).dropDatatype(this);
     }
 }

@@ -25,13 +25,13 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Calendar;
 
+import org.apache.asterix.common.metadata.AdapterIdentifier;
+import org.apache.asterix.common.metadata.DatasourceAdapter;
 import org.apache.asterix.external.api.IDataSourceAdapter;
-import org.apache.asterix.external.dataset.adapter.AdapterIdentifier;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
 import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
-import org.apache.asterix.metadata.entities.DatasourceAdapter;
 import org.apache.asterix.om.base.ARecord;
 import org.apache.asterix.om.base.AString;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;

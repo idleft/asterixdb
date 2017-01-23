@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.asterix.metadata.entities;
+package org.apache.asterix.common.metadata;
 
-import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 
 /**
@@ -52,13 +51,13 @@ public class Dataverse implements IMetadataEntity<Dataverse> {
     }
 
     @Override
-    public Dataverse addToCache(MetadataCache cache) {
-        return cache.addDataverseIfNotExists(this);
+    public Dataverse addToCache(IMetadataCache cache) {
+        return cache.addIfNotExists(this);
     }
 
     @Override
-    public Dataverse dropFromCache(MetadataCache cache) {
-        return cache.dropDataverse(this);
+    public Dataverse dropFromCache(IMetadataCache cache) {
+        return cache.drop(this);
     }
 
     @Override

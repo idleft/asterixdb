@@ -21,10 +21,10 @@ package org.apache.asterix.metadata.declared;
 import java.util.List;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
+import org.apache.asterix.common.metadata.Dataset;
+import org.apache.asterix.common.metadata.IDatasetDetails;
 import org.apache.asterix.external.api.IAdapterFactory;
-import org.apache.asterix.metadata.IDatasetDetails;
 import org.apache.asterix.metadata.MetadataManager;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.ExternalDatasetDetails;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.InternalDatasetDetails;

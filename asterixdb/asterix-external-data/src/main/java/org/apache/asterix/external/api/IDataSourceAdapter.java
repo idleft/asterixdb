@@ -30,11 +30,6 @@ import org.apache.hyracks.api.comm.IFrameWriter;
  */
 public interface IDataSourceAdapter extends Serializable {
 
-    public enum AdapterType {
-        INTERNAL,
-        EXTERNAL
-    }
-
     /**
      * Triggers the adapter to begin ingesting data from the external source.
      * @param partition

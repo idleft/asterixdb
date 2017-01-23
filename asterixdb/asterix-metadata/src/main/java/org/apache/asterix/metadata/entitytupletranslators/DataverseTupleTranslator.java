@@ -25,11 +25,11 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.Calendar;
 
+import org.apache.asterix.common.metadata.Dataverse;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
 import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
-import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.asterix.om.base.AInt32;
 import org.apache.asterix.om.base.AMutableInt32;
 import org.apache.asterix.om.base.ARecord;

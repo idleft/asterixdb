@@ -17,16 +17,13 @@
  * under the License.
  */
 
-package org.apache.asterix.metadata.entities;
+package org.apache.asterix.common.metadata;
 
 import java.util.Map;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
-import org.apache.asterix.metadata.IDatasetDetails;
-import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.logical.ProjectOperator;
 
 /**
  * Metadata describing a dataset.
@@ -165,12 +162,12 @@ public class Dataset implements IMetadataEntity<Dataset> {
     }
 
     @Override
-    public Dataset addToCache(MetadataCache cache) {
+    public Dataset addToCache(IMetadataCache cache) {
         return cache.addDatasetIfNotExists(this);
     }
 
     @Override
-    public Dataset dropFromCache(MetadataCache cache) {
+    public Dataset dropFromCache(IMetadataCache cache) {
         return cache.dropDataset(this);
     }
 

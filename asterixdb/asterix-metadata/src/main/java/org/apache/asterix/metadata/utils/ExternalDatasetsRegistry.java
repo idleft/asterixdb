@@ -24,8 +24,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
 
 /**
  * This is a singelton class used to maintain the version of each external dataset with indexes

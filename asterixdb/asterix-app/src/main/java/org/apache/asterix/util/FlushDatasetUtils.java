@@ -20,9 +20,9 @@
 package org.apache.asterix.util;
 
 import org.apache.asterix.common.config.CompilerProperties;
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.metadata.MetadataTransactionContext;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.runtime.operators.std.FlushDatasetOperatorDescriptor;
 import org.apache.asterix.runtime.util.AppContextInfo;

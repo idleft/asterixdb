@@ -28,8 +28,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.lang.common.util.FunctionUtil;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.InternalDatasetDetails;
 import org.apache.asterix.om.base.AInt32;
 import org.apache.asterix.om.constants.AsterixConstantValue;

@@ -18,11 +18,12 @@
  */
 package org.apache.asterix.external.feed.api;
 
-import java.io.Serializable;
 import java.util.Map;
-import org.apache.asterix.active.EntityId;
 
-public interface IFeed extends Serializable {
+import org.apache.asterix.active.EntityId;
+import org.apache.asterix.metadata.api.IMetadataEntity;
+
+public interface IFeed extends IMetadataEntity<IFeed> {
 
     public enum FeedType {
         /**

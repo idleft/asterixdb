@@ -25,6 +25,7 @@ import java.util.logging.Logger;
 
 import org.apache.asterix.common.api.IClusterManagementWork.ClusterState;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.metadata.Dataverse;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.statement.DatasetDecl;
 import org.apache.asterix.lang.common.statement.DataverseDropStatement;
@@ -33,7 +34,6 @@ import org.apache.asterix.lang.common.statement.DropDatasetStatement;
 import org.apache.asterix.lang.common.statement.InsertStatement;
 import org.apache.asterix.lang.common.statement.NodeGroupDropStatement;
 import org.apache.asterix.metadata.dataset.hints.DatasetHints;
-import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.asterix.metadata.utils.MetadataConstants;
 import org.apache.asterix.runtime.util.AppContextInfo;
 import org.apache.asterix.runtime.util.ClusterStateManager;

@@ -18,10 +18,5 @@
 package org.apache.asterix.external.feed.watch;
 
 public class FeedActivityDetails {
-    public static final String INTAKE_LOCATIONS = "intake-locations";
-    public static final String COMPUTE_LOCATIONS = "compute-locations";
-    public static final String STORAGE_LOCATIONS = "storage-locations";
-    public static final String COLLECT_LOCATIONS = "collect-locations";
     public static final String FEED_POLICY_NAME = "feed-policy-name";
-    public static final String FEED_CONNECT_TIMESTAMP = "feed-connect-timestamp";
 }

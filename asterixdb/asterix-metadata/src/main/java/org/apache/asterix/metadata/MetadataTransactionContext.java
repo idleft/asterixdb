@@ -22,8 +22,13 @@ package org.apache.asterix.metadata;
 import java.util.ArrayList;
 
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.common.metadata.AdapterIdentifier;
+import org.apache.asterix.common.metadata.CompactionPolicy;
+import org.apache.asterix.common.metadata.Dataset;
+import org.apache.asterix.common.metadata.DatasourceAdapter;
+import org.apache.asterix.common.metadata.Dataverse;
 import org.apache.asterix.common.transactions.JobId;
-import org.apache.asterix.external.dataset.adapter.AdapterIdentifier;
+import org.apache.asterix.external.feed.Feed;
 import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.asterix.metadata.entities.*;

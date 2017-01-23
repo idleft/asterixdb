@@ -28,8 +28,21 @@ import java.util.Map;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.common.metadata.CompactionPolicy;
+import org.apache.asterix.common.metadata.Dataset;
+import org.apache.asterix.common.metadata.DatasourceAdapter;
+import org.apache.asterix.common.metadata.Dataverse;
+import org.apache.asterix.common.metadata.IMetadataCache;
+import org.apache.asterix.external.feed.Feed;
 import org.apache.asterix.metadata.api.IMetadataEntity;
-import org.apache.asterix.metadata.entities.*;
+import org.apache.asterix.metadata.entities.Datatype;
+import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.asterix.metadata.entities.FeedPolicyEntity;
+import org.apache.asterix.metadata.entities.Function;
+import org.apache.asterix.metadata.entities.Index;
+import org.apache.asterix.metadata.entities.InternalDatasetDetails;
+import org.apache.asterix.metadata.entities.Library;
+import org.apache.asterix.metadata.entities.NodeGroup;
 
 /**
  * Caches metadata entities such that the MetadataManager does not have to
@@ -37,33 +50,33 @@ import org.apache.asterix.metadata.entities.*;
  * logging in the MetadataTransactionContext. Note that transaction abort is
  * simply ignored, i.e., updates are not not applied to the cache.
  */
-public class MetadataCache {
+public class MetadataCache implements IMetadataCache {
 
     // Default life time period of a temp dataset. It is 30 days.
     private final static long TEMP_DATASET_INACTIVE_TIME_THRESHOLD = 3600 * 24 * 30 * 1000L;
     // Key is dataverse name.
-    protected final Map<String, Dataverse> dataverses = new HashMap<String, Dataverse>();
+    protected final Map<String, Dataverse> dataverses = new HashMap<>();
     // Key is dataverse name. Key of value map is dataset name.
-    protected final Map<String, Map<String, Dataset>> datasets = new HashMap<String, Map<String, Dataset>>();
+    protected final Map<String, Map<String, Dataset>> datasets = new HashMap<>();
     // Key is dataverse name. Key of value map is dataset name. Key of value map of value map is index name.
-    protected final Map<String, Map<String, Map<String, Index>>> indexes = new HashMap<String, Map<String, Map<String, Index>>>();
+    protected final Map<String, Map<String, Map<String, Index>>> indexes = new HashMap<>();
     // Key is dataverse name. Key of value map is datatype name.
-    protected final Map<String, Map<String, Datatype>> datatypes = new HashMap<String, Map<String, Datatype>>();
+    protected final Map<String, Map<String, Datatype>> datatypes = new HashMap<>();
     // Key is dataverse name.
-    protected final Map<String, NodeGroup> nodeGroups = new HashMap<String, NodeGroup>();
+    protected final Map<String, NodeGroup> nodeGroups = new HashMap<>();
     // Key is function Identifier . Key of value map is function name.
-    protected final Map<FunctionSignature, Function> functions = new HashMap<FunctionSignature, Function>();
+    protected final Map<FunctionSignature, Function> functions = new HashMap<>();
     // Key is adapter dataverse. Key of value map is the adapter name
-    protected final Map<String, Map<String, DatasourceAdapter>> adapters = new HashMap<String, Map<String, DatasourceAdapter>>();
+    protected final Map<String, Map<String, DatasourceAdapter>> adapters = new HashMap<>();
 
     // Key is DataverseName, Key of the value map is the Policy name
-    protected final Map<String, Map<String, FeedPolicyEntity>> feedPolicies = new HashMap<String, Map<String, FeedPolicyEntity>>();
+    protected final Map<String, Map<String, FeedPolicyEntity>> feedPolicies = new HashMap<>();
     // Key is library dataverse. Key of value map is the library name
-    protected final Map<String, Map<String, Library>> libraries = new HashMap<String, Map<String, Library>>();
+    protected final Map<String, Map<String, Library>> libraries = new HashMap<>();
     // Key is library dataverse. Key of value map is the feed name
-    protected final Map<String, Map<String, Feed>> feeds = new HashMap<String, Map<String, Feed>>();
+    protected final Map<String, Map<String, Feed>> feeds = new HashMap<>();
     // Key is DataverseName, Key of the value map is the Policy name
-    protected final Map<String, Map<String, CompactionPolicy>> compactionPolicies = new HashMap<String, Map<String, CompactionPolicy>>();
+    protected final Map<String, Map<String, CompactionPolicy>> compactionPolicies = new HashMap<>();
     // Key is DataverseName, Key of value map is feedConnectionId
     protected final Map<String, Map<String, FeedConnection>> feedConnections = new HashMap<>();
 
@@ -154,7 +167,7 @@ public class MetadataCache {
 
                 Map<String, Dataset> m = datasets.get(dataset.getDataverseName());
                 if (m == null) {
-                    m = new HashMap<String, Dataset>();
+                    m = new HashMap<>();
                     datasets.put(dataset.getDataverseName(), m);
                 }
                 if (!m.containsKey(dataset.getDatasetName())) {
@@ -175,7 +188,7 @@ public class MetadataCache {
         synchronized (datatypes) {
             Map<String, Datatype> m = datatypes.get(datatype.getDataverseName());
             if (m == null) {
-                m = new HashMap<String, Datatype>();
+                m = new HashMap<>();
                 datatypes.put(datatype.getDataverseName(), m);
             }
             if (!m.containsKey(datatype.getDatatypeName())) {
@@ -198,7 +211,7 @@ public class MetadataCache {
         synchronized (compactionPolicy) {
             Map<String, CompactionPolicy> p = compactionPolicies.get(compactionPolicy.getDataverseName());
             if (p == null) {
-                p = new HashMap<String, CompactionPolicy>();
+                p = new HashMap<>();
                 p.put(compactionPolicy.getPolicyName(), compactionPolicy);
                 compactionPolicies.put(compactionPolicy.getDataverseName(), p);
             } else {
@@ -235,7 +248,7 @@ public class MetadataCache {
                                             datatypes.remove(dataverse.getDataverseName());
                                             adapters.remove(dataverse.getDataverseName());
                                             compactionPolicies.remove(dataverse.getDataverseName());
-                                            List<FunctionSignature> markedFunctionsForRemoval = new ArrayList<FunctionSignature>();
+                                            List<FunctionSignature> markedFunctionsForRemoval = new ArrayList<>();
                                             for (FunctionSignature signature : functions.keySet()) {
                                                 if (signature.getNamespace().equals(dataverse.getDataverseName())) {
                                                     markedFunctionsForRemoval.add(signature);
@@ -362,7 +375,7 @@ public class MetadataCache {
     }
 
     public List<Dataset> getDataverseDatasets(String dataverseName) {
-        List<Dataset> retDatasets = new ArrayList<Dataset>();
+        List<Dataset> retDatasets = new ArrayList<>();
         synchronized (datasets) {
             Map<String, Dataset> m = datasets.get(dataverseName);
             if (m == null) {
@@ -376,7 +389,7 @@ public class MetadataCache {
     }
 
     public List<Index> getDatasetIndexes(String dataverseName, String datasetName) {
-        List<Index> retIndexes = new ArrayList<Index>();
+        List<Index> retIndexes = new ArrayList<>();
         synchronized (datasets) {
             Map<String, Index> map = indexes.get(dataverseName).get(datasetName);
             if (map == null) {
@@ -433,7 +446,7 @@ public class MetadataCache {
         synchronized (feedPolicy) {
             Map<String, FeedPolicyEntity> p = feedPolicies.get(feedPolicy.getDataverseName());
             if (p == null) {
-                p = new HashMap<String, FeedPolicyEntity>();
+                p = new HashMap<>();
                 p.put(feedPolicy.getPolicyName(), feedPolicy);
                 feedPolicies.put(feedPolicy.getDataverseName(), p);
             } else {
@@ -460,7 +473,7 @@ public class MetadataCache {
             Map<String, DatasourceAdapter> adaptersInDataverse = adapters
                     .get(adapter.getAdapterIdentifier().getNamespace());
             if (adaptersInDataverse == null) {
-                adaptersInDataverse = new HashMap<String, DatasourceAdapter>();
+                adaptersInDataverse = new HashMap<>();
                 adapters.put(adapter.getAdapterIdentifier().getNamespace(), adaptersInDataverse);
             }
             DatasourceAdapter adapterObject = adaptersInDataverse.get(adapter.getAdapterIdentifier().getName());
@@ -488,7 +501,7 @@ public class MetadataCache {
             boolean needToAddd = (libsInDataverse == null || libsInDataverse.get(library.getName()) != null);
             if (needToAddd) {
                 if (libsInDataverse == null) {
-                    libsInDataverse = new HashMap<String, Library>();
+                    libsInDataverse = new HashMap<>();
                     libraries.put(library.getDataverseName(), libsInDataverse);
                 }
                 return libsInDataverse.put(library.getDataverseName(), library);
@@ -553,12 +566,12 @@ public class MetadataCache {
     private Index addIndexIfNotExistsInternal(Index index) {
         Map<String, Map<String, Index>> datasetMap = indexes.get(index.getDataverseName());
         if (datasetMap == null) {
-            datasetMap = new HashMap<String, Map<String, Index>>();
+            datasetMap = new HashMap<>();
             indexes.put(index.getDataverseName(), datasetMap);
         }
         Map<String, Index> indexMap = datasetMap.get(index.getDatasetName());
         if (indexMap == null) {
-            indexMap = new HashMap<String, Index>();
+            indexMap = new HashMap<>();
             datasetMap.put(index.getDatasetName(), indexMap);
         }
         if (!indexMap.containsKey(index.getIndexName())) {
@@ -602,5 +615,27 @@ public class MetadataCache {
             this.entity = entity;
             this.isAdd = isAdd;
         }
+    }
+
+    @Override
+    public <T> T addIfNotExists(IMetadataEntity<T> entity) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public <T> T drop(IMetadataEntity<T> entity) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Dataset addIfNotExists(Dataset entity) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public Dataset drop(Dataset entity) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

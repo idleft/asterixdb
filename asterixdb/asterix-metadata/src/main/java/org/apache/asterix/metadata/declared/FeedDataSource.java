@@ -22,12 +22,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.external.feed.Feed;
 import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
-import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.FeedPolicyEntity;
 import org.apache.asterix.metadata.feeds.BuiltinFeedPolicies;

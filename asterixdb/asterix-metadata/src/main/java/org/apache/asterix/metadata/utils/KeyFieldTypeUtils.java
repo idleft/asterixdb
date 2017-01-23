@@ -23,7 +23,7 @@ import java.util.List;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.exceptions.AsterixException;
-import org.apache.asterix.metadata.entities.Dataset;
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.metadata.entities.Index;
 import org.apache.asterix.metadata.entities.InternalDatasetDetails;
 import org.apache.asterix.om.types.ARecordType;

@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.dataset.adapter;
+package org.apache.asterix.common.metadata;
 
 import java.io.Serializable;
 

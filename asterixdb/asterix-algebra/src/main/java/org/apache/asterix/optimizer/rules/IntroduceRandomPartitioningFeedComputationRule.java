@@ -18,9 +18,9 @@
  */
 package org.apache.asterix.optimizer.rules;
 
+import org.apache.asterix.external.feed.Feed;
 import org.apache.asterix.metadata.declared.DataSource;
 import org.apache.asterix.metadata.declared.FeedDataSource;
-import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;

@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-import org.apache.asterix.metadata.entities.Dataverse;
-import org.apache.asterix.metadata.entities.Feed;
+import org.apache.asterix.common.metadata.Dataverse;
+import org.apache.asterix.external.feed.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
 
 public class MetadataLockManager {

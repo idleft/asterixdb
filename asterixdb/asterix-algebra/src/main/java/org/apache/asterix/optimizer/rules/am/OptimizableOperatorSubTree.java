@@ -21,9 +21,9 @@ package org.apache.asterix.optimizer.rules.am;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.metadata.declared.DataSource;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.utils.DatasetUtils;
 import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.om.types.ARecordType;

@@ -18,9 +18,9 @@
  */
 package org.apache.asterix.metadata.bootstrap;
 
+import org.apache.asterix.common.metadata.Dataverse;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 import org.apache.asterix.metadata.entities.Datatype;
-import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.asterix.metadata.utils.MetadataConstants;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.IAType;

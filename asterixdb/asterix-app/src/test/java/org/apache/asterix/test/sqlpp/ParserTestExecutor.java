@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.apache.asterix.common.config.GlobalConfig;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.lang.common.base.IParser;
 import org.apache.asterix.lang.common.base.IParserFactory;
 import org.apache.asterix.lang.common.base.IQueryRewriter;
@@ -46,7 +47,6 @@ import org.apache.asterix.lang.sqlpp.rewrites.SqlppRewriterFactory;
 import org.apache.asterix.lang.sqlpp.util.SqlppAstPrintUtil;
 import org.apache.asterix.lang.sqlpp.util.SqlppRewriteUtil;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.test.aql.TestExecutor;
 import org.apache.asterix.test.base.ComparisonException;
 import org.apache.asterix.testframework.context.TestCaseContext;

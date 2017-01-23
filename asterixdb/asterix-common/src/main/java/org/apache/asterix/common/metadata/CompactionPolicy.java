@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.asterix.metadata.entities;
+package org.apache.asterix.common.metadata;
 
-import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 
 /**
@@ -71,12 +70,12 @@ public class CompactionPolicy implements IMetadataEntity<CompactionPolicy> {
     }
 
     @Override
-    public CompactionPolicy addToCache(MetadataCache cache) {
+    public CompactionPolicy addToCache(IMetadataCache cache) {
         return cache.addCompactionPolicyIfNotExists(this);
     }
 
     @Override
-    public CompactionPolicy dropFromCache(MetadataCache cache) {
+    public CompactionPolicy dropFromCache(IMetadataCache cache) {
         return cache.dropCompactionPolicy(this);
     }
 }

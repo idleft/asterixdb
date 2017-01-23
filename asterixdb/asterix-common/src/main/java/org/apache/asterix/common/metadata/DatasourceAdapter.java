@@ -16,17 +16,18 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.metadata.entities;
+package org.apache.asterix.common.metadata;
 
-import org.apache.asterix.external.api.IDataSourceAdapter.AdapterType;
-import org.apache.asterix.external.dataset.adapter.AdapterIdentifier;
-import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 
 public class DatasourceAdapter implements IMetadataEntity<DatasourceAdapter> {
 
     private static final long serialVersionUID = 1L;
 
+    public enum AdapterType {
+        INTERNAL,
+        EXTERNAL
+    }
     private final AdapterIdentifier adapterIdentifier;
     private final String classname;
     private final AdapterType type;
@@ -38,12 +39,12 @@ public class DatasourceAdapter implements IMetadataEntity<DatasourceAdapter> {
     }
 
     @Override
-    public DatasourceAdapter addToCache(MetadataCache cache) {
+    public DatasourceAdapter addToCache(IMetadataCache cache) {
         return cache.addAdapterIfNotExists(this);
     }
 
     @Override
-    public DatasourceAdapter dropFromCache(MetadataCache cache) {
+    public DatasourceAdapter dropFromCache(IMetadataCache cache) {
         return cache.dropAdapter(this);
     }
 

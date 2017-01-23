@@ -60,6 +60,8 @@ public class AqlExecutionTest {
 
     @Test
     public void test() throws Exception {
-        LangExecutionUtil.test(tcCtx);
+        for (int i = 0; i < 5000; i++) {
+            LangExecutionUtil.test(tcCtx);
+        }
     }
 }

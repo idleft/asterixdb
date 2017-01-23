@@ -17,19 +17,18 @@
  * under the License.
  */
 
-package org.apache.asterix.metadata.entities;
+package org.apache.asterix.external.feed;
 
 import java.util.Map;
 
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.common.metadata.IMetadataCache;
 import org.apache.asterix.external.feed.api.IFeed;
-import org.apache.asterix.metadata.MetadataCache;
-import org.apache.asterix.metadata.api.IMetadataEntity;
 
 /**
  * Feed POJO
  */
-public class Feed implements IMetadataEntity<Feed>, IFeed {
+public class Feed implements IFeed {
     private static final long serialVersionUID = 1L;
     public static final String EXTENSION_NAME = "Feed";
 
@@ -87,12 +86,12 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     }
 
     @Override
-    public Feed addToCache(MetadataCache cache) {
+    public Feed addToCache(IMetadataCache cache) {
         return cache.addFeedIfNotExists(this);
     }
 
     @Override
-    public Feed dropFromCache(MetadataCache cache) {
+    public Feed dropFromCache(IMetadataCache cache) {
         return cache.dropFeed(this);
     }
 

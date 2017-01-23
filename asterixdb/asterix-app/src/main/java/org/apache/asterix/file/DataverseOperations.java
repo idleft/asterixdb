@@ -18,8 +18,8 @@
  */
 package org.apache.asterix.file;
 
+import org.apache.asterix.common.metadata.Dataverse;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataverse;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
 import org.apache.hyracks.algebricks.common.utils.Pair;

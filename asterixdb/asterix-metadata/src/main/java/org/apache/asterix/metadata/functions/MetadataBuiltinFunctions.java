@@ -18,8 +18,8 @@
  */
 package org.apache.asterix.metadata.functions;
 
+import org.apache.asterix.common.metadata.Dataset;
 import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.om.typecomputer.base.IResultTypeComputer;
 import org.apache.asterix.om.types.ATypeTag;

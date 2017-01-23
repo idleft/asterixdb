@@ -24,11 +24,11 @@ import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.apache.asterix.common.metadata.CompactionPolicy;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.MetadataException;
 import org.apache.asterix.metadata.bootstrap.MetadataPrimaryIndexes;
 import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
-import org.apache.asterix.metadata.entities.CompactionPolicy;
 import org.apache.asterix.om.base.ARecord;
 import org.apache.asterix.om.base.AString;
 import org.apache.hyracks.api.dataflow.value.ISerializerDeserializer;
