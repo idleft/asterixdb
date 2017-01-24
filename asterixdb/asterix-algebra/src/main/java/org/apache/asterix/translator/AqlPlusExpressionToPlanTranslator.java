@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import java.util.logging.Logger;
 
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
-import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.functions.FunctionConstants;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.transactions.JobId;
@@ -181,11 +181,11 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     private class MetaScopeLogicalVariable {
         private HashMap<Identifier, LogicalVariable> map = new HashMap<Identifier, LogicalVariable>();
 
-        public VariableReferenceExpression getVariableReferenceExpression(Identifier id) throws AsterixException {
+        public VariableReferenceExpression getVariableReferenceExpression(Identifier id) throws CompilationException {
             LogicalVariable var = map.get(id);
             LOGGER.fine("get:" + id + ":" + var);
             if (var == null) {
-                throw new AsterixException("Identifier " + id + " not found in AQL+ meta-scope.");
+                throw new CompilationException("Identifier " + id + " not found in AQL+ meta-scope.");
             }
             return new VariableReferenceExpression(var);
         }
@@ -199,10 +199,10 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     private class MetaScopeILogicalOperator {
         private HashMap<Identifier, ILogicalOperator> map = new HashMap<Identifier, ILogicalOperator>();
 
-        public ILogicalOperator get(Identifier id) throws AsterixException {
+        public ILogicalOperator get(Identifier id) throws CompilationException {
             ILogicalOperator op = map.get(id);
             if (op == null) {
-                throw new AsterixException("Identifier " + id + " not found in AQL+ meta-scope.");
+                throw new CompilationException("Identifier " + id + " not found in AQL+ meta-scope.");
             }
             return op;
         }
@@ -235,12 +235,12 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
         return context.getVarCounter();
     }
 
-    public ILogicalPlan translate(Query expr) throws AlgebricksException, AsterixException {
+    public ILogicalPlan translate(Query expr) throws AlgebricksException, CompilationException {
         return translate(expr, null);
     }
 
     public ILogicalPlan translate(Query expr, MetadataProvider metadata)
-            throws AlgebricksException, AsterixException {
+            throws AlgebricksException, CompilationException {
         IDataFormat format = metadata.getFormat();
         if (format == null) {
             throw new AlgebricksException("Data format has not been set.");
@@ -295,7 +295,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
         return plan;
     }
 
-    public ILogicalPlan translate(List<Clause> clauses) throws AlgebricksException, AsterixException {
+    public ILogicalPlan translate(List<Clause> clauses) throws AlgebricksException, CompilationException {
 
         if (clauses == null) {
             return null;
@@ -319,7 +319,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(ForClause fc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         LogicalVariable v = context.newVar(fc.getVarExpr());
 
         Expression inExpr = fc.getInExpr();
@@ -340,7 +340,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(LetClause lc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         LogicalVariable v;
         ILogicalOperator returnedOp;
 
@@ -367,7 +367,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FLWOGRExpression flwor, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Mutable<ILogicalOperator> flworPlan = tupSource;
         boolean isTop = context.isTopFlwor();
         if (isTop) {
@@ -408,7 +408,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FieldAccessor fa, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Pair<ILogicalExpression, Mutable<ILogicalOperator>> p = aqlExprToAlgExpression(fa.getExpr(), tupSource);
         LogicalVariable v = context.newVar();
         AbstractFunctionCallExpression fldAccess = new ScalarFunctionCallExpression(
@@ -425,7 +425,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(IndexAccessor ia, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Pair<ILogicalExpression, Mutable<ILogicalOperator>> p = aqlExprToAlgExpression(ia.getExpr(), tupSource);
         LogicalVariable v = context.newVar();
         AbstractFunctionCallExpression f;
@@ -447,7 +447,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CallExpr fcall, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         LogicalVariable v = context.newVar();
         FunctionSignature signature = fcall.getFunctionSignature();
         List<Mutable<ILogicalExpression>> args = new ArrayList<Mutable<ILogicalExpression>>();
@@ -518,7 +518,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(GroupbyClause gc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         GroupByOperator gOp = new GroupByOperator();
         Mutable<ILogicalOperator> topOp = tupSource;
         for (GbyVariableExpressionPair ve : gc.getGbyPairList()) {
@@ -571,7 +571,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(IfExpr ifexpr, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         // In the most general case, IfThenElse is translated in the following
         // way.
         //
@@ -634,7 +634,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(OperatorExpr op, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         List<OperatorType> ops = op.getOpList();
         int nOps = ops.size();
 
@@ -712,7 +712,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(OrderbyClause oc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
 
         OrderOperator ord = new OrderOperator();
         Iterator<OrderModifier> modifIter = oc.getModifierList().iterator();
@@ -737,7 +737,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(QuantifiedExpression qe, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Mutable<ILogicalOperator> topOp = tupSource;
 
         ILogicalOperator firstOp = null;
@@ -791,13 +791,13 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(Query q, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         return q.getBody().accept(this, tupSource);
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(RecordConstructor rc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         AbstractFunctionCallExpression f = new ScalarFunctionCallExpression(
                 FunctionUtil.getFunctionInfo(BuiltinFunctions.OPEN_RECORD_CONSTRUCTOR));
         LogicalVariable v1 = context.newVar();
@@ -817,7 +817,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(ListConstructor lc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         FunctionIdentifier fid = (lc.getType() == Type.ORDERED_LIST_CONSTRUCTOR)
                 ? BuiltinFunctions.ORDERED_LIST_CONSTRUCTOR : BuiltinFunctions.UNORDERED_LIST_CONSTRUCTOR;
         AbstractFunctionCallExpression f = new ScalarFunctionCallExpression(FunctionUtil.getFunctionInfo(fid));
@@ -835,7 +835,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(UnaryExpr u, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Expression expr = u.getExpr();
         Pair<ILogicalExpression, Mutable<ILogicalOperator>> eo = aqlExprToAlgExpression(expr, tupSource);
         LogicalVariable v1 = context.newVar();
@@ -865,7 +865,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(WhereClause w, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Pair<ILogicalExpression, Mutable<ILogicalOperator>> p = aqlExprToAlgExpression(w.getWhereExpr(), tupSource);
         SelectOperator s = new SelectOperator(new MutableObject<ILogicalExpression>(p.first), false, null);
         s.getInputs().add(p.second);
@@ -875,7 +875,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(LimitClause lc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Pair<ILogicalExpression, Mutable<ILogicalOperator>> p1 = aqlExprToAlgExpression(lc.getLimitExpr(), tupSource);
         LimitOperator opLim;
         Expression offset = lc.getOffset();
@@ -892,7 +892,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DistinctClause dc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         List<Mutable<ILogicalExpression>> exprList = new ArrayList<Mutable<ILogicalExpression>>();
         Mutable<ILogicalOperator> input = null;
         for (Expression expr : dc.getDistinctByExpr()) {
@@ -907,7 +907,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(UnionExpr unionExpr, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         Mutable<ILogicalOperator> ts = tupSource;
         ILogicalOperator lastOp = null;
         LogicalVariable lastVar = null;
@@ -990,7 +990,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     private AbstractFunctionCallExpression createFunctionCallExpressionForBuiltinOperator(OperatorType t)
-            throws AsterixException {
+            throws CompilationException {
 
         FunctionIdentifier fid = null;
         switch (t) {
@@ -1051,7 +1051,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     private Pair<ILogicalExpression, Mutable<ILogicalOperator>> aqlExprToAlgExpression(Expression expr,
-            Mutable<ILogicalOperator> topOp) throws AsterixException {
+            Mutable<ILogicalOperator> topOp) throws CompilationException {
         switch (expr.getKind()) {
             case VARIABLE_EXPRESSION: {
                 VariableReferenceExpression ve =
@@ -1135,7 +1135,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
     }
 
     private Pair<ILogicalOperator, LogicalVariable> visitAndOrOperator(OperatorExpr op,
-            Mutable<ILogicalOperator> tupSource) throws AsterixException {
+            Mutable<ILogicalOperator> tupSource) throws CompilationException {
         List<OperatorType> ops = op.getOpList();
         int nOps = ops.size();
 
@@ -1183,76 +1183,76 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(TypeDecl td, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(RecordTypeDefinition tre, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(TypeReferenceExpression tre, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(NodegroupDecl ngd, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(LoadStatement stmtLoad, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DropDatasetStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateIndexStatement cis, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(OrderedListTypeDefinition olte, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(UnorderedListTypeDefinition ulte,
-            Mutable<ILogicalOperator> arg) throws AsterixException {
+            Mutable<ILogicalOperator> arg) throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visitMetaVariableClause(MetaVariableClause mc,
-            Mutable<ILogicalOperator> tupSource) throws AsterixException {
+            Mutable<ILogicalOperator> tupSource) throws CompilationException {
         return new Pair<ILogicalOperator, LogicalVariable>(metaScopeOp.get(mc.getVar()), null);
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visitJoinClause(JoinClause jc, Mutable<ILogicalOperator> tupSource)
-            throws AsterixException {
+            throws CompilationException {
         // Pair<ILogicalOperator, LogicalVariable> leftSide =
         // jc.getLeftExpr().accept(this, tupSource);
         Mutable<ILogicalOperator> opRef = tupSource;
@@ -1295,7 +1295,7 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visitMetaVariableExpr(MetaVariableExpr me,
-            Mutable<ILogicalOperator> tupSource) throws AsterixException {
+            Mutable<ILogicalOperator> tupSource) throws CompilationException {
         LogicalVariable var = context.newVar();
         AssignOperator a = new AssignOperator(var,
                 new MutableObject<ILogicalExpression>(metaScopeExp.getVariableReferenceExpression(me.getVar())));
@@ -1336,168 +1336,168 @@ public class AqlPlusExpressionToPlanTranslator extends AbstractLangTranslator
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(InsertStatement insert, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DeleteStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(UpdateStatement update, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(UpdateClause del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DataverseDecl dv, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DatasetDecl dd, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(SetStatement ss, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(WriteStatement ws, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateDataverseStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(IndexDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(NodeGroupDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DataverseDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(TypeDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(DisconnectFeedStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateFunctionStatement cfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FunctionDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(ConnectFeedStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FeedDropStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CompactStatement del, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedStatement cfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(StartFeedStatement sfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(StopFeedStatement sfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(CreateFeedPolicyStatement cfps, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
     public Pair<ILogicalOperator, LogicalVariable> visit(FeedPolicyDropStatement dfs, Mutable<ILogicalOperator> arg)
-            throws AsterixException {
+            throws CompilationException {
         // TODO Auto-generated method stub
         return null;
     }

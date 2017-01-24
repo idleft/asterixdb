@@ -45,7 +45,7 @@ import org.apache.asterix.common.annotations.TypeDataGen;
 import org.apache.asterix.common.annotations.UndeclaredFieldsDataGen;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
-import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.lang.common.base.Expression;
 import org.apache.asterix.lang.common.base.Literal;
@@ -258,7 +258,7 @@ class SQLPPParser extends ScopeChecker implements IParser {
         super.setInput(s);
     }
 
-    public static void main(String args[]) throws ParseException, TokenMgrError, IOException, FileNotFoundException, AsterixException {
+    public static void main(String args[]) throws ParseException, TokenMgrError, IOException, FileNotFoundException, CompilationException {
         File file = new File(args[0]);
         Reader fis = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"));
         SQLPPParser parser = new SQLPPParser(fis);
@@ -266,15 +266,15 @@ class SQLPPParser extends ScopeChecker implements IParser {
         //st.accept(new SQLPPPrintVisitor(), 0);
     }
 
-    public List<Statement> parse() throws AsterixException {
+    public List<Statement> parse() throws CompilationException {
         try {
             return Statement();
         } catch (Error e) {
             // this is here as the JavaCharStream that's below the lexer somtimes throws Errors that are not handled
             // by the ANTLR-generated lexer or parser (e.g it does this for invalid backslash u + 4 hex digits escapes)
-            throw new AsterixException(new ParseException(e.getMessage()));
+            throw new CompilationException(new ParseException(e.getMessage()));
         } catch (ParseException e) {
-            throw new AsterixException("Syntax error: " + getMessage(e));
+            throw new CompilationException("Syntax error: " + getMessage(e));
         }
     }
 
@@ -1802,7 +1802,7 @@ Expression AndExpr()throws ParseException:
         }
         try{
            op.addOperator(token.image.toLowerCase());
-        } catch (AsterixException e){
+        } catch (CompilationException e){
            throw new ParseException(e.getMessage());
         }
     }
@@ -1848,7 +1848,7 @@ Expression RelExpr()throws ParseException:
     operand = BetweenExpr()
 
     (
-      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> | <LG> |<SIMILAR> | (<NOT> { not = true; })? (<LIKE>|<IN>))
+      LOOKAHEAD(2)( <LT> | <GT> | <LE> | <GE> | <EQ> | <NE> | <LG> |<SIMILAR> | (<NOT> { not = true; })? <IN>)
         {
           String mhint = getHint(token);
           if (mhint != null) {
@@ -1875,7 +1875,7 @@ Expression RelExpr()throws ParseException:
           }
           try{
             op.addOperator(operator);
-          } catch (AsterixException e){
+          } catch (CompilationException e){
             throw new ParseException(e.getMessage());
           }
         }
@@ -1893,6 +1893,7 @@ Expression RelExpr()throws ParseException:
        return op==null? operand: op;
      }
 }
+
 
 Expression BetweenExpr()throws ParseException:
 {
@@ -1926,7 +1927,7 @@ Expression BetweenExpr()throws ParseException:
           }
           try{
             op.addOperator(operator);
-          } catch (AsterixException e){
+          } catch (CompilationException e){
             throw new ParseException(e.getMessage());
           }
         }
@@ -1958,7 +1959,7 @@ Expression IsExpr() throws ParseException:
     boolean not = false;
 }
 {
-    operand = ConcatExpr()
+    operand = LikeExpr()
     ( <IS> (<NOT> { not = true; })? (<NULL> | <MISSING> | <UNKOWN>)
       {
         String functionName = "is-" + token.image.toLowerCase();
@@ -1973,6 +1974,45 @@ Expression IsExpr() throws ParseException:
     {
         return expr = expr==null? operand : expr;
     }
+}
+
+
+Expression LikeExpr()throws ParseException:
+{
+  boolean not = false;
+  OperatorExpr op = null;
+  Expression operand = null;
+}
+{
+    operand = ConcatExpr()
+    (
+        LOOKAHEAD(2)
+        (<NOT> { not = true; })? <LIKE>
+        {
+          op = new OperatorExpr();
+          op.addOperand(operand);
+          op.setCurrentop(true);
+
+          String operator = token.image.toLowerCase();
+          if (not) {
+            operator = "not_" + operator;
+          }
+          try{
+            op.addOperator(operator);
+          } catch (CompilationException e){
+            throw new ParseException(e.getMessage());
+          }
+        }
+
+        operand = ConcatExpr()
+        {
+          op.addOperand(operand);
+        }
+     )?
+
+     {
+       return op == null ? operand : op;
+     }
 }
 
 Expression ConcatExpr()throws ParseException:
@@ -2120,7 +2160,7 @@ Expression UnaryExpr() throws ParseException:
         uexpr = new UnaryExpr();
         try{
             uexpr.setExprType(exprType);
-        } catch (AsterixException e){
+        } catch (CompilationException e){
             throw new ParseException(e.getMessage());
         }
     }

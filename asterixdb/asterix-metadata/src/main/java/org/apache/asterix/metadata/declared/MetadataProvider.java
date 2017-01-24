@@ -25,19 +25,20 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.asterix.common.config.StorageProperties;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.ExternalFilePendingOp;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
 import org.apache.asterix.common.config.GlobalConfig;
+import org.apache.asterix.common.config.StorageProperties;
 import org.apache.asterix.common.context.AsterixVirtualBufferCacheProvider;
 import org.apache.asterix.common.context.ITransactionSubsystemProvider;
 import org.apache.asterix.common.context.TransactionSubsystemProvider;
+import org.apache.asterix.common.dataflow.IApplicationContextInfo;
 import org.apache.asterix.common.dataflow.LSMIndexUtil;
 import org.apache.asterix.common.dataflow.LSMInvertedIndexInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
-import org.apache.asterix.common.dataflow.IApplicationContextInfo;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.ioopcallbacks.LSMBTreeIOOperationCallbackFactory;
 import org.apache.asterix.common.ioopcallbacks.LSMBTreeWithBuddyIOOperationCallbackFactory;
 import org.apache.asterix.common.ioopcallbacks.LSMInvertedIndexIOOperationCallbackFactory;
@@ -46,7 +47,7 @@ import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.common.transactions.IRecoveryManager.ResourceType;
 import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
-import org.apache.asterix.dataflow.data.nontagged.valueproviders.AqlPrimitiveValueProviderFactory;
+import org.apache.asterix.dataflow.data.nontagged.valueproviders.PrimitiveValueProviderFactory;
 import org.apache.asterix.external.adapter.factory.LookupAdapterFactory;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.api.IDataSourceAdapter;
@@ -94,8 +95,8 @@ import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.runtime.operators.LSMInvertedIndexUpsertOperatorDescriptor;
 import org.apache.asterix.runtime.operators.LSMTreeUpsertOperatorDescriptor;
 import org.apache.asterix.runtime.util.AppContextInfo;
-import org.apache.asterix.runtime.util.RuntimeComponentsProvider;
 import org.apache.asterix.runtime.util.ClusterStateManager;
+import org.apache.asterix.runtime.util.RuntimeComponentsProvider;
 import org.apache.asterix.transaction.management.opcallbacks.LockThenSearchOperationCallbackFactory;
 import org.apache.asterix.transaction.management.opcallbacks.PrimaryIndexInstantSearchOperationCallbackFactory;
 import org.apache.asterix.transaction.management.opcallbacks.PrimaryIndexModificationOperationCallbackFactory;
@@ -415,18 +416,18 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
         return new Pair<>(dataScanner, constraint);
     }
 
-    public IDataFormat getDataFormat(String dataverseName) throws AsterixException {
+    public IDataFormat getDataFormat(String dataverseName) throws CompilationException {
         Dataverse dataverse = MetadataManager.INSTANCE.getDataverse(mdTxnCtx, dataverseName);
         IDataFormat format;
         try {
             format = (IDataFormat) Class.forName(dataverse.getDataFormat()).newInstance();
         } catch (Exception e) {
-            throw new AsterixException(e);
+            throw new CompilationException(e);
         }
         return format;
     }
 
-    public Dataverse findDataverse(String dataverseName) throws AsterixException {
+    public Dataverse findDataverse(String dataverseName) throws CompilationException {
         return MetadataManager.INSTANCE.getDataverse(mdTxnCtx, dataverseName);
     }
 
@@ -637,7 +638,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
             IPrimitiveValueProviderFactory[] valueProviderFactories =
                     new IPrimitiveValueProviderFactory[numNestedSecondaryKeyFields];
             for (int i = 0; i < numNestedSecondaryKeyFields; i++) {
-                valueProviderFactories[i] = AqlPrimitiveValueProviderFactory.INSTANCE;
+                valueProviderFactories[i] = PrimitiveValueProviderFactory.INSTANCE;
             }
 
             RecordDescriptor outputRecDesc = JobGenHelper.mkRecordDescriptor(typeEnv, opSchema, context);
@@ -1734,7 +1735,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
                 comparatorFactories[i] = BinaryComparatorFactoryProvider.INSTANCE
                         .getBinaryComparatorFactory(nestedKeyType, true);
                 typeTraits[i] = TypeTraitProvider.INSTANCE.getTypeTrait(nestedKeyType);
-                valueProviderFactories[i] = AqlPrimitiveValueProviderFactory.INSTANCE;
+                valueProviderFactories[i] = PrimitiveValueProviderFactory.INSTANCE;
             }
             List<List<String>> partitioningKeys = DatasetUtils.getPartitioningKeys(dataset);
             for (List<String> partitioningKey : partitioningKeys) {

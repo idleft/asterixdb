@@ -26,12 +26,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.asterix.common.config.StorageProperties;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.ExternalDatasetTransactionState;
 import org.apache.asterix.common.config.DatasetConfig.ExternalFilePendingOp;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
 import org.apache.asterix.common.config.IPropertiesProvider;
+import org.apache.asterix.common.config.StorageProperties;
 import org.apache.asterix.common.context.AsterixVirtualBufferCacheProvider;
 import org.apache.asterix.common.dataflow.LSMIndexUtil;
 import org.apache.asterix.common.exceptions.AsterixException;
@@ -39,7 +39,7 @@ import org.apache.asterix.common.ioopcallbacks.LSMBTreeIOOperationCallbackFactor
 import org.apache.asterix.common.ioopcallbacks.LSMBTreeWithBuddyIOOperationCallbackFactory;
 import org.apache.asterix.common.ioopcallbacks.LSMRTreeIOOperationCallbackFactory;
 import org.apache.asterix.common.transactions.IResourceFactory;
-import org.apache.asterix.dataflow.data.nontagged.valueproviders.AqlPrimitiveValueProviderFactory;
+import org.apache.asterix.dataflow.data.nontagged.valueproviders.PrimitiveValueProviderFactory;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.indexing.FilesIndexDescription;
@@ -111,6 +111,9 @@ public class ExternalIndexingOperations {
     public static final List<List<String>> FILE_INDEX_FIELD_NAMES = Collections
             .singletonList(Collections.singletonList(""));
     public static final List<IAType> FILE_INDEX_FIELD_TYPES = Collections.singletonList(BuiltinType.ASTRING);
+
+    private ExternalIndexingOperations() {
+    }
 
     public static boolean isIndexible(ExternalDatasetDetails ds) {
         String adapter = ds.getAdapter();
@@ -598,7 +601,7 @@ public class ExternalIndexingOperations {
             secondaryComparatorFactories[i] = BinaryComparatorFactoryProvider.INSTANCE
                     .getBinaryComparatorFactory(nestedKeyType, true);
             secondaryTypeTraits[i] = TypeTraitProvider.INSTANCE.getTypeTrait(nestedKeyType);
-            valueProviderFactories[i] = AqlPrimitiveValueProviderFactory.INSTANCE;
+            valueProviderFactories[i] = PrimitiveValueProviderFactory.INSTANCE;
         }
         // Add serializers and comparators for primary index fields.
         for (int i = 0; i < numPrimaryKeys; i++) {

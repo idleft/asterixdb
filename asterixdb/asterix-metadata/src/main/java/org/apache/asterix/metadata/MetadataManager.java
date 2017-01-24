@@ -51,7 +51,6 @@ import org.apache.asterix.metadata.entities.Node;
 import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
-import org.apache.hadoop.hive.ql.io.orc.Metadata;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 /**

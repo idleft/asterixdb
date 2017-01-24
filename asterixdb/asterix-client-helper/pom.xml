@@ -66,6 +66,53 @@
         </executions>
       </plugin>
       <plugin>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>license-automation-plugin</artifactId>
+        <version>${hyracks.version}</version>
+        <executions>
+          <execution>
+            <phase>generate-resources</phase>
+            <goals>
+              <goal>generate</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <templateRootDir>${basedir}/../../</templateRootDir>
+          <generatedFiles>
+            <generatedFile>
+              <template>asterixdb/src/main/licenses/templates/asterix-license.ftl</template>
+              <outputFile>LICENSE</outputFile>
+            </generatedFile>
+          </generatedFiles>
+          <location>repo/</location>
+          <licenseMapOutputFile>${project.build.directory}/generated-resources/license_map.json</licenseMapOutputFile>
+          <excludes>
+            <exclude>org.apache.asterix:*</exclude>
+            <exclude>org.apache.algebricks:*</exclude>
+            <exclude>org.apache.hyracks:*</exclude>
+          </excludes>
+          <licenseDirectory>${basedir}/../src/main/licenses/content</licenseDirectory>
+          <models>
+            <model>${basedir}/../src/main/appended-resources/supplemental-models.xml</model>
+          </models>
+          <licenses>
+            <license>
+              <url>https://raw.githubusercontent.com/mojohaus/appassembler/master/LICENSE.txt</url>
+              <aliasUrls>http://svn.codehaus.org/mojo/trunk/mojo/appassembler/LICENSE.txt</aliasUrls>
+            </license>
+            <license>
+              <url>https://java.net/projects/stax-utils/sources/svn/content/trunk/LICENSE</url>
+              <contentFile>stax-utils_LICENSE.txt</contentFile>
+              <displayName>a BSD-style License</displayName>
+              <aliasUrls>
+                <aliasUrl>https://stax-utils.dev.java.net/source/browse/*checkout*/stax-utils/LICENSE</aliasUrl>
+              </aliasUrls>
+            </license>
+          </licenses>
+        </configuration>
+      </plugin>
+      <plugin>
         <artifactId>maven-assembly-plugin</artifactId>
         <version>2.6</version>
         <executions>
@@ -81,7 +128,46 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-dependency-plugin</artifactId>
+        <version>2.10</version>
+        <configuration>
+          <usedDependencies>
+            <usedDependency>org.codehaus.mojo.appassembler:appassembler-booter</usedDependency>
+            <usedDependency>javax.servlet:javax.servlet-api</usedDependency>
+          </usedDependencies>
+        </configuration>
+      </plugin>
     </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.eclipse.m2e</groupId>
+          <artifactId>lifecycle-mapping</artifactId>
+          <version>1.0.0</version>
+          <configuration>
+            <lifecycleMappingMetadata>
+              <pluginExecutions>
+                <pluginExecution>
+                  <pluginExecutionFilter>
+                    <groupId>org.apache.hyracks</groupId>
+                    <artifactId>license-automation-plugin</artifactId>
+                    <versionRange>${hyracks.version}</versionRange>
+                    <goals>
+                      <goal>generate</goal>
+                    </goals>
+                  </pluginExecutionFilter>
+                  <action>
+                    <ignore />
+                  </action>
+                </pluginExecution>
+              </pluginExecutions>
+            </lifecycleMappingMetadata>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
   <dependencies>
     <dependency>
@@ -110,10 +196,6 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-core</artifactId>
     </dependency>
   </dependencies>
 </project>

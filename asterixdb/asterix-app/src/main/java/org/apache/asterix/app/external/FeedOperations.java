@@ -103,7 +103,6 @@ import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 import org.apache.hyracks.dataflow.std.misc.NullSinkOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
-import org.json.JSONException;
 
 /**
  * Provides helper method(s) for creating JobSpec for operations on a feed.
@@ -155,7 +154,7 @@ public class FeedOperations {
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider,
             FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
             DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc)
-            throws AlgebricksException, RemoteException, ACIDException, JSONException {
+            throws AlgebricksException, RemoteException, ACIDException {
         PrintWriter writer = new PrintWriter(System.err, true);
         SessionConfig pc = new SessionConfig(writer, SessionConfig.OutputFormat.ADM);
         DataverseDecl dataverseDecl = new DataverseDecl(new Identifier(feedConnection.getDataverseName()));

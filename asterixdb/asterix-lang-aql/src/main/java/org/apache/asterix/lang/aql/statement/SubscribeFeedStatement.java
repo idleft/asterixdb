@@ -26,7 +26,7 @@ import java.util.logging.Logger;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.exceptions.ACIDException;
-import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
@@ -133,7 +133,7 @@ public class SubscribeFeedStatement implements Statement {
         try {
             statements = parser.parse();
             query = ((InsertStatement) statements.get(INSERT_STATEMENT_POS)).getQuery();
-        } catch (AsterixException pe) {
+        } catch (CompilationException pe) {
             throw new MetadataException(pe);
         }
 
@@ -161,7 +161,7 @@ public class SubscribeFeedStatement implements Statement {
     }
 
     @Override
-    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws AsterixException {
+    public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws CompilationException {
         return null;
     }
 
