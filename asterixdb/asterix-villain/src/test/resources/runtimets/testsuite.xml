@@ -17,16 +17,6 @@
  ! under the License.
  !-->
 <!-- Keep test-suite list in Alphabetical order. -->
-<!DOCTYPE test-suite [
-
-             <!ENTITY APIQueries SYSTEM "queries/api/APIQueries.xml">
-             <!ENTITY ComparisonQueries SYSTEM "queries/comparison/ComparisonQueries.xml">
-             <!ENTITY DeepEqualQueries SYSTEM "queries/comparison/deep_equal/DeepEqualQueries.xml">
-             <!ENTITY RecordsQueries SYSTEM "queries/objects/ObjectsQueries.xml">
-             <!ENTITY TemporalQueries SYSTEM "queries/temporal/TemporalQueries.xml">
-
-             ]>
-
 <test-suite
              xmlns="urn:xml.testframework.asterix.apache.org"
              ResultOffsetPath="results"

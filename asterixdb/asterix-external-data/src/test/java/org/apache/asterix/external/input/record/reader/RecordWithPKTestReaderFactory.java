@@ -19,6 +19,7 @@
 package org.apache.asterix.external.input.record.reader;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +36,7 @@ public class RecordWithPKTestReaderFactory implements IRecordReaderFactory<Recor
 
     private static final long serialVersionUID = 1L;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
-    private String[] recordReaderNames = {};
+    private static final List<String> recordReaderNames = Collections.unmodifiableList(Arrays.asList());
 
 
     @Override
@@ -60,6 +61,6 @@ public class RecordWithPKTestReaderFactory implements IRecordReaderFactory<Recor
     }
 
     @Override public List<String> getRecordReaderNames() {
-        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
+        return recordReaderNames;
     }
 }

@@ -46,9 +46,9 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     protected Map<String, String> configuration;
     protected Format format;
     protected String recordReaderName;
-    private String[] recordReaderNames = { ExternalDataConstants.ALIAS_LOCALFS_ADAPTER,
+    private static final List<String> recordReaderNames = Collections.unmodifiableList(Arrays.asList(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER,
             ExternalDataConstants.ALIAS_SOCKET_ADAPTER, ExternalDataConstants.SOCKET,
-            ExternalDataConstants.STREAM_SOCKET_CLIENT };
+            ExternalDataConstants.STREAM_SOCKET_CLIENT));
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -97,6 +97,6 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     @Override
     public List<String> getRecordReaderNames() {
-        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
+        return recordReaderNames;
     }
 }

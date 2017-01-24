@@ -22,7 +22,6 @@ import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.util.List;
-import java.util.Set;
 
 public interface IRecordReaderFactory<T> extends IExternalDataSourceFactory {
 

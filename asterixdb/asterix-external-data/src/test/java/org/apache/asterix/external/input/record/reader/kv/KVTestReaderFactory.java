@@ -42,7 +42,7 @@ public class KVTestReaderFactory implements IRecordReaderFactory<DCPRequest> {
     private int upsertCycle = 0;
     private int numOfReaders;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
-    private String[] recordReaderNames = {};
+    private static final List<String> recordReaderNames = Collections.unmodifiableList(Arrays.asList());
 
     @Override
     public AlgebricksAbsolutePartitionConstraint getPartitionConstraint() {
@@ -83,6 +83,6 @@ public class KVTestReaderFactory implements IRecordReaderFactory<DCPRequest> {
     }
 
     @Override public List<String> getRecordReaderNames() {
-        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
+        return recordReaderNames;
     }
 }

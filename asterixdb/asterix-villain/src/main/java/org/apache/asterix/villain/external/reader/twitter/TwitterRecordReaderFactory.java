@@ -50,13 +50,14 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
 
     private Map<String, String> configuration;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
-    private static final String[] recordReaderNames = { ExternalDataConstants.READER_TWITTER_PULL,
+    private static final List<String> recordReaderNames = Collections
+            .unmodifiableList(Arrays.asList(ExternalDataConstants.READER_TWITTER_PULL,
             ExternalDataConstants.READER_TWITTER_PUSH, ExternalDataConstants.READER_PUSH_TWITTER,
-            ExternalDataConstants.READER_PULL_TWITTER, ExternalDataConstants.READER_USER_STREAM_TWITTER };
+                    ExternalDataConstants.READER_PULL_TWITTER, ExternalDataConstants.READER_USER_STREAM_TWITTER));
 
     @Override
     public List<String> getRecordReaderNames() {
-        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
+        return recordReaderNames;
     }
 
     @Override

@@ -76,7 +76,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
     private InputSplit[] inputSplits;
     private String nodeName;
     private Format format;
-    private String[] recordReaderNames = { "hdfs" };
+    private static final List recordReaderNames = Collections.unmodifiableList(Arrays.asList("hdfs"));
 
     @Override
     public void configure(Map<String, String> configuration) throws AsterixException {
@@ -231,7 +231,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
     }
 
     @Override
-    public List<String> getRecordReaderNames() {
-        return Collections.unmodifiableList(Arrays.asList(recordReaderNames));
+    public List getRecordReaderNames() {
+        return recordReaderNames;
     }
 }
