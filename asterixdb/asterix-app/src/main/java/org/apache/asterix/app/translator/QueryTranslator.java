@@ -172,6 +172,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
@@ -2158,14 +2159,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         .getDatasetName()));
             }
 
-            org.apache.commons.lang3.tuple.Pair<JobSpecification, IAdapterFactory> intakeInfo = FeedOperations
-                    .buildFeedIntakeJobSpec(feed, metadataProvider, new FeedPolicyAccessor(new HashMap<>()));
+            org.apache.commons.lang3.tuple.Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> jobInfo =
+                    FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
+                            compilationProvider, qtFactory, hcc);
 
-            JobSpecification feedJob = FeedOperations.buildStartFeedJob(metadataProvider, feed, feedConnections,
-                    compilationProvider, qtFactory, hcc, intakeInfo);
-
-            listener = new FeedEventsListener(entityId, datasets, intakeInfo.getRight().getPartitionConstraint()
-                    .getLocations());
+            JobSpecification feedJob = jobInfo.getLeft();
+            listener = new FeedEventsListener(entityId, datasets, jobInfo.getRight().getLocations());
             ActiveJobNotificationHandler.INSTANCE.registerListener(listener);
             IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STARTED);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);

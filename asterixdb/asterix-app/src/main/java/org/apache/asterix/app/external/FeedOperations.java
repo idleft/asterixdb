@@ -112,7 +112,7 @@ public class FeedOperations {
 
     static final Logger LOGGER = Logger.getLogger(FeedOperations.class.getName());
 
-    public static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
+    private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
             MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
         JobSpecification spec = JobSpecificationUtils.createJobSpecification();
         spec.setFrameSize(FeedConstants.JobConstants.DEFAULT_FRAME_SIZE);
@@ -362,10 +362,13 @@ public class FeedOperations {
         return jobSpec;
     }
 
-    public static JobSpecification buildStartFeedJob(MetadataProvider metadataProvider, Feed feed,
-            List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
-            DefaultStatementExecutorFactory qtFactory, IHyracksClientConnection hcc,
-            Pair<JobSpecification, IAdapterFactory> intakeInfo) throws Exception {
+    public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
+            MetadataProvider metadataProvider, Feed feed, List<FeedConnection> feedConnections,
+            ILangCompilationProvider compilationProvider, DefaultStatementExecutorFactory qtFactory,
+            IHyracksClientConnection hcc) throws Exception {
+        FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
+        // TODO: Change the default Datasource to use all possible partitions
+        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
         //TODO: Add feed policy accessor
         List<JobSpecification> jobsList = new ArrayList<>();
         // Construct the ingestion Job
@@ -378,8 +381,8 @@ public class FeedOperations {
                     compilationProvider, qtFactory, hcc);
             jobsList.add(connectionJob);
         }
-        return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
-                ingestionLocations);
+        return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+                ingestionLocations), intakeInfo.getRight().getPartitionConstraint());
     }
 
     public static void SendStopMessageToNode(EntityId feedId, String intakeNodeLocation, Integer partition)
