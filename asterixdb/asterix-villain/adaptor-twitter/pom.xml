@@ -36,12 +36,12 @@
         <dependency>
             <groupId>org.apache.hyracks</groupId>
             <artifactId>hyracks-util</artifactId>
-            <version>0.2.18-SNAPSHOT</version>
+            <version>${hyracks.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hyracks</groupId>
             <artifactId>hyracks-data-std</artifactId>
-            <version>0.2.18-SNAPSHOT</version>
+            <version>${hyracks.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.asterix</groupId>
@@ -56,12 +56,12 @@
         <dependency>
             <groupId>org.apache.hyracks</groupId>
             <artifactId>hyracks-api</artifactId>
-            <version>0.2.18-SNAPSHOT</version>
+            <version>${hyracks.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hyracks</groupId>
             <artifactId>algebricks-common</artifactId>
-            <version>0.2.18-SNAPSHOT</version>
+            <version>${algebricks.version}</version>
         </dependency>
     </dependencies>
 
