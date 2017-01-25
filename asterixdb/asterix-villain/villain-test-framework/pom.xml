@@ -33,6 +33,8 @@
                         <usedDependency>org.apache.asterix:asterix-common</usedDependency>
                         <usedDependency>org.apache.hadoop:hadoop-minicluster</usedDependency>
                         <usedDependency>org.apache.asterix:asterix-app</usedDependency>
+                        <usedDependency>org.apache.asterix:adaptor-twitter</usedDependency>
+                        <usedDependency>org.apache.asterix:adaptor-rss</usedDependency>
                     </usedDependencies>
                 </configuration>
             </plugin>
@@ -81,14 +83,12 @@
         <dependency>
             <groupId>org.apache.asterix</groupId>
             <artifactId>adaptor-rss</artifactId>
-            <type>jar</type>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.asterix</groupId>
             <artifactId>adaptor-twitter</artifactId>
-            <type>jar</type>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
