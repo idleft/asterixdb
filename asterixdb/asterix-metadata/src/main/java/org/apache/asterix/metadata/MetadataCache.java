@@ -29,18 +29,7 @@ import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.IndexType;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.metadata.api.IMetadataEntity;
-import org.apache.asterix.metadata.entities.CompactionPolicy;
-import org.apache.asterix.metadata.entities.Dataset;
-import org.apache.asterix.metadata.entities.DatasourceAdapter;
-import org.apache.asterix.metadata.entities.Datatype;
-import org.apache.asterix.metadata.entities.Dataverse;
-import org.apache.asterix.metadata.entities.Feed;
-import org.apache.asterix.metadata.entities.FeedPolicyEntity;
-import org.apache.asterix.metadata.entities.Function;
-import org.apache.asterix.metadata.entities.Index;
-import org.apache.asterix.metadata.entities.InternalDatasetDetails;
-import org.apache.asterix.metadata.entities.Library;
-import org.apache.asterix.metadata.entities.NodeGroup;
+import org.apache.asterix.metadata.entities.*;
 
 /**
  * Caches metadata entities such that the MetadataManager does not have to
@@ -75,6 +64,8 @@ public class MetadataCache {
     protected final Map<String, Map<String, Feed>> feeds = new HashMap<String, Map<String, Feed>>();
     // Key is DataverseName, Key of the value map is the Policy name
     protected final Map<String, Map<String, CompactionPolicy>> compactionPolicies = new HashMap<String, Map<String, CompactionPolicy>>();
+    // Key is DataverseName, Key of value map is feedConnectionId
+    protected final Map<String, Map<String, FeedConnection>> feedConnections = new HashMap<>();
 
     // Atomically executes all metadata operations in ctx's log.
     public void commit(MetadataTransactionContext ctx) {
@@ -398,28 +389,13 @@ public class MetadataCache {
         }
     }
 
-    /**
-     * Represents a logical operation against the metadata.
-     */
-    protected class MetadataLogicalOperation {
-        // Entity to be added/dropped.
-        public final IMetadataEntity<?> entity;
-        // True for add, false for drop.
-        public final boolean isAdd;
-
-        public MetadataLogicalOperation(IMetadataEntity<?> entity, boolean isAdd) {
-            this.entity = entity;
-            this.isAdd = isAdd;
-        }
-    };
-
-    protected void doOperation(MetadataLogicalOperation op) {
+        protected void doOperation(MetadataLogicalOperation op) {
         if (op.isAdd) {
             op.entity.addToCache(this);
         } else {
             op.entity.dropFromCache(this);
         }
-    }
+    };
 
     protected void undoOperation(MetadataLogicalOperation op) {
         if (!op.isAdd) {
@@ -531,8 +507,37 @@ public class MetadataCache {
         }
     }
 
+    public FeedConnection addFeedConnectionIfNotExists(FeedConnection feedConnection) {
+        synchronized (feedConnections) {
+            Map<String, FeedConnection> feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
+            if (feedConnsInDataverse == null) {
+                feedConnections.put(feedConnection.getDataverseName(), new HashMap<>());
+                feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
+            }
+            return feedConnsInDataverse.put(feedConnection.getConnectionId(), feedConnection);
+        }
+    }
+
+    public FeedConnection dropFeedConnection(FeedConnection feedConnection) {
+        synchronized (feedConnections) {
+            Map<String, FeedConnection> feedConnsInDataverse = feedConnections.get(feedConnection.getDataverseName());
+            if (feedConnsInDataverse != null) {
+                return feedConnsInDataverse.remove(feedConnection.getConnectionId());
+            } else {
+                return null;
+            }
+        }
+    }
+
     public Feed addFeedIfNotExists(Feed feed) {
-        return null;
+        synchronized (feeds) {
+            Map<String, Feed> feedsInDataverse = feeds.get(feed.getDataverseName());
+            if (feedsInDataverse == null) {
+                feeds.put(feed.getDataverseName(), new HashMap<>());
+                feedsInDataverse = feeds.get(feed.getDataverseName());
+            }
+            return feedsInDataverse.put(feed.getFeedName(), feed);
+        }
     }
 
     public Feed dropFeed(Feed feed) {
@@ -581,6 +586,21 @@ public class MetadataCache {
                     }
                 }
             }
+        }
+    }
+
+/**
+     * Represents a logical operation against the metadata.
+     */
+    protected class MetadataLogicalOperation {
+        // Entity to be added/dropped.
+        public final IMetadataEntity<?> entity;
+        // True for add, false for drop.
+        public final boolean isAdd;
+
+        public MetadataLogicalOperation(IMetadataEntity<?> entity, boolean isAdd) {
+            this.entity = entity;
+            this.isAdd = isAdd;
         }
     }
 }
