@@ -24,7 +24,6 @@ import java.util.logging.Logger;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveRuntime;
-import org.apache.hyracks.api.context.IHyracksTaskContext;
 
 public class IngestionRuntime implements IActiveRuntime {
 

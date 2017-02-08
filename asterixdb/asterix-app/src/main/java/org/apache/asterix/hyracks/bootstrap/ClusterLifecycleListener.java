@@ -19,6 +19,7 @@
 package org.apache.asterix.hyracks.bootstrap;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +41,7 @@ import org.apache.asterix.metadata.cluster.AddNodeWorkResponse;
 import org.apache.asterix.metadata.cluster.ClusterManagerProvider;
 import org.apache.asterix.metadata.cluster.RemoveNodeWork;
 import org.apache.asterix.metadata.cluster.RemoveNodeWorkResponse;
-import org.apache.asterix.runtime.util.ClusterStateManager;
+import org.apache.asterix.runtime.utils.ClusterStateManager;
 import org.apache.hyracks.api.application.IClusterLifecycleListener;
 import org.apache.hyracks.api.exceptions.HyracksException;
 
@@ -93,7 +94,7 @@ public class ClusterLifecycleListener implements IClusterLifecycleListener {
     }
 
     @Override
-    public void notifyNodeFailure(Set<String> deadNodeIds) throws HyracksException {
+    public void notifyNodeFailure(Collection<String> deadNodeIds) throws HyracksException {
         for (String deadNode : deadNodeIds) {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info("NC: " + deadNode + " left");
@@ -118,7 +119,7 @@ public class ClusterLifecycleListener implements IClusterLifecycleListener {
         }
     }
 
-    private void updateProgress(ClusterEventType eventType, Set<String> nodeIds) {
+    private void updateProgress(ClusterEventType eventType, Collection<String> nodeIds) {
         List<IClusterManagementWorkResponse> completedResponses = new ArrayList<IClusterManagementWorkResponse>();
         boolean isComplete = false;
         for (IClusterManagementWorkResponse resp : pendingWorkResponses) {

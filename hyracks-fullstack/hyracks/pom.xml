@@ -36,14 +36,6 @@
         <artifactId>versions-maven-plugin</artifactId>
         <version>1.2</version>
       </plugin>
-      <plugin>
-        <groupId>org.apache.rat</groupId>
-        <artifactId>apache-rat-plugin</artifactId>
-        <version>0.11</version>
-        <configuration>
-          <skip>true</skip>
-        </configuration>
-      </plugin>
     </plugins>
     <pluginManagement>
       <plugins>
@@ -130,5 +122,6 @@
     <module>hyracks-maven-plugins</module>
     <module>hyracks-hdfs</module>
     <module>hyracks-dist</module>
+    <module>hyracks-http</module>
   </modules>
 </project>

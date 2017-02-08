@@ -31,7 +31,6 @@ import java.util.Set;
 
 import org.apache.asterix.algebra.base.ILangExpressionToPlanTranslator;
 import org.apache.asterix.algebra.base.ILangExpressionToPlanTranslatorFactory;
-import org.apache.asterix.api.common.Job.SubmissionMode;
 import org.apache.asterix.app.result.ResultUtil;
 import org.apache.asterix.common.config.CompilerProperties;
 import org.apache.asterix.common.config.ExternalProperties;
@@ -40,6 +39,8 @@ import org.apache.asterix.common.config.OptimizationConfUtil;
 import org.apache.asterix.common.config.PropertyInterpreters;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.CompilationException;
+import org.apache.asterix.common.utils.Job;
+import org.apache.asterix.common.utils.Job.SubmissionMode;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.compiler.provider.IRuleSetFactory;
 import org.apache.asterix.dataflow.data.common.ConflictingTypeResolver;
@@ -59,11 +60,12 @@ import org.apache.asterix.lang.common.statement.FunctionDecl;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
-import org.apache.asterix.runtime.util.AppContextInfo;
+import org.apache.asterix.runtime.utils.AppContextInfo;
 import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
-import org.apache.asterix.translator.SessionConfig;
 import org.apache.asterix.translator.CompiledStatements.ICompiledDmlStatement;
 import org.apache.asterix.translator.IStatementExecutor.Stats;
+import org.apache.asterix.utils.ResourceUtils;
+import org.apache.asterix.translator.SessionConfig;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
@@ -78,7 +80,7 @@ import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionEvalSiz
 import org.apache.hyracks.algebricks.core.algebra.expressions.IExpressionTypeComputer;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IMergeAggregationExpressionFactory;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IMissableTypeComputer;
-import org.apache.hyracks.algebricks.core.algebra.expressions.LogicalExpressionJobGenToExpressionRuntimeProviderAdapter;
+import org.apache.hyracks.algebricks.core.algebra.expressions.ExpressionRuntimeProvider;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.AlgebricksAppendable;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.LogicalOperatorPrettyPrintVisitor;
 import org.apache.hyracks.algebricks.core.algebra.prettyprint.PlanPlotter;
@@ -89,6 +91,7 @@ import org.apache.hyracks.algebricks.core.rewriter.base.PhysicalOptimizationConf
 import org.apache.hyracks.api.client.IClusterInfoCollector;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.client.NodeControllerInfo;
+import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 
@@ -124,7 +127,8 @@ public class APIFramework {
                 IExpressionEvalSizeComputer expressionEvalSizeComputer,
                 IMergeAggregationExpressionFactory mergeAggregationExpressionFactory,
                 IExpressionTypeComputer expressionTypeComputer, IMissableTypeComputer missableTypeComputer,
-                IConflictingTypeResolver conflictingTypeResolver, PhysicalOptimizationConfig physicalOptimizationConfig,
+                IConflictingTypeResolver conflictingTypeResolver,
+                PhysicalOptimizationConfig physicalOptimizationConfig,
                 AlgebricksPartitionConstraint clusterLocations) {
             return new AlgebricksOptimizationContext(varCounter, expressionEvalSizeComputer,
                     mergeAggregationExpressionFactory, expressionTypeComputer, missableTypeComputer,
@@ -179,8 +183,8 @@ public class APIFramework {
 
         org.apache.asterix.common.transactions.JobId asterixJobId = JobIdFactory.generateJobId();
         metadataProvider.setJobId(asterixJobId);
-        ILangExpressionToPlanTranslator t = translatorFactory.createExpressionToPlanTranslator(metadataProvider,
-                varCounter);
+        ILangExpressionToPlanTranslator t =
+                translatorFactory.createExpressionToPlanTranslator(metadataProvider, varCounter);
 
         ILogicalPlan plan;
         // statement = null when it's a query
@@ -222,8 +226,8 @@ public class APIFramework {
         OptimizationConfUtil.getPhysicalOptimizationConfig().setMaxFramesExternalGroupBy(groupFrameLimit);
         OptimizationConfUtil.getPhysicalOptimizationConfig().setMaxFramesForJoin(joinFrameLimit);
 
-        HeuristicCompilerFactoryBuilder builder = new HeuristicCompilerFactoryBuilder(
-                OptimizationContextFactory.INSTANCE);
+        HeuristicCompilerFactoryBuilder builder =
+                new HeuristicCompilerFactoryBuilder(OptimizationContextFactory.INSTANCE);
         builder.setPhysicalOptimizationConfig(OptimizationConfUtil.getPhysicalOptimizationConfig());
         builder.setLogicalRewrites(ruleSetFactory.getLogicalRewrites());
         builder.setPhysicalRewrites(ruleSetFactory.getPhysicalRewrites());
@@ -238,8 +242,9 @@ public class APIFramework {
 
         int parallelism = getParallelism(querySpecificConfig.get(CompilerProperties.COMPILER_PARALLELISM_KEY),
                 compilerProperties.getParallelism());
-        builder.setClusterLocations(parallelism == CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE
-                ? metadataProvider.getClusterLocations() : getComputationLocations(clusterInfoCollector, parallelism));
+        AlgebricksAbsolutePartitionConstraint computationLocations =
+                chooseLocations(clusterInfoCollector, parallelism, metadataProvider.getClusterLocations());
+        builder.setClusterLocations(computationLocations);
 
         ICompiler compiler = compilerFactory.createCompiler(plan, metadataProvider, t.getVarCounter());
         if (conf.isOptimize()) {
@@ -282,7 +287,7 @@ public class APIFramework {
         builder.setBinaryIntegerInspectorFactory(format.getBinaryIntegerInspectorFactory());
         builder.setComparatorFactoryProvider(format.getBinaryComparatorFactoryProvider());
         builder.setExpressionRuntimeProvider(
-                new LogicalExpressionJobGenToExpressionRuntimeProviderAdapter(QueryLogicalExpressionJobGen.INSTANCE));
+                new ExpressionRuntimeProvider(QueryLogicalExpressionJobGen.INSTANCE));
         builder.setHashFunctionFactoryProvider(format.getBinaryHashFunctionFactoryProvider());
         builder.setHashFunctionFamilyProvider(format.getBinaryHashFunctionFamilyProvider());
         builder.setMissingWriterFactory(format.getMissingWriterFactory());
@@ -310,9 +315,17 @@ public class APIFramework {
         builder.setTypeTraitProvider(format.getTypeTraitProvider());
         builder.setNormalizedKeyComputerFactoryProvider(format.getNormalizedKeyComputerFactoryProvider());
 
-        JobEventListenerFactory jobEventListenerFactory = new JobEventListenerFactory(asterixJobId,
-                metadataProvider.isWriteTransaction());
+        JobEventListenerFactory jobEventListenerFactory =
+                new JobEventListenerFactory(asterixJobId, metadataProvider.isWriteTransaction());
         JobSpecification spec = compiler.createJob(AppContextInfo.INSTANCE, jobEventListenerFactory);
+
+        // When the top-level statement is a query, the statement parameter is null.
+        if (statement == null) {
+            // Sets a required capacity, only for read-only queries.
+            // DDLs and DMLs are considered not that frequent.
+            spec.setRequiredClusterCapacity(ResourceUtils.getRequiredCompacity(plan, computationLocations,
+                    sortFrameLimit, groupFrameLimit, joinFrameLimit, frameSize));
+        }
 
         if (conf.is(SessionConfig.OOB_HYRACKS_JOB)) {
             printPlanPrefix(conf, "Hyracks job");
@@ -364,66 +377,90 @@ public class APIFramework {
         }
     }
 
-    // Computes the location constraints based on user-configured parallelism parameter.
-    // Note that the parallelism parameter is only a hint -- it will not be respected if it is too small or too large.
-    private AlgebricksAbsolutePartitionConstraint getComputationLocations(IClusterInfoCollector clusterInfoCollector,
-            int parallelismHint) throws AlgebricksException {
+    // Chooses the location constraints, i.e., whether to use storage parallelism or use a user-sepcified number
+    // of cores.
+    private AlgebricksAbsolutePartitionConstraint chooseLocations(IClusterInfoCollector clusterInfoCollector,
+            int parallelismHint, AlgebricksAbsolutePartitionConstraint storageLocations) throws AlgebricksException {
         try {
             Map<String, NodeControllerInfo> ncMap = clusterInfoCollector.getNodeControllerInfos();
 
-            // Unifies the handling of non-positive parallelism.
-            int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+            // Gets total number of cores in the cluster.
+            int totalNumCores = getTotalNumCores(ncMap);
 
-            // Calculates per node parallelism, with load balance, i.e., randomly selecting nodes with larger
-            // parallelism.
-            int numNodes = ncMap.size();
-            int numNodesWithOneMorePartition = parallelism % numNodes;
-            int perNodeParallelismMin = parallelism / numNodes;
-            int perNodeParallelismMax = parallelism / numNodes + 1;
-            List<String> allNodes = new ArrayList<>();
-            Set<String> selectedNodesWithOneMorePartition = new HashSet<>();
-            for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
-                allNodes.add(entry.getKey());
+            // If storage parallelism is not larger than the total number of cores, we use the storage parallelism.
+            // Otherwise, we will use all available cores.
+            if (parallelismHint == CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE
+                    && storageLocations.getLocations().length <= totalNumCores) {
+                return storageLocations;
             }
-            Random random = new Random();
-            for (int index = numNodesWithOneMorePartition; index >= 1; --index) {
-                int pick = random.nextInt(index);
-                selectedNodesWithOneMorePartition.add(allNodes.get(pick));
-                Collections.swap(allNodes, pick, index - 1);
-            }
-
-            // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
-            List<String> locations = new ArrayList<>();
-            for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
-                String nodeId = entry.getKey();
-                int numCores = entry.getValue().getNumCores();
-                int availableCores = numCores > 1 ? numCores - 1 : numCores; // Reserves one core for heartbeat.
-                int nodeParallelism = selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax
-                        : perNodeParallelismMin;
-                int coresToUse = nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism
-                        : availableCores;
-                for (int count = 0; count < coresToUse; ++count) {
-                    locations.add(nodeId);
-                }
-            }
-            return new AlgebricksAbsolutePartitionConstraint(locations.toArray(new String[0]));
-        } catch (Exception e) {
+            return getComputationLocations(ncMap, parallelismHint);
+        } catch (HyracksException e) {
             throw new AlgebricksException(e);
         }
+    }
+
+    // Computes the location constraints based on user-configured parallelism parameter.
+    // Note that the parallelism parameter is only a hint -- it will not be respected if it is too small or too large.
+    private AlgebricksAbsolutePartitionConstraint getComputationLocations(Map<String, NodeControllerInfo> ncMap,
+            int parallelismHint) {
+        // Unifies the handling of non-positive parallelism.
+        int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+
+        // Calculates per node parallelism, with load balance, i.e., randomly selecting nodes with larger
+        // parallelism.
+        int numNodes = ncMap.size();
+        int numNodesWithOneMorePartition = parallelism % numNodes;
+        int perNodeParallelismMin = parallelism / numNodes;
+        int perNodeParallelismMax = parallelism / numNodes + 1;
+        List<String> allNodes = new ArrayList<>();
+        Set<String> selectedNodesWithOneMorePartition = new HashSet<>();
+        for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
+            allNodes.add(entry.getKey());
+        }
+        Random random = new Random();
+        for (int index = numNodesWithOneMorePartition; index >= 1; --index) {
+            int pick = random.nextInt(index);
+            selectedNodesWithOneMorePartition.add(allNodes.get(pick));
+            Collections.swap(allNodes, pick, index - 1);
+        }
+
+        // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
+        List<String> locations = new ArrayList<>();
+        for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
+            String nodeId = entry.getKey();
+            int availableCores = entry.getValue().getNumAvailableCores();
+            int nodeParallelism =
+                    selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
+            int coresToUse =
+                    nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
+            for (int count = 0; count < coresToUse; ++count) {
+                locations.add(nodeId);
+            }
+        }
+        return new AlgebricksAbsolutePartitionConstraint(locations.toArray(new String[0]));
+    }
+
+    // Gets the total number of available cores in the cluster.
+    private int getTotalNumCores(Map<String, NodeControllerInfo> ncMap) {
+        int sum = 0;
+        for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
+            sum += entry.getValue().getNumAvailableCores();
+        }
+        return sum;
     }
 
     // Gets the frame limit.
     private int getFrameLimit(String parameter, long memBudgetInConfiguration, int frameSize) {
         IPropertyInterpreter<Long> longBytePropertyInterpreter = PropertyInterpreters.getLongBytePropertyInterpreter();
-        long memBudget = parameter == null ? memBudgetInConfiguration
-                : longBytePropertyInterpreter.interpret(parameter);
+        long memBudget =
+                parameter == null ? memBudgetInConfiguration : longBytePropertyInterpreter.interpret(parameter);
         return (int) (memBudget / frameSize);
     }
 
     // Gets the parallelism parameter.
     private int getParallelism(String parameter, int parallelismInConfiguration) {
-        IPropertyInterpreter<Integer> integerIPropertyInterpreter = PropertyInterpreters
-                .getIntegerPropertyInterpreter();
+        IPropertyInterpreter<Integer> integerIPropertyInterpreter =
+                PropertyInterpreters.getIntegerPropertyInterpreter();
         return parameter == null ? parallelismInConfiguration : integerIPropertyInterpreter.interpret(parameter);
     }
 }

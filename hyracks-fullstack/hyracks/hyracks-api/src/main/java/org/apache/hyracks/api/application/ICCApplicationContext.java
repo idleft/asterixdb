@@ -38,7 +38,7 @@ public interface ICCApplicationContext extends IApplicationContext {
      * @param state
      *            The distributed state
      */
-    public void setDistributedState(Serializable state);
+    void setDistributedState(Serializable state);
 
     /**
      * A listener that listens to Job Lifecycle events at the Cluster
@@ -46,21 +46,21 @@ public interface ICCApplicationContext extends IApplicationContext {
      *
      * @param jobLifecycleListener
      */
-    public void addJobLifecycleListener(IJobLifecycleListener jobLifecycleListener);
+    void addJobLifecycleListener(IJobLifecycleListener jobLifecycleListener);
 
     /**
      * A listener that listens to Cluster Lifecycle events at the Cluster
      * Controller.
      *
-     * @param jobLifecycleListener
+     * @param clusterLifecycleListener
      */
-    public void addClusterLifecycleListener(IClusterLifecycleListener clusterLifecycleListener);
+    void addClusterLifecycleListener(IClusterLifecycleListener clusterLifecycleListener);
 
     /**
      * Get the Cluster Controller Context.
      *
      * @return The Cluster Controller Context.
      */
-    public ICCContext getCCContext();
+    ICCContext getCCContext();
 
 }

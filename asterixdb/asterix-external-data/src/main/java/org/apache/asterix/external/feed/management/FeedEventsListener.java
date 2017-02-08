@@ -33,7 +33,7 @@ import org.apache.asterix.active.message.ActivePartitionMessage;
 import org.apache.asterix.common.metadata.IDataset;
 import org.apache.asterix.external.feed.watch.FeedEventSubscriber;
 import org.apache.asterix.external.feed.watch.NoOpSubscriber;
-import org.apache.asterix.runtime.util.AppContextInfo;
+import org.apache.asterix.runtime.utils.AppContextInfo;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;

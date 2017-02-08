@@ -19,6 +19,7 @@
 
 package org.apache.asterix.api.http.servlet;
 
+import org.apache.asterix.api.http.server.QueryServiceServlet;
 import org.junit.Assert;
 import org.junit.Test;
 

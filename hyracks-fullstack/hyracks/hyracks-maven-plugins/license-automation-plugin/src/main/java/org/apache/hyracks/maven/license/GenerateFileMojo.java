@@ -49,11 +49,11 @@ import freemarker.cache.FileTemplateLoader;
 import freemarker.template.Configuration;
 import freemarker.template.Template;
 import freemarker.template.TemplateException;
+import org.apache.commons.io.IOUtils;
 import org.apache.hyracks.maven.license.freemarker.IndentDirective;
 import org.apache.hyracks.maven.license.freemarker.LoadFileDirective;
 import org.apache.hyracks.maven.license.project.LicensedProjects;
 import org.apache.hyracks.maven.license.project.Project;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -109,9 +109,10 @@ public class GenerateFileMojo extends LicenseMojo {
             resolveNoticeFiles();
             resolveLicenseFiles();
             rebuildLicenseContentProjectMap();
-            buildNoticeProjectMap();
-            persistLicenseMap();
             combineCommonGavs();
+            SourcePointerResolver.execute(this);
+            persistLicenseMap();
+            buildNoticeProjectMap();
             generateFiles();
         } catch (IOException | TemplateException | ProjectBuildingException e) {
             throw new MojoExecutionException("Unexpected exception: " + e, e);
@@ -220,9 +221,9 @@ public class GenerateFileMojo extends LicenseMojo {
                         spec.setDisplayName(projects.getLicense().getDisplayName());
                     }
                 }
-                for (Project project : projects.getProjects()) {
-                    project.setLocation(extraLicenseFile.getLocation());
-                    addProject(project, projects.getLicense(), extraLicenseFile.isAdditive());
+                for (Project p : projects.getProjects()) {
+                    p.setLocation(extraLicenseFile.getLocation());
+                    addProject(p, projects.getLicense(), extraLicenseFile.isAdditive());
                 }
             }
         }
@@ -244,10 +245,10 @@ public class GenerateFileMojo extends LicenseMojo {
         int counter = 0;
         Map<String, LicensedProjects> licenseMap2 = new TreeMap<>(WHITESPACE_NORMALIZED_COMPARATOR);
         for (LicensedProjects lps : licenseMap.values()) {
-            for (Project project : lps.getProjects()) {
-                String licenseText = project.getLicenseText();
+            for (Project p : lps.getProjects()) {
+                String licenseText = p.getLicenseText();
                 if (licenseText == null) {
-                    getLog().warn("Using license other than from within artifact: " + project.gav());
+                    getLog().warn("Using license other than from within artifact: " + p.gav());
                     licenseText = resolveLicenseContent(lps.getLicense(), false);
                 }
                 LicenseSpec spec = lps.getLicense();
@@ -268,7 +269,7 @@ public class GenerateFileMojo extends LicenseMojo {
                 if (lp2.getLicense().getDisplayName() == null) {
                     lp2.getLicense().setDisplayName(lps.getLicense().getDisplayName());
                 }
-                lp2.addProject(project);
+                lp2.addProject(p);
             }
         }
         licenseMap = licenseMap2;
@@ -282,15 +283,26 @@ public class GenerateFileMojo extends LicenseMojo {
 
     private void buildNoticeProjectMap() {
         noticeMap = new TreeMap<>(WHITESPACE_NORMALIZED_COMPARATOR);
-        for (Project project : getProjects()) {
-            final String noticeText = project.getNoticeText();
+        for (Project p : getProjects()) {
+            prependSourcePointerToNotice(p);
+            final String noticeText = p.getNoticeText();
             if (noticeText == null) {
                 continue;
             }
             if (!noticeMap.containsKey(noticeText)) {
                 noticeMap.put(noticeText, new TreeSet<>(Project.PROJECT_COMPARATOR));
             }
-            noticeMap.get(noticeText).add(project);
+            noticeMap.get(noticeText).add(p);
+        }
+    }
+
+    private void prependSourcePointerToNotice(Project project) {
+        if (project.getSourcePointer() != null) {
+            String notice = project.getSourcePointer().replace("\n", "\n    ");
+            if (project.getNoticeText() != null) {
+                notice += "\n\n" + project.getNoticeText();
+            }
+            project.setNoticeText(notice);
         }
     }
 
@@ -308,8 +320,8 @@ public class GenerateFileMojo extends LicenseMojo {
     private void resolveArtifactFiles(final String name, Predicate<JarEntry> filter,
                                       BiConsumer<Project, String> consumer, UnaryOperator<String> contentTransformer)
             throws MojoExecutionException, IOException {
-        for (Project project : getProjects()) {
-            File artifactFile = new File(project.getArtifactPath());
+        for (Project p : getProjects()) {
+            File artifactFile = new File(p.getArtifactPath());
             if (!artifactFile.exists()) {
                 throw new MojoExecutionException("Artifact file " + artifactFile + " does not exist!");
             } else if (!artifactFile.getName().endsWith(".jar")) {
@@ -320,15 +332,15 @@ public class GenerateFileMojo extends LicenseMojo {
                 SortedMap<String, JarEntry> matches = gatherMatchingEntries(jarFile,
                         filter);
                 if (matches.isEmpty()) {
-                    getLog().warn("No " + name + " file found for " + project.gav());
+                    getLog().warn("No " + name + " file found for " + p.gav());
                 } else {
                     if (matches.size() > 1) {
-                        getLog().warn("Multiple " + name + " files found for " + project.gav() + ": " + matches.keySet()
+                        getLog().warn("Multiple " + name + " files found for " + p.gav() + ": " + matches.keySet()
                                 + "; taking first");
                     } else {
-                        getLog().info(project.gav() + " has " + name + " file: " + matches.keySet());
+                        getLog().info(p.gav() + " has " + name + " file: " + matches.keySet());
                     }
-                    resolveContent(project, jarFile, matches.values().iterator().next(),
+                    resolveContent(p, jarFile, matches.values().iterator().next(),
                             contentTransformer, consumer, name);
                 }
             }
