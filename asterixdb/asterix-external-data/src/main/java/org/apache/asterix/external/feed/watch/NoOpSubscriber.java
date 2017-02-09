@@ -24,8 +24,8 @@ import org.apache.asterix.active.IActiveEventSubscriber;
 /**
  * An event subscriber that does not listen to any events
  */
-public class NoOpSubscriber implements IActiveEventSubscriber{
-    
+public class NoOpSubscriber implements IActiveEventSubscriber {
+
     public static final NoOpSubscriber INSTANCE = new NoOpSubscriber();
 
     private NoOpSubscriber() {
@@ -33,6 +33,7 @@ public class NoOpSubscriber implements IActiveEventSubscriber{
 
     @Override
     public void notify(ActiveEvent event) {
+        // do nothing
     }
 
     @Override
@@ -42,10 +43,12 @@ public class NoOpSubscriber implements IActiveEventSubscriber{
 
     @Override
     public void sync() {
+        // do nothing
     }
 
     @Override
     public void unsubscribe() {
+        // do nothing
     }
 
 }

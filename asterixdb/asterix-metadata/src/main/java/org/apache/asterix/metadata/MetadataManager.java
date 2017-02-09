@@ -806,6 +806,7 @@ public class MetadataManager implements IMetadataManager {
         ctx.addFeed(feed);
     }
 
+    @Override
     public void addFeedConnection(MetadataTransactionContext ctx, FeedConnection feedConnection)
             throws MetadataException {
         try {
@@ -816,6 +817,7 @@ public class MetadataManager implements IMetadataManager {
         ctx.addFeedConnection(feedConnection);
     }
 
+    @Override
     public void dropFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
             String datasetName) throws MetadataException {
         try {
@@ -826,6 +828,7 @@ public class MetadataManager implements IMetadataManager {
         ctx.dropFeedConnection(dataverseName, feedName, datasetName);
     }
 
+    @Override
     public FeedConnection getFeedConnection(MetadataTransactionContext ctx, String dataverseName, String feedName,
             String datasetName) throws MetadataException {
         try {
@@ -835,6 +838,7 @@ public class MetadataManager implements IMetadataManager {
         }
     }
 
+    @Override
     public List<FeedConnection> getFeedConections(MetadataTransactionContext ctx, String dataverseName, String feedName)
             throws MetadataException {
         try {

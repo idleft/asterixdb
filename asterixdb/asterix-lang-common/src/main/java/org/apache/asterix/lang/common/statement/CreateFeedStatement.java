@@ -72,6 +72,7 @@ public class CreateFeedStatement implements Statement {
         return Kind.CREATE_FEED;
     }
 
+    @Override
     public <R, T> R accept(ILangVisitor<R, T> visitor, T arg) throws CompilationException {
         return visitor.visit(this, arg);
     }

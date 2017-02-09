@@ -1184,7 +1184,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 if (activeEntityId.getExtensionName().equals(Feed.EXTENSION_NAME)
                         && activeEntityId.getDataverse().equals(dataverseName)) {
                     stopFeedBeforeDelete(new Pair<>(dvId, new Identifier(activeEntityId.getEntityName())),
-                            metadataProvider, hcc);
+                            metadataProvider);
                     // prepare job to remove feed log storage
                     jobsToExecute.add(FeedOperations.buildRemoveFeedStorageJob(MetadataManager.INSTANCE
                             .getFeed(mdTxnCtx, dataverseName, activeEntityId.getEntityName())));
@@ -1292,8 +1292,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    protected void stopFeedBeforeDelete(Pair<Identifier, Identifier> feedNameComp, MetadataProvider metadataProvider,
-            IHyracksClientConnection hcc) {
+    protected void stopFeedBeforeDelete(Pair<Identifier, Identifier> feedNameComp, MetadataProvider metadataProvider) {
         StopFeedStatement disStmt = new StopFeedStatement(feedNameComp);
         try {
             handleStopFeedStatement(metadataProvider, disStmt);

@@ -82,7 +82,7 @@ public class FeedEventsListener implements IActiveEntityEventsListener {
         }
     }
 
-    private void notifySubscribers(ActiveEvent event) {
+    private synchronized void notifySubscribers(ActiveEvent event) {
         notifyAll();
         Iterator<IActiveEventSubscriber> it = subscribers.iterator();
         while (it.hasNext()) {

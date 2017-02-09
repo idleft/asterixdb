@@ -71,7 +71,8 @@ public class ActiveEvent {
                 return jobId + " Finished";
             case PARTITION_EVENT:
                 return jobId + " Partition Event";
+            default:
+                return "Unknown event kind";
         }
-        return "Unknown event kind";
     }
 }
