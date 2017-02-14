@@ -122,12 +122,17 @@ public class ExternalDataConstants {
     /**
      * Builtin record readers
      */
+    // Twitter
     public static final String READER_HDFS = "hdfs";
     public static final String READER_TWITTER_PUSH = "twitter_push";
     public static final String READER_PUSH_TWITTER = "push_twitter";
     public static final String READER_TWITTER_PULL = "twitter_pull";
     public static final String READER_PULL_TWITTER = "pull_twitter";
     public static final String READER_USER_STREAM_TWITTER = "twitter_user_stream";
+
+    // Http Server
+    public static final String READER_HTTP_READER_NAME = "http";
+    public static final String READER_HTTP_READER_PORT = "port";
 
     public static final String CLUSTER_LOCATIONS = "cluster-locations";
     public static final String SCHEDULER = "hdfs-scheduler";

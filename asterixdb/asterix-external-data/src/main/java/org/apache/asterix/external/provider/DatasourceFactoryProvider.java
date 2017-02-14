@@ -28,6 +28,7 @@ import org.apache.asterix.external.api.IExternalDataSourceFactory.DataSourceType
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.api.IRecordReaderFactory;
 import org.apache.asterix.external.input.HDFSDataSourceFactory;
+import org.apache.asterix.external.input.record.reader.http.HttpServerRecordReaderFactory;
 import org.apache.asterix.external.input.record.reader.rss.RSSRecordReaderFactory;
 import org.apache.asterix.external.input.record.reader.stream.StreamRecordReaderFactory;
 import org.apache.asterix.external.input.record.reader.twitter.TwitterRecordReaderFactory;
@@ -116,6 +117,8 @@ public class DatasourceFactoryProvider {
                 return new StreamRecordReaderFactory(new SocketClientInputStreamFactory());
             case ExternalDataConstants.READER_RSS:
                 return new RSSRecordReaderFactory();
+            case ExternalDataConstants.READER_HTTP_READER_NAME:
+                return new HttpServerRecordReaderFactory();
             default:
                 try {
                     return (IRecordReaderFactory<?>) Class.forName(reader).newInstance();

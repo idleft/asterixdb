@@ -23,8 +23,6 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.hyracks.api.exceptions.ErrorCode;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.IWritable;
 
 public final class JobId implements IWritable, Serializable {
@@ -72,12 +70,12 @@ public final class JobId implements IWritable, Serializable {
         return "JID:" + id;
     }
 
-    public static JobId parse(String str) throws HyracksDataException {
+    public static JobId parse(String str) {
         if (str.startsWith("JID:")) {
             str = str.substring(4);
             return new JobId(Long.parseLong(str));
         }
-        throw HyracksDataException.create(ErrorCode.NOT_A_JOBID, str);
+        throw new IllegalArgumentException();
     }
 
     @Override
