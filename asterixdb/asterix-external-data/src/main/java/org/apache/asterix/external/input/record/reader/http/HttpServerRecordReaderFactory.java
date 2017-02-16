@@ -31,22 +31,26 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.util.Map;
 
-public class HttpServerRecordReaderFactory implements IRecordReaderFactory<String> {
+public class HttpServerRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
-    private String serverPortNumber;
+    private static final int serverPortNumber = 10010;
     private static final int HTTP_SERVER_NUM = 1;
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
 
 
     @Override
-    public IRecordReader<? extends String> createRecordReader(IHyracksTaskContext ctx, int partition)
+    public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition)
             throws HyracksDataException {
-        return new HttpServerRecordReader(serverPortNumber);
+        try {
+            return new HttpServerRecordReader(serverPortNumber);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public Class<?> getRecordClass() {
-        return String.class;
+        return char[].class;
     }
 
     @Override
@@ -58,6 +62,6 @@ public class HttpServerRecordReaderFactory implements IRecordReaderFactory<Strin
 
     @Override
     public void configure(Map<String, String> configuration) throws AlgebricksException, HyracksDataException {
-        this.serverPortNumber = configuration.get(ExternalDataConstants.READER_HTTP_READER_PORT);
+//        this.serverPortNumber = configuration.get(ExternalDataConstants.READER_HTTP_READER_PORT);
     }
 }

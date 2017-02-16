@@ -38,17 +38,17 @@ import java.io.IOException;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class HttpServerRecordReader implements IRecordReader<String> {
+public class HttpServerRecordReader implements IRecordReader<char[]> {
 
-    private static String ENTRY_POINT = "/feed/";
+    private static String ENTRY_POINT = "/datafeed/";
     private static String POST_PARA_NAME = "adm";
-    private final String port;
+    private final int port;
     private LinkedBlockingQueue<String> inputQ;
-    private GenericRecord<String> record;
+    private GenericRecord<char[]> record;
     private boolean closed = false;
     private WebManager webManager;
 
-    public HttpServerRecordReader(String port) throws Exception {
+    public HttpServerRecordReader(int port) throws Exception {
         inputQ = new LinkedBlockingQueue<>();
         record = new GenericRecord<>();
         this.port = port;
@@ -58,7 +58,7 @@ public class HttpServerRecordReader implements IRecordReader<String> {
     }
 
     private void configureHttpServer() {
-        HttpServer webServer = new HttpServer(webManager.getBosses(), webManager.getWorkers(), Integer.valueOf(port));
+        HttpServer webServer = new HttpServer(webManager.getBosses(), webManager.getWorkers(), port);
         webServer.addLet(new HttpFeedServlet(webServer.ctx(), new String[] { ENTRY_POINT }, inputQ));
         webManager.add(webServer);
     }
@@ -69,12 +69,12 @@ public class HttpServerRecordReader implements IRecordReader<String> {
     }
 
     @Override
-    public IRawRecord<String> next() throws IOException, InterruptedException {
+    public IRawRecord<char[]> next() throws IOException, InterruptedException {
         String srecord = inputQ.poll();
         if (srecord == null) {
             return null;
         }
-        record.set(srecord);
+        record.set(srecord.toCharArray());
         return record;
     }
 
