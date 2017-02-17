@@ -151,17 +151,4 @@ public class ActiveJobNotificationHandler implements Runnable {
         }
         jobId2ActiveJobInfos.put(jobId, activeJob);
     }
-
-    public synchronized void unregisterListener(IActiveEntityEventsListener listener) throws HyracksDataException {
-        if (DEBUG) {
-            LOGGER.log(Level.WARNING,
-                    "unregisterListener(IActiveEntityEventsListener listener) was called for the entity "
-                            + listener.getEntityId());
-        }
-        IActiveEntityEventsListener registeredListener = entityEventListeners.remove(listener.getEntityId());
-        if (registeredListener == null) {
-            throw new HyracksDataException(
-                    "Active Entity Listener " + listener.getEntityId() + " hasn't been registered");
-        }
-    }
 }
