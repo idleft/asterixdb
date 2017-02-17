@@ -48,8 +48,7 @@ create feed TweetFeed
 using localfs
 (("type-name"="TweetInputType"),
 ("path"="asterix_nc1://../../../../../../asterix-app/data/twitter/obamatweets.adm"),
-("format"="adm"))
-apply function testlib#parseTweet;
+("format"="adm"));
 
 create dataset TweetsFeedIngest(TweetOutputType)
 primary key id;

@@ -19,5 +19,10 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
+    <test-case FilePath="feeds">
+    <compilation-unit name="change-feed-with-meta-csv">
+      <output-dir compare="Text">change-feed-with-meta-csv</output-dir>
+    </compilation-unit>
+  </test-case>
   </test-group>
 </test-suite>

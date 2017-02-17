@@ -22,25 +22,25 @@ import org.apache.hyracks.api.job.JobId;
 
 public class ActiveEvent {
 
+    public static final byte JOB_CREATED = 0x00;
+    public static final byte JOB_START = 0x01;
+    public static final byte JOB_FINISH = 0x02;
+    public static final byte PARTITION_EVENT = 0x03;
+
     private final JobId jobId;
     private final EntityId entityId;
-    private final EventKind eventKind;
+    private final byte eventKind;
     private final Object eventObject;
 
-    public enum EventKind {
-        JOB_START,
-        JOB_FINISH,
-        PARTITION_EVENT
-    }
 
-    public ActiveEvent(JobId jobId, ActiveEvent.EventKind eventKind, EntityId entityId, Object eventObject) {
+    public ActiveEvent(JobId jobId, byte eventKind, EntityId entityId, Object eventObject) {
         this.jobId = jobId;
         this.entityId = entityId;
         this.eventKind = eventKind;
         this.eventObject = eventObject;
     }
 
-    public ActiveEvent(JobId jobId, ActiveEvent.EventKind eventKind, EntityId entityId) {
+    public ActiveEvent(JobId jobId, byte eventKind, EntityId entityId) {
         this(jobId, eventKind, entityId, null);
     }
 
@@ -52,11 +52,27 @@ public class ActiveEvent {
         return entityId;
     }
 
-    public EventKind getEventKind() {
+    public byte getEventKind() {
         return eventKind;
     }
 
     public Object getEventObject() {
         return eventObject;
+    }
+
+    @Override
+    public String toString() {
+        switch (eventKind) {
+            case JOB_CREATED:
+                return jobId + " Created";
+            case JOB_START:
+                return jobId + " Started";
+            case JOB_FINISH:
+                return jobId + " Finished";
+            case PARTITION_EVENT:
+                return jobId + " Partition Event";
+            default:
+                return "Unknown event kind";
+        }
     }
 }

@@ -48,7 +48,7 @@ public class ActiveLifecycleListener implements IJobLifecycleListener {
     public synchronized void notifyJobStart(JobId jobId) throws HyracksException {
         EntityId entityId = ActiveJobNotificationHandler.INSTANCE.getEntity(jobId);
         if (entityId != null) {
-            jobEventInbox.add(new ActiveEvent(jobId, ActiveEvent.EventKind.JOB_START, entityId));
+            jobEventInbox.add(new ActiveEvent(jobId, ActiveEvent.JOB_START, entityId));
         }
     }
 
@@ -56,7 +56,7 @@ public class ActiveLifecycleListener implements IJobLifecycleListener {
     public synchronized void notifyJobFinish(JobId jobId) throws HyracksException {
         EntityId entityId = ActiveJobNotificationHandler.INSTANCE.getEntity(jobId);
         if (entityId != null) {
-            jobEventInbox.add(new ActiveEvent(jobId, ActiveEvent.EventKind.JOB_FINISH, entityId));
+            jobEventInbox.add(new ActiveEvent(jobId, ActiveEvent.JOB_FINISH, entityId));
         } else {
             if (LOGGER.isLoggable(Level.INFO)) {
                 LOGGER.info("NO NEED TO NOTIFY JOB FINISH!");
@@ -70,10 +70,8 @@ public class ActiveLifecycleListener implements IJobLifecycleListener {
     }
 
     public void receive(ActivePartitionMessage message) {
-        if (ActiveJobNotificationHandler.INSTANCE.isActiveJob(message.getJobId())) {
-            jobEventInbox.add(new ActiveEvent(message.getJobId(), ActiveEvent.EventKind.PARTITION_EVENT,
-                    message.getActiveRuntimeId().getEntityId(), message));
-        }
+        jobEventInbox.add(new ActiveEvent(message.getJobId(), ActiveEvent.PARTITION_EVENT,
+                message.getActiveRuntimeId().getEntityId(), message));
     }
 
     public void stop() {
