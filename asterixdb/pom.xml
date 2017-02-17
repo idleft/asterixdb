@@ -406,6 +406,16 @@
             </lifecycleMappingMetadata>
           </configuration>
         </plugin>
+        <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>versions-maven-plugin</artifactId>
+            <version>2.1</version>
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-scm-plugin</artifactId>
+            <version>1.9.5</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -521,6 +531,27 @@
       </build>
     </profile>
     <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
       <id>java8</id>
       <activation>
         <jdk>1.8</jdk>
@@ -625,6 +656,7 @@
     <module>asterix-yarn</module>
     <module>asterix-replication</module>
     <module>asterix-experiments</module>
+    <module>asterix-benchmark</module>
     <module>asterix-coverage</module>
     <module>asterix-active</module>
     <module>asterix-client-helper</module>

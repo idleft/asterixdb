@@ -24,10 +24,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.net.URI;
 import java.net.URL;
 import java.util.Collections;
 
-import org.apache.asterix.common.utils.LetUtil.Lets;
+import org.apache.asterix.common.utils.Servlets;
 import org.apache.asterix.test.aql.TestExecutor;
 import org.apache.asterix.test.base.TestMethodTracer;
 import org.apache.asterix.test.common.TestHelper;
@@ -54,7 +55,7 @@ public class SampleLocalClusterIT {
     // src/test/resources/NCServiceExecutionIT/cc.conf.
     private static final String OUTPUT_DIR = joinPath(TARGET_DIR, "sample-local-cluster");
 
-    private static final String LOCAL_SAMPLES_DIR = joinPath(OUTPUT_DIR, "samples", "local");
+    private static final String LOCAL_SAMPLES_DIR = joinPath(OUTPUT_DIR, "opt", "local");
 
     @Rule
     public TestRule watcher = new TestMethodTracer();
@@ -89,7 +90,8 @@ public class SampleLocalClusterIT {
     public void test1_sanityQuery() throws Exception {
         TestExecutor testExecutor = new TestExecutor();
         InputStream resultStream = testExecutor.executeQuery("1+1", OutputFormat.ADM,
-                "http://127.0.0.1:19002" + Lets.AQL_QUERY.getPath(), Collections.emptyList());
+                new URI("http", null, "127.0.0.1", 19002, Servlets.AQL_QUERY, null, null),
+                Collections.emptyList());
         StringWriter sw = new StringWriter();
         IOUtils.copy(resultStream, sw);
         Assert.assertEquals("2", sw.toString().trim());
@@ -97,8 +99,8 @@ public class SampleLocalClusterIT {
 
     @Test
     public void test2_stopCluster() throws Exception {
-        Process process = new ProcessBuilder(joinPath(LOCAL_SAMPLES_DIR, "bin/stop-sample-cluster.sh"))
-                .inheritIO().start();
+        Process process =
+                new ProcessBuilder(joinPath(LOCAL_SAMPLES_DIR, "bin/stop-sample-cluster.sh")).inheritIO().start();
         Assert.assertEquals(0, process.waitFor());
         try {
             new URL("http://127.0.0.1:19002").openConnection().connect();

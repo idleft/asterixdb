@@ -40,15 +40,17 @@ public class JobStartWork extends SynchronizableWork {
     private final DeploymentId deploymentId;
     private final JobId jobId;
     private final IResultCallback<JobId> callback;
+    private final boolean predestributed;
 
     public JobStartWork(ClusterControllerService ccs, DeploymentId deploymentId, byte[] acggfBytes,
-            EnumSet<JobFlag> jobFlags, JobId jobId, IResultCallback<JobId> callback) {
+            EnumSet<JobFlag> jobFlags, JobId jobId, IResultCallback<JobId> callback, boolean predestributed) {
         this.deploymentId = deploymentId;
         this.jobId = jobId;
         this.ccs = ccs;
         this.acggfBytes = acggfBytes;
         this.jobFlags = jobFlags;
         this.callback = callback;
+        this.predestributed = predestributed;
     }
 
     @Override
@@ -56,11 +58,21 @@ public class JobStartWork extends SynchronizableWork {
         IJobManager jobManager = ccs.getJobManager();
         try {
             final CCApplicationContext appCtx = ccs.getApplicationContext();
-            IActivityClusterGraphGeneratorFactory acggf = (IActivityClusterGraphGeneratorFactory) DeploymentUtils
-                    .deserialize(acggfBytes, deploymentId, appCtx);
-            IActivityClusterGraphGenerator acgg = acggf.createActivityClusterGraphGenerator(jobId, appCtx, jobFlags);
-            JobRun run = new JobRun(ccs, deploymentId, jobId, acggf, acgg, jobFlags, callback);
+            JobRun run;
+            if (!predestributed) {
+                //Need to create the ActivityClusterGraph
+                IActivityClusterGraphGeneratorFactory acggf = (IActivityClusterGraphGeneratorFactory) DeploymentUtils
+                        .deserialize(acggfBytes, deploymentId, appCtx);
+                IActivityClusterGraphGenerator acgg =
+                        acggf.createActivityClusterGraphGenerator(jobId, appCtx, jobFlags);
+                run = new JobRun(ccs, deploymentId, jobId, acggf, acgg, jobFlags, callback);
+            } else {
+                //ActivityClusterGraph has already been distributed
+                run = new JobRun(ccs, deploymentId, jobId, callback,
+                        ccs.getPreDistributedJobStore().getDistributedJobDescriptor(jobId));
+            }
             jobManager.add(run);
+
         } catch (Exception e) {
             callback.setException(e);
         }
