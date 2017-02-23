@@ -80,7 +80,13 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
 
     @Override
     public boolean stop() {
-        return !closed;
+        try {
+            webManager.stop();
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     @Override
@@ -100,21 +106,49 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
 
     @Override
     public void close() throws IOException {
-
+        try {
+            webManager.stop();
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
     }
 
     private class HttpFeedServlet extends AbstractServlet {
 
         private LinkedBlockingQueue<String> inputQ;
 
+        private void handleMultipleRecords(String admData) throws InterruptedException {
+            int p = 0, cnt = 0;
+            boolean record = false;
+            char[] charBuff = admData.toCharArray();
+            for (int iter1 = 0; iter1 < charBuff.length; iter1++) {
+                if (charBuff[iter1] == '{') {
+                    if (record == false) {
+                        p = iter1;
+                        record = true;
+                    }
+                    cnt++;
+                } else if (charBuff[iter1] == '}') {
+                    cnt--;
+                }
+                if (cnt == 0) {
+                    if (record) {
+                        inputQ.put(admData.substring(p, iter1+1)+'\n');
+                        record = false;
+                    }
+                    p = iter1;
+                }
+            }
+        }
+
         public HttpFeedServlet(ConcurrentMap<String, Object> ctx, String[] paths, LinkedBlockingQueue<String> inputQ) {
             super(ctx, paths);
             this.inputQ = inputQ;
         }
 
-        private void doPost(IServletRequest request, IServletResponse response) throws InterruptedException {
+        private void doPost(IServletRequest request) throws InterruptedException {
             String admData = request.getParameter(POST_PARA_NAME);
-            inputQ.put(admData);
+            handleMultipleRecords(admData);
         }
 
         @Override
@@ -122,7 +156,7 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
             response.setStatus(HttpResponseStatus.OK);
             if (request.getHttpRequest().method() == HttpMethod.POST) {
                 try {
-                    doPost(request, response);
+                    doPost(request);
                 } catch (InterruptedException e) {
                     response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                 }
