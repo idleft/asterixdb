@@ -23,7 +23,7 @@
 
 * [Introduction](#Introduction)
 * [Feed Adaptors](#FeedAdaptors)
-* [Feed Policies](#FeedPolicies)
+<!-- * [Feed Policies](#FeedPolicies) -->
 
 ## <a name="Introduction">Introduction</a>  ##
 
@@ -56,7 +56,7 @@ to ingest data that is directed at a prescribed socket.
 
 
 In this tutorial, we shall describe building two example data ingestion pipelines
-that cover the popular scenario of ingesting data from (a) Twitter (b) RSS  (c) Socket Feed source.
+that cover the popular scenarios of ingesting data from (a) Twitter (b) RSS  (c) Socket Feed source.
 
 ####Ingesting Twitter Stream
 We shall use the built-in push-based Twitter adaptor.
@@ -141,7 +141,7 @@ An example of Twitter adaptor tracking tweets with keyword "news" can be describ
          ("access.token.secret"="*************"),
          ("keywords"="news"));
 
-For the detail information about the parameters, please visit https://dev.twitter.com/streaming/overview/request-parameters
+For more details about these APIs, please visit https://dev.twitter.com/streaming/overview/request-parameters
 
 ####Lifecycle of a Feed####
 
@@ -162,7 +162,7 @@ Also one feed can be simultaneously connected to different target datasets.
         start feed TwitterFeed;
 
 The `connect feed` statement above directs AsterixDB to persist
-the data from `TwitterFeed` feed in the `Tweets` dataset. The `start feed` statement will activate the feed and
+the data from `TwitterFeed` feed into the `Tweets` dataset. The `start feed` statement will activate the feed and
 start the dataflow.
 If it is required (by the high-level application) to also retain the raw
 tweets obtained from Twitter, the end user may additionally choose
@@ -260,8 +260,8 @@ address is called binding. [[Network socket]](https://en.wikipedia.org/wiki/Netw
 
 #####Using the "socket_feed" feed adapter#####
 AsterixDB provides socket adaptor which enables socket client to push data directly into dataset. Similar to Twitter
-Adaptor and Rss Adaptor, Socket adaptor works with a predefined datatype and feeds data into dataset controlled by
-`start feed` and `stop feed` statement.
+Adaptor and Rss Adaptor, Socket adaptor works with a predefined data model and feeds data into dataset controlled by
+`start feed` and `stop feed` statements.
 
         drop dataverse feeds if exists;
         create dataverse feeds;
@@ -287,7 +287,7 @@ Adaptor and Rss Adaptor, Socket adaptor works with a predefined datatype and fee
         start feed TestSocketFeed;
 
 The above statements create a socket feed which is listening to "10001" port of the host machine. This feed accepts data
-records in adm format. As an example, you can download the sample dataset [Chirp Users](../data/chu.adm) and push them line
+records in "adm" format. As an example, you can download the sample dataset [Chirp Users](../data/chu.adm) and push them line
 by line into the socket feed using any socket client you like. Following is a socket client example in Python:
 
         from socket import socket
@@ -305,7 +305,7 @@ by line into the socket feed using any socket client you like. Following is a so
             sock1.close()
 
 
-<!---
+<!--
 ## <a name="FeedPolicies">Policies for Feed Ingestion</a>  ##
 
 Multiple feeds may be concurrently operational on an AsterixDB
