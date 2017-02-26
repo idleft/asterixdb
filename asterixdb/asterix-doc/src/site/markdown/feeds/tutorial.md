@@ -122,12 +122,13 @@ to a target dataset using the connect feed statement and activated using the sta
 (which we shall revisit later).
 
 The Twitter adaptor also supports several Twitter streaming APIs as follow:
+
 1. Track filter ("keywords"="AsterixDB, Apache")
 2. Locations filter ("locations"="-29.7, 79.2, 36.7, 72.0; -124.848974,-66.885444, 24.396308, 49.384358")
 3. Language filter ("language"="en")
 4. Filter level ("filter-level"="low")
 
-An example of Twitter adaptor tracking tweets containing keyword "news" can be describe with following ddl:
+An example of Twitter adaptor tracking tweets with keyword "news" can be described using following ddl:
 
         use dataverse feeds;
 
@@ -145,14 +146,14 @@ For the detail information about the parameters, please visit https://dev.twitte
 ####Lifecycle of a Feed####
 
 A feed is a logical artifact that is brought to life (i.e., its data flow
-is initiated) only when it is activated using the `start feed` AQL statement.
-Before we active a feed, we need to designate the dataset where the data to be persistent
+is initiated) only when it is activated using the `start feed` statement.
+Before we active a feed, we need to designate the dataset where the data to be persisted
 using `connect feed` statement.
-Subsequent to a `connect feed` statement, the feed is said to be in the connected state, i.e. ready-to-go state.
-`start feed` statement will activate the feed, and start the dataflow from feed to its connected dataset.
+Subsequent to a `connect feed` statement, the feed is said to be in the connected state.
+After that, `start feed` statement will activate the feed, and start the dataflow from feed to its connected dataset.
 Multiple feeds can simultaneously be connected to a dataset such that the
 contents of the dataset represent the union of the connected feeds.
-One feed may also be simultaneously connected to different target datasets.
+Also one feed can be simultaneously connected to different target datasets.
 
         use dataverse feeds;
 
@@ -161,7 +162,7 @@ One feed may also be simultaneously connected to different target datasets.
         start feed TwitterFeed;
 
 The `connect feed` statement above directs AsterixDB to persist
-the `TwitterFeed` feed in the `Tweets` dataset. `start feed` statement will activate the feed and
+the data from `TwitterFeed` feed in the `Tweets` dataset. The `start feed` statement will activate the feed and
 start the dataflow.
 If it is required (by the high-level application) to also retain the raw
 tweets obtained from Twitter, the end user may additionally choose
@@ -180,7 +181,7 @@ The dataflow of data from a feed can be terminated explicitly by `stop feed` sta
 
         stop feed TwitterFeed;
 
-The `disconnnect statement` can be used to discontinue the data feeding from the feed to certain dataset.
+The `disconnnect statement` can be used to disconnect the feed from certain dataset.
 
         use dataverse feeds;
 
@@ -237,7 +238,7 @@ The following statements activate the feed and start the dataflow:
 
         start feed my_feed;
 
-The following statements show the latest data from the data set, and
+The following statements show the latest data from the data set, stop the feed, and
 disconnect the feed from the data set.
 
         use dataverse feeds;
@@ -255,7 +256,7 @@ Internet sockets), in particular for the Transmission Control Protocol (TCP), wh
 connections. In this context, sockets are assumed to be associated with a specific socket address, namely the
 IP address and a port number for the local node, and there is a corresponding socket address at the foreign node
 (other node), which itself has an associated socket, used by the foreign process. Associating a socket with a socket
-address is called binding. [Network socket](https://en.wikipedia.org/wiki/Network_socket)
+address is called binding. [[Network socket]](https://en.wikipedia.org/wiki/Network_socket)
 
 #####Using the "socket_feed" feed adapter#####
 AsterixDB provides socket adaptor which enables socket client to push data directly into dataset. Similar to Twitter
@@ -285,8 +286,8 @@ Adaptor and Rss Adaptor, Socket adaptor works with a predefined datatype and fee
         use dataverse feeds;
         start feed TestSocketFeed;
 
-The above statements create a socket feed which is listening to port "10001" of the host machine. This feed accepts data
-records in adm format. As an example, you can download the sample data [Chirp Users](../data/chu.adm) and push them line
+The above statements create a socket feed which is listening to "10001" port of the host machine. This feed accepts data
+records in adm format. As an example, you can download the sample dataset [Chirp Users](../data/chu.adm) and push them line
 by line into the socket feed using any socket client you like. Following is a socket client example in Python:
 
         from socket import socket
@@ -359,4 +360,4 @@ time, which is independent from other related feeds in the hierarchy.
 
         connect feed TwitterFeed to dataset Tweets
         using policy Basic ;
---->
+-->
