@@ -28,7 +28,10 @@
 ## <a name="Introduction">Introduction</a>  ##
 
 In this document, we describe the support for data ingestion in
-AsterixDB.  Data feeds are a new mechanism for having continuous data arrive into a BDMS from external sources and incrementally populate a persisted dataset and associated indexes. We add a new BDMS architectural component, called a data feed, that makes a Big Data system the caretaker for functionality that
+AsterixDB. Data feeds are a new mechanism for having continuous
+data arrive into a BDMS from external sources and incrementally
+populate a persisted dataset and associated indexes. We add a new BDMS
+architectural component, called a data feed, that makes a Big Data system the caretaker for functionality that
 used to live outside, and we show how it improves users' lives and system performance.
 
 ## <a name="FeedAdaptors">Feed Adaptors</a>  ##
@@ -52,25 +55,28 @@ provides a generic socket-based adaptor that can be used
 to ingest data that is directed at a prescribed socket.
 
 
-In this tutorial, we shall describe building two example data ingestion pipelines that cover the popular scenario of ingesting data from (a) Twitter and (b) RSS Feed source.
+In this tutorial, we shall describe building two example data ingestion pipelines
+that cover the popular scenario of ingesting data from (a) Twitter (b) RSS  (c) Socket Feed source.
 
 ####Ingesting Twitter Stream
 We shall use the built-in push-based Twitter adaptor.
-As a pre-requisite, we must define a Tweet using the AsterixDB Data Model (ADM) and the AsterixDB Query Language (AQL). Given below are the type definition in AQL that create a Tweet datatype which is representative of a real tweet as obtained from Twitter.
+As a pre-requisite, we must define a Tweet using the AsterixDB Data Model (ADM)
+and the AsterixDB Query Language (AQL). Given below are the type definition in AQL
+that create a Tweet datatype which is representative of a real tweet as obtained from Twitter.
 
         create dataverse feeds;
         use dataverse feeds;
 
         create type TwitterUser as closed {
-                screen_name: string,
-                lang: string,
-                friends_count: int32,
-                statuses_count: int32
+            screen_name: string,
+            lang: string,
+            friends_count: int32,
+            statuses_count: int32
         };
 
         create type Tweet as open {
-          id: int64,
-          user: TwitterUser
+            id: int64,
+            user: TwitterUser
         }
 
         create dataset Tweets (Tweet)
@@ -81,7 +87,9 @@ Next we make use of the `create feed` AQL statement to define our example data f
 
 #####Using the "push_twitter" feed adapter#####
 The "push_twitter" adaptor requires setting up an application account with Twitter. To retrieve
-tweets, Twitter requires registering an application with Twitter. Registration involves providing a name and a brief description for the application. Each application has an associated OAuth authentication credential that includes OAuth keys and tokens. Accessing the
+tweets, Twitter requires registering an application with Twitter. Registration involves providing
+a name and a brief description for the application. Each application has an associated OAuth
+authentication credential that includes OAuth keys and tokens. Accessing the
 Twitter API requires providing the following.
 1. Consumer Key (API Key)
 2. Consumer Secret (API Secret)
@@ -89,7 +97,9 @@ Twitter API requires providing the following.
 4. Access Token Secret
 
 The "push_twitter" adaptor takes as configuration the above mentioned
-parameters. End users are required to obtain the above authentication credentials prior to using the "push_twitter" adaptor. For further information on obtaining OAuth keys and tokens and registering an application with Twitter, please visit http://apps.twitter.com
+parameters. End users are required to obtain the above authentication credentials prior to
+using the "push_twitter" adaptor. For further information on obtaining OAuth keys and tokens and
+registering an application with Twitter, please visit http://apps.twitter.com
 
 Given below is an example AQL statement that creates a feed called "TwitterFeed" by using the
 "push_twitter" adaptor.
@@ -105,33 +115,54 @@ Given below is an example AQL statement that creates a feed called "TwitterFeed"
          ("access.token.secret"="*************"));
 
 It is required that the above authentication parameters are provided valid values.
-Note that the `create feed` statement does not initiate the flow of data from Twitter into our AsterixDB instance. Instead, the `create feed` statement only results in registering the feed with AsterixDB. The flow of data along a feed is initiated when it is connected
-to a target dataset using the connect feed statement (which we shall revisit later).
+Note that the `create feed` statement does not initiate the flow of data from Twitter into
+our AsterixDB instance. Instead, the `create feed` statement only results in registering
+the feed with AsterixDB. The flow of data along a feed is initiated when it is connected
+to a target dataset using the connect feed statement and activated using the start feed statement
+(which we shall revisit later).
 
+The Twitter adaptor also supports several Twitter streaming APIs as follow:
+1. Track filter ("keywords"="AsterixDB, Apache")
+2. Locations filter ("locations"="-29.7, 79.2, 36.7, 72.0; -124.848974,-66.885444, 24.396308, 49.384358")
+3. Language filter ("language"="en")
+4. Filter level ("filter-level"="low")
+
+An example of Twitter adaptor tracking tweets containing keyword "news" can be describe with following ddl:
+
+        use dataverse feeds;
+
+        create feed TwitterFeed if not exists using "push_twitter"
+        (("type-name"="Tweet"),
+         ("format"="twitter-status"),
+         ("consumer.key"="************"),
+         ("consumer.secret"="**************"),
+         ("access.token"="**********"),
+         ("access.token.secret"="*************"),
+         ("keywords"="news"));
+
+For the detail information about the parameters, please visit https://dev.twitter.com/streaming/overview/request-parameters
 
 ####Lifecycle of a Feed####
 
 A feed is a logical artifact that is brought to life (i.e., its data flow
-is initiated) only when it is connected to a dataset using the `connect
-feed` AQL statement. Subsequent to a `connect feed`
-statement, the feed is said to be in the connected state. Multiple
-feeds can simultaneously be connected to a dataset such that the
+is initiated) only when it is activated using the `start feed` AQL statement.
+Before we active a feed, we need to designate the dataset where the data to be persistent
+using `connect feed` statement.
+Subsequent to a `connect feed` statement, the feed is said to be in the connected state, i.e. ready-to-go state.
+`start feed` statement will activate the feed, and start the dataflow from feed to its connected dataset.
+Multiple feeds can simultaneously be connected to a dataset such that the
 contents of the dataset represent the union of the connected feeds.
-In a supported but unlikely scenario, one feed may also be simultaneously
-connected to different target datasets. Note that connecting
-a secondary feed does not require the parent feed (or any ancestor
-feed) to be in the connected state; the order in which feeds are connected
-to their respective datasets is not important. Furthermore,
-additional (secondary) feeds can be added to an existing hierarchy
-and connected to a dataset at any time without impeding/interrupting
-the flow of data along a connected ancestor feed.
+One feed may also be simultaneously connected to different target datasets.
 
         use dataverse feeds;
 
         connect feed TwitterFeed to dataset Tweets;
 
+        start feed TwitterFeed;
+
 The `connect feed` statement above directs AsterixDB to persist
-the `TwitterFeed` feed in the `Tweets` dataset.
+the `TwitterFeed` feed in the `Tweets` dataset. `start feed` statement will activate the feed and
+start the dataflow.
 If it is required (by the high-level application) to also retain the raw
 tweets obtained from Twitter, the end user may additionally choose
 to connect TwitterFeed to a different dataset.
@@ -143,12 +174,13 @@ latest tweets that are stored into the data set.
 
         for $i in dataset Tweets limit 10 return $i;
 
+The dataflow of data from a feed can be terminated explicitly by `stop feed` statement.
 
-The flow of data from a feed into a dataset can be terminated
-explicitly by use of the `disconnect feed` statement.
-Disconnecting a feed from a particular dataset does not interrupt
-the flow of data from the feed to any other dataset(s), nor does it
-impact other connected feeds in the lineage.
+        use dataverse feeds;
+
+        stop feed TwitterFeed;
+
+The `disconnnect statement` can be used to discontinue the data feeding from the feed to certain dataset.
 
         use dataverse feeds;
 
@@ -156,11 +188,15 @@ impact other connected feeds in the lineage.
 
 ####Ingesting an RSS Feed
 
-RSS (Rich Site Summary), originally RDF Site Summary and often called Really Simple Syndication, uses a family of standard web feed formats to publish frequently updated information: blog entries, news headlines, audio, video. An RSS document (called "feed", "web feed", or "channel") includes full or summarized text, and metadata, like publishing date and author's name. RSS feeds enable publishers to syndicate data automatically.
+RSS (Rich Site Summary), originally RDF Site Summary and often called Really Simple Syndication,
+uses a family of standard web feed formats to publish frequently updated information: blog entries, news headlines,
+audio, video. An RSS document (called "feed", "web feed", or "channel") includes full or summarized text, and metadata,
+like publishing date and author's name. RSS feeds enable publishers to syndicate data automatically.
 
 
 #####Using the "rss_feed" feed adapter#####
-AsterixDB provides a built-in feed adaptor that allows retrieving data given a collection of RSS end point URLs. As observed in the case of ingesting tweets, it is required to model an RSS data item using AQL.
+AsterixDB provides a built-in feed adaptor that allows retrieving data given a collection of RSS end point URLs.
+As observed in the case of ingesting tweets, it is required to model an RSS data item using AQL.
 
         use dataverse feeds;
 
@@ -185,7 +221,8 @@ Next, we define an RSS feed using our built-in adaptor "rss_feed".
            ("url"="http://rss.cnn.com/rss/edition.rss")
         );
 
-In the above definition, the configuration parameter "url" can be a comma-separated list that reflects a collection of RSS URLs, where each URL corresponds to an RSS endpoint or a RSS feed.
+In the above definition, the configuration parameter "url" can be a comma-separated list that reflects a
+collection of RSS URLs, where each URL corresponds to an RSS endpoint or a RSS feed.
 The "rss_adaptor" retrieves data from each of the specified RSS URLs (comma separated values) in parallel.
 
 The following statements connect the feed into the `RssDataset`:
@@ -193,6 +230,12 @@ The following statements connect the feed into the `RssDataset`:
         use dataverse feeds;
 
         connect feed my_feed to dataset RssDataset;
+
+The following statements activate the feed and start the dataflow:
+
+        use dataverse feeds;
+
+        start feed my_feed;
 
 The following statements show the latest data from the data set, and
 disconnect the feed from the data set.
@@ -203,9 +246,65 @@ disconnect the feed from the data set.
 
         disconnect feed my_feed from dataset RssDataset;
 
-AsterixDB also allows multiple feeds to be connected to form a cascade
-network to process data.
+        stop feed my_feed;
 
+####Ingesting an Socket Feed
+A network socket is an internal endpoint for sending or receiving data at a single node in a computer network.
+In practice "socket" usually refers to a socket in an Internet Protocol (IP) network (where sockets may be called
+Internet sockets), in particular for the Transmission Control Protocol (TCP), which is a protocol for one-to-one
+connections. In this context, sockets are assumed to be associated with a specific socket address, namely the
+IP address and a port number for the local node, and there is a corresponding socket address at the foreign node
+(other node), which itself has an associated socket, used by the foreign process. Associating a socket with a socket
+address is called binding. [Network socket](https://en.wikipedia.org/wiki/Network_socket)
+
+#####Using the "socket_feed" feed adapter#####
+AsterixDB provides socket adaptor which enables socket client to push data directly into dataset. Similar to Twitter
+Adaptor and Rss Adaptor, Socket adaptor works with a predefined datatype and feeds data into dataset controlled by
+`start feed` and `stop feed` statement.
+
+        drop dataverse feeds if exists;
+        create dataverse feeds;
+        use dataverse feeds;
+
+        create type TestDataType as open {
+           screen-name: string
+        }
+
+        create dataset TestDataset(TestDataType) primary key screen-name;
+
+        create feed TestSocketFeed using socket_adapter
+        (
+           ("sockets"="127.0.0.1:10001"),
+           ("address-type"="IP"),
+           ("type-name"="TestDataType"),
+           ("format"="adm")
+        );
+
+        connect feed TestSocketFeed to dataset TestDataset;
+
+        use dataverse feeds;
+        start feed TestSocketFeed;
+
+The above statements create a socket feed which is listening to port "10001" of the host machine. This feed accepts data
+records in adm format. As an example, you can download the sample data [Chirp Users](../data/chu.adm) and push them line
+by line into the socket feed using any socket client you like. Following is a socket client example in Python:
+
+        from socket import socket
+
+        ip = '127.0.0.1'
+        port1 = 10001
+        filePath = 'chu.adm'
+
+        sock1 = socket()
+        sock1.connect((ip, port1))
+
+        with open(filePath) as inputData:
+            for line in inputData:
+                sock1.sendall(line)
+            sock1.close()
+
+
+<!---
 ## <a name="FeedPolicies">Policies for Feed Ingestion</a>  ##
 
 Multiple feeds may be concurrently operational on an AsterixDB
@@ -260,3 +359,4 @@ time, which is independent from other related feeds in the hierarchy.
 
         connect feed TwitterFeed to dataset Tweets
         using policy Basic ;
+--->
