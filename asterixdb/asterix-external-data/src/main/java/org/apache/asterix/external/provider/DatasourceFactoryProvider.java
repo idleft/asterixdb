@@ -38,6 +38,7 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import twitter4j.conf.ConfigurationBuilder;
 
 public class DatasourceFactoryProvider {
 
@@ -108,6 +109,11 @@ public class DatasourceFactoryProvider {
             case ExternalDataConstants.READER_PUSH_TWITTER:
             case ExternalDataConstants.READER_PULL_TWITTER:
             case ExternalDataConstants.READER_USER_STREAM_TWITTER:
+                try {
+                    ConfigurationBuilder cb = new ConfigurationBuilder();
+                } catch (NoClassDefFoundError e) {
+                    throw new RuntimeDataException(ErrorCode.ADAPTOR_TWITTER_TWITTER4J_LIB_NOT_FOUND);
+                }
                 return new TwitterRecordReaderFactory();
             case ExternalDataConstants.ALIAS_SOCKET_ADAPTER:
             case ExternalDataConstants.SOCKET:
