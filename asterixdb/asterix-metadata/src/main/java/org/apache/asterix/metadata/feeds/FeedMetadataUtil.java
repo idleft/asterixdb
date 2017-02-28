@@ -309,7 +309,7 @@ public class FeedMetadataUtil {
                 } catch (ACIDException | RemoteException e2) {
                     e.addSuppressed(e2);
                 }
-                throw new MetadataException(ErrorCode.FEED_CREATE_FEED_DATATYPE_ERROR, datatypeName);
+                throw new MetadataException(ErrorCode.FEED_CREATE_FEED_DATATYPE_ERROR, e, datatypeName);
             }
         } finally {
             MetadataManager.INSTANCE.releaseReadLatch();
