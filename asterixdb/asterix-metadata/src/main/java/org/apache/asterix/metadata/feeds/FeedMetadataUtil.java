@@ -155,7 +155,7 @@ public class FeedMetadataUtil {
                 }
             }
         } catch (Exception e) {
-            throw new AsterixException(e);
+            throw new AsterixException("Invalid feed parameters", e);
         }
     }
 
