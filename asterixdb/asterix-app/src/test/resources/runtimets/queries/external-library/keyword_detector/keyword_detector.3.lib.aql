@@ -16,30 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.om.functions;
-
-import java.io.Serializable;
-import java.util.List;
-
-import org.apache.asterix.om.typecomputer.base.IResultTypeComputer;
-import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
-import org.apache.hyracks.algebricks.core.algebra.functions.IFunctionInfo;
-
-public interface IExternalFunctionInfo extends IFunctionInfo, Serializable {
-
-    public IResultTypeComputer getResultTypeComputer();
-
-    public IAType getReturnType();
-
-    public String getFunctionBody();
-
-    public List<IAType> getParamList();
-
-    public String getLanguage();
-
-    public FunctionKind getKind();
-
-    public String getInitParameters();
-
-}
+/*
+ * Description     : Use fully qualified name to create dataset, type and index
+ *                 : and to access dataset
+ * Expected Result : Success
+ * Date            : 29th August 2012
+ */
+install test testlib src/test/resources/externallib/testlib-zip-binary-assembly.zip

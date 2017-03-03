@@ -1738,7 +1738,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
             Function function = new Function(dataverse, functionName, cfs.getaAterixFunction().getArity(),
                     cfs.getParamList(), Function.RETURNTYPE_VOID, cfs.getFunctionBody(), Function.LANGUAGE_AQL,
-                    FunctionKind.SCALAR.toString());
+                    FunctionKind.SCALAR.toString(), "");
             MetadataManager.INSTANCE.addFunction(mdTxnCtx, function);
 
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);

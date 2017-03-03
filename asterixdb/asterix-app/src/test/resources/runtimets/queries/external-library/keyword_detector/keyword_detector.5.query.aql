@@ -16,30 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.om.functions;
 
-import java.io.Serializable;
-import java.util.List;
+use dataverse test;
 
-import org.apache.asterix.om.typecomputer.base.IResultTypeComputer;
-import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
-import org.apache.hyracks.algebricks.core.algebra.functions.IFunctionInfo;
+for $i1 in dataset Res1
+for $i2 in dataset Res2
+where $i1.id = $i2.id and ($i1.sensitive = true or $i2.sensitive = true)
+order by $i1.id
+return $i1.id
 
-public interface IExternalFunctionInfo extends IFunctionInfo, Serializable {
-
-    public IResultTypeComputer getResultTypeComputer();
-
-    public IAType getReturnType();
-
-    public String getFunctionBody();
-
-    public List<IAType> getParamList();
-
-    public String getLanguage();
-
-    public FunctionKind getKind();
-
-    public String getInitParameters();
-
-}

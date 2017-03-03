@@ -30,6 +30,7 @@
     <xs:element name="function_type" type="xs:string" />
     <xs:element name="definition" type="xs:string" />
     <xs:element name="factory_class" type="xs:string" />
+    <xs:element name="init_parameters" type="xs:string" />
 
 
     <!-- definition of complex elements -->
@@ -41,6 +42,7 @@
                 <xs:element ref="lib:arguments" />
                 <xs:element ref="lib:return_type" />
                 <xs:element ref="lib:definition" />
+                <xs:element ref="lib:init_parameters" />
             </xs:sequence>
         </xs:complexType>
     </xs:element>

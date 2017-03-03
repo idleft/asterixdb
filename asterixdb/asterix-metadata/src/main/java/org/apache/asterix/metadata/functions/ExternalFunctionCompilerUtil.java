@@ -83,7 +83,8 @@ public class ExternalFunctionCompilerUtil {
         returnType = getTypeInfo(function.getReturnType(), txnCtx, function);
 
         return new ExternalScalarFunctionInfo(fid.getNamespace(), fid.getName(), fid.getArity(), returnType,
-                function.getFunctionBody(), function.getLanguage(), arguments, typeComputer);
+                function.getFunctionBody(), function.getLanguage(), function.getInitParameters(), arguments,
+                typeComputer);
     }
 
     private static IAType getTypeInfo(String paramType, MetadataTransactionContext txnCtx, Function function)

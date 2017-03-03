@@ -16,30 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.om.functions;
 
-import java.io.Serializable;
-import java.util.List;
+use dataverse test;
 
-import org.apache.asterix.om.typecomputer.base.IResultTypeComputer;
-import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
-import org.apache.hyracks.algebricks.core.algebra.functions.IFunctionInfo;
-
-public interface IExternalFunctionInfo extends IFunctionInfo, Serializable {
-
-    public IResultTypeComputer getResultTypeComputer();
-
-    public IAType getReturnType();
-
-    public String getFunctionBody();
-
-    public List<IAType> getParamList();
-
-    public String getLanguage();
-
-    public FunctionKind getKind();
-
-    public String getInitParameters();
-
-}
+load dataset EmpDataset
+using localfs
+(("path"="asterix_nc1://data/names.adm"),("format"="delimited-text"),("delimiter"="|"));

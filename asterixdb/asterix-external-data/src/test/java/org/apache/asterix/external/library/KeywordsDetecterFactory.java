@@ -16,30 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.om.functions;
 
-import java.io.Serializable;
-import java.util.List;
+package org.apache.asterix.external.library;
 
-import org.apache.asterix.om.typecomputer.base.IResultTypeComputer;
-import org.apache.asterix.om.types.IAType;
-import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
-import org.apache.hyracks.algebricks.core.algebra.functions.IFunctionInfo;
+import org.apache.asterix.external.api.IExternalScalarFunction;
+import org.apache.asterix.external.api.IFunctionFactory;
 
-public interface IExternalFunctionInfo extends IFunctionInfo, Serializable {
+public class KeywordsDetecterFactory implements IFunctionFactory{
 
-    public IResultTypeComputer getResultTypeComputer();
-
-    public IAType getReturnType();
-
-    public String getFunctionBody();
-
-    public List<IAType> getParamList();
-
-    public String getLanguage();
-
-    public FunctionKind getKind();
-
-    public String getInitParameters();
-
+    @Override
+    public IExternalScalarFunction getExternalFunction() {
+        return new KeywordsDetecterFunction();
+    }
 }

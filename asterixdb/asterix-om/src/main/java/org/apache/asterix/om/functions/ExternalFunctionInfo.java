@@ -34,6 +34,7 @@ public class ExternalFunctionInfo extends FunctionInfo implements IExternalFunct
     private final String language;
     private final FunctionKind kind;
     private final IAType returnType;
+    private final String initParameters;
 
     public ExternalFunctionInfo() {
         super();
@@ -43,11 +44,11 @@ public class ExternalFunctionInfo extends FunctionInfo implements IExternalFunct
         language = null;
         kind = null;
         returnType = null;
-
+        initParameters = null;
     }
 
-    public ExternalFunctionInfo(String namespace, String name, int arity, FunctionKind kind,
-            List<IAType> argumentTypes, IAType returnType, IResultTypeComputer rtc, String body, String language) {
+    public ExternalFunctionInfo(String namespace, String name, int arity, FunctionKind kind, List<IAType> argumentTypes,
+            IAType returnType, IResultTypeComputer rtc, String body, String language, String initParams) {
         super(namespace, name, arity, true);
         this.rtc = rtc;
         this.argumentTypes = argumentTypes;
@@ -55,6 +56,7 @@ public class ExternalFunctionInfo extends FunctionInfo implements IExternalFunct
         this.language = language;
         this.kind = kind;
         this.returnType = returnType;
+        this.initParameters = initParams;
     }
 
     public IResultTypeComputer getResultTypeComputer() {
@@ -88,6 +90,11 @@ public class ExternalFunctionInfo extends FunctionInfo implements IExternalFunct
     @Override
     public IAType getReturnType() {
         return returnType;
+    }
+
+    @Override
+    public  String getInitParameters() {
+        return initParameters;
     }
 
 }

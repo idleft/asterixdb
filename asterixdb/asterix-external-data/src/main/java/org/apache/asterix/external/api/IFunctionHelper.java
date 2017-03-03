@@ -34,4 +34,6 @@ public interface IFunctionHelper {
     public IJObject getObject(JTypeTag jtypeTag) throws HyracksDataException;
 
     public void reset();
+
+    public String getInitParameters();
 }
