@@ -100,7 +100,7 @@ public class InputHandlerTest extends TestCase {
     private static FeedPolicyAccessor createFeedPolicyAccessor(boolean spill, boolean discard, long spillBudget,
             float discardFraction) {
         FeedPolicyAccessor fpa = Mockito.mock(FeedPolicyAccessor.class);
-        Mockito.when(fpa.bufferingEnabled()).thenReturn(true);
+        Mockito.when(fpa.flowControlEnabled()).thenReturn(true);
         Mockito.when(fpa.spillToDiskOnCongestion()).thenReturn(spill);
         Mockito.when(fpa.getMaxSpillOnDisk()).thenReturn(spillBudget);
         Mockito.when(fpa.discardOnCongestion()).thenReturn(discard);
