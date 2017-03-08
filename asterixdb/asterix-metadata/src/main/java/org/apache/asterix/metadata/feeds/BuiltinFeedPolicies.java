@@ -60,7 +60,7 @@ public class BuiltinFeedPolicies {
         return new FeedPolicyEntity(MetadataConstants.METADATA_DATAVERSE_NAME, "Basic", description, policyParams);
     }
 
-    // AdvancedFT_Discard
+    // Discard
     private static FeedPolicyEntity initializeAdvancedFTDiscardPolicy() {
         Map<String, String> policyParams = new HashMap<String, String>();
         policyParams.put(FeedPolicyAccessor.ELASTIC, "false");
@@ -70,11 +70,11 @@ public class BuiltinFeedPolicies {
         policyParams.put(FeedPolicyAccessor.LOGGING_STATISTICS, "true");
 
         String description = "FlowControl 100% Discard during congestion";
-        return new FeedPolicyEntity(MetadataConstants.METADATA_DATAVERSE_NAME, "AdvancedFT_Discard", description,
+        return new FeedPolicyEntity(MetadataConstants.METADATA_DATAVERSE_NAME, "Discard", description,
                 policyParams);
     }
 
-    // AdvancedFT_Spill
+    // Spill
     private static FeedPolicyEntity initializeAdvancedFTSpillPolicy() {
         Map<String, String> policyParams = new HashMap<String, String>();
         policyParams.put(FeedPolicyAccessor.ELASTIC, "false");
@@ -83,7 +83,7 @@ public class BuiltinFeedPolicies {
         policyParams.put(FeedPolicyAccessor.MAX_SPILL_SIZE_ON_DISK, "" + FeedPolicyAccessor.NO_LIMIT);
 
         String description = "FlowControl 100% Spill during congestion";
-        return new FeedPolicyEntity(MetadataConstants.METADATA_DATAVERSE_NAME, "AdvancedFT_Spill", description,
+        return new FeedPolicyEntity(MetadataConstants.METADATA_DATAVERSE_NAME, "Spill", description,
                 policyParams);
     }
 

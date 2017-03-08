@@ -76,7 +76,7 @@ public class InputHandlerTest extends TestCase {
         EntityId feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, DATAVERSE, FEED);
         FeedConnectionId connectionId = new FeedConnectionId(feedId, DATASET);
         ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.COLLECT.toString(), 0);
-        return new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, fpa, fta, framePool);
+        return new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, fpa, fta, framePool, this.toString());
     }
 
     /*

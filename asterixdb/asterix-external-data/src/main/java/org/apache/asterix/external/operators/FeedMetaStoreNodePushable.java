@@ -132,7 +132,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         }
         if (policyAccessor.flowControlEnabled()) {
             writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, insertOperator,
-                    policyAccessor, fta, feedManager.getFramePool());
+                    policyAccessor, fta, feedManager.getFramePool(), this.toString());
         } else {
             writer = new SyncFeedRuntimeInputHandler(ctx, insertOperator, fta);
         }

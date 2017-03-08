@@ -20,6 +20,7 @@ package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -50,7 +51,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
 
     private static final Logger LOGGER = Logger.getLogger(FeedRuntimeInputHandler.class.getName());
     private static final double MAX_SPILL_USED_BEFORE_RESUME = 0.8;
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private final Object mutex = new Object();
     private final FeedExceptionHandler exceptionHandler;
     private final FrameSpiller spiller;
@@ -60,7 +61,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private final FrameTransporter consumer;
     private final Thread consumerThread;
     private final LinkedBlockingDeque<ByteBuffer> inbox;
-    private final ConcurrentFramePool framePool;
+    private final ConcurrentFramePool framePool; // framepool size different from feed frame cause record # inconsistent
     private Mode mode = Mode.PROCESS;
     private int total = 0;
     private int numDiscarded = 0;
@@ -69,10 +70,10 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private int numStalled = 0;
 
     public FeedRuntimeInputHandler(IHyracksTaskContext ctx, FeedConnectionId connectionId, ActiveRuntimeId runtimeId,
-            IFrameWriter writer, FeedPolicyAccessor fpa, FrameTupleAccessor fta, ConcurrentFramePool framePool)
+            IFrameWriter writer, FeedPolicyAccessor fpa, FrameTupleAccessor fta, ConcurrentFramePool framePool, String caller)
             throws HyracksDataException {
         this.writer = writer;
-
+        System.out.println("Create Runtime Input Hanlder from : " + caller);
         this.spiller = fpa.spillToDiskOnCongestion()
                 ? new FrameSpiller(ctx,
                         connectionId.getFeedId() + "_" + connectionId.getDatasetName() + "_"
@@ -84,7 +85,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         this.framePool = framePool;
         this.inbox = new LinkedBlockingDeque<>();
         this.consumer = new FrameTransporter();
-        this.consumerThread = new Thread(consumer);
+        this.consumerThread = new Thread(consumer, "FeedRuntimeInputHandler-FrameTransporter");
         this.consumerThread.start();
         this.initialFrameSize = ctx.getInitialFrameSize();
         this.frameAction = new FrameAction();

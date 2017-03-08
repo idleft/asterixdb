@@ -63,7 +63,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutp
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             if (policyAccessor.flowControlEnabled()) {
                 writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
-                        activeManager.getFramePool());
+                        activeManager.getFramePool(), this.toString());
             } else {
                 writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
             }

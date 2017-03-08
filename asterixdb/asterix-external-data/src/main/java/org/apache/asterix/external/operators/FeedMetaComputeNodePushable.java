@@ -130,7 +130,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         coreOperator.setOutputFrameWriter(0, writer, recordDesc);
         if (fpa.flowControlEnabled()) {
             writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, coreOperator, fpa, fta,
-                    feedManager.getFramePool());
+                    feedManager.getFramePool(), "ComputePushable");
         } else {
             writer = new SyncFeedRuntimeInputHandler(ctx, coreOperator, fta);
         }
