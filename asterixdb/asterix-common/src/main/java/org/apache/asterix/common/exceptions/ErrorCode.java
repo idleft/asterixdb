@@ -93,7 +93,7 @@ public class ErrorCode {
     public static final int OPERATORS_FEED_INTAKE_OPERATOR_DESCRIPTOR_CLASSLOADER_NOT_CONFIGURED = 3004;
     public static final int PARSER_DELIMITED_NONOPTIONAL_NULL = 3005;
     public static final int PARSER_DELIMITED_ILLEGAL_FIELD = 3006;
-    public static final int ADAPTOR_TWITTER_TWITTER4J_LIB_NOT_FOUND = 3007;
+    public static final int ADAPTER_TWITTER_TWITTER4J_LIB_NOT_FOUND = 3007;
     public static final int OPERATORS_FEED_INTAKE_OPERATOR_NODE_PUSHABLE_FAIL_AT_INGESTION = 3008;
     public static final int FEED_CREATE_FEED_DATATYPE_ERROR = 3009;
     public static final int PARSER_HIVE_NON_PRIMITIVE_LIST_NOT_SUPPORT = 3010;
