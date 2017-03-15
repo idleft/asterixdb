@@ -227,7 +227,7 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
           location="${hivecompatLocation!}" filePrefix="${hivecompatPrefix!}">
 Source files in asterix-hivecompat are derived from portions of Apache Hive Query Language v0.13.0 (org.apache.hive:hive-exec).
 </@license>
-<@license component="AsterixDB QueryUI" licenseName="The MIT License"
+<@license component="AsterixDB WebUI" licenseName="The MIT License"
         files=["webui/static/js/jquery.json-viewer.js","webui/static/css/jquery.json-viewer.css"]>
     Copyright (c) 2014 Alexandre Bodelot
 

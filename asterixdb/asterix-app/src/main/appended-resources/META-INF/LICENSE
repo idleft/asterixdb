@@ -246,10 +246,10 @@
    OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
    THE SOFTWARE.
 ---
-    Portions of the AsterixDB QueryUI
+    Portions of the AsterixDB WebUI
        located at:
          webui/static/js/jquery.json-viewer.js
-         and
+       and
          webui/static/css/jquery.json-viewer.css
     are available under The MIT License:
 ---
