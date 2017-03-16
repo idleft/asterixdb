@@ -61,7 +61,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private final FrameTransporter consumer;
     private final Thread consumerThread;
     private final LinkedBlockingDeque<ByteBuffer> inbox;
-    private final ConcurrentFramePool framePool; // framepool size different from feed frame cause record # inconsistent
+    private final ConcurrentFramePool framePool;
     private Mode mode = Mode.PROCESS;
     private int total = 0;
     private int numDiscarded = 0;
@@ -73,7 +73,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             IFrameWriter writer, FeedPolicyAccessor fpa, FrameTupleAccessor fta, ConcurrentFramePool framePool, String caller)
             throws HyracksDataException {
         this.writer = writer;
-        System.out.println("Create Runtime Input Hanlder from : " + caller);
         this.spiller = fpa.spillToDiskOnCongestion()
                 ? new FrameSpiller(ctx,
                         connectionId.getFeedId() + "_" + connectionId.getDatasetName() + "_"
@@ -476,7 +475,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
                                 frame = spiller.next();
                             }
                         }
-                        writer.flush();
                         // At this point. We consumed all memory and spilled
                         // We can't assume the next will be in memory. what if there is 0 memory?
                         synchronized (mutex) {
