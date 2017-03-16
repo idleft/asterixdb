@@ -16,7 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.input.stream;
+package org.apache.asterix.external.input.stream.factory;
 
 import java.io.IOException;
 import java.util.ArrayList;
