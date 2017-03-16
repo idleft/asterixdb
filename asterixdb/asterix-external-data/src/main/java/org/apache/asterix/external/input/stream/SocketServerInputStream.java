@@ -72,7 +72,7 @@ public class SocketServerInputStream extends AsterixInputStream {
             read = connectionStream.read(b, off, len);
         } catch (IOException e) {
             // exception is expected when no connection available
-            LOGGER.info("Exhausted all pending connections. Waiting for new one coming.");
+            LOGGER.info("Exhausted all pending connections. Waiting for new ones to come.");
             read = -1;
         }
         while (read < 0) {

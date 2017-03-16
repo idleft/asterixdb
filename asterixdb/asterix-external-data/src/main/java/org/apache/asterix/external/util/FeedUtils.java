@@ -122,9 +122,6 @@ public class FeedUtils {
         // read the message and reduce the number of tuples
         fta.reset(input);
         int tc = fta.getTupleCount() - 1;
-        if(tc == -1) {
-            System.out.println("Error");
-        }
         int offset = fta.getTupleStartOffset(tc);
         int len = fta.getTupleLength(tc);
         int newSize = FrameHelper.calcAlignedFrameSizeToStore(1, len, message.getMinSize());
