@@ -87,6 +87,7 @@ public class TweetGenerator {
                 try {
                     os.write(outputBuffer.array(), 0, outputBuffer.limit());
                 } catch (Exception e) {
+                    LOGGER.info("OutputStream failed. Add it into the removal list.");
                     subscribersForRemoval.add(os);
                 }
             }
@@ -99,7 +100,7 @@ public class TweetGenerator {
         outputBuffer.limit(32 * 1024);
     }
 
-    public boolean generateNextBatch(int numTweets) throws Exception {
+    public boolean generateNextBatch(int numTweets) throws IOException{
         boolean moreData = tweetIterator.hasNext();
         if (!moreData) {
             if (outputBuffer.position() > 0) {

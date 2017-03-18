@@ -94,7 +94,7 @@ public class TwitterFirehoseStreamFactory implements IInputStreamFactory {
     @Override
     public AsterixInputStream createInputStream(IHyracksTaskContext ctx, int partition) throws HyracksDataException {
         try {
-            return new TwitterFirehoseInputStream(configuration, ctx, partition);
+            return new TwitterFirehoseInputStream(configuration, partition);
         } catch (IOException e) {
             throw new HyracksDataException(e);
         }

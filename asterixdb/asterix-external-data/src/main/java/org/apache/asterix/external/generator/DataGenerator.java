@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.asterix.external.util.Datatypes;
-import org.apache.asterix.external.util.Datatypes.Tweet;
 
 public class DataGenerator {
 
@@ -85,13 +84,13 @@ public class DataGenerator {
     }
 
     public static class InitializationInfo {
-        public Date startDate = new Date(1, 1, 2005);
-        public Date endDate = new Date(8, 20, 2012);
-        public String[] lastNames = DataGenerator.lastNames;
-        public String[] firstNames = DataGenerator.firstNames;
-        public String[] vendors = DataGenerator.vendors;
-        public String[] jargon = DataGenerator.jargon;
-        public String[] org_list = DataGenerator.org_list;
+        public static final Date startDate = new Date(1, 1, 2005);
+        public static final Date endDate = new Date(8, 20, 2012);
+        public static final String[] lastNames = DataGenerator.lastNames;
+        public static final String[] firstNames = DataGenerator.firstNames;
+        public static final String[] vendors = DataGenerator.vendors;
+        public static final String[] jargon = DataGenerator.jargon;
+        public static final String[] org_list = DataGenerator.org_list;
     }
 
     public void initialize(InitializationInfo info) {
@@ -109,9 +108,9 @@ public class DataGenerator {
         if (usernameSuffix != null) {
             name = name + usernameSuffix;
         }
-        int numFriends = random.nextInt((100)); // draw from Zipfian
+        int numFriends = random.nextInt(100); // draw from Zipfian
         int statusesCount = random.nextInt(500); // draw from Zipfian
-        int followersCount = random.nextInt((200));
+        int followersCount = random.nextInt(200);
         twUser.reset(screenName, numFriends, statusesCount, name, followersCount);
     }
 
@@ -171,7 +170,7 @@ public class DataGenerator {
             int year = date.getYear()
                     + (date.getYear() == endDate.getYear() ? 0 : random.nextInt(endDate.getYear() - date.getYear()));
             int month = (year == endDate.getYear())
-                    ? date.getMonth() == endDate.getMonth() ? (endDate.getMonth())
+                    ? date.getMonth() == endDate.getMonth() ? endDate.getMonth()
                             : (date.getMonth() + random.nextInt(endDate.getMonth() - date.getMonth()))
                     : random.nextInt(12) + 1;
 
@@ -201,6 +200,7 @@ public class DataGenerator {
         }
 
         public DateTime() {
+            // do nothing
         }
 
         public void reset(int month, int day, int year, String hour, String min, String sec) {
@@ -222,9 +222,9 @@ public class DataGenerator {
 
         public DateTime(Date date, int hour, int min, int sec) {
             super(date.getMonth(), date.getDay(), date.getYear());
-            this.hour = (hour < 10) ? "0" : "" + hour;
-            this.min = (min < 10) ? "0" : "" + min;
-            this.sec = (sec < 10) ? "0" : "" + sec;
+            this.hour = (hour < 10) ? "0" : Integer.toString(hour);
+            this.min = (min < 10) ? "0" : Integer.toString(min);
+            this.sec = (sec < 10) ? "0" : Integer.toString(sec);
         }
 
         @Override
@@ -245,12 +245,12 @@ public class DataGenerator {
 
     public static class Message {
 
-        private char[] message = new char[500];
+        private char[] content = new char[500];
         private List<String> referredTopics;
         private int length;
 
         public Message(char[] m, List<String> referredTopics) {
-            System.arraycopy(m, 0, message, 0, m.length);
+            System.arraycopy(m, 0, content, 0, m.length);
             length = m.length;
             this.referredTopics = referredTopics;
         }
@@ -265,7 +265,7 @@ public class DataGenerator {
         }
 
         public void reset(char[] m, int offset, int length, List<String> referredTopics) {
-            System.arraycopy(m, offset, message, 0, length);
+            System.arraycopy(m, offset, content, 0, length);
             this.length = length;
             this.referredTopics = referredTopics;
         }
@@ -275,7 +275,7 @@ public class DataGenerator {
         }
 
         public char charAt(int index) {
-            return message[index];
+            return content[index];
         }
 
     }
@@ -304,6 +304,7 @@ public class DataGenerator {
         }
 
         public Point() {
+            // do nothing
         }
 
         @Override
@@ -432,7 +433,11 @@ public class DataGenerator {
 
     public static class RandomUtil {
 
-        public static Random random = new Random();
+        private RandomUtil() {
+            // do nothing
+        }
+
+        public static final Random random = new Random();
 
         public static int[] getKFromN(int k, int n) {
             int[] result = new int[k];
@@ -510,7 +515,8 @@ public class DataGenerator {
 
         }
 
-        public TweetMessage() {
+        private TweetMessage() {
+            // do nothing
         }
 
         public TweetMessage(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,
@@ -535,7 +541,8 @@ public class DataGenerator {
             this.country = country;
         }
 
-        public String getAdmEquivalent(String[] fields) {
+        public String getAdmEquivalent(String[] admFields) {
+            String[] fields = admFields;
             if (fields == null) {
                 fields = DEFAULT_FIELDS;
             }
@@ -574,6 +581,9 @@ public class DataGenerator {
                     case Datatypes.Tweet.COUNTRY:
                         appendFieldName(builder, Datatypes.Tweet.COUNTRY);
                         builder.append("\"" + country + "\"");
+                        break;
+                    default:
+                        // no possible
                         break;
                 }
                 builder.append(",");
@@ -635,7 +645,7 @@ public class DataGenerator {
         private int followersCount;
 
         public TwitterUser() {
-
+            // do nothing
         }
 
         public TwitterUser(String screenName, int friendsCount, int statusesCount, String name, int followersCount) {
@@ -726,6 +736,7 @@ public class DataGenerator {
         }
 
         public Date() {
+            // do nothing
         }
 
         @Override
@@ -735,9 +746,9 @@ public class DataGenerator {
             builder.append("(\"");
             builder.append(year);
             builder.append("-");
-            builder.append(month < 10 ? "0" + month : "" + month);
+            builder.append(String.format("%02d", month));
             builder.append("-");
-            builder.append(day < 10 ? "0" + day : "" + day);
+            builder.append(String.format("%02d", day));
             builder.append("\")");
             return builder.toString();
         }
@@ -755,9 +766,9 @@ public class DataGenerator {
         }
     }
 
-    public static String[] lastNames = { "Hoopengarner", "Harrow", "Gardner", "Blyant", "Best", "Buttermore", "Gronko",
-            "Mayers", "Countryman", "Neely", "Ruhl", "Taggart", "Bash", "Cason", "Hil", "Zalack", "Mingle", "Carr",
-            "Rohtin", "Wardle", "Pullman", "Wire", "Kellogg", "Hiles", "Keppel", "Bratton", "Sutton", "Wickes",
+    protected static final String[] lastNames = { "Hoopengarner", "Harrow", "Gardner", "Blyant", "Best", "Buttermore",
+            "Gronko", "Mayers", "Countryman", "Neely", "Ruhl", "Taggart", "Bash", "Cason", "Hil", "Zalack", "Mingle",
+            "Carr", "Rohtin", "Wardle", "Pullman", "Wire", "Kellogg", "Hiles", "Keppel", "Bratton", "Sutton", "Wickes",
             "Muller", "Friedline", "Llora", "Elizabeth", "Anderson", "Gaskins", "Rifler", "Vinsant", "Stanfield",
             "Black", "Guest", "Hujsak", "Carter", "Weidemann", "Hays", "Patton", "Hayhurst", "Paynter", "Cressman",
             "Fiddler", "Evans", "Sherlock", "Woodworth", "Jackson", "Bloise", "Schneider", "Ring", "Kepplinger",
@@ -816,17 +827,17 @@ public class DataGenerator {
             "Wells", "Wilkins", "Gisiko", "Bauerle", "Harrold", "Prechtl", "Polson", "Faast", "Winton", "Garneys",
             "Peters", "Potter", "Porter", "Tennant", "Eve", "Dugger", "Jones", "Burch", "Cowper", "Whittier" };
 
-    public static String[] firstNames = { "Albert", "Jacquelin", "Dona", "Alia", "Mayme", "Genoveva", "Emma", "Lena",
-            "Melody", "Vilma", "Katelyn", "Jeremy", "Coral", "Leann", "Lita", "Gilda", "Kayla", "Alvina", "Maranda",
-            "Verlie", "Khadijah", "Karey", "Patrice", "Kallie", "Corey", "Mollie", "Daisy", "Melanie", "Sarita",
-            "Nichole", "Pricilla", "Terresa", "Berneice", "Arianne", "Brianne", "Lavinia", "Ulrike", "Lesha", "Adell",
-            "Ardelle", "Marisha", "Laquita", "Karyl", "Maryjane", "Kendall", "Isobel", "Raeann", "Heike", "Barbera",
-            "Norman", "Yasmine", "Nevada", "Mariam", "Edith", "Eugena", "Lovie", "Maren", "Bennie", "Lennie", "Tamera",
-            "Crystal", "Randi", "Anamaria", "Chantal", "Jesenia", "Avis", "Shela", "Randy", "Laurena", "Sharron",
-            "Christiane", "Lorie", "Mario", "Elizabeth", "Reina", "Adria", "Lakisha", "Brittni", "Azzie", "Dori",
-            "Shaneka", "Asuncion", "Katheryn", "Laurice", "Sharita", "Krystal", "Reva", "Inger", "Alpha", "Makeda",
-            "Anabel", "Loni", "Tiara", "Meda", "Latashia", "Leola", "Chin", "Daisey", "Ivory", "Amalia", "Logan",
-            "Tyler", "Kyong", "Carolann", "Maryetta", "Eufemia", "Anya", "Doreatha", "Lorna", "Rutha", "Ehtel",
+    protected static final String[] firstNames = { "Albert", "Jacquelin", "Dona", "Alia", "Mayme", "Genoveva", "Emma",
+            "Lena", "Melody", "Vilma", "Katelyn", "Jeremy", "Coral", "Leann", "Lita", "Gilda", "Kayla", "Alvina",
+            "Maranda", "Verlie", "Khadijah", "Karey", "Patrice", "Kallie", "Corey", "Mollie", "Daisy", "Melanie",
+            "Sarita", "Nichole", "Pricilla", "Terresa", "Berneice", "Arianne", "Brianne", "Lavinia", "Ulrike", "Lesha",
+            "Adell", "Ardelle", "Marisha", "Laquita", "Karyl", "Maryjane", "Kendall", "Isobel", "Raeann", "Heike",
+            "Barbera", "Norman", "Yasmine", "Nevada", "Mariam", "Edith", "Eugena", "Lovie", "Maren", "Bennie", "Lennie",
+            "Tamera", "Crystal", "Randi", "Anamaria", "Chantal", "Jesenia", "Avis", "Shela", "Randy", "Laurena",
+            "Sharron", "Christiane", "Lorie", "Mario", "Elizabeth", "Reina", "Adria", "Lakisha", "Brittni", "Azzie",
+            "Dori", "Shaneka", "Asuncion", "Katheryn", "Laurice", "Sharita", "Krystal", "Reva", "Inger", "Alpha",
+            "Makeda", "Anabel", "Loni", "Tiara", "Meda", "Latashia", "Leola", "Chin", "Daisey", "Ivory", "Amalia",
+            "Logan", "Tyler", "Kyong", "Carolann", "Maryetta", "Eufemia", "Anya", "Doreatha", "Lorna", "Rutha", "Ehtel",
             "Debbie", "Chassidy", "Sang", "Christa", "Lottie", "Chun", "Karine", "Peggie", "Amina", "Melany", "Alayna",
             "Scott", "Romana", "Naomi", "Christiana", "Salena", "Taunya", "Mitsue", "Regina", "Chelsie", "Charity",
             "Dacia", "Aletha", "Latosha", "Lia", "Tamica", "Chery", "Bianca", "Shu", "Georgianne", "Myriam", "Austin",
@@ -1165,17 +1176,16 @@ public class DataGenerator {
             "Hallam", "Delores", "Cressida", "Carlyle", "Leann", "Kelcey", "Laurence", "Ryan", "Reynold", "Mark",
             "Collyn", "Audie", "Sammy", "Ellery", "Sallie", "Pamelia", "Adolph", "Lydia", "Titania", "Ron", "Bridger",
             "Aline", "Read", "Kelleigh", "Weldon", "Irving", "Garey", "Diggory", "Evander", "Kylee", "Deidre", "Ormond",
-            "Laurine", "Reannon", "Arline", "Pat"
+            "Laurine", "Reannon", "Arline", "Pat"};
 
-    };
+    protected static final String[] jargon = { "wireless", "signal", "network", "3G", "plan", "touch-screen",
+            "customer-service", "reachability", "voice-command", "shortcut-menu", "customization", "platform", "speed",
+            "voice-clarity", "voicemail-service" };
 
-    public static String[] jargon = { "wireless", "signal", "network", "3G", "plan", "touch-screen", "customer-service",
-            "reachability", "voice-command", "shortcut-menu", "customization", "platform", "speed", "voice-clarity",
-            "voicemail-service" };
+    protected static final String[] vendors = { "at&t", "verizon", "t-mobile", "sprint", "motorola", "samsung",
+            "iphone" };
 
-    public static String[] vendors = { "at&t", "verizon", "t-mobile", "sprint", "motorola", "samsung", "iphone" };
-
-    public static String[] org_list = { "Latsonity", "ganjalax", "Zuncan", "Lexitechno", "Hot-tech", "subtam",
+    protected static final String[] org_list = { "Latsonity", "ganjalax", "Zuncan", "Lexitechno", "Hot-tech", "subtam",
             "Coneflex", "Ganjatax", "physcane", "Tranzap", "Qvohouse", "Zununoing", "jaydax", "Keytech", "goldendexon",
             "Villa-tech", "Trustbam", "Newcom", "Voltlane", "Ontohothex", "Ranhotfan", "Alphadax", "Transhigh",
             "kin-ron", "Doublezone", "Solophase", "Vivaace", "silfind", "Basecone", "sonstreet", "Freshfix",
