@@ -766,7 +766,7 @@ public class DataGenerator {
         }
     }
 
-    protected static final String[] lastNames = { "Hoopengarner", "Harrow", "Gardner", "Blyant", "Best", "Buttermore",
+    public static final String[] lastNames = { "Hoopengarner", "Harrow", "Gardner", "Blyant", "Best", "Buttermore",
             "Gronko", "Mayers", "Countryman", "Neely", "Ruhl", "Taggart", "Bash", "Cason", "Hil", "Zalack", "Mingle",
             "Carr", "Rohtin", "Wardle", "Pullman", "Wire", "Kellogg", "Hiles", "Keppel", "Bratton", "Sutton", "Wickes",
             "Muller", "Friedline", "Llora", "Elizabeth", "Anderson", "Gaskins", "Rifler", "Vinsant", "Stanfield",
@@ -827,7 +827,7 @@ public class DataGenerator {
             "Wells", "Wilkins", "Gisiko", "Bauerle", "Harrold", "Prechtl", "Polson", "Faast", "Winton", "Garneys",
             "Peters", "Potter", "Porter", "Tennant", "Eve", "Dugger", "Jones", "Burch", "Cowper", "Whittier" };
 
-    protected static final String[] firstNames = { "Albert", "Jacquelin", "Dona", "Alia", "Mayme", "Genoveva", "Emma",
+    public static final String[] firstNames = { "Albert", "Jacquelin", "Dona", "Alia", "Mayme", "Genoveva", "Emma",
             "Lena", "Melody", "Vilma", "Katelyn", "Jeremy", "Coral", "Leann", "Lita", "Gilda", "Kayla", "Alvina",
             "Maranda", "Verlie", "Khadijah", "Karey", "Patrice", "Kallie", "Corey", "Mollie", "Daisy", "Melanie",
             "Sarita", "Nichole", "Pricilla", "Terresa", "Berneice", "Arianne", "Brianne", "Lavinia", "Ulrike", "Lesha",
@@ -1178,14 +1178,14 @@ public class DataGenerator {
             "Aline", "Read", "Kelleigh", "Weldon", "Irving", "Garey", "Diggory", "Evander", "Kylee", "Deidre", "Ormond",
             "Laurine", "Reannon", "Arline", "Pat"};
 
-    protected static final String[] jargon = { "wireless", "signal", "network", "3G", "plan", "touch-screen",
+    public static final String[] jargon = { "wireless", "signal", "network", "3G", "plan", "touch-screen",
             "customer-service", "reachability", "voice-command", "shortcut-menu", "customization", "platform", "speed",
             "voice-clarity", "voicemail-service" };
 
-    protected static final String[] vendors = { "at&t", "verizon", "t-mobile", "sprint", "motorola", "samsung",
+    public static final String[] vendors = { "at&t", "verizon", "t-mobile", "sprint", "motorola", "samsung",
             "iphone" };
 
-    protected static final String[] org_list = { "Latsonity", "ganjalax", "Zuncan", "Lexitechno", "Hot-tech", "subtam",
+    public static final String[] org_list = { "Latsonity", "ganjalax", "Zuncan", "Lexitechno", "Hot-tech", "subtam",
             "Coneflex", "Ganjatax", "physcane", "Tranzap", "Qvohouse", "Zununoing", "jaydax", "Keytech", "goldendexon",
             "Villa-tech", "Trustbam", "Newcom", "Voltlane", "Ontohothex", "Ranhotfan", "Alphadax", "Transhigh",
             "kin-ron", "Doublezone", "Solophase", "Vivaace", "silfind", "Basecone", "sonstreet", "Freshfix",
