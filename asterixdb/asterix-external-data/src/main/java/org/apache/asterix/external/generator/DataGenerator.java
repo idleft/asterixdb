@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.asterix.external.util.Datatypes;
-import org.ini4j.Ini;
 
 public class DataGenerator {
 
