@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Random;
 
 import org.apache.asterix.external.util.Datatypes;
+import org.ini4j.Ini;
 
 public class DataGenerator {
 
@@ -38,8 +39,8 @@ public class DataGenerator {
     private TweetMessage twMessage = new TweetMessage();
     private static final String DEFAULT_COUNTRY = "US";
 
-    public DataGenerator(InitializationInfo info) {
-        initialize(info);
+    public DataGenerator() {
+        initialize(new DefaultInitializationInfo());
     }
 
     public class TweetMessageIterator implements Iterator<TweetMessage> {
@@ -64,7 +65,7 @@ public class DataGenerator {
         @Override
         public TweetMessage next() {
             tweetId++;
-            TweetMessage msg = null;
+            TweetMessage msg;
             getTwitterUser(null);
             Message message = randMessageGen.getNextRandomMessage();
             Point location = randLocationGen.getRandomPoint();
@@ -78,22 +79,25 @@ public class DataGenerator {
         @Override
         public void remove() {
             // TODO Auto-generated method stub
-
         }
 
     }
 
-    public static class InitializationInfo {
-        public static final Date startDate = new Date(1, 1, 2005);
-        public static final Date endDate = new Date(8, 20, 2012);
-        public static final String[] lastNames = DataGenerator.lastNames;
-        public static final String[] firstNames = DataGenerator.firstNames;
-        public static final String[] vendors = DataGenerator.vendors;
-        public static final String[] jargon = DataGenerator.jargon;
-        public static final String[] org_list = DataGenerator.org_list;
+    public class DefaultInitializationInfo {
+        private DefaultInitializationInfo() {
+            // do nothing
+        }
+
+        public final Date startDate = new Date(1, 1, 2005);
+        public final Date endDate = new Date(8, 20, 2012);
+        public final String[] lastNames = DataGenerator.lastNames;
+        public final String[] firstNames = DataGenerator.firstNames;
+        public final String[] vendors = DataGenerator.vendors;
+        public final String[] jargon = DataGenerator.jargon;
+        public final String[] org_list = DataGenerator.org_list;
     }
 
-    public void initialize(InitializationInfo info) {
+    public void initialize(DefaultInitializationInfo info) {
         randDateGen = new RandomDateGenerator(info.startDate, info.endDate);
         randNameGen = new RandomNameGenerator(info.firstNames, info.lastNames);
         randLocationGen = new RandomLocationGenerator(24, 49, 66, 98);
@@ -505,6 +509,10 @@ public class DataGenerator {
         private String country;
 
         public static final class TweetFields {
+            private TweetFields() {
+                // do nothing
+            }
+
             public static final String TWEETID = "id";
             public static final String USER = "user";
             public static final String LATITUDE = "latitude";
