@@ -23,16 +23,49 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.data.accessors.ITupleReference;
 
 public interface IIndexCursor {
-    public void open(ICursorInitialState initialState, ISearchPredicate searchPred) throws IndexException,
-            HyracksDataException;
+    /**
+     * Opens the cursor
+     *
+     * @param initialState
+     * @param searchPred
+     * @throws IndexException
+     * @throws HyracksDataException
+     */
+    void open(ICursorInitialState initialState, ISearchPredicate searchPred) throws HyracksDataException;
 
-    public boolean hasNext() throws HyracksDataException, IndexException;
+    /**
+     * True if the cursor has a next value
+     *
+     * @return
+     * @throws HyracksDataException
+     * @throws IndexException
+     */
+    boolean hasNext() throws HyracksDataException;
 
-    public void next() throws HyracksDataException;
+    /**
+     * moves the cursor to the next value
+     *
+     * @throws HyracksDataException
+     */
+    void next() throws HyracksDataException;
 
-    public void close() throws HyracksDataException;
+    /**
+     * Closes the cursor
+     *
+     * @throws HyracksDataException
+     */
+    void close() throws HyracksDataException;
 
-    public void reset() throws HyracksDataException, IndexException;
+    /**
+     * Reset the cursor to be reused
+     *
+     * @throws HyracksDataException
+     * @throws IndexException
+     */
+    void reset() throws HyracksDataException;
 
-    public ITupleReference getTuple();
+    /**
+     * @return the tuple pointed to by the cursor
+     */
+    ITupleReference getTuple();
 }
