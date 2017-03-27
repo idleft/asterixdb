@@ -446,18 +446,8 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         @Override
         public void run() {
             try {
-                ByteBuffer frame = inbox.poll();
+                ByteBuffer frame;
                 while (true) {
-                    if (frame != null) {
-                        try {
-                            if (consume(frame) != null) {
-                                return;
-                            }
-                        } finally {
-                            // Done with frame.
-                            framePool.release(frame);
-                        }
-                    }
                     frame = inbox.poll();
                     if (frame == null) {
                         // Memory queue is empty. Check spill
@@ -491,6 +481,15 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
                                     LOGGER.info("Consumer is waking up");
                                 }
                             }
+                        }
+                    } else {
+                        try {
+                            if (consume(frame) != null) {
+                                return;
+                            }
+                        } finally {
+                            // Done with frame.
+                            framePool.release(frame);
                         }
                     }
                 }
