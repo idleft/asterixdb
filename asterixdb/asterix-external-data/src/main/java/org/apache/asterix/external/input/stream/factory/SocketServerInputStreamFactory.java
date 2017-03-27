@@ -60,9 +60,9 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
                 mode = Mode.valueOf(modeValue.trim().toUpperCase());
             }
             String socketsValue = configuration.get(ExternalDataConstants.KEY_SOCKETS);
-            if (socketsValue == null) {
-                throw new IllegalArgumentException(
-                        "\'sockets\' parameter not specified as part of adapter configuration");
+            if (socketsValue == null
+                    || !socketsValue.matches("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}")) {
+                throw new IllegalArgumentException("\'sockets\' parameter is not properly configured.");
             }
             Map<InetAddress, Set<String>> ncMap;
             ncMap = RuntimeUtils.getNodeControllerMap();

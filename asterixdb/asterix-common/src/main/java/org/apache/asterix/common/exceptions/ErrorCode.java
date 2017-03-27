@@ -174,6 +174,7 @@ public class ErrorCode {
     public static final int UTIL_LOCAL_FILE_SYSTEM_UTILS_PATH_NOT_FOUND = 3077;
     public static final int UTIL_HDFS_UTILS_CANNOT_OBTAIN_HDFS_SCHEDULER = 3078;
     public static final int ACTIVE_MANAGER_SHUTDOWN = 3079;
+    public static final int FEED_METADATA_UTIL_UNEXPECTED_FEED_DATATYPE = 3080;
 
     private ErrorCode() {
     }
