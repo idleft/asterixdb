@@ -20,7 +20,6 @@ package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -85,7 +84,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         this.inbox = new LinkedBlockingDeque<>();
         this.consumer = new FrameTransporter();
         this.consumerThread = new Thread(consumer, "FeedRuntimeInputHandler-FrameTransporter");
-        this.consumerThread.start();
         this.initialFrameSize = ctx.getInitialFrameSize();
         this.frameAction = new FrameAction();
     }
@@ -94,6 +92,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     public void open() throws HyracksDataException {
         synchronized (writer) {
             writer.open();
+            consumerThread.start();
         }
     }
 
@@ -391,9 +390,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
 
     @Override
     public void flush() throws HyracksDataException {
-        synchronized (writer) {
-            writer.flush();
-        }
+        // no op
     }
 
     public int getNumDiscarded() {
@@ -475,6 +472,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
                                 frame = spiller.next();
                             }
                         }
+                        writer.flush();
                         // At this point. We consumed all memory and spilled
                         // We can't assume the next will be in memory. what if there is 0 memory?
                         synchronized (mutex) {

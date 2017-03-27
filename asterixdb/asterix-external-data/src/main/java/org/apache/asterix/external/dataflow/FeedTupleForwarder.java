@@ -114,8 +114,6 @@ public class FeedTupleForwarder implements ITupleForwarder {
     }
 
     public void flush() throws HyracksDataException {
-        if (appender.getTupleCount() > 0) {
-            appender.flush(writer);
-        }
+        appender.flush(writer);
     }
 }
