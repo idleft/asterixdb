@@ -20,6 +20,7 @@ package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -51,7 +52,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private static final Logger LOGGER = Logger.getLogger(FeedRuntimeInputHandler.class.getName());
     private static final double MAX_SPILL_USED_BEFORE_RESUME = 0.8;
     private static final boolean DEBUG = false;
-    private final Object mutex = new Object();
     private final FeedExceptionHandler exceptionHandler;
     private final FrameSpiller spiller;
     private final FeedPolicyAccessor fpa;
@@ -59,7 +59,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private final int initialFrameSize;
     private final FrameTransporter consumer;
     private final Thread consumerThread;
-    private final LinkedBlockingDeque<ByteBuffer> inbox;
+    private final LinkedBlockingQueue<ByteBuffer> inbox;
     private final ConcurrentFramePool framePool;
     private Mode mode = Mode.PROCESS;
     private int total = 0;
@@ -81,7 +81,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         this.exceptionHandler = new FeedExceptionHandler(ctx, fta);
         this.fpa = fpa;
         this.framePool = framePool;
-        this.inbox = new LinkedBlockingDeque<>();
+        this.inbox = new LinkedBlockingQueue<>();
         this.consumer = new FrameTransporter();
         this.consumerThread = new Thread(consumer, "FeedRuntimeInputHandler-FrameTransporter");
         this.initialFrameSize = ctx.getInitialFrameSize();
@@ -107,12 +107,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     public void close() throws HyracksDataException {
         try {
             inbox.put((ByteBuffer.allocate(0)));
-            synchronized (mutex) {
-                if (DEBUG) {
-                    LOGGER.info("Producer is waking up consumer");
-                }
-                mutex.notify();
-            }
             consumerThread.join();
         } catch (InterruptedException e) {
             LOGGER.log(Level.WARNING, e.getMessage(), e);
@@ -259,12 +253,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
                 waitforSpillSpace();
                 spiller.spill(frame);
                 numSpilled++;
-                synchronized (mutex) {
-                    if (DEBUG) {
-                        LOGGER.info("Producer is waking up consumer");
-                    }
-                    mutex.notify();
-                }
                 return;
             }
             if (DEBUG) {
@@ -278,12 +266,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             numProcessedInMemory++;
             if (DEBUG) {
                 LOGGER.info("stall(frame) has been completed. Notifying the consumer that a frame is ready");
-            }
-            synchronized (mutex) {
-                if (DEBUG) {
-                    LOGGER.info("Producer is waking up consumer");
-                }
-                mutex.notify();
             }
         } catch (InterruptedException e) {
             throw new HyracksDataException(e);
@@ -312,7 +294,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             next.put(frame);
             try {
                 inbox.put(next);
-                notifyMemoryConsumer();
             } catch (InterruptedException e) {
                 throw new HyracksDataException(e);
             }
@@ -325,46 +306,30 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         }
     }
 
-    private void notifyMemoryConsumer() {
-        if (inbox.size() == 1) {
-            synchronized (mutex) {
-                if (DEBUG) {
-                    LOGGER.info("Producer is waking up consumer");
-                }
-                mutex.notify();
-            }
-        }
-    }
-
     private void spill(ByteBuffer frame) throws HyracksDataException {
         if (spiller.switchToMemory()) {
-            synchronized (mutex) {
-                // Check if there is memory
-                ByteBuffer next = null;
-                if (frame.capacity() <= framePool.getMaxFrameSize()) {
-                    next = getFreeBuffer(frame.capacity());
-                }
-                if (next != null) {
-                    spiller.close();
-                    numProcessedInMemory++;
-                    next.put(frame);
-                    inbox.offer(next);
-                    notifyMemoryConsumer();
-                    mode = Mode.PROCESS;
-                } else {
-                    // spill. This will always succeed since spilled = 0 (TODO must verify that budget can't be 0)
-                    spiller.spill(frame);
-                    numSpilled++;
-                    if (DEBUG) {
-                        LOGGER.info("Producer is waking up consumer");
-                    }
-                    mutex.notify();
+            // Check if there is memory
+            ByteBuffer next = null;
+            if (frame.capacity() <= framePool.getMaxFrameSize()) {
+                next = getFreeBuffer(frame.capacity());
+            }
+            if (next != null) {
+                spiller.close();
+                numProcessedInMemory++;
+                next.put(frame);
+                inbox.offer(next);
+                mode = Mode.PROCESS;
+            } else {
+                // spill. This will always succeed since spilled = 0 (TODO must verify that budget can't be 0)
+                spiller.spill(frame);
+                numSpilled++;
+                if (DEBUG) {
+                    LOGGER.info("Producer is waking up consumer");
                 }
             }
         } else {
             // try to spill. If failed switch to either discard or stall
             if (spiller.spill(frame)) {
-                notifyDiskConsumer();
                 numSpilled++;
             } else {
                 if (fpa.discardOnCongestion()) {
@@ -373,17 +338,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
                 } else {
                     stall(frame);
                 }
-            }
-        }
-    }
-
-    private void notifyDiskConsumer() {
-        if (spiller.remaining() == 1) {
-            synchronized (mutex) {
-                if (DEBUG) {
-                    LOGGER.info("Producer is waking up consumer");
-                }
-                mutex.notify();
             }
         }
     }
@@ -439,40 +393,42 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             return null;
         }
 
-        private ByteBuffer getNextFrame() throws HyracksDataException, InterruptedException {
-            ByteBuffer frame = null;
-            if (read_from_spiller) {
-                if (spiller != null) {
-                    frame = spiller.next();
-                }
-                if (frame == null) {
-                    read_from_spiller = false;
-                }
-                synchronized (mutex) {
-                    mutex.wait();
-                }
-                return getNextFrame();
-            } else {
-                frame = inbox.poll();
-                if (frame == null) {
-                    read_from_spiller = true;
-                    return getNextFrame();
-                }
-            }
-            return frame;
-        }
-
         @Override
         public void run() {
             try {
                 ByteBuffer frame;
-                while (true) {
-                    frame = getNextFrame();
+                int step = 0;
+                boolean running = true;
+                while (running) {
+                    if (inbox.size() > 0) {
+                        frame = inbox.take();
+                        step = 1;
+                    } else if (spiller.remaining() > 0) {
+                        frame = spiller.next();
+                        while (frame != null) {
+                            if (frame.capacity() == 0) {
+                                running = false;
+                                break;
+                            }
+                            if (consume(frame) != null) {
+                                return;
+                            }
+                            frame = spiller.next();
+                        }
+                        step = 2;
+                        continue;
+                    } else {
+                        frame = inbox.poll();
+                        step = 3;
+                    }
+
+                    if (running == false) {
+                        break;
+                    }
 
                     // process
                     if (frame.capacity() == 0) {
-                        // poisoned
-                        break;
+                        running = false;
                     } else {
                         try {
                             if (consume(frame) != null) {
@@ -500,7 +456,7 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
         return total;
     }
 
-    public LinkedBlockingDeque<ByteBuffer> getInternalBuffer() {
+    public LinkedBlockingQueue<ByteBuffer> getInternalBuffer() {
         return inbox;
     }
 }
