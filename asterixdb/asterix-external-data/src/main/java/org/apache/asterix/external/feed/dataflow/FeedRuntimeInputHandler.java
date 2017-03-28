@@ -105,14 +105,14 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
 
     @Override
     public void close() throws HyracksDataException {
-        consumer.poison();
-        synchronized (mutex) {
-            if (DEBUG) {
-                LOGGER.info("Producer is waking up consumer");
-            }
-            mutex.notify();
-        }
         try {
+            inbox.put((ByteBuffer.allocate(0)));
+            synchronized (mutex) {
+                if (DEBUG) {
+                    LOGGER.info("Producer is waking up consumer");
+                }
+                mutex.notify();
+            }
             consumerThread.join();
         } catch (InterruptedException e) {
             LOGGER.log(Level.WARNING, e.getMessage(), e);
@@ -412,14 +412,10 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private class FrameTransporter implements Runnable {
         private volatile Throwable cause;
         private int consumed = 0;
-        private boolean poisoned = false;
+        private boolean read_from_spiller = false;
 
         public Throwable cause() {
             return cause;
-        }
-
-        public void poison() {
-            poisoned = true;
         }
 
         private Throwable consume(ByteBuffer frame) {
@@ -443,55 +439,50 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             return null;
         }
 
+        private ByteBuffer getNextFrame() throws HyracksDataException, InterruptedException {
+            ByteBuffer frame = null;
+            if (read_from_spiller) {
+                if (spiller != null) {
+                    frame = spiller.next();
+                }
+                if (frame == null) {
+                    read_from_spiller = false;
+                }
+                synchronized (mutex) {
+                    mutex.wait();
+                }
+                return getNextFrame();
+            } else {
+                frame = inbox.poll();
+                if (frame == null) {
+                    read_from_spiller = true;
+                    return getNextFrame();
+                }
+            }
+            return frame;
+        }
+
         @Override
         public void run() {
             try {
                 ByteBuffer frame;
                 while (true) {
-                    frame = inbox.poll();
-                    if (frame == null) {
-                        // Memory queue is empty. Check spill
-                        if (spiller != null) {
-                            frame = spiller.next();
-                            while (frame != null) {
-                                if (consume(frame) != null) {
-                                    // We don't release the frame since this is a spill frame that we didn't get from memory
-                                    // manager
-                                    return;
-                                }
-                                frame = spiller.next();
-                            }
-                        }
-                        writer.flush();
-                        // At this point. We consumed all memory and spilled
-                        // We can't assume the next will be in memory. what if there is 0 memory?
-                        synchronized (mutex) {
-                            frame = inbox.poll();
-                            // Nothing in memory
-                            if (frame == null && (spiller == null || spiller.switchToMemory())) {
-                                if (poisoned) {
-                                    break;
-                                }
-                                if (DEBUG) {
-                                    LOGGER.info("Consumer is going to sleep");
-                                }
-                                // Nothing in disk
-                                mutex.wait();
-                                if (DEBUG) {
-                                    LOGGER.info("Consumer is waking up");
-                                }
-                            }
-                        }
+                    frame = getNextFrame();
+
+                    // process
+                    if (frame.capacity() == 0) {
+                        // poisoned
+                        break;
                     } else {
                         try {
                             if (consume(frame) != null) {
                                 return;
                             }
                         } finally {
-                            // Done with frame.
                             framePool.release(frame);
                         }
                     }
+                    writer.flush();
                 }
             } catch (Throwable th) {
                 this.cause = th;
