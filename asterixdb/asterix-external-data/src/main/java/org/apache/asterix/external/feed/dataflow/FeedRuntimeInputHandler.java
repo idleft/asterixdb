@@ -366,8 +366,6 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private class FrameTransporter implements Runnable {
         private volatile Throwable cause;
         private int consumed = 0;
-        private boolean read_from_spiller = false;
-
         public Throwable cause() {
             return cause;
         }
@@ -393,33 +391,38 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
             return null;
         }
 
+        private boolean clearDiskFrames() throws HyracksDataException{
+            ByteBuffer frame = spiller.next();
+            while (frame != null) {
+                if (frame.capacity() == 0) {
+                    return false;
+                }
+                if (consume(frame) != null) {
+                    return false;
+                }
+                frame = spiller.next();
+            }
+            return true;
+        }
+
         @Override
         public void run() {
             try {
                 ByteBuffer frame;
-                int step = 0;
                 boolean running = true;
                 while (running) {
                     if (inbox.size() > 0) {
-                        frame = inbox.take();
-                        step = 1;
-                    } else if (spiller.remaining() > 0) {
-                        frame = spiller.next();
-                        while (frame != null) {
-                            if (frame.capacity() == 0) {
-                                running = false;
-                                break;
-                            }
-                            if (consume(frame) != null) {
-                                return;
-                            }
-                            frame = spiller.next();
+                        frame = inbox.poll();
+                        if (frame == null) {
+                            System.out.println("err1");
                         }
-                        step = 2;
+                    } else if (spiller != null && spiller.remaining() > 0) {
+                        running = clearDiskFrames();
                         continue;
                     } else {
-                        frame = inbox.poll();
-                        step = 3;
+                        frame = inbox.take();
+                        if (frame == null)
+                            System.out.println("err2");
                     }
 
                     if (running == false) {
@@ -428,6 +431,9 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
 
                     // process
                     if (frame.capacity() == 0) {
+                        if (spiller != null && spiller.remaining() > 0) {
+                            clearDiskFrames();
+                        }
                         running = false;
                     } else {
                         try {
