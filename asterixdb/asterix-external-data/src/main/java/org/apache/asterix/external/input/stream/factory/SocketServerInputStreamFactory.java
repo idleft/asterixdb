@@ -29,6 +29,8 @@ import java.util.Random;
 import java.util.Set;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
+import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.input.stream.SocketServerInputStream;
@@ -43,6 +45,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 public class SocketServerInputStreamFactory implements IInputStreamFactory {
 
     private static final long serialVersionUID = 1L;
+    private final String IP_ADDRESS_REGEX = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}";
     private List<Pair<String, Integer>> sockets;
     private Mode mode = Mode.IP;
 
@@ -61,8 +64,8 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
             }
             String socketsValue = configuration.get(ExternalDataConstants.KEY_SOCKETS);
             if (socketsValue == null
-                    || !socketsValue.matches("^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}")) {
-                throw new IllegalArgumentException("\'sockets\' parameter is not properly configured.");
+                    || !socketsValue.matches(IP_ADDRESS_REGEX)) {
+                throw new CompilationException(ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_NOT_PROPERLY_CONFIGURED);
             }
             Map<InetAddress, Set<String>> ncMap;
             ncMap = RuntimeUtils.getNodeControllerMap();
@@ -78,9 +81,9 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
                     case IP:
                         Set<String> ncsOnIp = ncMap.get(InetAddress.getByName(host));
                         if ((ncsOnIp == null) || ncsOnIp.isEmpty()) {
-                            throw new IllegalArgumentException("Invalid host " + host
-                                    + " as it is not part of the AsterixDB cluster. Valid choices are "
-                                    + StringUtils.join(ncMap.keySet(), ", "));
+                            throw new CompilationException(
+                                    ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_INVALID_HOST_NC, "host", host,
+                                    StringUtils.join(ncMap.keySet(), ", "));
                         }
                         String[] ncArray = ncsOnIp.toArray(new String[] {});
                         String nc = ncArray[random.nextInt(ncArray.length)];
@@ -90,9 +93,9 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
                     case NC:
                         p = new Pair<String, Integer>(host, port);
                         if (!ncs.contains(host)) {
-                            throw new IllegalArgumentException("Invalid NC " + host
-                                    + " as it is not part of the AsterixDB cluster. Valid choices are "
-                                    + StringUtils.join(ncs, ", "));
+                            throw new CompilationException(
+                                    ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_INVALID_HOST_NC, "NC", host,
+                                    StringUtils.join(ncs, ", "));
 
                         }
                         break;
