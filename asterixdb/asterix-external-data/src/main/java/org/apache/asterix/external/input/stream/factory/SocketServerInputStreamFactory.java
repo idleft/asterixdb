@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -35,9 +36,11 @@ import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.input.stream.SocketServerInputStream;
 import org.apache.asterix.external.util.ExternalDataConstants;
+import org.apache.asterix.runtime.exceptions.ExceptionUtil;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -45,7 +48,6 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 public class SocketServerInputStreamFactory implements IInputStreamFactory {
 
     private static final long serialVersionUID = 1L;
-    private final String IP_ADDRESS_REGEX = "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}:[0-9]{1,5}";
     private List<Pair<String, Integer>> sockets;
     private Mode mode = Mode.IP;
 
@@ -55,7 +57,7 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
     }
 
     @Override
-    public void configure(Map<String, String> configuration) throws AsterixException {
+    public void configure(Map<String, String> configuration) throws AlgebricksException {
         try {
             sockets = new ArrayList<Pair<String, Integer>>();
             String modeValue = configuration.get(ExternalDataConstants.KEY_MODE);
@@ -63,8 +65,7 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
                 mode = Mode.valueOf(modeValue.trim().toUpperCase());
             }
             String socketsValue = configuration.get(ExternalDataConstants.KEY_SOCKETS);
-            if (socketsValue == null
-                    || !socketsValue.matches(IP_ADDRESS_REGEX)) {
+            if (socketsValue == null) {
                 throw new CompilationException(ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_NOT_PROPERLY_CONFIGURED);
             }
             Map<InetAddress, Set<String>> ncMap;
@@ -102,8 +103,12 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
                 }
                 sockets.add(p);
             }
-        } catch (Exception e) {
+        } catch (CompilationException e) {
+            throw e;
+        } catch (HyracksDataException | UnknownHostException e) {
             throw new AsterixException(e);
+        } catch (Exception e) {
+            throw new CompilationException(ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_NOT_PROPERLY_CONFIGURED);
         }
     }
 
