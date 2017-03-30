@@ -105,8 +105,8 @@ public class SubscribeFeedStatement implements Statement {
                 switch (function.getLanguage().toUpperCase()) {
                     case Function.LANGUAGE_AQL:
                         builder.append(
-                                " let " + "$" + lValueName + variableIndex + ":=(" + function.getFunctionBody() + ")");
-                        builder.append("\n");
+                                " let " + "$" + lValueName + variableIndex + ":=" + function.getName()+ "(" + "$" + rValueName + ")");
+                        rValueName = lValueName + variableIndex;
                         break;
                     case Function.LANGUAGE_JAVA:
                         builder.append(" let " + "$" + lValueName + variableIndex + ":=" + function.getName() + "("
