@@ -247,8 +247,8 @@ public class FeedOperations {
                         if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
                             IConnectorDescriptor connectorDesc = subJob.getOperatorInputMap()
                                     .get(opDesc.getOperatorId()).get(0);
-                            IOperatorDescriptor sourceOp = subJob.getProducer(connectorDesc);
-                            if (sourceOp instanceof FeedCollectOperatorDescriptor) {
+                            // anything on the network interface needs to be message compatible
+                            if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
                                 metaOp = new FeedMetaOperatorDescriptor(jobSpec,
                                         feedConnectionId, opDesc, feedPolicyEntity.getProperties(),
                                         FeedRuntimeType.COMPUTE, null);
