@@ -47,7 +47,6 @@ import org.apache.asterix.optimizer.rules.IntroduceDynamicTypeCastForExternalFun
 import org.apache.asterix.optimizer.rules.IntroduceDynamicTypeCastRule;
 import org.apache.asterix.optimizer.rules.IntroduceEnforcedListTypeRule;
 import org.apache.asterix.optimizer.rules.IntroduceMaterializationForInsertWithSelfScanRule;
-import org.apache.asterix.optimizer.rules.IntroduceRandomPartitioningFeedComputationRule;
 import org.apache.asterix.optimizer.rules.IntroduceRapidFrameFlushProjectAssignRule;
 import org.apache.asterix.optimizer.rules.IntroduceSecondaryIndexInsertDeleteRule;
 import org.apache.asterix.optimizer.rules.IntroduceStaticTypeCastForInsertRule;
@@ -352,7 +351,6 @@ public final class RuleCollections {
         physicalRewritesTopLevel.add(new SetAlgebricksPhysicalOperatorsRule());
         physicalRewritesTopLevel.add(new IntroduceRapidFrameFlushProjectAssignRule());
         physicalRewritesTopLevel.add(new SetExecutionModeRule());
-        physicalRewritesTopLevel.add(new IntroduceRandomPartitioningFeedComputationRule());
         return physicalRewritesTopLevel;
     }
 
