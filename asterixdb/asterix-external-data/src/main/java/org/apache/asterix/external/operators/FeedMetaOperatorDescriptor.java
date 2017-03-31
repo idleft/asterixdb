@@ -94,6 +94,7 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
             throws HyracksDataException {
         IOperatorNodePushable nodePushable = null;
         switch (runtimeType) {
+            // TODO: remove ComputeNodePushable and the runtimeType (xikui)
             case COMPUTE:
                 nodePushable = new FeedMetaComputeNodePushable(ctx, recordDescProvider, partition, nPartitions,
                         coreOperator, feedConnectionId, feedPolicyProperties, operandId, this);
