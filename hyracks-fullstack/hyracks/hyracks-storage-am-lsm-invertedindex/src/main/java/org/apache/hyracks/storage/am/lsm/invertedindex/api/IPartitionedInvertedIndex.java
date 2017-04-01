@@ -23,13 +23,12 @@ import java.util.ArrayList;
 
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.storage.am.common.api.IIndexOperationContext;
-import org.apache.hyracks.storage.am.common.api.IndexException;
 import org.apache.hyracks.storage.am.lsm.invertedindex.search.InvertedListPartitions;
 
 public interface IPartitionedInvertedIndex {
     public boolean openInvertedListPartitionCursors(IInvertedIndexSearcher searcher, IIndexOperationContext ictx,
             short numTokensLowerBound, short numTokensUpperBound, InvertedListPartitions invListPartitions,
-            ArrayList<IInvertedListCursor> cursorsOrderedByTokens) throws HyracksDataException, IndexException;
+            ArrayList<IInvertedListCursor> cursorsOrderedByTokens) throws HyracksDataException;
 
     public boolean isEmpty();
 }

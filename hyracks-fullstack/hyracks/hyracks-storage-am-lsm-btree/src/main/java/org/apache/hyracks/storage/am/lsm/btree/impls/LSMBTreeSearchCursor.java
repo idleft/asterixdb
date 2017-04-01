@@ -25,7 +25,6 @@ import org.apache.hyracks.storage.am.btree.impls.RangePredicate;
 import org.apache.hyracks.storage.am.common.api.ICursorInitialState;
 import org.apache.hyracks.storage.am.common.api.ISearchPredicate;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexCursor;
-import org.apache.hyracks.storage.am.common.api.IndexException;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndexOperationContext;
 import org.apache.hyracks.storage.common.buffercache.IBufferCache;
 import org.apache.hyracks.storage.common.buffercache.ICachedPage;
@@ -47,8 +46,7 @@ public class LSMBTreeSearchCursor implements ITreeIndexCursor {
     }
 
     @Override
-    public void open(ICursorInitialState initialState, ISearchPredicate searchPred) throws IndexException,
-            HyracksDataException {
+    public void open(ICursorInitialState initialState, ISearchPredicate searchPred) throws HyracksDataException {
 
         LSMBTreeCursorInitialState lsmInitialState = (LSMBTreeCursorInitialState) initialState;
 
@@ -58,8 +56,8 @@ public class LSMBTreeSearchCursor implements ITreeIndexCursor {
             if (btreePred.isLowKeyInclusive() && btreePred.isHighKeyInclusive()) {
                 if (btreePred.getLowKeyComparator().getKeyFieldCount() == btreePred.getHighKeyComparator()
                         .getKeyFieldCount()) {
-                    if (btreePred.getLowKeyComparator().getKeyFieldCount() == lsmInitialState
-                            .getOriginalKeyComparator().getKeyFieldCount()) {
+                    if (btreePred.getLowKeyComparator().getKeyFieldCount() == lsmInitialState.getOriginalKeyComparator()
+                            .getKeyFieldCount()) {
                         if (lsmInitialState.getOriginalKeyComparator().compare(btreePred.getLowKey(),
                                 btreePred.getHighKey()) == 0) {
                             searchType = LSMBTreeSearchType.POINT;
@@ -82,7 +80,7 @@ public class LSMBTreeSearchCursor implements ITreeIndexCursor {
     }
 
     @Override
-    public boolean hasNext() throws HyracksDataException, IndexException {
+    public boolean hasNext() throws HyracksDataException {
         return currentCursor.hasNext();
     }
 
@@ -100,7 +98,7 @@ public class LSMBTreeSearchCursor implements ITreeIndexCursor {
     }
 
     @Override
-    public void reset() throws HyracksDataException, IndexException {
+    public void reset() throws HyracksDataException {
         if (currentCursor != null) {
             currentCursor.reset();
         }
