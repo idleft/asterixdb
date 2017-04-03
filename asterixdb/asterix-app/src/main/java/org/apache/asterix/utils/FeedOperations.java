@@ -238,11 +238,6 @@ public class FeedOperations {
                     if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
                         AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
                         IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
-                        for (IPushRuntimeFactory runtimeFactory : runtimeFactories) {
-                            if (runtimeFactory instanceof StreamSelectRuntimeFactory) {
-                                ((StreamSelectRuntimeFactory) runtimeFactory).retainMissing(true, 0);
-                            }
-                        }
                         // Tweak AssignOp to work with messages
                         if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
                             IConnectorDescriptor connectorDesc = subJob.getOperatorInputMap()
