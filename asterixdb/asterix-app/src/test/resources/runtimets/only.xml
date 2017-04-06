@@ -19,10 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="feeds">
-      <compilation-unit name="disconnect-live-feed">
-        <output-dir compare="Text">disconnect-live-feed</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>
