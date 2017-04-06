@@ -137,6 +137,9 @@ public class DatasourceFactoryProvider {
                 is.close();
                 String[] classNames = config.split("\n");
                 for (String className : classNames) {
+                    if (className.startsWith("#")) {
+                        continue;
+                    }
                     final Class<?> clazz = Class.forName(className);
                     List<String> formats = ((IRecordReaderFactory) clazz.newInstance()).getRecordReaderNames();
                     for (String format : formats) {

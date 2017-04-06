@@ -81,6 +81,9 @@ public class StreamRecordReaderProvider {
                 is.close();
                 String[] classNames = config.split("\n");
                 for (String className : classNames) {
+                    if (className.startsWith("#")) {
+                        continue;
+                    }
                     final Class<?> clazz = Class.forName(className);
                     List<String> formats = (List<String>) clazz.getField(READER_FORMAT_NAME).get(null);
                     for (String format : formats) {
