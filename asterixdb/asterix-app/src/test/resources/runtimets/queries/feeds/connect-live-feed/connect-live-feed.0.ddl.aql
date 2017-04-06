@@ -16,4 +16,25 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-1000
+
+drop dataverse new_experiments if exists;
+create dataverse new_experiments;
+use dataverse new_experiments;
+
+create type TweetMessageType as closed {
+ tweetid: string,
+ tweetid-copy:string
+}
+
+create dataset Tweets1(TweetMessageType) primary key tweetid;
+create dataset Tweets2(TweetMessageType) primary key tweetid;
+
+create feed TweetFeed using socket_adapter
+(
+ ("sockets"="127.0.0.1:10001"),
+ ("address-type"="IP"),
+ ("type-name"="TweetMessageType"),
+ ("format"="adm")
+);
+
+connect feed TweetFeed to dataset Tweets1;
