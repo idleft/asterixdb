@@ -50,7 +50,7 @@ the connection. Once a connection is authorized, the data source
 the adapter. In contrast, when operating in a pull mode, the adapter
 makes a separate request each time to receive data.
 AsterixDB currently provides built-in adapters for several popular
-data sources such as Twitter, CNN, and RSS feeds. AsterixDB additionally
+data sources such as Twitter and RSS feeds. AsterixDB additionally
 provides a generic socket-based adapter that can be used
 to ingest data that is directed at a prescribed socket.
 
@@ -386,24 +386,15 @@ AsterixDB allows a data feed to have an associated ingestion
 policy that is expressed as a collection of parameters and associated
 values. An ingestion policy dictates the runtime behavior of
 the feed in response to resource bottlenecks and failures. AsterixDB provides
-a list of policy parameters that help customize the
-system's runtime behavior when handling excess objects. AsterixDB
-provides a set of built-in policies, each constructed by setting
-appropriate value(s) for the policy parameter(s) from the table below.
+a set of policies that help customize the
+system's runtime behavior when handling excess objects.
 
-####Policy Parameters
+####Policies
 
-- *excess.records.spill*: Set to true if objects that cannot be processed by an operator for lack of resources (referred to as excess objects hereafter) should be persisted to the local disk for deferred processing. (Default: false)
+- *Spill*: Objects that cannot be processed by an operator for lack of resources
+(referred to as excess objects hereafter) should be persisted to the local disk for deferred processing.
 
-- *excess.records.discard*: Set to true if excess objects should be discarded. (Default: false)
-
-- *excess.records.throttle*: Set to true if rate of arrival of objects is required to be reduced in an adaptive manner to prevent having any excess objects (Default: false)
-
-- *excess.records.elastic*: Set to true if the system should attempt to resolve resource bottlenecks by re-structuring and/or rescheduling the feed ingestion pipeline. (Default: false)
-
-- *recover.soft.failure*:  Set to true if the feed must attempt to survive any runtime exception. A false value permits an early termination of a feed in such an event. (Default: true)
-
-- *recover.soft.failure*:  Set to true if the feed must attempt to survive a hardware failures (loss of AsterixDB node(s)). A false value permits the early termination of a feed in the event of a hardware failure (Default: false)
+- *Discard*: Excess objects should be discarded.
 
 Note that the end user may choose to form a custom policy.  For example,
 it is possible in AsterixDB to create a custom policy that spills excess
@@ -411,10 +402,8 @@ objects to disk and subsequently resorts to throttling if the
 spillage crosses a configured threshold. In all cases, the desired
 ingestion policy is specified as part of the `connect feed` statement
 or else the "Basic" policy will be chosen as the default.
-It is worth noting that a feed can be connected to a dataset at any
-time, which is independent from other related feeds in the hierarchy.
 
         use dataverse feeds;
 
         connect feed TwitterFeed to dataset Tweets
-        using policy Basic ;
+        using policy Basic;
