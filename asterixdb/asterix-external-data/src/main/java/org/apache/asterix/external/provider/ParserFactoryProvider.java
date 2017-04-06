@@ -38,6 +38,7 @@ import org.apache.commons.io.IOUtils;
 public class ParserFactoryProvider {
 
     private static final String RESOURCE = "META-INF/services/org.apache.asterix.external.api.IDataParserFactory";
+    private static final String PARSER_FORMAT_FIELD_NAME = "parserFormats";
     private static Map<String, Class> factories = null;
 
     private ParserFactoryProvider() {
@@ -102,7 +103,7 @@ public class ParserFactoryProvider {
                         continue;
                     }
                     final Class<?> clazz = Class.forName(className);
-                    String[] formats = ((IDataParserFactory) clazz.newInstance()).getFormats();
+                    List<String> formats = (List<String>) clazz.getField(PARSER_FORMAT_FIELD_NAME).get(null);
                     for (String format : formats) {
                         if (factories.containsKey(format)) {
                             throw new AsterixException("Duplicate format " + format);
@@ -111,10 +112,9 @@ public class ParserFactoryProvider {
                     }
                 }
             }
-        } catch (IOException | ClassNotFoundException | InstantiationException
+        } catch (IOException | ClassNotFoundException | NoSuchFieldException
                 | IllegalAccessException e) {
             throw new AsterixException(e);
-        }
-        return factories;
+        } return factories;
     }
 }

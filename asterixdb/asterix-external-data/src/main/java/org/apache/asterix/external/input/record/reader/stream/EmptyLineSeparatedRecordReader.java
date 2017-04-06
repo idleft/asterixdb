@@ -19,13 +19,21 @@
 package org.apache.asterix.external.input.record.reader.stream;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.util.ExternalDataConstants;
 
 public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
 
-    public EmptyLineSeparatedRecordReader(AsterixInputStream inputStream) {
+
+    public static final List<String> recordReaderFormats = Collections
+            .unmodifiableList(Arrays.asList(ExternalDataConstants.FORMAT_LINE_SEPARATED));
+
+    public EmptyLineSeparatedRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
         super(inputStream);
     }
 
@@ -98,6 +106,11 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
         } while (newlineLength < 2);
         record.endRecord();
         return true;
+    }
+
+    @Override
+    public List<String> getRecordReaderFormats() {
+        return recordReaderFormats;
     }
 
     private boolean skipWhiteSpace() throws IOException {

@@ -19,6 +19,7 @@
 package org.apache.asterix.external.input.record.reader.stream;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IRawRecord;
@@ -29,7 +30,6 @@ import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.input.stream.AsterixInputStreamReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.FeedLogManager;
-import org.apache.commons.lang.mutable.MutableBoolean;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public abstract class StreamRecordReader implements IRecordReader<char[]>, IStreamNotificationHandler {
@@ -40,7 +40,6 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
     protected int bufferPosn = 0;
     protected boolean done = false;
     protected FeedLogManager feedLogManager;
-    protected MutableBoolean newFile = new MutableBoolean(false);
 
     public StreamRecordReader(AsterixInputStream inputStream) {
         this.reader = new AsterixInputStreamReader(inputStream);
@@ -95,4 +94,6 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
     public void notifyNewSource() {
         throw new UnsupportedOperationException();
     }
+
+    public abstract List<String> getRecordReaderFormats();
 }

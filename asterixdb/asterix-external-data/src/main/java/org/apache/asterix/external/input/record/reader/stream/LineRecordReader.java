@@ -19,9 +19,15 @@
 package org.apache.asterix.external.input.record.reader.stream;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.asterix.common.exceptions.ExceptionUtils;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.util.ExternalDataConstants;
+import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class LineRecordReader extends StreamRecordReader {
@@ -31,12 +37,32 @@ public class LineRecordReader extends StreamRecordReader {
     protected int newlineLength;
     protected int recordNumber = 0;
     protected boolean nextIsHeader = false;
+    private final boolean quotedReader;
+    private final char quote;
+    private boolean inQuote;
+    private boolean prevCharEscape;
+    public static final List<String> recordReaderFormats = Collections.unmodifiableList(Arrays.asList(
+            ExternalDataConstants.FORMAT_DELIMITED_TEXT,
+            ExternalDataConstants.FORMAT_CSV
+    ));
 
-    public LineRecordReader(final boolean hasHeader, final AsterixInputStream stream) throws HyracksDataException {
-        super(stream);
-        this.hasHeader = hasHeader;
+    public LineRecordReader(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException {
+        super(inputStream);
+        String quoteString = config.get(ExternalDataConstants.KEY_QUOTE);
+        if (quoteString != null) {
+            quotedReader = true;
+            if (quoteString.length() != 1) {
+                throw new HyracksDataException(ExceptionUtils.incorrectParameterMessage(ExternalDataConstants.KEY_QUOTE,
+                        ExternalDataConstants.PARAMETER_OF_SIZE_ONE, quoteString));
+            }
+            quote = quoteString.charAt(0);
+        } else {
+            quotedReader = false;
+            quote = '\n';
+        }
+        this.hasHeader = ExternalDataUtils.hasHeader(config);
         if (hasHeader) {
-            stream.setNotificationHandler(this);
+            inputStream.setNotificationHandler(this);
         }
     }
 
@@ -48,7 +74,98 @@ public class LineRecordReader extends StreamRecordReader {
     }
 
     @Override
+    public List<String> getRecordReaderFormats() {
+        return recordReaderFormats;
+    }
+
+    @Override
     public boolean hasNext() throws IOException {
+        if (quotedReader) {
+            return quotedLineRecordReaderHasNext();
+        } else {
+            return lineRecordReaderHasNext();
+        }
+    }
+
+    public boolean quotedLineRecordReaderHasNext() throws IOException {
+        while (true) {
+            if (done) {
+                return false;
+            }
+            newlineLength = 0;
+            prevCharCR = false;
+            prevCharEscape = false;
+            record.reset();
+            int readLength = 0;
+            inQuote = false;
+            do {
+                int startPosn = bufferPosn;
+                if (bufferPosn >= bufferLength) {
+                    startPosn = bufferPosn = 0;
+                    bufferLength = reader.read(inputBuffer);
+                    if (bufferLength <= 0) {
+                        if (readLength > 0) {
+                            if (inQuote) {
+                                throw new IOException("malformed input record ended inside quote");
+                            }
+                            record.endRecord();
+                            recordNumber++;
+                            return true;
+                        }
+                        close();
+                        return false;
+                    }
+                }
+                for (; bufferPosn < bufferLength; ++bufferPosn) {
+                    if (!inQuote) {
+                        if (inputBuffer[bufferPosn] == ExternalDataConstants.LF) {
+                            newlineLength = (prevCharCR) ? 2 : 1;
+                            ++bufferPosn;
+                            break;
+                        }
+                        if (prevCharCR) {
+                            newlineLength = 1;
+                            break;
+                        }
+                        prevCharCR = (inputBuffer[bufferPosn] == ExternalDataConstants.CR);
+                        if (inputBuffer[bufferPosn] == quote) {
+                            if (!prevCharEscape) {
+                                inQuote = true;
+                            }
+                        }
+                        if (prevCharEscape) {
+                            prevCharEscape = false;
+                        } else {
+                            prevCharEscape = inputBuffer[bufferPosn] == ExternalDataConstants.ESCAPE;
+                        }
+                    } else {
+                        // only look for next quote
+                        if (inputBuffer[bufferPosn] == quote) {
+                            if (!prevCharEscape) {
+                                inQuote = false;
+                            }
+                        }
+                        prevCharEscape = inputBuffer[bufferPosn] == ExternalDataConstants.ESCAPE;
+                    }
+                }
+                readLength = bufferPosn - startPosn;
+                if (prevCharCR && newlineLength == 0) {
+                    --readLength;
+                }
+                if (readLength > 0) {
+                    record.append(inputBuffer, startPosn, readLength);
+                }
+            } while (newlineLength == 0);
+            if (nextIsHeader) {
+                nextIsHeader = false;
+                continue;
+            }
+            recordNumber++;
+            return true;
+        }
+    }
+
+    public boolean lineRecordReaderHasNext() throws IOException {
         while (true) {
             if (done) {
                 return false;
