@@ -117,20 +117,6 @@ class SqlppQueryRewriter implements IQueryRewriter {
         // Rewrites like/not-like expressions.
         rewriteOperatorExpression();
 
-        // Generate ids for variables (considering scopes) and replace global variable access with the dataset function.
-        variableCheckAndRewrite(true);
-
-        // Rewrites several variable-arg functions into their corresponding internal list-input functions.
-        rewriteListInputFunctions();
-
-        // Inlines functions.
-        inlineDeclaredUdfs();
-
-        // Rewrites function names.
-        // This should be done after inlineDeclaredUdfs() because user-defined function
-        // names could be case sensitive.
-        rewriteFunctionNames();
-
         // Resets the variable counter to the previous marked value.
         // Therefore, the variable ids in the final query plans will not be perturbed
         // by the additon or removal of intermediate AST rewrites.
@@ -145,6 +131,20 @@ class SqlppQueryRewriter implements IQueryRewriter {
 
         // Sets the var counter of the query.
         topStatement.setVarCounter(context.getVarCounter());
+
+        // Generate ids for variables (considering scopes) and replace global variable access with the dataset function.
+        variableCheckAndRewrite(true);
+
+        // Rewrites several variable-arg functions into their corresponding internal list-input functions.
+        rewriteListInputFunctions();
+
+        // Inlines functions.
+        inlineDeclaredUdfs();
+
+        // Rewrites function names.
+        // This should be done after inlineDeclaredUdfs() because user-defined function
+        // names could be case sensitive.
+        rewriteFunctionNames();
     }
 
     protected void rewriteGlobalAggregations() throws CompilationException {
