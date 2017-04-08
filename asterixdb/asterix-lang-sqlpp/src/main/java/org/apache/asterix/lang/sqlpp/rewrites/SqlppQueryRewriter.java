@@ -140,7 +140,7 @@ class SqlppQueryRewriter implements IQueryRewriter {
         // by the additon or removal of intermediate AST rewrites.
         context.resetCounter();
 
-        // Generate ids for variables (considering scopes) and replace global variable access with the dataset function.
+        // Replace global variable access with the dataset function for inlined expressions.
         variableCheckAndRewrite(true);
 
         // Sets the var counter of the query.
