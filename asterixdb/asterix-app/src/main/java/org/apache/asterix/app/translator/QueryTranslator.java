@@ -2139,9 +2139,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     ExternalDataConstants.KEY_TYPE_NAME);
             List<FunctionSignature> appliedFunctions = cfs.getAppliedFunctions();
             for (FunctionSignature func : appliedFunctions) {
-                if (MetadataManager.INSTANCE.getFunction(mdTxnCtx, func) == null)
+                if (MetadataManager.INSTANCE.getFunction(mdTxnCtx, func) == null) {
                     throw new CompilationException(ErrorCode.FEED_CONNECT_FEED_APPLIED_INVALID_FUNCTION,
                             func.getName());
+                }
             }
             fc = MetadataManager.INSTANCE.getFeedConnection(metadataProvider.getMetadataTxnContext(), dataverseName,
                     feedName, datasetName);
