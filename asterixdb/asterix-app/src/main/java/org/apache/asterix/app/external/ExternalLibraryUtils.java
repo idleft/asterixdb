@@ -74,9 +74,15 @@ public class ExternalLibraryUtils {
             // get the list of files in the directory
             for (String dataverse : installLibDir.list()) {
                 File dataverseDir = new File(installLibDir, dataverse);
+                if (!dataverseDir.isDirectory()) {
+                    continue;
+                }
                 String[] libraries = dataverseDir.list();
                 for (String library : libraries) {
                     // for each file (library), register library
+                    if (library.startsWith(".")) {
+                        continue;
+                    }
                     registerLibrary(externalLibraryManager, dataverse, library);
                     // is metadata node?
                     if (isMetadataNode) {
