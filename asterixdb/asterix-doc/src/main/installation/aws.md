@@ -58,6 +58,15 @@
          $ ansible --version
          ansible 2.2.1.0
 
+     **For users with macOS 10.11+**, please create a user-level Ansible configuration file at:
+
+         ~/.ansible.cfg
+
+     and add the following configuration:
+
+         [ssh_connection]
+         control_path = %(directory)s/%%C
+
   *  Download the AsterixDB distribution package, unzip it, navigate to `opt/aws/`
 
          $ cd opt/aws
@@ -95,7 +104,7 @@
          Host *.amazonaws.com
               IdentityFile ~/.ssh/id_rsa
 
-### <a id="config">Cluster Configuration</a>
+## <a id="config">Cluster Configuration</a>
   *  **AWS settings**.  Edit `conf/instance_settings.yml`. The meaning of each parameter is listed as follows:
 
          # The OS image id for ec2 instances.
@@ -154,7 +163,7 @@
      (as the value of Ansible builtin variable ansible_env.HOME) of the ssh user account on each node.
 
 
-### <a id="lifecycle">Cluster Lifecycle Management</a>
+## <a id="lifecycle">Cluster Lifecycle Management</a>
   *  Allocate AWS EC2 nodes (the number of nodes is specified in `conf/instance_settings.yml`)
      and deploy the binary to all allocated EC2 nodes:
 
