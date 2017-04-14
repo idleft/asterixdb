@@ -17,7 +17,7 @@
 # under the License.
 # ------------------------------------------------------------
 
-- name: Destroy the library in certain dataverse
+- name: Destroy the library {{ libname }} in dataverse {{ dataverse }}
   hosts: all
   tasks:
     - include_vars: ../conf/instance_settings.yml

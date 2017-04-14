@@ -50,12 +50,11 @@ import org.apache.asterix.metadata.entities.Function;
 import org.apache.asterix.metadata.entities.Library;
 import org.apache.asterix.metadata.utils.MetadataUtil;
 import org.apache.asterix.runtime.formats.NonTaggedDataFormat;
-import org.apache.hyracks.control.common.controllers.ControllerConfig;
 
 public class ExternalLibraryUtils {
 
     private static final Logger LOGGER = Logger.getLogger(ExternalLibraryUtils.class.getName());
-    private static final FilenameFilter nonHiddenFileNameFilter =  ((dir, name) -> !name.startsWith("."));
+    private static final FilenameFilter nonHiddenFileNameFilter = (dir, name) -> !name.startsWith(".");
 
     private ExternalLibraryUtils() {
     }

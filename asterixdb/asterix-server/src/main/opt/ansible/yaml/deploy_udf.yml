@@ -17,7 +17,7 @@
 # under the License.
 # ------------------------------------------------------------
 
-- name: Deploy the UDF packages to the cluster
+- name: Deploy the UDF library {{ dataverse }}.{{ libname }} to the cluster
   hosts: all
   tasks:
     - include_vars: ../conf/instance_settings.yml

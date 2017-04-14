@@ -66,7 +66,7 @@ if [[ $mode = "i" ]]; then
     fi
 elif [[ $mode == "u" ]]; then
     echo "Uninstall library in $dname.$libname"
-    ansible-playbook -i $INVENTORY $ANSB_PATH/yaml/destroy_udf.yml --extra-vars "dataverse=test libname=test"
+    ansible-playbook -i $INVENTORY $ANSB_PATH/yaml/destroy_udf.yml --extra-vars "dataverse=$dname libname=$libname"
 else
     echo "Wrong mode"
 fi
