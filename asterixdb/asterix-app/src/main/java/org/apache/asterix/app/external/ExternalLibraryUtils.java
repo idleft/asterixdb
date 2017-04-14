@@ -72,19 +72,15 @@ public class ExternalLibraryUtils {
         // directory exists?
         if (installLibDir.exists()) {
             // get the list of files in the directory
-            for (String dataverse : installLibDir.list()) {
-                File dataverseDir = new File(installLibDir, dataverse);
-                String[] libraries = dataverseDir.list();
-                for (String library : libraries) {
+            for (File dataverseDir : installLibDir.listFiles(File::isDirectory)) {
+                for (File libraryDir : dataverseDir.listFiles(File::isDirectory)) {
                     // for each file (library), register library
-                    registerLibrary(externalLibraryManager, dataverse, library);
+                    registerLibrary(externalLibraryManager, dataverseDir.getName(), libraryDir.getName());
                     // is metadata node?
                     if (isMetadataNode) {
                         // get library file
-                        File libraryDir = new File(installLibDir.getAbsolutePath() + File.separator + dataverse
-                                + File.separator + library);
                         // install if needed (i,e, add the functions, adapters, datasources, parsers to the metadata)
-                        installLibraryIfNeeded(dataverse, libraryDir, uninstalledLibs);
+                        installLibraryIfNeeded(dataverseDir.getName(), libraryDir, uninstalledLibs);
                     }
                 }
             }
@@ -396,7 +392,7 @@ public class ExternalLibraryUtils {
     protected static File getLibraryInstallDir() {
         // Check managix directory first. If not exists, check app home.
         File managixWorkingDir = new File(System.getProperty("user.dir"), "library");
-        if (managixWorkingDir.exists()) {
+        if (!managixWorkingDir.exists()) {
             managixWorkingDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
                     + File.separator + "lib" + File.separator + "udfs");
         }
