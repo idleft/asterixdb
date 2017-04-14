@@ -37,7 +37,7 @@ public class InstallCommand extends AbstractCommand {
         String instanceName = installConfig.name;
         AsterixInstance instance = AsterixEventServiceUtil.validateAsterixInstanceExists(instanceName, State.INACTIVE);
         PatternCreator pc = PatternCreator.INSTANCE;
-        Patterns patterns = pc.getLibraryInstallPattern(instance, installConfig.dataverseName,
+        Patterns patterns = pc.getLibraryInstallPattern(instance.getCluster(), installConfig.dataverseName,
                 installConfig.libraryName, installConfig.libraryPath);
         AsterixEventService.getAsterixEventServiceClient(instance.getCluster()).submit(patterns);
         LOGGER.info("Installed library " + installConfig.libraryName);

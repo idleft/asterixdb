@@ -33,10 +33,16 @@ import java.util.logging.Logger;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 
+import org.apache.asterix.common.config.ClusterProperties;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.library.ILibraryManager;
+import org.apache.asterix.event.schema.cluster.Cluster;
+import org.apache.asterix.event.schema.pattern.Patterns;
+import org.apache.asterix.event.service.AsterixEventService;
+import org.apache.asterix.event.service.AsterixEventServiceUtil;
+import org.apache.asterix.event.util.PatternCreator;
 import org.apache.asterix.external.api.IDataSourceAdapter;
 import org.apache.asterix.external.dataset.adapter.AdapterIdentifier;
 import org.apache.asterix.external.library.ExternalLibrary;
@@ -50,13 +56,35 @@ import org.apache.asterix.metadata.entities.Function;
 import org.apache.asterix.metadata.entities.Library;
 import org.apache.asterix.metadata.utils.MetadataUtil;
 import org.apache.asterix.runtime.formats.NonTaggedDataFormat;
-import org.apache.hyracks.control.common.controllers.ControllerConfig;
 
 public class ExternalLibraryUtils {
 
     private static final Logger LOGGER = Logger.getLogger(ExternalLibraryUtils.class.getName());
+    private static final FilenameFilter dirNameFilter = ((dir, name) -> dir.isDirectory());
+    private static final FilenameFilter nonhiddenNameFilter = ((dir, name) -> !name.startsWith("."));
 
     private ExternalLibraryUtils() {
+    }
+
+    public static void unpackExternalLibrariesIfNeeded() throws Exception {
+        File installLibDir = getLibraryInstallDir();
+        Cluster cluster = ClusterProperties.INSTANCE.getCluster();
+        if (installLibDir.exists()) {
+            for (File dataverseDir : installLibDir.listFiles(File::isDirectory)) {
+                for (File libDir : dataverseDir.listFiles(File::isDirectory)) {
+                    File[] libPack = libDir.listFiles(nonhiddenNameFilter);
+                    if (libPack.length == 1 && libPack[0].getName().endsWith(".zip")) {
+                        // Unpack at CC
+                        AsterixEventServiceUtil.unzip(libPack[0].getAbsolutePath(), libDir.getAbsolutePath());
+                        // Distribute to the cluster
+                        PatternCreator pc = PatternCreator.INSTANCE;
+                        Patterns patterns = pc.getLibraryInstallPattern(cluster, dataverseDir.getName(),
+                                libDir.getName(), libPack[0].getPath());
+                        AsterixEventService.getAsterixEventServiceClient(cluster).submit(patterns);
+                    }
+                }
+            }
+        }
     }
 
     public static void setUpExternaLibraries(ILibraryManager externalLibraryManager, boolean isMetadataNode)

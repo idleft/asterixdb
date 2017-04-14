@@ -359,13 +359,12 @@ public class PatternCreator {
         return new Patterns(patternList);
     }
 
-    public Patterns getLibraryInstallPattern(AsterixInstance instance, String dataverse, String libraryName,
+    public Patterns getLibraryInstallPattern(Cluster cluster, String dataverse, String libraryName,
             String libraryPath) throws Exception {
         List<Pattern> patternList = new ArrayList<>();
-        Cluster cluster = instance.getCluster();
         Nodeid nodeid = new Nodeid(new Value(null, EventDriver.CLIENT_NODE.getId()));
         String username = cluster.getUsername() != null ? cluster.getUsername() : System.getProperty("user.name");
-        String workingDir = cluster.getWorkingDir().getDir();
+        String workingDir = System.getProperty("user.dir");
         String destDir =
                 workingDir + File.separator + "library" + File.separator + dataverse + File.separator + libraryName;
         String fileToTransfer = new File(libraryPath).getAbsolutePath();
@@ -378,7 +377,7 @@ public class PatternCreator {
         Pattern p = new Pattern(null, 1, null, event);
         patternList.add(p);
 
-        if (!cluster.getWorkingDir().isNFS()) {
+//        if (!cluster.getWorkingDir().isNFS()) {
             while (installTargets.hasNext()) {
                 Node node = installTargets.next();
                 pargs = username + " " + fileToTransfer + " " + node.getClusterIp() + " " + destDir + " " + "unpack";
@@ -392,7 +391,7 @@ public class PatternCreator {
             event = new Event("file_transfer", nodeid, pargs);
             p = new Pattern(null, 1, null, event);
             patternList.add(p);
-        }
+//        }
         return new Patterns(patternList);
     }
 

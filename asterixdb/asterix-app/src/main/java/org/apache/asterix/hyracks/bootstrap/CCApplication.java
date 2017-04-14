@@ -63,6 +63,7 @@ import org.apache.asterix.common.replication.IFaultToleranceStrategy;
 import org.apache.asterix.common.replication.IReplicationStrategy;
 import org.apache.asterix.common.utils.Servlets;
 import org.apache.asterix.external.library.ExternalLibraryManager;
+import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.file.StorageComponentProvider;
 import org.apache.asterix.messaging.CCMessageBroker;
 import org.apache.asterix.metadata.MetadataManager;
@@ -118,6 +119,7 @@ public class CCApplication extends BaseCCApplication {
         IReplicationStrategy repStrategy = ClusterProperties.INSTANCE.getReplicationStrategy();
         IFaultToleranceStrategy ftStrategy = FaultToleranceStrategyFactory
                 .create(ClusterProperties.INSTANCE.getCluster(), repStrategy, messageBroker);
+        ExternalLibraryUtils.unpackExternalLibrariesIfNeeded();
         ExternalLibraryUtils.setUpExternaLibraries(libraryManager, false);
         componentProvider = new StorageComponentProvider();
         GlobalRecoveryManager.instantiate((HyracksConnection) getHcc(), componentProvider);
