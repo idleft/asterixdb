@@ -55,6 +55,7 @@ import org.apache.hyracks.control.common.controllers.ControllerConfig;
 public class ExternalLibraryUtils {
 
     private static final Logger LOGGER = Logger.getLogger(ExternalLibraryUtils.class.getName());
+    private static final FilenameFilter nonHiddenFileNameFilter =  ((dir, name) -> !name.startsWith("."));
 
     private ExternalLibraryUtils() {
     }
@@ -101,7 +102,7 @@ public class ExternalLibraryUtils {
         // directory exists?
         if (uninstallLibDir.exists()) {
             // list files
-            uninstallLibNames = uninstallLibDir.list();
+            uninstallLibNames = uninstallLibDir.list(nonHiddenFileNameFilter);
             for (String uninstallLibName : uninstallLibNames) {
                 // Get the <dataverse name - library name> pair
                 String[] components = uninstallLibName.split("\\.");
@@ -391,20 +392,25 @@ public class ExternalLibraryUtils {
      */
     protected static File getLibraryInstallDir() {
         // Check managix directory first. If not exists, check app home.
-        File managixWorkingDir = new File(System.getProperty("user.dir"), "library");
-        if (!managixWorkingDir.exists()) {
-            managixWorkingDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
+        File installDir = new File(System.getProperty("user.dir"), "library");
+        if (!installDir.exists()) {
+            installDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
                     + File.separator + "lib" + File.separator + "udfs");
         }
-        return managixWorkingDir;
+        return installDir;
     }
 
     /**
      * @return the directory "$(ControllerConfig.defaultDir)/uninstall": This needs to be improved
      */
     protected static File getLibraryUninstallDir() {
-        String workingDir = System.getProperty("user.dir");
-        return new File(workingDir, "uninstall");
+        // Check managix directory first. If not exists, check app home.
+        File uninstallDir = new File(System.getProperty("user.dir"), "uninstall");
+        if (!uninstallDir.exists()) {
+            uninstallDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
+                    + File.separator + "lib" + File.separator + "udfs" + File.separator + "uninstall");
+        }
+        return uninstallDir;
     }
 
 }

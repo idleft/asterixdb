@@ -17,14 +17,17 @@
 # under the License.
 # ------------------------------------------------------------
 
-- name: Deploy the UDF packages to the cluster
+- name: Destroy the library in certain dataverse
   hosts: all
   tasks:
     - include_vars: ../conf/instance_settings.yml
     - file:
-        path: "{{ binarydir }}/lib/udfs/{{ dataverse }}/{{ libname }}"
+        path: "{{ binarydir }}/lib/udfs/uninstall/"
         state: directory
         mode: 0755
-    - unarchive:
-        src: "{{ package_path }}"
-        dest: "{{ binarydir }}/lib/udfs/{{ dataverse }}/{{ libname }}"
+    - file:
+        state: touch
+        path: "{{ binarydir }}/lib/udfs/uninstall/{{ dataverse }}.{{ libname }}"
+    - file:
+        path: "{{ binarydir }}/lib/udfs/{{ dataverse }}/{{ libname }}"
+        state: absent

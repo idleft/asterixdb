@@ -19,10 +19,13 @@
 # ------------------------------------------------------------
 
 # Get options
-usage() { echo "./udf.sh -m [i|d]" 1>&2; exit 1; }
+usage() { echo "./udf.sh -m [i|u] -d DATAVERSE_NAME -l LIBRARY_NAME [-p UDF_PACKAGE_PATH]" 1>&2; exit 1; }
 
-while getopts ":d:l:p:" o; do
+while getopts ":d:l:p:m:" o; do
   case "${o}" in
+    m)
+        mode=${OPTARG}
+        ;;
     d)
         dname=${OPTARG}
         ;;
@@ -33,15 +36,16 @@ while getopts ":d:l:p:" o; do
         tarpath=${OPTARG}
         ;;
     *)
+        echo $o
         usage
         ;;
   esac
 done
 shift $((OPTIND-1))
 
-echo $dname
-echo $tarpath
-echo $libname
+if [[ -z $dname ]] || [[ -z $libname ]]; then
+    echo "Dataverse name or Library name is missing"
+fi
 
 # Gets the absolute path so that the script can work no matter where it is invoked.
 pushd `dirname $0` > /dev/null
@@ -51,6 +55,18 @@ ANSB_PATH=`dirname "${SCRIPT_PATH}"`
 
 INVENTORY=$ANSB_PATH/conf/inventory
 
-# Deploy the UDF package to all nodes.
+# Deploy/Destroy the UDF package on all nodes.
 export ANSIBLE_HOST_KEY_CHECKING=false
-ansible-playbook -i $INVENTORY $ANSB_PATH/yaml/deploy_udf.yml --extra-vars "dataverse=$dname libname=$libname package_path=$tarpath"
+if [[ $mode = "i" ]]; then
+    if [[ -z $tarpath ]]; then
+        echo "UDF package path is undefined"
+    else
+        echo "Install library to $dname.$libname"
+        ansible-playbook -i $INVENTORY $ANSB_PATH/yaml/deploy_udf.yml --extra-vars "dataverse=$dname libname=$libname package_path=$tarpath"
+    fi
+elif [[ $mode == "u" ]]; then
+    echo "Uninstall library in $dname.$libname"
+    ansible-playbook -i $INVENTORY $ANSB_PATH/yaml/destroy_udf.yml --extra-vars "dataverse=test libname=test"
+else
+    echo "Wrong mode"
+fi
