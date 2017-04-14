@@ -295,7 +295,6 @@ public class ExternalLibraryUtils {
      *
      * @param dataverse
      * @param libraryName
-     * @param installLibDir
      * @throws Exception
      */
     protected static void registerLibrary(ILibraryManager externalLibraryManager, String dataverse, String libraryName)
@@ -395,8 +394,13 @@ public class ExternalLibraryUtils {
      * @return the directory "$(ControllerConfig.defaultDir)/library": This needs to be improved
      */
     protected static File getLibraryInstallDir() {
-        String workingDir = System.getProperty("user.dir");
-        return new File(workingDir, "library");
+        // Check managix directory first. If not exists, check app home.
+        File managixWorkingDir = new File(System.getProperty("user.dir"), "library");
+        if (managixWorkingDir.exists()) {
+            managixWorkingDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
+                    + File.separator + "lib" + File.separator + "udfs");
+        }
+        return managixWorkingDir;
     }
 
     /**
