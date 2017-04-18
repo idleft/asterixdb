@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.exceptions.CompilationException;
+import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.api.IRecordReader;
@@ -67,7 +69,7 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
         return streamFactory.getPartitionConstraint();
     }
 
-    private void configureInputStreamFactory(Map<String, String> config) throws AsterixException {
+    private void configureInputStreamFactory(Map<String, String> config) throws CompilationException {
         String reader = config.get(ExternalDataConstants.KEY_READER);
         if (reader.equals(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER)) {
             streamFactory = new LocalFSInputStreamFactory();
@@ -77,7 +79,7 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
         } else if (reader.equals(ExternalDataConstants.STREAM_SOCKET_CLIENT)) {
             streamFactory = new SocketClientInputStreamFactory();
         } else {
-            throw new AsterixException("UNKNOWN Adaptor name");
+            throw new CompilationException(ErrorCode.FEED_UNKNOWN_ADAPTER_NAME);
         }
     }
 
