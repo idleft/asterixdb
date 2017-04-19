@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.library;
 
+import org.apache.asterix.external.library.java.JObjects;
 import org.apache.asterix.external.library.java.JObjects.JRecord;
 import org.apache.asterix.external.library.java.JObjects.JString;
 import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
@@ -43,7 +44,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
         list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        JString id = (JString) inputRecord.getValueByName("id");
+        JObjects.JLong id = (JObjects.JLong) inputRecord.getValueByName("id");
         JString text = (JString) inputRecord.getValueByName("text");
 
         String[] tokens = text.getValue().split(" ");
@@ -56,10 +57,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
         }
         JRecord result = (JRecord) functionHelper.getResultObject();
         result.setField("id", id);
-        result.setField("username", inputRecord.getValueByName("username"));
-        result.setField("location", inputRecord.getValueByName("location"));
         result.setField("text", text);
-        result.setField("timestamp", inputRecord.getValueByName("timestamp"));
         result.setField("topics", list);
         functionHelper.setResult(result);
     }

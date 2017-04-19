@@ -30,27 +30,21 @@ drop dataverse externallibtest if exists;
 create dataverse externallibtest;
 use dataverse externallibtest;
 
-create type TweetInputType as closed {
-  id: string,
-  username : string,
-  location : string,
-  text : string,
-  timestamp : string
+create type TweetInputType as open {
+  id: int64,
+  text : string
 }
 
-create type TweetOutputType as closed {
-  id: string,
-  username : string,
-  location : string,
+create type TweetOutputType as open {
+  id: int64,
   text : string,
-  timestamp : string,
   topics : {{string}}
 }
 
 create feed TweetFeed
 using localfs
 (("type-name"="TweetInputType"),
-("path"="asterix_nc1://data/twitter/obamatweets.adm"),
+("path"="asterix_nc1://data/twitter/test/small.json"),
 ("format"="adm"));
 
 create dataset TweetsFeedIngest(TweetOutputType)
