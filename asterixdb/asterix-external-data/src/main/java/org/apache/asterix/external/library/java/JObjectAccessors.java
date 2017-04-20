@@ -191,7 +191,7 @@ public class JObjectAccessors {
             return jObject;
         }
     }
-    
+
     public static class JNullAccessor implements IJObjectAccessor {
 
         @Override
