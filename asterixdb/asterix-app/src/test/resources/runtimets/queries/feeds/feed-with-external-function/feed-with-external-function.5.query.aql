@@ -29,4 +29,4 @@ use dataverse externallibtest;
 
 for $x in dataset TweetsFeedIngest
 order by $x.id
-return testlib#parseTweet($x);
+return $x;

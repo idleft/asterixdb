@@ -27,7 +27,7 @@
  */
 use dataverse externallibtest;
 
-set wait-for-completion-feed "true";
+set wait-for-completion-feed "false";
 
 connect feed TweetFeed to dataset TweetsFeedIngest;
 
