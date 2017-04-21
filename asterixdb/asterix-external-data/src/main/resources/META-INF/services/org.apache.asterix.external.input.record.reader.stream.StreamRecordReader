@@ -17,4 +17,5 @@
 #
 org.apache.asterix.external.input.record.reader.stream.EmptyLineSeparatedRecordReader
 org.apache.asterix.external.input.record.reader.stream.LineRecordReader
+org.apache.asterix.external.input.record.reader.stream.QuotedLineRecordReader
 org.apache.asterix.external.input.record.reader.stream.SemiStructuredRecordReader

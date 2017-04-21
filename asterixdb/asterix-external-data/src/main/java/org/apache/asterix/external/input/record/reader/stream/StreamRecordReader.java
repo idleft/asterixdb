@@ -96,4 +96,6 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
     }
 
     public abstract List<String> getRecordReaderFormats();
+
+    public abstract String getRequiredConfigs();
 }

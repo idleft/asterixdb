@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -33,13 +34,15 @@ import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.external.input.record.reader.stream.StreamRecordReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.tuple.Pair;
 
 public class StreamRecordReaderProvider {
 
     private static final String RESOURCE = "META-INF/services/org.apache.asterix.external.input.record."
             + "reader.stream.StreamRecordReader";
     private static final String READER_FORMAT_NAME = "recordReaderFormats";
-    private static Map<String, Class> recordReaders = null;
+    private static final String REQUIRED = "requiredConfigs";
+    private static Map<String, List<Pair<String[], Class>>> recordReaders = null;
 
     protected static StreamRecordReader getInstance(Class clazz) throws AsterixException {
         try {
@@ -53,6 +56,41 @@ public class StreamRecordReaderProvider {
         // do nothing
     }
 
+    public static Class findRecordReaderClazzWithConfig(Map<String, String> configuration, String format)
+            throws AsterixException {
+        List<Pair<String[], Class>> requiredConfigs = recordReaders.get(format);
+        Class clazz = null;
+        int maxOptNum = 0;
+        for (Pair<String[], Class> configPair : requiredConfigs) {
+            Boolean matchFlag = true;
+            int matchOptNum = 0;
+            // Here StreamRecordReaderProvider will try its best to find the most suitable
+            // record reader by matching options. However, if there is a option key error,
+            // it will be ignored and a potential wrong record reader with less required options
+            // will be returned.
+            for (String configKey : configPair.getLeft()) {
+                if (configKey.length()>0 && !configuration.containsKey(configKey)) {
+                    matchFlag = false;
+                    maxOptNum = 0;
+                    clazz = null;
+                    break;
+                }
+                if (configKey.length() > 0) {
+                    matchOptNum++;
+                }
+            }
+            if (matchFlag && matchOptNum >= maxOptNum) {
+                clazz = configPair.getRight();
+                maxOptNum = matchOptNum;
+            }
+        }
+        if (clazz != null) {
+            return clazz;
+        } else {
+            throw new AsterixException(ErrorCode.PROVIDER_STREAM_RECORD_READER_WRONG_CONFIGURATION, format);
+        }
+    }
+
     public static Class getRecordReaderClazz(Map<String, String> configuration) throws AsterixException {
         String format = configuration.get(ExternalDataConstants.KEY_FORMAT);
 
@@ -62,15 +100,15 @@ public class StreamRecordReaderProvider {
 
         if (format != null) {
             if (recordReaders.containsKey(format)) {
-                return recordReaders.get(format);
+                return findRecordReaderClazzWithConfig(configuration, format);
             }
             throw new AsterixException(ErrorCode.PROVIDER_STREAM_RECORD_READER_UNKNOWN_FORMAT, format);
         }
         throw new AsterixException("Unspecified parameter: " + ExternalDataConstants.KEY_FORMAT);
     }
 
-    protected static Map<String, Class> initRecordReaders() throws AsterixException {
-        Map<String, Class> recordReaders = new HashMap<>();
+    protected static Map<String, List<Pair<String[], Class>>> initRecordReaders() throws AsterixException {
+        Map<String, List<Pair<String[], Class>>> recordReaders = new HashMap<>();
         ClassLoader cl = StreamRecordReaderProvider.class.getClassLoader();
         final Charset encoding = Charset.forName("UTF-8");
         try {
@@ -86,12 +124,12 @@ public class StreamRecordReaderProvider {
                     }
                     final Class<?> clazz = Class.forName(className);
                     List<String> formats = (List<String>) clazz.getField(READER_FORMAT_NAME).get(null);
+                    String[] configs = ((String) clazz.getField(REQUIRED).get(null)).split(":");
                     for (String format : formats) {
-                        if (recordReaders.containsKey(format)) {
-                            throw new AsterixException(ErrorCode.PROVIDER_STREAM_RECORD_READER_DUPLICATE_FORMAT_MAPPING,
-                                    format);
+                        if (!recordReaders.containsKey(format)) {
+                            recordReaders.put(format, new ArrayList<>());
                         }
-                        recordReaders.put(format, clazz);
+                        recordReaders.get(format).add(Pair.of(configs, clazz));
                     }
                 }
             }

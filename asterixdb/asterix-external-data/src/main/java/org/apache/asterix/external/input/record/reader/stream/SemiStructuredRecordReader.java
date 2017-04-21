@@ -39,11 +39,10 @@ public class SemiStructuredRecordReader extends StreamRecordReader {
     private char recordStart;
     private char recordEnd;
     private int recordNumber = 0;
-    public static final List<String> recordReaderFormats = Collections.unmodifiableList(Arrays.asList(
-            ExternalDataConstants.FORMAT_ADM,
-            ExternalDataConstants.FORMAT_JSON,
-            ExternalDataConstants.FORMAT_SEMISTRUCTURED
-    ));
+    public static final List<String> recordReaderFormats = Collections
+            .unmodifiableList(Arrays.asList(ExternalDataConstants.FORMAT_ADM, ExternalDataConstants.FORMAT_JSON,
+                    ExternalDataConstants.FORMAT_SEMISTRUCTURED));
+    public static final String requiredConfigs = "";
 
     public SemiStructuredRecordReader(AsterixInputStream stream, Map<String, String> config)
             throws HyracksDataException {
@@ -166,6 +165,11 @@ public class SemiStructuredRecordReader extends StreamRecordReader {
     @Override
     public List<String> getRecordReaderFormats() {
         return recordReaderFormats;
+    }
+
+    @Override
+    public String getRequiredConfigs() {
+        return requiredConfigs;
     }
 
     @Override

@@ -42,9 +42,14 @@ public class StreamRecordReaderProviderTest {
                 ExternalDataConstants.FORMAT_CSV);
         Map<String, String> config = new HashMap<>();
         for (String format : recordReaderFormats) {
+            config.clear();
             config.put(ExternalDataConstants.KEY_FORMAT, format);
             Class clazz = StreamRecordReaderProvider.getRecordReaderClazz(config);
             Assert.assertTrue(clazz != null);
         }
+        config.clear();
+        config.put(ExternalDataConstants.KEY_FORMAT, ExternalDataConstants.FORMAT_CSV);
+        config.put(ExternalDataConstants.KEY_QUOTE, "\u0000");
+        Assert.assertTrue(StreamRecordReaderProvider.getRecordReaderClazz(config) != null);
     }
 }
