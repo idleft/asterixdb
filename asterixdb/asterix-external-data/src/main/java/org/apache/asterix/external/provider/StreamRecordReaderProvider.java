@@ -71,8 +71,6 @@ public class StreamRecordReaderProvider {
             for (String configKey : configPair.getLeft()) {
                 if (configKey.length()>0 && !configuration.containsKey(configKey)) {
                     matchFlag = false;
-                    maxOptNum = 0;
-                    clazz = null;
                     break;
                 }
                 if (configKey.length() > 0) {
