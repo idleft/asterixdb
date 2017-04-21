@@ -17,4 +17,4 @@
  * under the License.
  */
 /*
-install externallibtest snlp /Volumes/Storage/Users/Xikui/Projects/AsterixDB-SNLP/target/asterix-snlp-udf-0.1-SNAPSHOT-testlib.zip
+install externallibtest testlib target/data/externallib/asterix-external-data-testlib.zip
