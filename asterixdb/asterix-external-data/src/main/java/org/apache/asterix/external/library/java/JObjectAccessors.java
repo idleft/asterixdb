@@ -145,6 +145,7 @@ public class JObjectAccessors {
                 break;
             case MISSING:
                 accessor = new JMissingAccessor();
+                break;
             default:
                 break;
         }

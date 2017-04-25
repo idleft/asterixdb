@@ -157,7 +157,7 @@ public class JObjects {
         }
 
     }
-    
+
     public static class JMissing implements IJObject {
         public final static JMissing INSTANCE = new JMissing();
 
@@ -184,7 +184,7 @@ public class JObjects {
 
         @Override
         public void reset() throws HyracksDataException {
-
+            // no op
         }
     }
 
