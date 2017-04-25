@@ -143,6 +143,8 @@ public class JObjectAccessors {
             case NULL:
                 accessor = new JNullAccessor();
                 break;
+            case MISSING:
+                accessor = new JMissingAccessor();
             default:
                 break;
         }
@@ -198,6 +200,16 @@ public class JObjectAccessors {
         public IJObject access(IVisitablePointable pointable, IObjectPool<IJObject, IAType> objPool)
                 throws HyracksDataException {
             IJObject jObject = objPool.allocate(BuiltinType.ANULL);
+            return jObject;
+        }
+    }
+
+    public static class JMissingAccessor implements  IJObjectAccessor {
+
+        @Override
+        public IJObject access(IVisitablePointable pointable, IObjectPool<IJObject, IAType> objPool)
+                throws HyracksDataException {
+            IJObject jObject = objPool.allocate(BuiltinType.AMISSING);
             return jObject;
         }
     }

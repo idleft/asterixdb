@@ -113,6 +113,9 @@ public class JTypeObjectFactory implements IObjectFactory<IJObject, IAType> {
             case NULL:
                 retValue = JObjects.JNull.INSTANCE;
                 break;
+            case MISSING:
+                retValue = JObjects.JMissing.INSTANCE;
+                break;
             case ORDEREDLIST:
                 AOrderedListType ot = (AOrderedListType) type;
                 IAType orderedItemType = ot.getItemType();
