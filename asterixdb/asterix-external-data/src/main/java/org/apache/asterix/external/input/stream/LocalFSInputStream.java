@@ -22,6 +22,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.util.ExternalDataConstants;
@@ -154,8 +156,8 @@ public class LocalFSInputStream extends AsterixInputStream {
             return false;
         }
         if (th instanceof IOException) {
-            // TODO: Change from string check to exception type
-            if (th.getCause().getMessage().contains("Malformed input stream")) {
+            if (th instanceof RuntimeDataException
+                    && ((RuntimeDataException) th).getErrorCode() == ErrorCode.RECORD_READER_MALFORMED_INPUT_STREAM) {
                 if (currentFile != null) {
                     try {
                         logManager.logRecord(currentFile.getAbsolutePath(), "Corrupted input file");
