@@ -155,22 +155,21 @@ public class LocalFSInputStream extends AsterixInputStream {
         if (in == null) {
             return false;
         }
-        if (th instanceof HyracksDataException) {
-            if (((HyracksDataException) th).getErrorCode() == ErrorCode.RECORD_READER_MALFORMED_INPUT_STREAM) {
-                if (currentFile != null) {
-                    try {
-                        logManager.logRecord(currentFile.getAbsolutePath(), "Corrupted input file");
-                    } catch (IOException e) {
-                        LOGGER.warn("Filed to write to feed log file", e);
-                    }
-                    LOGGER.warn("Corrupted input file: " + currentFile.getAbsolutePath());
-                }
+        if (th instanceof HyracksDataException
+                && ((HyracksDataException) th).getErrorCode() == ErrorCode.RECORD_READER_MALFORMED_INPUT_STREAM) {
+            if (currentFile != null) {
                 try {
-                    advance();
-                    return true;
-                } catch (Exception e) {
-                    LOGGER.warn("An exception was thrown while trying to skip a file", e);
+                    logManager.logRecord(currentFile.getAbsolutePath(), "Corrupted input file");
+                } catch (IOException e) {
+                    LOGGER.warn("Filed to write to feed log file", e);
                 }
+                LOGGER.warn("Corrupted input file: " + currentFile.getAbsolutePath());
+            }
+            try {
+                advance();
+                return true;
+            } catch (Exception e) {
+                LOGGER.warn("An exception was thrown while trying to skip a file", e);
             }
         }
         LOGGER.warn("Failed to recover from failure", th);
