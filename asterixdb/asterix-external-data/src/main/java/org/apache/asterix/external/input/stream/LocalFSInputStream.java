@@ -155,9 +155,8 @@ public class LocalFSInputStream extends AsterixInputStream {
         if (in == null) {
             return false;
         }
-        if (th instanceof IOException) {
-            if (th instanceof RuntimeDataException
-                    && ((RuntimeDataException) th).getErrorCode() == ErrorCode.RECORD_READER_MALFORMED_INPUT_STREAM) {
+        if (th instanceof RuntimeDataException) {
+            if (((RuntimeDataException) th).getErrorCode() == ErrorCode.RECORD_READER_MALFORMED_INPUT_STREAM) {
                 if (currentFile != null) {
                     try {
                         logManager.logRecord(currentFile.getAbsolutePath(), "Corrupted input file");
