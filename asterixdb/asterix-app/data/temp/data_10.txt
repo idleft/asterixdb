@@ -1,0 +1,10 @@
+{"str2": "sint", "rid": 0, "num1": 960, "num2": 9323, "str1": "eligendi"}
+{"str2": "vel", "rid": 1, "num1": 6750, "num2": 5334, "str1": "et"}
+{"str2": "saepe", "rid": 2, "num1": 7299, "num2": 6279, "str1": "enim"}
+{"str2": "vel", "rid": 3, "num1": 309, "num2": 3737, "str1": "quas"}
+{"str2": "dicta", "rid": 4, "num1": 7276, "num2": 5918, "str1": "soluta"}
+{"str2": "beatae", "rid": 5, "num1": 2427, "num2": 1343, "str1": "dicta"}
+{"str2": "repellendus", "rid": 6, "num1": 8580, "num2": 8553, "str1": "quae"}
+{"str2": "libero", "rid": 7, "num1": 1795, "num2": 1661, "str1": "expedita"}
+{"str2": "non", "rid": 8, "num1": 2521, "num2": 1824, "str1": "tenetur"}
+{"str2": "inventore", "rid": 9, "num1": 8351, "num2": 4329, "str1": "at"}

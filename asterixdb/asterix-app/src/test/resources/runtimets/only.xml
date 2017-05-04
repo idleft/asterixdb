@@ -19,5 +19,10 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
+    <test-case FilePath="leftouterjoin">
+      <compilation-unit name="xikui_exp">
+        <output-dir compare="Text">query_issue658</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
 </test-suite>
