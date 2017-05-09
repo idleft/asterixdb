@@ -54,7 +54,7 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
         return false;
     }
 
-    private boolean rewriteFunctionArgus(ILogicalOperator op, Mutable<ILogicalExpression> expRef,
+    private boolean rewriteFunctionArgs(ILogicalOperator op, Mutable<ILogicalExpression> expRef,
             IOptimizationContext context) throws AlgebricksException {
         ILogicalExpression expr = expRef.getValue();
         if (expr.getExpressionTag() != LogicalExpressionTag.FUNCTION_CALL) {
@@ -66,9 +66,9 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
         ARecordType requiredRecordType;
         for (int iter1 = 0; iter1 < funcCallExpr.getArguments().size(); iter1++) {
             inputRecordType = (IAType) op.computeOutputTypeEnvironment(context)
-                    .getType(funcCallExpr.getArguments().get(0).getValue());
+                    .getType(funcCallExpr.getArguments().get(iter1).getValue());
             requiredRecordType = (ARecordType) ((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo())
-                    .getArgumenTypes().get(0);
+                    .getArgumenTypes().get(iter1);
             /** the input record type can be an union type -- for the case when it comes from a subplan or left-outer join */
             boolean checkUnknown = false;
             while (NonTaggedFormatUtil.isOptional(inputRecordType)) {
@@ -80,9 +80,9 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
             if (castFlag || checkUnknown) {
                 AbstractFunctionCallExpression castFunc = new ScalarFunctionCallExpression(
                         FunctionUtil.getFunctionInfo(BuiltinFunctions.CAST_TYPE));
-                castFunc.getArguments().add(funcCallExpr.getArguments().get(0));
+                castFunc.getArguments().add(funcCallExpr.getArguments().get(iter1));
                 TypeCastUtils.setRequiredAndInputTypes(castFunc, requiredRecordType, inputRecordType);
-                funcCallExpr.getArguments().set(0, new MutableObject<>(castFunc));
+                funcCallExpr.getArguments().set(iter1, new MutableObject<>(castFunc));
                 changed = changed || true;
             }
         }
@@ -106,11 +106,10 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
                 ((ScalarFunctionCallExpression) assignExpr).getFunctionIdentifier()) != null) {
             return false;
         }
-        if (op.acceptExpressionTransform(exprRef -> rewriteFunctionArgus(op, exprRef, context))) {
+        if (op.acceptExpressionTransform(exprRef -> rewriteFunctionArgs(op, exprRef, context))) {
             return true;
         } else {
             return false;
         }
     }
-
 }
