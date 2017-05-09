@@ -57,7 +57,8 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
     private boolean rewriteFunctionArgs(ILogicalOperator op, Mutable<ILogicalExpression> expRef,
             IOptimizationContext context) throws AlgebricksException {
         ILogicalExpression expr = expRef.getValue();
-        if (expr.getExpressionTag() != LogicalExpressionTag.FUNCTION_CALL) {
+        if (expr.getExpressionTag() != LogicalExpressionTag.FUNCTION_CALL
+                || !(expr instanceof ScalarFunctionCallExpression)) {
             return false;
         }
         ScalarFunctionCallExpression funcCallExpr = (ScalarFunctionCallExpression) expr;
@@ -69,7 +70,8 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
                     .getType(funcCallExpr.getArguments().get(iter1).getValue());
             requiredRecordType = (ARecordType) ((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo())
                     .getArgumenTypes().get(iter1);
-            /** the input record type can be an union type -- for the case when it comes from a subplan or left-outer join */
+            /** the input record type can be an union type
+             * for the case when it comes from a subplan or left-outer join */
             boolean checkUnknown = false;
             while (NonTaggedFormatUtil.isOptional(inputRecordType)) {
                 /** while-loop for the case there is a nested multi-level union */
@@ -103,7 +105,7 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
             return false;
         }
         if (BuiltinFunctions.getBuiltinFunctionIdentifier(
-                ((ScalarFunctionCallExpression) assignExpr).getFunctionIdentifier()) != null) {
+                ((AbstractFunctionCallExpression) assignExpr).getFunctionIdentifier()) != null) {
             return false;
         }
         if (op.acceptExpressionTransform(exprRef -> rewriteFunctionArgs(op, exprRef, context))) {
