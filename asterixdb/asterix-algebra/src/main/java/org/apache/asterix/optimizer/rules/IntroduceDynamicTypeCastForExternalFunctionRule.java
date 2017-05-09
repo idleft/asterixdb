@@ -25,6 +25,7 @@ import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.om.typecomputer.base.TypeCastUtils;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.AUnionType;
+import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.utils.NonTaggedFormatUtil;
 import org.apache.commons.lang3.mutable.Mutable;
@@ -68,10 +69,16 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
         for (int iter1 = 0; iter1 < funcCallExpr.getArguments().size(); iter1++) {
             inputRecordType = (IAType) op.computeOutputTypeEnvironment(context)
                     .getType(funcCallExpr.getArguments().get(iter1).getValue());
+            if (((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo()).getArgumenTypes()
+                    .get(iter1) instanceof BuiltinType) {
+                continue;
+            }
             requiredRecordType = (ARecordType) ((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo())
                     .getArgumenTypes().get(iter1);
-            /** the input record type can be an union type
-             * for the case when it comes from a subplan or left-outer join */
+            /**
+             * the input record type can be an union type
+             * for the case when it comes from a subplan or left-outer join
+             */
             boolean checkUnknown = false;
             while (NonTaggedFormatUtil.isOptional(inputRecordType)) {
                 /** while-loop for the case there is a nested multi-level union */
@@ -94,7 +101,6 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
     @Override
     public boolean rewritePost(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
             throws AlgebricksException {
-
         AbstractLogicalOperator op = (AbstractLogicalOperator) opRef.getValue();
         if (op.getOperatorTag() != LogicalOperatorTag.ASSIGN) {
             return false;
