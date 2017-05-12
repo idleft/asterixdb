@@ -69,8 +69,8 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
         for (int iter1 = 0; iter1 < funcCallExpr.getArguments().size(); iter1++) {
             inputRecordType = (IAType) op.computeOutputTypeEnvironment(context)
                     .getType(funcCallExpr.getArguments().get(iter1).getValue());
-            if (((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo()).getArgumenTypes()
-                    .get(iter1) instanceof BuiltinType) {
+            if (!(((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo()).getArgumenTypes()
+                    .get(iter1) instanceof ARecordType)) {
                 continue;
             }
             requiredRecordType = (ARecordType) ((ExternalScalarFunctionInfo) funcCallExpr.getFunctionInfo())
