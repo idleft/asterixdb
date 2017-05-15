@@ -59,7 +59,9 @@ public class AMurmurHash3BinaryHashFunctionFamily implements IBinaryHashFunction
                 // If a numeric type is encountered, then we promote each numeric type to the DOUBLE type.
                 fieldValueBuffer.reset();
                 sourceTag = EnumDeserializer.ATYPETAGDESERIALIZER.deserialize(bytes[offset]);
-
+                if (sourceTag == null) {
+                    System.out.println("Bad things happens!");
+                }
                 switch (sourceTag) {
                     case TINYINT:
                     case SMALLINT:
