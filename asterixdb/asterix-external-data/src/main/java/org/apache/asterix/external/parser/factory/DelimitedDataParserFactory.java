@@ -39,7 +39,7 @@ import org.apache.hyracks.dataflow.common.data.parsers.IValueParserFactory;
 public class DelimitedDataParserFactory extends AbstractRecordStreamParserFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections
+    private static final List<String> parserFormats = Collections
             .unmodifiableList(Arrays.asList("csv", "delimited-text"));
 
     @Override

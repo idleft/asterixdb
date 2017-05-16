@@ -41,7 +41,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 public class RecordWithMetadataParserFactory<I, O> implements IRecordDataParserFactory<I> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections
+    private static final List<String> parserFormats = Collections
             .unmodifiableList(Arrays.asList("record-with-metadata"));
     private ARecordType metaType;
     private ARecordType recordType;

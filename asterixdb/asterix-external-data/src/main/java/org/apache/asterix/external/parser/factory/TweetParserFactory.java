@@ -34,7 +34,7 @@ import twitter4j.Status;
 public class TweetParserFactory implements IRecordDataParserFactory<String> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("twitter-status"));
+    private static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("twitter-status"));
     private ARecordType recordType;
 
     @Override

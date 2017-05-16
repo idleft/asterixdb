@@ -103,7 +103,7 @@ public class ParserFactoryProvider {
                         continue;
                     }
                     final Class<?> clazz = Class.forName(className);
-                    List<String> formats = (List<String>) clazz.getField(PARSER_FORMAT_FIELD_NAME).get(null);
+                    List<String> formats = ((IDataParserFactory) clazz.newInstance()).getParserFormats();
                     for (String format : formats) {
                         if (factories.containsKey(format)) {
                             throw new AsterixException("Duplicate format " + format);
@@ -112,9 +112,9 @@ public class ParserFactoryProvider {
                     }
                 }
             }
-        } catch (IOException | ClassNotFoundException | NoSuchFieldException
-                | IllegalAccessException e) {
+        } catch (IOException | ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new AsterixException(e);
-        } return factories;
+        }
+        return factories;
     }
 }

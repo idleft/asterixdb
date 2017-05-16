@@ -34,7 +34,7 @@ import java.util.List;
 public class ADMDataParserFactory extends AbstractRecordStreamParserFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections
+    private static final List<String> parserFormats = Collections
             .unmodifiableList(Arrays.asList("adm", "json", "semi-structured"));
 
     @Override

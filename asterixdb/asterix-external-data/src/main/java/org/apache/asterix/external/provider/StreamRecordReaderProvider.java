@@ -18,8 +18,10 @@
  */
 package org.apache.asterix.external.provider;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
@@ -31,7 +33,9 @@ import java.util.Map;
 
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.input.record.reader.stream.StreamRecordReader;
+import org.apache.asterix.external.input.stream.BasicInputStream;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -40,8 +44,6 @@ public class StreamRecordReaderProvider {
 
     private static final String RESOURCE = "META-INF/services/org.apache.asterix.external.input.record."
             + "reader.stream.StreamRecordReader";
-    private static final String READER_FORMAT_NAME = "recordReaderFormats";
-    private static final String REQUIRED = "requiredConfigs";
     private static Map<String, List<Pair<String[], Class>>> recordReaders = null;
 
     protected static StreamRecordReader getInstance(Class clazz) throws AsterixException {
@@ -121,8 +123,11 @@ public class StreamRecordReaderProvider {
                         continue;
                     }
                     final Class<?> clazz = Class.forName(className);
-                    List<String> formats = (List<String>) clazz.getField(READER_FORMAT_NAME).get(null);
-                    String[] configs = ((String) clazz.getField(REQUIRED).get(null)).split(":");
+                    StreamRecordReader newInstance = (StreamRecordReader) clazz
+                            .getDeclaredConstructor(AsterixInputStream.class, Map.class)
+                            .newInstance(null, null);
+                    List<String> formats = newInstance.getRecordReaderFormats();
+                    String[] configs = newInstance.getRequiredConfigs().split(":");
                     for (String format : formats) {
                         if (!recordReaders.containsKey(format)) {
                             recordReaders.put(format, new ArrayList<>());
@@ -131,7 +136,8 @@ public class StreamRecordReaderProvider {
                     }
                 }
             }
-        } catch (IOException | ClassNotFoundException | IllegalAccessException | NoSuchFieldException e) {
+        } catch (IOException | ClassNotFoundException | InvocationTargetException | IllegalAccessException
+                | NoSuchMethodException | InstantiationException e) {
             throw new AsterixException(e);
         }
         return recordReaders;

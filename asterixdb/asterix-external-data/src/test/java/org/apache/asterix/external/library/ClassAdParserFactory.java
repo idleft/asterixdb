@@ -37,7 +37,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 public class ClassAdParserFactory implements IRecordDataParserFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("line-separated"));
+    private static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("line-separated"));
     public static final String KEY_OLD_FORMAT = "old-format";
     public static final String KEY_EVALUATE = "evaluate";
     public static final String KEY_KEEP_EXPR = "keep-expr";

@@ -29,9 +29,9 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 
 public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
 
-    public static final List<String> recordReaderFormats = Collections
+    private static final List<String> recordReaderFormats = Collections
             .unmodifiableList(Arrays.asList(ExternalDataConstants.FORMAT_LINE_SEPARATED));
-    public static final String requiredConfigs = "";
+    private static final String requiredConfigs = "";
 
     public EmptyLineSeparatedRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
         super(inputStream);
@@ -135,5 +135,10 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
                 }
             }
         }
+    }
+
+    @Override
+    public void configure() {
+        // no op
     }
 }

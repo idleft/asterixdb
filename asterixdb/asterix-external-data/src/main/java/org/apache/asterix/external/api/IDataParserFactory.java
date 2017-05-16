@@ -60,5 +60,10 @@ public interface IDataParserFactory extends Serializable {
      */
     public void setMetaType(ARecordType metaType);
 
+    /**
+     * Get the formats that are handled by this parser.
+     *
+     * @return A list of formats
+     */
     public List<String> getParserFormats();
 }

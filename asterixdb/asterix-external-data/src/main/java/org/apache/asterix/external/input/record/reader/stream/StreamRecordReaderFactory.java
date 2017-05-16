@@ -96,8 +96,11 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition)
             throws HyracksDataException {
         try {
-            return (StreamRecordReader) recordReaderClazz.getDeclaredConstructor(AsterixInputStream.class, Map.class)
+            StreamRecordReader streamRecordReader = (StreamRecordReader) recordReaderClazz
+                    .getDeclaredConstructor(AsterixInputStream.class, Map.class)
                     .newInstance(streamFactory.createInputStream(ctx, partition), configuration);
+            streamRecordReader.configure();
+            return streamRecordReader;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException
                 | NoSuchMethodException e) {
             throw new HyracksDataException(e);

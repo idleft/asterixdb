@@ -207,6 +207,7 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
                 StreamRecordReader streamReader = (StreamRecordReader) recordReaderClazz
                         .getDeclaredConstructor(AsterixInputStream.class, Map.class)
                         .newInstance(createInputStream(ctx, partition, indexer), configuration);
+                streamReader.configure();
                 if (indexer != null) {
                     return new IndexingStreamRecordReader(streamReader, indexer);
                 } else {

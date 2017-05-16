@@ -31,18 +31,26 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class LineRecordReader extends StreamRecordReader {
 
-    private final boolean hasHeader;
+    private boolean hasHeader;
     protected boolean prevCharCR;
     protected int newlineLength;
     protected int recordNumber = 0;
     protected boolean nextIsHeader = false;
-    public static final List<String> recordReaderFormats = Collections.unmodifiableList(
+    protected final AsterixInputStream inputStream;
+    protected final Map<String, String> config;
+    private static final List<String> recordReaderFormats = Collections.unmodifiableList(
             Arrays.asList(ExternalDataConstants.FORMAT_DELIMITED_TEXT, ExternalDataConstants.FORMAT_CSV));
-    public static final String requiredConfigs = "";
+    private static final String requiredConfigs = "";
 
-    public LineRecordReader(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException {
+    public LineRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
         super(inputStream);
-        this.hasHeader = ExternalDataUtils.hasHeader(config);;
+        this.inputStream = inputStream;
+        this.config = config;
+    }
+
+    @Override
+    public void configure() throws HyracksDataException {
+        this.hasHeader = ExternalDataUtils.hasHeader(config);
         if (hasHeader) {
             inputStream.setNotificationHandler(this);
         }

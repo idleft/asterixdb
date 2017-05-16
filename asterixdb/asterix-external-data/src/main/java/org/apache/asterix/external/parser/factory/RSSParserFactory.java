@@ -34,7 +34,7 @@ import com.sun.syndication.feed.synd.SyndEntryImpl;
 public class RSSParserFactory implements IRecordDataParserFactory<SyndEntryImpl> {
 
     private static final long serialVersionUID = 1L;
-    public static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("rss"));
+    private static final List<String> parserFormats = Collections.unmodifiableList(Arrays.asList("rss"));
     private ARecordType recordType;
 
     @Override
