@@ -68,6 +68,7 @@ import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.asterix.translator.CompiledStatements;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.SessionConfig;
+import org.apache.asterix.translator.SessionOutput;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
@@ -146,7 +147,7 @@ public class FeedOperations {
         return spec;
     }
 
-    private static JobSpecification getConnectionJob(SessionConfig sessionConfig, MetadataProvider metadataProvider,
+    private static JobSpecification getConnectionJob(SessionOutput sessionOutput, MetadataProvider metadataProvider,
             FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
             IStorageComponentProvider storageComponentProvider, DefaultStatementExecutorFactory qtFactory,
             IHyracksClientConnection hcc) throws AlgebricksException, RemoteException, ACIDException {
@@ -160,7 +161,7 @@ public class FeedOperations {
         statements.add(dataverseDecl);
         statements.add(subscribeStmt);
         IStatementExecutor translator = qtFactory.create(metadataProvider.getApplicationContext(), statements,
-                sessionConfig, compilationProvider, storageComponentProvider);
+                sessionOutput, compilationProvider, storageComponentProvider);
         // configure the metadata provider
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, "" + Boolean.TRUE);
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, "" + subscribeStmt.getPolicy());
@@ -344,7 +345,7 @@ public class FeedOperations {
     }
 
     public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
-            SessionConfig sessionConfig, MetadataProvider metadataProvider, Feed feed,
+            SessionOutput sessionOutput, MetadataProvider metadataProvider, Feed feed,
             List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
             IStorageComponentProvider storageComponentProvider, DefaultStatementExecutorFactory qtFactory,
             IHyracksClientConnection hcc) throws Exception {
@@ -359,7 +360,7 @@ public class FeedOperations {
         String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob = getConnectionJob(sessionConfig, metadataProvider, feedConnection,
+            JobSpecification connectionJob = getConnectionJob(sessionOutput, metadataProvider, feedConnection,
                     ingestionLocations, compilationProvider, storageComponentProvider, qtFactory, hcc);
             jobsList.add(connectionJob);
         }
