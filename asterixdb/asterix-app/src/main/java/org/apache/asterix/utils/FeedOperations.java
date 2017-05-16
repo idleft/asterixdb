@@ -289,7 +289,7 @@ public class FeedOperations {
                             leftOp.getRight());
                 }
                 if (connDesc instanceof MToNPartitioningWithMessageConnectorDescriptor) {
-                    FeedMessagingOperatorDescriptor feedMsgHandlerOp = new FeedMessagingOperatorDescriptor(jobSpec,
+                    FeedMessagingOperatorDescriptor feedMessagingOpDesc = new FeedMessagingOperatorDescriptor(jobSpec,
                             feedPolicyEntity.getProperties());
                     if (operatorLocations.containsKey(rightOpDesc.getOperatorId())) {
                         List<LocationConstraint> rightLocations = operatorLocations.get(rightOpDesc.getOperatorId());
@@ -298,13 +298,13 @@ public class FeedOperations {
                                 .size(); iter2++) {
                             locations[iter2] = rightLocations.get(iter2).location;
                         }
-                        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, feedMsgHandlerOp, locations);
+                        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, feedMessagingOpDesc, locations);
                     } else {
-                        PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, feedMsgHandlerOp,
+                        PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, feedMessagingOpDesc,
                                 operatorCounts.get(rightOpDesc.getOperatorId()));
                     }
-                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), feedMsgHandlerOp, 0);
-                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), feedMsgHandlerOp, 0, rightOpDesc,
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), feedMessagingOpDesc, 0);
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), feedMessagingOpDesc, 0, rightOpDesc,
                             rightOp.getRight());
                 } else {
                     jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
