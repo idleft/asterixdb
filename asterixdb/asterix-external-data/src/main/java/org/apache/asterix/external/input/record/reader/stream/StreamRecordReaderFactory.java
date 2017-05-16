@@ -87,8 +87,8 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration)
             throws HyracksDataException, AlgebricksException {
         this.configuration = configuration;
-        streamFactory.configure(serviceCtx, configuration);
         configureInputStreamFactory(configuration);
+        streamFactory.configure(serviceCtx, configuration);
         recordReaderClazz = StreamRecordReaderProvider.getRecordReaderClazz(configuration);
     }
 
