@@ -34,7 +34,6 @@ import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.common.context.IStorageComponentProvider;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
-import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
@@ -42,14 +41,13 @@ import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
-import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
+import org.apache.asterix.external.operators.FeedMessagingOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.lang.aql.statement.SubscribeFeedStatement;
@@ -77,9 +75,6 @@ import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConst
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Triple;
-import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
-import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
-import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.constraints.Constraint;
 import org.apache.hyracks.api.constraints.PartitionConstraintHelper;
@@ -207,16 +202,12 @@ public class FeedOperations {
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
         List<JobId> jobIds = new ArrayList<>();
-        FeedMetaOperatorDescriptor metaOp;
 
         for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
             FeedConnection curFeedConnection = feedConnections.get(iter1);
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            Map<ConnectorDescriptorId, IConnectorDescriptor> connectorsMap = subJob.getConnectorMap();
-            FeedConnectionId feedConnectionId =
-                    new FeedConnectionId(ingestionOp.getEntityId(), feedConnections.get(iter1).getDatasetName());
 
             FeedPolicyEntity feedPolicyEntity =
                     FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
@@ -225,34 +216,10 @@ public class FeedOperations {
             // copy operators
             OperatorDescriptorId oldId;
             OperatorDescriptorId opId;
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
-                    Pair<IOperatorDescriptor, Integer>>> entry : subJob.getConnectorOperatorMap().entrySet()) {
-                IOperatorDescriptor rightOp = entry.getValue().getRight().getLeft();
-                oldId = rightOp.getOperatorId();
-                if (!(connectorsMap.get(entry.getKey()) instanceof  MToNPartitioningConnectorDescriptor) ||
-                        operatorIdMapping.containsKey(rightOp.getOperatorId())) {
-                    continue;
-                }
-                if (rightOp instanceof LSMTreeInsertDeleteOperatorDescriptor) {
-                    String operandId = ((LSMTreeInsertDeleteOperatorDescriptor) rightOp).getIndexName();
-                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, rightOp,
-                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE, operandId);
-                    opId = metaOp.getOperatorId();
-                } else {
-                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, rightOp,
-                            feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE, null);
-                    opId = metaOp.getOperatorId();
-                }
+            for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
+                oldId = entry.getKey();
+                opId = jobSpec.createOperatorDescriptorId(entry.getValue());
                 operatorIdMapping.put(oldId, opId);
-            }
-            for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
-                oldId = entry.getValue().getOperatorId();
-                if (!operatorIdMapping.containsKey(oldId)) {
-                    opId = jobSpec.createOperatorDescriptorId(entry.getValue());
-                    operatorIdMapping.put(oldId, opId);
-                } else {
-                    entry.getValue().setOperatorId(operatorIdMapping.get(oldId));
-                }
             }
 
             // copy connectors
@@ -269,22 +236,6 @@ public class FeedOperations {
                     newConnId = jobSpec.createConnectorDescriptor(connDesc);
                 }
                 connectorIdMapping.put(entry.getKey(), newConnId);
-            }
-
-            // make connections between operators
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
-                    Pair<IOperatorDescriptor, Integer>>> entry : subJob.getConnectorOperatorMap().entrySet()) {
-                ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
-                IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
-                Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
-                Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
-                IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
-                IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
-                if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
-                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
-                            leftOp.getRight());
-                }
-                jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
             }
 
             // prepare for setting partition constraints
@@ -308,8 +259,8 @@ public class FeedOperations {
                             operatorLocations.put(opDesc.getOperatorId(), locations);
                         }
                         String location = (String) ((ConstantExpression) cexpr).getValue();
-                        LocationConstraint lc =
-                                new LocationConstraint(location, ((PartitionLocationExpression) lexpr).getPartition());
+                        LocationConstraint lc = new LocationConstraint(location,
+                                ((PartitionLocationExpression) lexpr).getPartition());
                         locations.add(lc);
                         break;
                     default:
@@ -317,13 +268,51 @@ public class FeedOperations {
                 }
             }
 
+            // sort the location constraint to make sure all Ops are consisten
+            for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
+                Collections.sort(entry.getValue(),
+                        (LocationConstraint o1, LocationConstraint o2) -> o1.partition - o2.partition);
+            }
+
+            // make connections between operators
+            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
+                    Pair<IOperatorDescriptor, Integer>>> entry : subJob.getConnectorOperatorMap().entrySet()) {
+                ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
+                IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
+                Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
+                Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
+                IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
+                IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
+                if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
+                            leftOp.getRight());
+                }
+                if (connDesc instanceof MToNPartitioningWithMessageConnectorDescriptor) {
+                    FeedMessagingOperatorDescriptor feedMsgHandlerOp = new FeedMessagingOperatorDescriptor(jobSpec,
+                            feedPolicyEntity.getProperties());
+                    if (operatorLocations.containsKey(rightOpDesc.getOperatorId())) {
+                        List<LocationConstraint> rightLocations = operatorLocations.get(rightOpDesc.getOperatorId());
+                        String[] locations = new String[rightLocations.size()];
+                        for (int iter2 = 0; iter2 < operatorLocations.get(rightOpDesc.getOperatorId())
+                                .size(); iter2++) {
+                            locations[iter2] = rightLocations.get(iter2).location;
+                        }
+                        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, feedMsgHandlerOp, locations);
+                    } else {
+                        PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, feedMsgHandlerOp,
+                                operatorCounts.get(rightOpDesc.getOperatorId()));
+                    }
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), feedMsgHandlerOp, 0);
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), feedMsgHandlerOp, 0, rightOpDesc,
+                            rightOp.getRight());
+                } else {
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
+                }
+            }
+
             // set absolute location constraints
             for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
                 IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(entry.getKey());
-                // why do we need to sort?
-                Collections.sort(entry.getValue(), (LocationConstraint o1, LocationConstraint o2) -> {
-                    return o1.partition - o2.partition;
-                });
                 String[] locations = new String[entry.getValue().size()];
                 for (int j = 0; j < locations.length; ++j) {
                     locations[j] = entry.getValue().get(j).location;
