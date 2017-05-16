@@ -42,7 +42,6 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import twitter4j.conf.ConfigurationBuilder;
 
 public class DatasourceFactoryProvider {
 
