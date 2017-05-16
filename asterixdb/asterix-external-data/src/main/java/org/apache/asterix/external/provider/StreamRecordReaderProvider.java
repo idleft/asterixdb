@@ -71,7 +71,7 @@ public class StreamRecordReaderProvider {
             // it will be ignored and a potential wrong record reader with less required options
             // will be returned.
             for (String configKey : configPair.getLeft()) {
-                if (configKey.length()>0 && !configuration.containsKey(configKey)) {
+                if (configKey.length() > 0 && !configuration.containsKey(configKey)) {
                     matchFlag = false;
                     break;
                 }

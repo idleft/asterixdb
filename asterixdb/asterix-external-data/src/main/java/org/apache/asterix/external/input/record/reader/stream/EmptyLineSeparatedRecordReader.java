@@ -31,10 +31,12 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
 
     private static final List<String> recordReaderFormats = Collections
             .unmodifiableList(Arrays.asList(ExternalDataConstants.FORMAT_LINE_SEPARATED));
-    private static final String requiredConfigs = "";
+    private static final String REQUIRED_CONFIGS = "";
+    protected Map<String, String> config;
 
     public EmptyLineSeparatedRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
         super(inputStream);
+        this.config = config;
     }
 
     private boolean prevCharCR;
@@ -115,7 +117,7 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
 
     @Override
     public String getRequiredConfigs() {
-        return requiredConfigs;
+        return REQUIRED_CONFIGS;
     }
 
     private boolean skipWhiteSpace() throws IOException {

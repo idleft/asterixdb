@@ -40,7 +40,7 @@ public class LineRecordReader extends StreamRecordReader {
     protected final Map<String, String> config;
     private static final List<String> recordReaderFormats = Collections.unmodifiableList(
             Arrays.asList(ExternalDataConstants.FORMAT_DELIMITED_TEXT, ExternalDataConstants.FORMAT_CSV));
-    private static final String requiredConfigs = "";
+    private static final String REQUIRED_CONFIGS = "";
 
     public LineRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
         super(inputStream);
@@ -70,7 +70,7 @@ public class LineRecordReader extends StreamRecordReader {
 
     @Override
     public String getRequiredConfigs() {
-        return requiredConfigs;
+        return REQUIRED_CONFIGS;
     }
 
     @Override

@@ -38,7 +38,6 @@ import org.apache.commons.io.IOUtils;
 public class ParserFactoryProvider {
 
     private static final String RESOURCE = "META-INF/services/org.apache.asterix.external.api.IDataParserFactory";
-    private static final String PARSER_FORMAT_FIELD_NAME = "parserFormats";
     private static Map<String, Class> factories = null;
 
     private ParserFactoryProvider() {
