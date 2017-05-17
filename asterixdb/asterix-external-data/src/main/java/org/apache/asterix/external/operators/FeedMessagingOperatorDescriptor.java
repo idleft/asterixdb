@@ -19,6 +19,7 @@
 package org.apache.asterix.external.operators;
 
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -32,9 +33,10 @@ public class FeedMessagingOperatorDescriptor extends AbstractSingleActivityOpera
     private final Map<String, String> feedPolicyProperties;
 
     public FeedMessagingOperatorDescriptor(IOperatorDescriptorRegistry spec,
-            final Map<String, String> feedPolicyProperties) {
+            final Map<String, String> feedPolicyProperties, IOperatorDescriptor sourceOpDesc) {
         super(spec, 1, 1);
         this.feedPolicyProperties = feedPolicyProperties;
+        this.outRecDescs[0] = sourceOpDesc.getOutputRecordDescriptors()[0];
     }
 
     @Override

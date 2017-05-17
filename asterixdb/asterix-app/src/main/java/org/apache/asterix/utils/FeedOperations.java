@@ -290,7 +290,7 @@ public class FeedOperations {
                 }
                 if (connDesc instanceof MToNPartitioningWithMessageConnectorDescriptor) {
                     FeedMessagingOperatorDescriptor feedMessagingOpDesc = new FeedMessagingOperatorDescriptor(jobSpec,
-                            feedPolicyEntity.getProperties());
+                            feedPolicyEntity.getProperties(), leftOpDesc);
                     if (operatorLocations.containsKey(rightOpDesc.getOperatorId())) {
                         List<LocationConstraint> rightLocations = operatorLocations.get(rightOpDesc.getOperatorId());
                         String[] locations = new String[rightLocations.size()];
