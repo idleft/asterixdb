@@ -123,6 +123,7 @@ public class ClassAdToADMTest extends TestCase {
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
                 SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
+                recordReader.configure();
                 while (recordReader.hasNext()) {
                     tb.reset();
                     IRawRecord<char[]> record = recordReader.next();
@@ -161,6 +162,7 @@ public class ClassAdToADMTest extends TestCase {
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
                 SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
+                recordReader.configure();
                 try {
                     Value val = new Value(objectPool);
                     while (recordReader.hasNext()) {
@@ -202,6 +204,7 @@ public class ClassAdToADMTest extends TestCase {
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
                 SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
+                recordReader.configure();
                 try {
                     Value val = new Value(objectPool);
                     while (recordReader.hasNext()) {

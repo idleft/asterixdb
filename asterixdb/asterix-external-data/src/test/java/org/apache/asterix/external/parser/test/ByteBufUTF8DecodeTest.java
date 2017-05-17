@@ -83,6 +83,7 @@ public class ByteBufUTF8DecodeTest {
         FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
         LocalFSInputStream in = new LocalFSInputStream(watcher);
         try (SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config)) {
+            recordReader.configure();
             while (recordReader.hasNext()) {
                 try {
                     IRawRecord<char[]> record = recordReader.next();

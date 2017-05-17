@@ -18,7 +18,6 @@
  */
 package org.apache.asterix.external.provider;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -35,7 +34,6 @@ import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.input.record.reader.stream.StreamRecordReader;
-import org.apache.asterix.external.input.stream.BasicInputStream;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.tuple.Pair;
