@@ -273,6 +273,11 @@
         <output-dir compare="Text">record-reader-with-malformed-input-stream</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="feed-with-join-function">
+        <output-dir compare="Text">feed-with-join-function</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="upsert">
     <test-case FilePath="upsert">

@@ -34,6 +34,7 @@ import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.common.context.IStorageComponentProvider;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
+import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
@@ -41,6 +42,7 @@ import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
+import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedConnectionRequest;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
@@ -48,6 +50,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedMessagingOperatorDescriptor;
+import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.lang.aql.statement.SubscribeFeedStatement;
@@ -209,6 +212,8 @@ public class FeedOperations {
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
+            String datasetName = feedConnections.get(iter1).getDatasetName();
+            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
 
             FeedPolicyEntity feedPolicyEntity =
                     FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
@@ -217,9 +222,20 @@ public class FeedOperations {
             // copy operators
             OperatorDescriptorId oldId;
             OperatorDescriptorId opId;
+            FeedMetaOperatorDescriptor metaOpDesc;
             for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 oldId = entry.getKey();
-                opId = jobSpec.createOperatorDescriptorId(entry.getValue());
+                IOperatorDescriptor opDesc = entry.getValue();
+                // wrap up LSMTreeInsertDeleteOperatorDescriptor to ensure failsafe insert
+                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
+                    metaOpDesc = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
+                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
+                    opId = metaOpDesc.getOperatorId();
+                    opDesc.setOperatorId(opId);
+                } else {
+                    opId = jobSpec.createOperatorDescriptorId(entry.getValue());
+                }
                 operatorIdMapping.put(oldId, opId);
             }
 
@@ -288,7 +304,8 @@ public class FeedOperations {
                     jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
                             leftOp.getRight());
                 }
-                if (connDesc instanceof MToNPartitioningWithMessageConnectorDescriptor) {
+                if (connDesc instanceof MToNPartitioningWithMessageConnectorDescriptor
+                        && !(rightOpDesc instanceof FeedMetaOperatorDescriptor)) {
                     FeedMessagingOperatorDescriptor feedMessagingOpDesc = new FeedMessagingOperatorDescriptor(jobSpec,
                             feedPolicyEntity.getProperties(), leftOpDesc);
                     if (operatorLocations.containsKey(rightOpDesc.getOperatorId())) {

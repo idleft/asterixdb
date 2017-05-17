@@ -1,0 +1,5 @@
+{ "cid": 0, "address": null, "cashBack": 600, "lastorder": { "oid": 258, "total": 368.61862 }, "name": "Mike ley", "order_ids": [ 1000, 1, 100, 10 ] }
+{ "cid": 1, "address": { "number": 389, "street": "Hill St.", "city": "Mountain View" }, "cashBack": 650, "lastorder": { "oid": 18, "total": 338.61862 }, "name": "Mike Carey", "order_ids": [ 1000, 1, 100, 10 ] }
+{ "cid": 4, "address": { "number": 8, "street": "Hill St.", "city": "Mountain View" }, "age": 12, "cashBack": 450, "lastorder": { "oid": 4545, "total": 87.61863 }, "name": "Mary Carey", "order_ids": [ 1000, 1, 100, 10 ] }
+{ "cid": 5, "address": null, "age": 19, "cashBack": 350, "lastorder": { "oid": 48, "total": 318.61862 }, "name": "Jodi Alex", "order_ids": [ 1000, 1, 100, 10 ] }
+{ "cid": 775, "address": { "number": 8389, "street": "Hill St.", "city": "Mountain View" }, "age": null, "cashBack": 100, "lastorder": { "oid": 66, "total": 38.618626 }, "name": "Jodi Rotruck", "order_ids": [ 1000, 1, 100, 10 ] }
