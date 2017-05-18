@@ -1,22 +1,20 @@
 /*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  * Licensed to the Apache Software Foundation (ASF) under one
- *  * or more contributor license agreements.  See the NOTICE file
- *  * distributed with this work for additional information
- *  * regarding copyright ownership.  The ASF licenses this file
- *  * to you under the Apache License, Version 2.0 (the
- *  * "License"); you may not use this file except in compliance
- *  * with the License.  You may obtain a copy of the License at
- *  *
- *  *   http://www.apache.org/licenses/LICENSE-2.0
- *  *
- *  * Unless required by applicable law or agreed to in writing,
- *  * software distributed under the License is distributed on an
- *  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  * KIND, either express or implied.  See the License for the
- *  * specific language governing permissions and limitations
- *  * under the License.
- *  
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.apache.asterix.external.operators;
@@ -37,7 +35,7 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 
 public class FeedMessagingOperatorPushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
-    
+
     private final IHyracksTaskContext ctx;
     private final IRecordDescriptorProvider recordDescriptorProvider;
     private final VSizeFrame message;
@@ -45,11 +43,9 @@ public class FeedMessagingOperatorPushable extends AbstractUnaryInputUnaryOutput
     private final ActivityId activityId;
     private final FeedPolicyAccessor fpa;
     private boolean opened;
-    
-    public FeedMessagingOperatorPushable(IHyracksTaskContext ctx,
-            IRecordDescriptorProvider recordDescriptorProvider, Map<String, String> feedPolicyProperties,
-            ActivityId activityId)
-            throws HyracksDataException {
+
+    public FeedMessagingOperatorPushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescriptorProvider,
+            Map<String, String> feedPolicyProperties, ActivityId activityId) throws HyracksDataException {
         this.ctx = ctx;
         this.recordDescriptorProvider = recordDescriptorProvider;
         this.message = new VSizeFrame(ctx);
@@ -59,7 +55,7 @@ public class FeedMessagingOperatorPushable extends AbstractUnaryInputUnaryOutput
         this.opened = false;
         TaskUtil.putInSharedMap(HyracksConstants.KEY_MESSAGE, message, ctx);
     }
-    
+
     @Override
     public void open() throws HyracksDataException {
         fta = new FrameTupleAccessor(recordDescriptorProvider.getInputRecordDescriptor(activityId, 0));
