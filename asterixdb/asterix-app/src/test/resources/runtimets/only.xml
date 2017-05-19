@@ -19,5 +19,11 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
+    <test-case FilePath="feeds">
+      <compilation-unit name="drop-function-used-by-feed">
+        <output-dir compare="Text">drop-function-used-by-feed</output-dir>
+        <expected-error>Cannot find function</expected-error>
+      </compilation-unit>
+    </test-case>
   </test-group>
 </test-suite>

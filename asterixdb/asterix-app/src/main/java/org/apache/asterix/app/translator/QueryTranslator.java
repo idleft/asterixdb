@@ -1641,9 +1641,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (dv == null) {
                 throw new AlgebricksException("There is no dataverse with this name " + dataverse + ".");
             }
+            // TODO: if function body contains other function call, the referenced function should increase
+            // its reference count.
             Function function = new Function(dataverse, functionName, cfs.getaAterixFunction().getArity(),
                     cfs.getParamList(), Function.RETURNTYPE_VOID, cfs.getFunctionBody(), Function.LANGUAGE_AQL,
-                    FunctionKind.SCALAR.toString());
+                    FunctionKind.SCALAR.toString(), 0);
             MetadataManager.INSTANCE.addFunction(mdTxnCtx, function);
 
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
@@ -1669,7 +1671,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 if (!stmtDropFunction.getIfExists()) {
                     throw new AlgebricksException("Unknonw function " + signature);
                 }
-            } else {
+            } else if (function.getReferenceCount() !=0) {
+                throw new AlgebricksException("Function " + signature + " is being used. It cannot be dropped.");
+            }else {
                 MetadataManager.INSTANCE.dropFunction(mdTxnCtx, signature);
             }
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
@@ -2152,6 +2156,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName,
                     outputType.toString());
             MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
+            // increase function reference count
+            for (FunctionSignature funcSig : appliedFunctions) {
+                Function func = MetadataManager.INSTANCE.getFunction(mdTxnCtx, funcSig);
+                func.reference();
+                MetadataManager.INSTANCE.updateFunction(mdTxnCtx, func);
+            }
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
@@ -2188,6 +2198,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         + cfs.getDatasetName().getValue() + ". Invalid operation!");
             }
             MetadataManager.INSTANCE.dropFeedConnection(mdTxnCtx, dataverseName, feedName, datasetName);
+            for (FunctionSignature functionSignature : fc.getAppliedFunctions()) {
+                Function function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, functionSignature);
+                function.dereference();
+                MetadataManager.INSTANCE.updateFunction(mdTxnCtx, function);
+            }
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;

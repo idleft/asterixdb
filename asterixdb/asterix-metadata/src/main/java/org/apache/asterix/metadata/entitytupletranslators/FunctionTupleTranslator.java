@@ -104,8 +104,10 @@ public class FunctionTupleTranslator extends AbstractTupleTranslator<Function> {
         String functionKind =
                 ((AString) functionRecord.getValueByPos(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_KIND_FIELD_INDEX))
                         .getStringValue();
+        String referenceCount = ((AString) functionRecord
+                .getValueByPos(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_REFERENCE_COUNT_INDEX)).getStringValue();
         return new Function(dataverseName, functionName, Integer.parseInt(arity), params, returnType, definition,
-                language, functionKind);
+                language, functionKind, Integer.parseInt(referenceCount));
 
     }
 
