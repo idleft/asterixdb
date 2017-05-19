@@ -187,6 +187,12 @@ public class FunctionTupleTranslator extends AbstractTupleTranslator<Function> {
         stringSerde.serialize(aString, fieldValue.getDataOutput());
         recordBuilder.addField(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_KIND_FIELD_INDEX, fieldValue);
 
+        // write field 8
+        fieldValue.reset();
+        aString.setValue(function.getReferenceCount() + "");
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_REFERENCE_COUNT_INDEX, fieldValue);
+
         // write record
         recordBuilder.write(tupleBuilder.getDataOutput(), true);
         tupleBuilder.addFieldEndOffset();
