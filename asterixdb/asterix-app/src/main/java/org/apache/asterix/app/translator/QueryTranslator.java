@@ -1641,8 +1641,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (dv == null) {
                 throw new AlgebricksException("There is no dataverse with this name " + dataverse + ".");
             }
-            // TODO: if function body contains other function call, the referenced function should increase
-            // its reference count.
+            // If the function body contains function calls, theirs reference count won't be increased.
             Function function = new Function(dataverse, functionName, cfs.getaAterixFunction().getArity(),
                     cfs.getParamList(), Function.RETURNTYPE_VOID, cfs.getFunctionBody(), Function.LANGUAGE_AQL,
                     FunctionKind.SCALAR.toString(), 0);
@@ -2156,8 +2155,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName,
                     outputType.toString());
             MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
-            // increase function reference count
+            // Increase function reference count.
             for (FunctionSignature funcSig : appliedFunctions) {
+                // The function should be cached in Metadata manager, so this operation is not that expensive.
                 Function func = MetadataManager.INSTANCE.getFunction(mdTxnCtx, funcSig);
                 func.reference();
                 MetadataManager.INSTANCE.updateFunction(mdTxnCtx, func);
