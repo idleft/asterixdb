@@ -189,7 +189,7 @@ public class FunctionTupleTranslator extends AbstractTupleTranslator<Function> {
 
         // write field 8
         fieldValue.reset();
-        aString.setValue(function.getReferenceCount() + "");
+        aString.setValue(Integer.toString(function.getReferenceCount()));
         stringSerde.serialize(aString, fieldValue.getDataOutput());
         recordBuilder.addField(MetadataRecordTypes.FUNCTION_ARECORD_FUNCTION_REFERENCE_COUNT_INDEX, fieldValue);
 
