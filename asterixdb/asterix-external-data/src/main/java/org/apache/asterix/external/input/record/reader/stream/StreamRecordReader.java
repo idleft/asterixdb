@@ -100,5 +100,6 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
 
     public abstract String getRequiredConfigs();
 
-    public abstract void configure(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException;
+    public abstract void configure(AsterixInputStream inputStream, Map<String, String> config)
+            throws HyracksDataException;
 }
