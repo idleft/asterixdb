@@ -38,14 +38,10 @@ public class QuotedLineRecordReader extends LineRecordReader {
             Arrays.asList(ExternalDataConstants.FORMAT_DELIMITED_TEXT, ExternalDataConstants.FORMAT_CSV));
     private static final String REQUIRED_CONFIGS = "quote";
 
-    public QuotedLineRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
-        super(inputStream, config);
-    }
-
     @Override
-    public void configure() throws HyracksDataException {
-        super.configure();
-        String quoteString = this.config.get(ExternalDataConstants.KEY_QUOTE);
+    public void configure(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException {
+        super.configure(inputStream, config);
+        String quoteString = config.get(ExternalDataConstants.KEY_QUOTE);
         if (quoteString.length() != 1) {
             throw new HyracksDataException(ExceptionUtils.incorrectParameterMessage(ExternalDataConstants.KEY_QUOTE,
                     ExternalDataConstants.PARAMETER_OF_SIZE_ONE, quoteString));

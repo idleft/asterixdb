@@ -43,16 +43,10 @@ public class SemiStructuredRecordReader extends StreamRecordReader {
             .unmodifiableList(Arrays.asList(ExternalDataConstants.FORMAT_ADM, ExternalDataConstants.FORMAT_JSON,
                     ExternalDataConstants.FORMAT_SEMISTRUCTURED));
     private static final String REQUIRED_CONFIGS = "";
-    protected final Map<String, String> config;
-
-    public SemiStructuredRecordReader(AsterixInputStream stream, Map<String, String> config)
-            throws HyracksDataException {
-        super(stream);
-        this.config = config;
-    }
 
     @Override
-    public void configure() throws HyracksDataException {
+    public void configure(AsterixInputStream stream, Map<String, String> config) throws HyracksDataException {
+        super.configure(stream);
         String recStartString = config.get(ExternalDataConstants.KEY_RECORD_START);
         String recEndString = config.get(ExternalDataConstants.KEY_RECORD_END);
         // set record opening char

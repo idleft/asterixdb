@@ -36,20 +36,13 @@ public class LineRecordReader extends StreamRecordReader {
     protected int newlineLength;
     protected int recordNumber = 0;
     protected boolean nextIsHeader = false;
-    protected final AsterixInputStream inputStream;
-    protected final Map<String, String> config;
     private static final List<String> recordReaderFormats = Collections.unmodifiableList(
             Arrays.asList(ExternalDataConstants.FORMAT_DELIMITED_TEXT, ExternalDataConstants.FORMAT_CSV));
     private static final String REQUIRED_CONFIGS = "";
 
-    public LineRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
-        super(inputStream);
-        this.inputStream = inputStream;
-        this.config = config;
-    }
-
     @Override
-    public void configure() throws HyracksDataException {
+    public void configure(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException {
+        super.configure(inputStream);
         this.hasHeader = ExternalDataUtils.hasHeader(config);
         if (hasHeader) {
             inputStream.setNotificationHandler(this);

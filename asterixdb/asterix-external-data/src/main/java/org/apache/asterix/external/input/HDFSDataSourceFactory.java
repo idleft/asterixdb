@@ -204,10 +204,8 @@ public class HDFSDataSourceFactory implements IRecordReaderFactory<Object>, IInd
         try {
             IExternalIndexer indexer = files == null ? null : ExternalIndexerProvider.getIndexer(configuration);
             if (recordReaderClazz != null) {
-                StreamRecordReader streamReader = (StreamRecordReader) recordReaderClazz
-                        .getDeclaredConstructor(AsterixInputStream.class, Map.class)
-                        .newInstance(createInputStream(ctx, partition, indexer), configuration);
-                streamReader.configure();
+                StreamRecordReader streamReader = (StreamRecordReader) recordReaderClazz.getConstructor().newInstance();
+                streamReader.configure(createInputStream(ctx, partition, indexer), configuration);
                 if (indexer != null) {
                     return new IndexingStreamRecordReader(streamReader, indexer);
                 } else {

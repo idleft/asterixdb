@@ -91,7 +91,8 @@ public class ClassAdToADMTest extends TestCase {
     public void testSchemaful() {
         try {
             File file = new File("target/classad-wtih-temporals.adm");
-            File expected = new File(getClass().getResource("/classad/results/classad-with-temporals.adm").toURI().getPath());
+            File expected = new File(
+                    getClass().getResource("/classad/results/classad-with-temporals.adm").toURI().getPath());
             FileUtils.deleteQuietly(file);
             PrintStream printStream = new PrintStream(Files.newOutputStream(Paths.get(file.toURI())));
             String[] recordFieldNames = { "GlobalJobId", "Owner", "ClusterId", "ProcId", "RemoteWallClockTime",
@@ -111,7 +112,7 @@ public class ClassAdToADMTest extends TestCase {
                 printers[i] = printerFactories[i].createPrinter();
             }
             ClassAdObjectPool objectPool = new ClassAdObjectPool();
-            String[] files = new String[] {"/classad/classad-with-temporals.classads"};
+            String[] files = new String[] { "/classad/classad-with-temporals.classads" };
             ClassAdParser parser = new ClassAdParser(recordType, false, false, false, null, null, null, objectPool);
             ArrayTupleBuilder tb = new ArrayTupleBuilder(numOfTupleFields);
             for (String path : files) {
@@ -122,8 +123,8 @@ public class ClassAdToADMTest extends TestCase {
                 paths.add(Paths.get(getClass().getResource(path).toURI()));
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
-                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
-                recordReader.configure();
+                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader();
+                recordReader.configure(in, config);
                 while (recordReader.hasNext()) {
                     tb.reset();
                     IRawRecord<char[]> record = recordReader.next();
@@ -150,7 +151,7 @@ public class ClassAdToADMTest extends TestCase {
         try {
             ClassAdObjectPool objectPool = new ClassAdObjectPool();
             ClassAd pAd = new ClassAd(objectPool);
-            String[] files = new String[] {"/classad/escapes.txt"};
+            String[] files = new String[] { "/classad/escapes.txt" };
             ClassAdParser parser = new ClassAdParser(objectPool);
             CharArrayLexerSource lexerSource = new CharArrayLexerSource();
             for (String path : files) {
@@ -161,8 +162,8 @@ public class ClassAdToADMTest extends TestCase {
                 paths.add(Paths.get(getClass().getResource(path).toURI()));
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
-                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
-                recordReader.configure();
+                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader();
+                recordReader.configure(in, config);
                 try {
                     Value val = new Value(objectPool);
                     while (recordReader.hasNext()) {
@@ -192,7 +193,7 @@ public class ClassAdToADMTest extends TestCase {
         try {
             ClassAdObjectPool objectPool = new ClassAdObjectPool();
             ClassAd pAd = new ClassAd(objectPool);
-            String[] files = new String[] {"/classad/jobads.txt"};
+            String[] files = new String[] { "/classad/jobads.txt" };
             ClassAdParser parser = new ClassAdParser(objectPool);
             CharArrayLexerSource lexerSource = new CharArrayLexerSource();
             for (String path : files) {
@@ -203,8 +204,8 @@ public class ClassAdToADMTest extends TestCase {
                 paths.add(Paths.get(getClass().getResource(path).toURI()));
                 FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
                 LocalFSInputStream in = new LocalFSInputStream(watcher);
-                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config);
-                recordReader.configure();
+                SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader();
+                recordReader.configure(in, config);
                 try {
                     Value val = new Value(objectPool);
                     while (recordReader.hasNext()) {

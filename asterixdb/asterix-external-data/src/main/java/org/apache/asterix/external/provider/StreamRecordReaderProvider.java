@@ -121,9 +121,7 @@ public class StreamRecordReaderProvider {
                         continue;
                     }
                     final Class<?> clazz = Class.forName(className);
-                    StreamRecordReader newInstance = (StreamRecordReader) clazz
-                            .getDeclaredConstructor(AsterixInputStream.class, Map.class)
-                            .newInstance(null, null);
+                    StreamRecordReader newInstance = (StreamRecordReader) clazz.getConstructor().newInstance();
                     List<String> formats = newInstance.getRecordReaderFormats();
                     String[] configs = newInstance.getRequiredConfigs().split(":");
                     for (String format : formats) {

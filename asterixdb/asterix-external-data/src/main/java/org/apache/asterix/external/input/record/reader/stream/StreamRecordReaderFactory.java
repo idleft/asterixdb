@@ -48,11 +48,9 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     protected IInputStreamFactory streamFactory;
     protected Map<String, String> configuration;
     protected Class recordReaderClazz;
-    private static final List<String> recordReaderNames = Collections.unmodifiableList(Arrays.asList(
-            ExternalDataConstants.ALIAS_LOCALFS_ADAPTER,
-            ExternalDataConstants.ALIAS_SOCKET_ADAPTER,
-            ExternalDataConstants.SOCKET,
-            ExternalDataConstants.STREAM_SOCKET_CLIENT));
+    private static final List<String> recordReaderNames = Collections.unmodifiableList(
+            Arrays.asList(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER, ExternalDataConstants.ALIAS_SOCKET_ADAPTER,
+                    ExternalDataConstants.SOCKET, ExternalDataConstants.STREAM_SOCKET_CLIENT));
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -96,10 +94,9 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition)
             throws HyracksDataException {
         try {
-            StreamRecordReader streamRecordReader = (StreamRecordReader) recordReaderClazz
-                    .getDeclaredConstructor(AsterixInputStream.class, Map.class)
-                    .newInstance(streamFactory.createInputStream(ctx, partition), configuration);
-            streamRecordReader.configure();
+            StreamRecordReader streamRecordReader = (StreamRecordReader) recordReaderClazz.getConstructor()
+                    .newInstance();
+            streamRecordReader.configure(streamFactory.createInputStream(ctx, partition), configuration);
             return streamRecordReader;
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException
                 | NoSuchMethodException e) {

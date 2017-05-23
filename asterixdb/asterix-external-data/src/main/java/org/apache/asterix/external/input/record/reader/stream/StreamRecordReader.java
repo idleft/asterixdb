@@ -20,6 +20,7 @@ package org.apache.asterix.external.input.record.reader.stream;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IRawRecord;
@@ -33,7 +34,7 @@ import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public abstract class StreamRecordReader implements IRecordReader<char[]>, IStreamNotificationHandler {
-    protected final AsterixInputStreamReader reader;
+    protected AsterixInputStreamReader reader;
     protected CharArrayRecord record;
     protected char[] inputBuffer;
     protected int bufferLength = 0;
@@ -41,7 +42,7 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
     protected boolean done = false;
     protected FeedLogManager feedLogManager;
 
-    public StreamRecordReader(AsterixInputStream inputStream) {
+    public void configure(AsterixInputStream inputStream) {
         this.reader = new AsterixInputStreamReader(inputStream);
         record = new CharArrayRecord();
         inputBuffer = new char[ExternalDataConstants.DEFAULT_BUFFER_SIZE];
@@ -99,5 +100,5 @@ public abstract class StreamRecordReader implements IRecordReader<char[]>, IStre
 
     public abstract String getRequiredConfigs();
 
-    public abstract void configure() throws HyracksDataException;
+    public abstract void configure(AsterixInputStream inputStream, Map<String, String> config) throws HyracksDataException;
 }

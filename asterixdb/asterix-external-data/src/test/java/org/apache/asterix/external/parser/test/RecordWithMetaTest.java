@@ -89,7 +89,8 @@ public class RecordWithMetaTest {
             Map<String, String> config = new HashMap<>();
             config.put(ExternalDataConstants.KEY_HEADER, "true");
             config.put(ExternalDataConstants.KEY_QUOTE, ExternalDataConstants.DEFAULT_QUOTE);
-            LineRecordReader lineReader = new LineRecordReader(inputStream, config);
+            LineRecordReader lineReader = new LineRecordReader();
+            lineReader.configure(inputStream, config);
             // create csv with json record reader
             CSVToRecordWithMetadataAndPKConverter recordConverter = new CSVToRecordWithMetadataAndPKConverter(
                     valueIndex, delimiter, metaType, recordType, pkIndicators, pkIndexes, keyTypes);

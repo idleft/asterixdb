@@ -82,8 +82,8 @@ public class ByteBufUTF8DecodeTest {
         paths.add(Paths.get(getClass().getResource(jsonFileName).toURI()));
         FileSystemWatcher watcher = new FileSystemWatcher(paths, null, false);
         LocalFSInputStream in = new LocalFSInputStream(watcher);
-        try (SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader(in, config)) {
-            recordReader.configure();
+        try (SemiStructuredRecordReader recordReader = new SemiStructuredRecordReader()) {
+            recordReader.configure(in, config);
             while (recordReader.hasNext()) {
                 try {
                     IRawRecord<char[]> record = recordReader.next();

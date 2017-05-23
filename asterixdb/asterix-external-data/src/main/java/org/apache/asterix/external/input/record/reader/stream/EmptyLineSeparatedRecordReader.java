@@ -34,11 +34,6 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
     private static final String REQUIRED_CONFIGS = "";
     protected Map<String, String> config;
 
-    public EmptyLineSeparatedRecordReader(AsterixInputStream inputStream, Map<String, String> config) {
-        super(inputStream);
-        this.config = config;
-    }
-
     private boolean prevCharCR;
     private boolean prevCharLF;
     private int newlineLength;
@@ -140,7 +135,8 @@ public class EmptyLineSeparatedRecordReader extends StreamRecordReader {
     }
 
     @Override
-    public void configure() {
-        // no op
+    public void configure(AsterixInputStream inputStream, Map<String, String> config) {
+        super.configure(inputStream);
+        this.config = config;
     }
 }
