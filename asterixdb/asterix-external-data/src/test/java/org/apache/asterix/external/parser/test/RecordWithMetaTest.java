@@ -110,7 +110,7 @@ public class RecordWithMetaTest {
             serdes[1] = SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(metaType);
             printerFactories[0] = ADMPrinterFactoryProvider.INSTANCE.getPrinterFactory(recordType);
             printerFactories[1] = ADMPrinterFactoryProvider.INSTANCE.getPrinterFactory(metaType);
-            // create output descriptor 
+            // create output descriptor
             IPrinter[] printers = new IPrinter[printerFactories.length];
 
             for (int i = 0; i < printerFactories.length; i++) {
