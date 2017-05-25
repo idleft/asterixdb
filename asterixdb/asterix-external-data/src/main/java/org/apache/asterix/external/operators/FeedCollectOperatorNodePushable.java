@@ -23,27 +23,35 @@ import java.util.Map;
 
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.IActiveRuntime;
 import org.apache.asterix.common.api.INcApplicationContext;
+import org.apache.asterix.external.feed.dataflow.FeedMegaWriter;
 import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
+import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
 
 /**
  * The first operator in a collect job in a feed.
  */
-public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
+public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOperatorNodePushable implements
+        IActiveRuntime{
 
     private final int partition;
     private final FeedConnectionId connectionId;
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager activeManager;
     private final IHyracksTaskContext ctx;
+    private FeedMegaWriter feedMegaWriter;
+    private final ActiveRuntimeId runtimeId;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition) {
@@ -53,47 +61,34 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutp
         this.policyAccessor = new FeedPolicyAccessor(feedPolicy);
         this.activeManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
+        this.runtimeId = new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
     }
 
     @Override
     public void initialize() throws HyracksDataException {
         try {
-            ActiveRuntimeId runtimeId =
-                    new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
+            activeManager.registerRuntime(this);
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
-            if (policyAccessor.flowControlEnabled()) {
-                writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
-                        activeManager.getFramePool());
-            } else {
-                writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
-            }
+//            if (policyAccessor.flowControlEnabled()) {
+//                writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, feedMegaWriter, policyAccessor, tAccessor,
+//                        activeManager.getFramePool());
+//            } else {
+            writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
+//            }
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
     }
 
-    @Override
-    public void open() throws HyracksDataException {
-        writer.open();
+    @Override public IFrameWriter getInputFrameWriter(int index) {
+        return null;
     }
 
-    @Override
-    public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-        writer.nextFrame(buffer);
+    @Override public ActiveRuntimeId getRuntimeId() {
+        return this.runtimeId;
     }
 
-    @Override
-    public void fail() throws HyracksDataException {
-        writer.fail();
-    }
-
-    @Override
-    public void flush() throws HyracksDataException {
-        writer.flush();
-    }
-
-    @Override
-    public void close() throws HyracksDataException {
-        writer.close();
+    @Override public void stop() throws HyracksDataException, InterruptedException {
+        // no op
     }
 }
