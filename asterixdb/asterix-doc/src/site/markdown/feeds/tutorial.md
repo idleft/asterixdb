@@ -259,7 +259,7 @@ AsterixDB directly. Here is an example:
            screenName: string
         }
 
-        create dataset TestDataset(TestDataType) primary key screen-name;
+        create dataset TestDataset(TestDataType) primary key screenName;
 
         create feed TestSocketFeed using socket_adapter
         (
