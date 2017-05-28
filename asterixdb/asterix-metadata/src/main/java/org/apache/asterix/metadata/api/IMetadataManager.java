@@ -486,6 +486,8 @@ public interface IMetadataManager extends IMetadataBootstrap {
      */
     Feed getFeed(MetadataTransactionContext ctx, String dataverse, String feedName) throws MetadataException;
 
+    List<Feed> getFeeds(MetadataTransactionContext ctx, String dataverse) throws MetadataException;
+
     /**
      * @param ctx
      * @param dataverse

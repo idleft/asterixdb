@@ -783,6 +783,17 @@ public class MetadataManager implements IMetadataManager {
     }
 
     @Override
+    public List<Feed> getFeeds(MetadataTransactionContext ctx, String dataverse) throws MetadataException {
+        List<Feed> feeds;
+        try {
+            feeds = metadataNode.getFeeds(ctx.getJobId(), dataverse);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
+        return feeds;
+    }
+
+    @Override
     public void dropFeed(MetadataTransactionContext ctx, String dataverse, String feedName) throws MetadataException {
         Feed feed = null;
         List<FeedConnection> feedConnections = null;

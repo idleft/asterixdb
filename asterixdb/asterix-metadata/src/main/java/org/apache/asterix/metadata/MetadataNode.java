@@ -1675,6 +1675,20 @@ public class MetadataNode implements IMetadataNode {
     }
 
     @Override
+    public List<Feed> getFeeds(JobId jobId, String dataverse) throws MetadataException, RemoteException {
+        try{
+            ITupleReference searchKey = createTuple(dataverse);
+            FeedTupleTranslator tupleReaderWriter = tupleTranslatorProvider.getFeedTupleTranslator(false);
+            List<Feed> results = new ArrayList<>();
+            IValueExtractor<Feed> valueExtractor = new MetadataEntityValueExtractor<>(tupleReaderWriter);
+            searchIndex(jobId, MetadataPrimaryIndexes.FEED_DATASET, searchKey, valueExtractor, results);
+            return results;
+        } catch (HyracksDataException e) {
+            throw new MetadataException(e);
+        }
+    }
+
+    @Override
     public void dropFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException {
         try {
             ITupleReference searchKey = createTuple(dataverse, feedName);

@@ -1634,6 +1634,24 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
+    protected boolean checkWhetherFunctionIsBeingUsed(MetadataTransactionContext ctx, FunctionSignature signature)
+            throws MetadataException {
+        List<Dataverse> allDataverses = MetadataManager.INSTANCE.getDataverses(ctx);
+        for (Dataverse dataverse : allDataverses) {
+            List<Feed> feeds = MetadataManager.INSTANCE.getFeeds(ctx, dataverse.getDataverseName());
+            for (Feed feed : feeds) {
+                List<FeedConnection> feedConnections = MetadataManager.INSTANCE.getFeedConections(ctx,
+                        dataverse.getDataverseName(), feed.getFeedName());
+                for (FeedConnection conn : feedConnections) {
+                    if (conn.getAppliedFunctions().contains(signature)) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
     protected void handleFunctionDropStatement(MetadataProvider metadataProvider, Statement stmt) throws Exception {
         FunctionDropStatement stmtDropFunction = (FunctionDropStatement) stmt;
         FunctionSignature signature = stmtDropFunction.getFunctionSignature();
@@ -1644,10 +1662,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 signature.getNamespace() + "." + signature.getName());
         try {
             Function function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, signature);
-            if (function == null) {
-                if (!stmtDropFunction.getIfExists()) {
-                    throw new AlgebricksException("Unknonw function " + signature);
-                }
+            if (function == null && !stmtDropFunction.getIfExists()) {
+                throw new AlgebricksException("Unknonw function " + signature);
+            } else if (checkWhetherFunctionIsBeingUsed(mdTxnCtx, signature)) {
+                throw new AlgebricksException("Function " + signature + " is being used");
             } else {
                 MetadataManager.INSTANCE.dropFunction(mdTxnCtx, signature);
             }

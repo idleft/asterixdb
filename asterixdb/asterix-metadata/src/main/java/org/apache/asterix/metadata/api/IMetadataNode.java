@@ -537,6 +537,8 @@ public interface IMetadataNode extends Remote, Serializable {
      */
     Feed getFeed(JobId jobId, String dataverse, String feedName) throws MetadataException, RemoteException;
 
+    List<Feed> getFeeds(JobId jobId, String dataverse) throws MetadataException, RemoteException;
+
     /**
      * @param jobId
      * @param dataverse
