@@ -1195,6 +1195,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     // prepare job to remove feed log storage
                     jobsToExecute.add(FeedOperations.buildRemoveFeedStorageJob(metadataProvider,
                             MetadataManager.INSTANCE.getFeed(mdTxnCtx, dataverseName, activeEntityId.getEntityName())));
+
                 }
             }
 

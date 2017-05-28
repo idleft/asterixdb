@@ -19,5 +19,11 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
+    <test-case FilePath="feeds">
+    <compilation-unit name="drop-function-used-by-feed-cross-dataverse">
+      <output-dir compare="Text">drop-function-used-by-feed</output-dir>
+      <expected-error>Function experiments.test_func0@1 is being used. It cannot be dropped.</expected-error>
+    </compilation-unit>
+  </test-case>
   </test-group>
 </test-suite>
