@@ -1665,7 +1665,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (function == null && !stmtDropFunction.getIfExists()) {
                 throw new AlgebricksException("Unknonw function " + signature);
             } else if (checkWhetherFunctionIsBeingUsed(mdTxnCtx, signature)) {
-                throw new AlgebricksException("Function " + signature + " is being used");
+                throw new AlgebricksException("Function " + signature + " is being used. It cannot be dropped.");
             } else {
                 MetadataManager.INSTANCE.dropFunction(mdTxnCtx, signature);
             }
