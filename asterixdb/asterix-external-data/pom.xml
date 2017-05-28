@@ -260,13 +260,11 @@
       <groupId>org.twitter4j</groupId>
       <artifactId>twitter4j-core</artifactId>
       <version>4.0.3</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.twitter4j</groupId>
       <artifactId>twitter4j-stream</artifactId>
       <version>4.0.3</version>
-      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>net.java.dev.rome</groupId>
