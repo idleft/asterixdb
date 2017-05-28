@@ -430,8 +430,6 @@ public interface IMetadataNode extends Remote, Serializable {
      */
     void addFunction(JobId jobId, Function function) throws MetadataException, RemoteException;
 
-    void updateFunction(JobId jobId, Function function) throws MetadataException, RemoteException;
-
     /**
      * @param ctx
      * @param dataverseName
