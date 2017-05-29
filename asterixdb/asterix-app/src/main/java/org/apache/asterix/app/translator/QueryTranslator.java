@@ -1147,6 +1147,16 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     throw new AlgebricksException("There is no dataverse with this name " + dataverseName + ".");
                 }
             }
+            // # check whether any function in current dataverse is being used by others
+            List<Function> functionsInDataverse = MetadataManager.INSTANCE.getDataverseFunctions(mdTxnCtx,
+                    dataverseName);
+            for (Function function : functionsInDataverse) {
+                if (checkWhetherFunctionIsBeingUsed(mdTxnCtx, function.getDataverseName(), function.getName(),
+                        function.getArity(), dataverseName)) {
+                    throw new MetadataException(ErrorCode.METADATA_DROP_FUCTION_IN_USE,
+                            function.getDataverseName() + "." + function.getName() + "@" + function.getArity());
+                }
+            }
             // # disconnect all feeds from any datasets in the dataverse.
             ActiveLifecycleListener activeListener = (ActiveLifecycleListener) appCtx.getActiveLifecycleListener();
             ActiveJobNotificationHandler activeEventHandler = activeListener.getNotificationHandler();
@@ -1634,16 +1644,19 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         }
     }
 
-    protected boolean checkWhetherFunctionIsBeingUsed(MetadataTransactionContext ctx, FunctionSignature signature)
-            throws MetadataException {
+    protected boolean checkWhetherFunctionIsBeingUsed(MetadataTransactionContext ctx, String dataverseName,
+            String functionName, int arity, String currentDataverse) throws MetadataException {
         List<Dataverse> allDataverses = MetadataManager.INSTANCE.getDataverses(ctx);
         for (Dataverse dataverse : allDataverses) {
+            if (currentDataverse != null && dataverse.getDataverseName().equals(currentDataverse)) {
+                continue;
+            }
             List<Feed> feeds = MetadataManager.INSTANCE.getFeeds(ctx, dataverse.getDataverseName());
             for (Feed feed : feeds) {
                 List<FeedConnection> feedConnections = MetadataManager.INSTANCE.getFeedConections(ctx,
                         dataverse.getDataverseName(), feed.getFeedName());
                 for (FeedConnection conn : feedConnections) {
-                    if (conn.getAppliedFunctions().contains(signature)) {
+                    if (conn.containsFunction(dataverseName, functionName, arity)) {
                         return true;
                     }
                 }
@@ -1664,8 +1677,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             Function function = MetadataManager.INSTANCE.getFunction(mdTxnCtx, signature);
             if (function == null && !stmtDropFunction.getIfExists()) {
                 throw new AlgebricksException("Unknonw function " + signature);
-            } else if (checkWhetherFunctionIsBeingUsed(mdTxnCtx, signature)) {
-                throw new AlgebricksException("Function " + signature + " is being used. It cannot be dropped.");
+            } else if (checkWhetherFunctionIsBeingUsed(mdTxnCtx, signature.getNamespace(), signature.getName(),
+                    signature.getArity(), null)) {
+                throw new MetadataException(ErrorCode.METADATA_DROP_FUCTION_IN_USE, signature);
             } else {
                 MetadataManager.INSTANCE.dropFunction(mdTxnCtx, signature);
             }

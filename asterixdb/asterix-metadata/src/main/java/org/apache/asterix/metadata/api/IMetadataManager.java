@@ -391,6 +391,8 @@ public interface IMetadataManager extends IMetadataBootstrap {
 
     Function getFunction(MetadataTransactionContext ctx, FunctionSignature functionSignature) throws MetadataException;
 
+    List<Function> getFunctions(MetadataTransactionContext ctx, String dataverseName) throws MetadataException;
+
     /**
      * @param ctx
      *            MetadataTransactionContext of an active metadata transaction.

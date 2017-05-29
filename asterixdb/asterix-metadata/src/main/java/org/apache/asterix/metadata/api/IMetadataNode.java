@@ -403,6 +403,8 @@ public interface IMetadataNode extends Remote, Serializable {
      */
     Function getFunction(JobId jobId, FunctionSignature functionSignature) throws MetadataException, RemoteException;
 
+    List<Function> getFunctions(JobId jobId, String dataverseName) throws MetadataException, RemoteException;
+
     /**
      * Deletes a function, acquiring local locks on behalf of the given
      * transaction id.

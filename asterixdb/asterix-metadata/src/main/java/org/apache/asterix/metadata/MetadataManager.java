@@ -623,6 +623,15 @@ public class MetadataManager implements IMetadataManager {
     }
 
     @Override
+    public List<Function> getFunctions(MetadataTransactionContext ctx, String dataverseName) throws MetadataException {
+        try {
+           return metadataNode.getFunctions(ctx.getJobId(), dataverseName);
+        } catch (RemoteException e) {
+            throw new MetadataException(e);
+        }
+    }
+
+    @Override
     public void addFeedPolicy(MetadataTransactionContext mdTxnCtx, FeedPolicyEntity feedPolicy)
             throws MetadataException {
         try {

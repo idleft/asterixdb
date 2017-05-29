@@ -195,6 +195,7 @@ public class ErrorCode {
     public static final int FEED_UNKNOWN_ADAPTER_NAME = 3085;
     public static final int PROVIDER_STREAM_RECORD_READER_WRONG_CONFIGURATION = 3086;
     public static final int FEED_CONNECT_FEED_APPLIED_INVALID_FUNCTION = 3087;
+    public static final int METADATA_DROP_FUCTION_IN_USE = 3088;
 
     // Lifecycle management errors
     public static final int DUPLICATE_PARTITION_ID = 4000;
