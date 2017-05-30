@@ -1690,7 +1690,7 @@ public class MetadataNode implements IMetadataNode {
 
     @Override
     public List<Feed> getFeeds(JobId jobId, String dataverse) throws MetadataException, RemoteException {
-        try{
+        try {
             ITupleReference searchKey = createTuple(dataverse);
             FeedTupleTranslator tupleReaderWriter = tupleTranslatorProvider.getFeedTupleTranslator(false);
             List<Feed> results = new ArrayList<>();
