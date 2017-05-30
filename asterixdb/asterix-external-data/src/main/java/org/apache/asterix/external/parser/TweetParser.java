@@ -77,7 +77,7 @@ public class TweetParser extends AbstractDataParser implements IRecordDataParser
 
     private boolean writeField(JsonNode fieldObj, IAType originalFieldType, DataOutput out) throws IOException {
         boolean writeResult = true;
-        IAType fieldType = null;
+        IAType fieldType = originalFieldType;
         if (originalFieldType instanceof AUnionType) {
             fieldType = ((AUnionType) originalFieldType).getActualType();
         }
