@@ -20,7 +20,9 @@ package org.apache.asterix.external.operators;
 
 import java.util.Map;
 
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.IAType;
@@ -31,6 +33,8 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
+
+import static org.apache.asterix.external.util.FeedConstants.FEED_EXTENSION_NAME;
 
 /**
  * FeedCollectOperatorDescriptor is responsible for ingesting data from an external source. This
@@ -55,7 +59,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
 
     public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId, ARecordType atype,
             RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation) {
-        super(spec, 1, 1);
+        super(spec, 0, 1);
         this.outRecDescs[0] = rDesc;
         this.outputType = atype;
         this.connectionId = feedConnectionId;

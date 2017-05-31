@@ -46,7 +46,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityEventsL
 
     @Override
     public boolean isEntityUsingDataset(IDataset dataset) {
-        return datasets.contains(dataset);
+        return dataset != null && datasets.contains(dataset);
     }
 
     public JobId getJobId() {

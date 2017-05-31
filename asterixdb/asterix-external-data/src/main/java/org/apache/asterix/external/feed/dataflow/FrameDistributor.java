@@ -69,10 +69,6 @@ public class FrameDistributor implements IFrameWriter {
         registeredCollectors.put(frameCollector.getConnectionId(), frameCollector);
     }
 
-    public synchronized void deregisterFrameCollector(FeedFrameCollector frameCollector) throws HyracksDataException {
-        deregisterFrameCollector(frameCollector.getConnectionId());
-    }
-
     public synchronized void deregisterFrameCollector(FeedConnectionId connectionId) throws HyracksDataException {
         if (rootFailureCause != null) {
             throw new RuntimeDataException(ErrorCode.FEED_DATAFLOW_FRAME_DISTR_REGISTER_FAILED_DATA_PROVIDER,

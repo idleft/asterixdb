@@ -53,6 +53,12 @@ public class FeedConnectionId implements Serializable {
         return datasetName;
     }
 
+    public EntityId getConnEntityId() {
+        // This has to be consistent with FeedConnection
+        return new EntityId(feedId.getExtensionName(), feedId.getDataverse(),
+                feedId.getEntityName() + ":" + datasetName);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || !(o instanceof FeedConnectionId)) {

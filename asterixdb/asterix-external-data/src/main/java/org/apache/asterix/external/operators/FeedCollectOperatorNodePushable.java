@@ -18,82 +18,75 @@
  */
 package org.apache.asterix.external.operators;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
+import org.apache.asterix.active.EntityId;
+import org.apache.asterix.active.IActiveRuntime;
 import org.apache.asterix.common.api.INcApplicationContext;
-import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
+import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
-import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
+import org.w3c.dom.Entity;
 
 /**
  * The first operator in a collect job in a feed.
  */
-public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
+public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePushable implements IActiveRuntime {
 
     private final int partition;
     private final FeedConnectionId connectionId;
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager activeManager;
-    private final IHyracksTaskContext ctx;
+    private final ActiveRuntimeId intakeRuntimeId;
+    private FeedFrameCollector frameCollector;
+    private FeedIntakeOperatorNodePushable feedIntakeRuntime;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition) {
-        this.ctx = ctx;
+        // TODO: get rid of feed connection id if possible
+        super(ctx, new ActiveRuntimeId(feedConnectionId.getConnEntityId(),
+                FeedCollectOperatorNodePushable.class.getSimpleName(), partition));
         this.partition = partition;
         this.connectionId = feedConnectionId;
         this.policyAccessor = new FeedPolicyAccessor(feedPolicy);
         this.activeManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
+        this.intakeRuntimeId = new ActiveRuntimeId(feedConnectionId.getFeedId(),
+                FeedIntakeOperatorNodePushable.class.getSimpleName(), partition);
+        this.feedIntakeRuntime = (FeedIntakeOperatorNodePushable) activeManager.getRuntime(intakeRuntimeId);
     }
 
     @Override
-    public void initialize() throws HyracksDataException {
+    public void start() throws HyracksDataException {
         try {
-            ActiveRuntimeId runtimeId =
-                    new ActiveRuntimeId(connectionId.getFeedId(), FeedRuntimeType.COLLECT.toString(), partition);
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
-            if (policyAccessor.flowControlEnabled()) {
-                writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
-                        activeManager.getFramePool());
-            } else {
-                writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
-            }
+            // TODO: restore policy handler
+            //            if (policyAccessor.flowControlEnabled()) {
+            //                writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, policyAccessor, tAccessor,
+            //                        activeManager.getFramePool());
+            //            } else {
+            writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
+            frameCollector = new FeedFrameCollector(writer, connectionId);
+            feedIntakeRuntime.subscribe(frameCollector);
+            frameCollector.waitForFinish();
+            //            }
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
     }
 
     @Override
-    public void open() throws HyracksDataException {
-        writer.open();
-    }
-
-    @Override
-    public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-        writer.nextFrame(buffer);
-    }
-
-    @Override
-    public void fail() throws HyracksDataException {
-        writer.fail();
-    }
-
-    @Override
-    public void flush() throws HyracksDataException {
-        writer.flush();
-    }
-
-    @Override
-    public void close() throws HyracksDataException {
-        writer.close();
+    protected void abort() throws HyracksDataException, InterruptedException {
+        feedIntakeRuntime.unsubscribe(frameCollector);
     }
 }

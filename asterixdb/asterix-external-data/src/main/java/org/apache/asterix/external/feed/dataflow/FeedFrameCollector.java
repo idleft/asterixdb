@@ -32,17 +32,15 @@ public class FeedFrameCollector implements IFrameWriter {
     private State state;
 
     public enum State {
+        CREATED,
         ACTIVE,
         FINISHED,
-        TRANSITION,
-        HANDOVER
     }
 
-    public FeedFrameCollector(FeedPolicyAccessor feedPolicyAccessor, IFrameWriter writer,
-            FeedConnectionId connectionId) {
+    public FeedFrameCollector(IFrameWriter writer, FeedConnectionId connectionId) {
         this.connectionId = connectionId;
         this.writer = writer;
-        this.state = State.ACTIVE;
+        this.state = State.CREATED;
     }
 
     @Override
@@ -52,8 +50,14 @@ public class FeedFrameCollector implements IFrameWriter {
         notify();
     }
 
-    public synchronized void disconnect() {
-        setState(State.FINISHED);
+    public synchronized void waitForFinish() throws HyracksDataException {
+        while(state != State.FINISHED) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(e);
+            }
+        }
     }
 
     @Override
@@ -69,20 +73,11 @@ public class FeedFrameCollector implements IFrameWriter {
         this.state = state;
         switch (state) {
             case FINISHED:
-            case HANDOVER:
                 notifyAll();
                 break;
             default:
                 break;
         }
-    }
-
-    public IFrameWriter getFrameWriter() {
-        return writer;
-    }
-
-    public void setFrameWriter(IFrameWriter writer) {
-        this.writer = writer;
     }
 
     @Override

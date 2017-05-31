@@ -47,31 +47,16 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
     /** The original frame writer instantiated as part of job creation **/
     private final IFrameWriter writer;
 
-    /** The feed operation whose output is being distributed by the DistributeFeedFrameWriter **/
-    private final FeedRuntimeType feedRuntimeType;
-
     /** The value of the partition 'i' if this is the i'th instance of the associated operator **/
     private final int partition;
 
-    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, FeedRuntimeType feedRuntimeType,
-            int partition) throws IOException {
+    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, int partition) throws IOException {
         this.feedId = feedId;
         this.frameDistributor = new FrameDistributor();
-        this.feedRuntimeType = feedRuntimeType;
         this.partition = partition;
         this.writer = writer;
     }
 
-    /**
-     * @param fpa
-     *            Feed policy accessor
-     * @param nextOnlyWriter
-     *            the writer which will deliver the buffers
-     * @param connectionId
-     *            (Dataverse - Dataset - Feed)
-     * @return A frame collector.
-     * @throws HyracksDataException
-     */
     public void subscribe(FeedFrameCollector collector) throws HyracksDataException {
         frameDistributor.registerFrameCollector(collector);
     }
@@ -106,7 +91,7 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
 
     @Override
     public String toString() {
-        return feedId.toString() + feedRuntimeType + "[" + partition + "]";
+        return feedId.toString() + this.getClass().getSimpleName() +"[" + partition + "]";
     }
 
     @Override

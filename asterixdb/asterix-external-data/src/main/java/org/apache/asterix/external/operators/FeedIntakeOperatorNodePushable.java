@@ -25,16 +25,13 @@ import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
+import org.apache.asterix.external.feed.dataflow.DistributeFeedFrameWriter;
+import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
-import org.apache.hyracks.api.comm.IFrame;
-import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.util.HyracksConstants;
-import org.apache.hyracks.dataflow.common.io.MessagingFrameTupleAppender;
-import org.apache.hyracks.dataflow.common.utils.TaskUtil;
 
 /**
  * The runtime for @see{FeedIntakeOperationDescriptor}.
@@ -47,6 +44,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private final IAdapterFactory adapterFactory;
     private final FeedIntakeOperatorDescriptor opDesc;
     private volatile AdapterRuntimeManager adapterRuntimeManager;
+    private DistributeFeedFrameWriter distributeFeedFrameWriter;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
@@ -59,23 +57,15 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     }
 
     @Override
-    protected void start() throws HyracksDataException, InterruptedException {
+    protected void start() throws HyracksDataException {
         try {
-            writer.open();
             Thread.currentThread().setName("Intake Thread");
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
-            adapterRuntimeManager = new AdapterRuntimeManager(ctx, runtimeId.getEntityId(), adapter, writer, partition);
-            IFrame message = new VSizeFrame(ctx);
-            TaskUtil.putInSharedMap(HyracksConstants.KEY_MESSAGE, message, ctx);
-            /*
-             * Set null feed message. Feed pipeline carries with it a message with each frame
-             * Initially, the message is set to a null message that can be changed by feed adapters.
-             * One use case is adapters which consume data sources that allow restartability. Such adapters
-             * can propagate progress information through the ingestion pipeline to storage nodes
-             */
-            message.getBuffer().put(MessagingFrameTupleAppender.NULL_FEED_MESSAGE);
-            message.getBuffer().flip();
+            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition);
+            adapterRuntimeManager = new AdapterRuntimeManager(ctx, runtimeId.getEntityId(), adapter,
+                    distributeFeedFrameWriter, partition);
             adapterRuntimeManager.start();
+            distributeFeedFrameWriter.open();
             synchronized (adapterRuntimeManager) {
                 while (!adapterRuntimeManager.isDone()) {
                     adapterRuntimeManager.wait();
@@ -93,7 +83,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
              * continue to live and receive data from the external source.
              */
             writer.fail();
-            throw e;
+            throw new HyracksDataException(e);
         } finally {
             writer.close();
         }
@@ -104,5 +94,13 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         if (adapterRuntimeManager != null) {
             adapterRuntimeManager.stop();
         }
+    }
+
+    public synchronized void subscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
+        distributeFeedFrameWriter.subscribe(frameCollector);
+    }
+
+    public synchronized void unsubscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
+        distributeFeedFrameWriter.unsubscribeFeed(frameCollector.getConnectionId());
     }
 }
