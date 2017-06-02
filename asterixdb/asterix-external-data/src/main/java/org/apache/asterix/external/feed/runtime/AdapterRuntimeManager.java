@@ -34,6 +34,13 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
  */
 public class AdapterRuntimeManager {
 
+    public enum State{
+        CREATED,
+        ACTIVE,
+        FINISHED,
+        FAILED
+    }
+
     private static final Logger LOGGER = Logger.getLogger(AdapterRuntimeManager.class.getName());
 
     private final EntityId feedId; // (dataverse-feed)
@@ -48,9 +55,7 @@ public class AdapterRuntimeManager {
 
     private Future<?> execution;
 
-    private boolean started = false;
-    private volatile boolean done = false;
-    private volatile boolean failed = false;
+    private volatile State state;
 
     public AdapterRuntimeManager(IHyracksTaskContext ctx, EntityId entityId, FeedAdapter feedAdapter,
             IFrameWriter writer, int partition) {
@@ -59,23 +64,24 @@ public class AdapterRuntimeManager {
         this.feedAdapter = feedAdapter;
         this.partition = partition;
         this.adapterExecutor = new AdapterExecutor(writer, feedAdapter, this);
+        state = State.CREATED;
     }
 
-    public void start() {
+    public synchronized void start() {
         synchronized (adapterExecutor) {
-            started = true;
-            if (!done) {
+            if (state != State.FINISHED) {
                 execution = ctx.getExecutorService().submit(adapterExecutor);
+                this.state = State.ACTIVE;
             } else {
                 LOGGER.log(Level.WARNING, "Someone stopped me before I even start. I will simply not start");
             }
         }
     }
 
-    public void stop() throws HyracksDataException, InterruptedException {
+    public synchronized void stop() throws HyracksDataException, InterruptedException {
         synchronized (adapterExecutor) {
             try {
-                if (started) {
+                if (this.state == State.ACTIVE) {
                     try {
                         ctx.getExecutorService().submit(() -> {
                             if (feedAdapter.stop()) {
@@ -85,18 +91,22 @@ public class AdapterRuntimeManager {
                         }).get(30, TimeUnit.SECONDS);
                     } catch (InterruptedException e) {
                         LOGGER.log(Level.WARNING, "Interrupted while trying to stop an adapter runtime", e);
+                        this.state = State.FAILED;
                         throw e;
                     } catch (Exception e) {
                         LOGGER.log(Level.WARNING, "Exception while trying to stop an adapter runtime", e);
+                        this.state = State.FAILED;
                         throw HyracksDataException.create(e);
                     } finally {
                         execution.cancel(true);
+                        state = State.FINISHED;
                     }
                 } else {
                     LOGGER.log(Level.WARNING, "Adapter executor was stopped before it starts");
                 }
             } finally {
-                done = true;
+                LOGGER.log(Level.FINER, "AdapterRuntimeManager finished");
+                notifyAll();
             }
         }
     }
@@ -123,18 +133,25 @@ public class AdapterRuntimeManager {
     }
 
     public boolean isFailed() {
-        return failed;
+        return this.state == State.FAILED;
     }
 
-    public void setFailed(boolean failed) {
-        this.failed = failed;
+    public void setFailed() {
+        this.state = State.FAILED;
     }
 
-    public boolean isDone() {
-        return done;
+    public void setFinished() {
+        this.state = State.FINISHED;
     }
 
-    public void setDone(boolean done) {
-        this.done = done;
+    public synchronized void waitForFinish() throws HyracksDataException {
+        while (this.state != State.FINISHED && this.state != State.FAILED) {
+            try {
+                LOGGER.log(Level.FINER, "AdapterRuntimeManager waits for finish.");
+                wait();
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(e);
+            }
+        }
     }
 }

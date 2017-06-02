@@ -23,6 +23,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
+import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -50,19 +51,48 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
     /** The value of the partition 'i' if this is the i'th instance of the associated operator **/
     private final int partition;
 
-    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, int partition) throws IOException {
+    private final int initConnectionsCount;
+
+    private boolean started;
+
+    private int currentSubscriber;
+
+    private AdapterRuntimeManager adapterRuntimeManager;
+
+    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, int partition, int initConnectionsCount)
+            throws IOException {
         this.feedId = feedId;
         this.frameDistributor = new FrameDistributor();
         this.partition = partition;
         this.writer = writer;
+        this.initConnectionsCount = initConnectionsCount;
+        started = false;
+        currentSubscriber = 0;
     }
 
-    public void subscribe(FeedFrameCollector collector) throws HyracksDataException {
+    public synchronized void subscribe(FeedFrameCollector collector) throws HyracksDataException {
+        if (!started) {
+            currentSubscriber++;
+            if (adapterRuntimeManager == null) {
+                throw new RuntimeException("AdapterRuntimeManager is not properly configured.");
+            }
+            if (currentSubscriber >= initConnectionsCount) {
+                started = true;
+                adapterRuntimeManager.start();
+            }
+        }
         frameDistributor.registerFrameCollector(collector);
     }
 
-    public void unsubscribeFeed(FeedConnectionId connectionId) throws HyracksDataException {
+    public synchronized void unsubscribeFeed(FeedConnectionId connectionId) throws HyracksDataException {
+        if (!started) {
+            currentSubscriber--;
+        }
         frameDistributor.deregisterFrameCollector(connectionId);
+    }
+
+    public void setAdapterRuntimeManager(AdapterRuntimeManager adapterRuntimeManager) {
+        this.adapterRuntimeManager = adapterRuntimeManager;
     }
 
     @Override

@@ -123,6 +123,7 @@ public class ActiveManager {
                     stopIfRunning(runtimeId, runtime);
                 } catch (Exception e) {
                     // TODO(till) Figure out a better way to handle failure to stop a runtime
+                    e.printStackTrace();
                     LOGGER.warn("Failed to stop runtime: " + runtimeId, e);
                 }
             });

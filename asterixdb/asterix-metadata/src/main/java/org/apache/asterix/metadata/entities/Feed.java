@@ -43,11 +43,14 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     /** Adapter configuration */
     private Map<String, String> adapterConfiguration;
 
+    public int initConnectionsCount;
+
     public Feed(String dataverseName, String feedName,String adapterName, Map<String, String> configuration) {
         this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName, feedName);
         this.displayName = "(" + feedId + ")";
         this.adapterName = adapterName;
         this.adapterConfiguration = configuration;
+        initConnectionsCount = 0;
     }
 
     @Override
@@ -105,5 +108,10 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     @Override
     public Map<String, String> getAdapterConfiguration() {
         return adapterConfiguration;
+    }
+
+    @Override
+    public int getInitConnectionsCount() {
+        return this.initConnectionsCount;
     }
 }

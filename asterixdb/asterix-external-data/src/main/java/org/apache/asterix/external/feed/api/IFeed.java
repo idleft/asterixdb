@@ -46,4 +46,6 @@ public interface IFeed extends Serializable {
 
     public String getAdapterName();
 
+    public int getInitConnectionsCount();
+
 }

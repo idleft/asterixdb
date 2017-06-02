@@ -42,35 +42,32 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
 
     private final int partition;
     private final IAdapterFactory adapterFactory;
-    private final FeedIntakeOperatorDescriptor opDesc;
     private volatile AdapterRuntimeManager adapterRuntimeManager;
     private DistributeFeedFrameWriter distributeFeedFrameWriter;
+    private final int initConnectionsCount;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor) {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount) {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
-        this.opDesc = feedIntakeOperatorDescriptor;
-        this.recordDesc = recordDescProvider.getOutputRecordDescriptor(opDesc.getActivityId(), 0);
+        this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         this.partition = partition;
         this.adapterFactory = adapterFactory;
+        this.initConnectionsCount = initConnectionsCount;
     }
 
     @Override
     protected void start() throws HyracksDataException {
         try {
-            Thread.currentThread().setName("Intake Thread");
+            Thread.currentThread().setName("Intake Thread " + runtimeId.getEntityId().getEntityName());
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
-            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition);
+            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition,
+                    initConnectionsCount);
             adapterRuntimeManager = new AdapterRuntimeManager(ctx, runtimeId.getEntityId(), adapter,
                     distributeFeedFrameWriter, partition);
-            adapterRuntimeManager.start();
+            distributeFeedFrameWriter.setAdapterRuntimeManager(adapterRuntimeManager);
             distributeFeedFrameWriter.open();
-            synchronized (adapterRuntimeManager) {
-                while (!adapterRuntimeManager.isDone()) {
-                    adapterRuntimeManager.wait();
-                }
-            }
+            adapterRuntimeManager.waitForFinish();
             if (adapterRuntimeManager.isFailed()) {
                 throw new RuntimeDataException(
                         ErrorCode.OPERATORS_FEED_INTAKE_OPERATOR_NODE_PUSHABLE_FAIL_AT_INGESTION);

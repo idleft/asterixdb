@@ -24,10 +24,5 @@
         <output-dir compare="Text">feed-push-socket</output-dir>
       </compilation-unit>
     </test-case>
-    <test-case FilePath="feeds">
-      <compilation-unit name="start-feed">
-        <output-dir compare="Text">start-feed</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>

@@ -69,6 +69,7 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
     @Override
     public void start() throws HyracksDataException {
         try {
+            Thread.currentThread().setName("Collector Thread " + this.runtimeId.getEntityId().getEntityName());
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             // TODO: restore policy handler
             //            if (policyAccessor.flowControlEnabled()) {
@@ -79,6 +80,8 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
             frameCollector = new FeedFrameCollector(writer, connectionId);
             feedIntakeRuntime.subscribe(frameCollector);
             frameCollector.waitForFinish();
+//            feedIntakeRuntime.unsubscribe(frameCollector);
+            System.out.println("Dummy1");
             //            }
         } catch (Exception e) {
             throw new HyracksDataException(e);

@@ -66,6 +66,8 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     /** The configuration parameters associated with the adapter. **/
     private Map<String, String> adaptorConfiguration;
 
+    private final int initConnectionsCount;
+
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
             ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
         super(spec, 0, 1);
@@ -75,6 +77,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.initConnectionsCount = primaryFeed.getInitConnectionsCount();
     }
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, String adapterLibraryName,
@@ -89,6 +92,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.initConnectionsCount = primaryFeed.getInitConnectionsCount();
     }
 
     @Override
@@ -98,7 +102,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
         return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, policyAccessor,
-                recordDescProvider, this);
+                recordDescProvider, this, initConnectionsCount);
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {

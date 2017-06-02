@@ -50,18 +50,18 @@ public class AdapterExecutor implements Runnable {
         boolean failed = false;
         try {
             failed = doRun();
+            writer.close();
         } catch (InterruptedException e) {
+            System.out.println("AdapterExecutor is properly interrupted!");
             Thread.currentThread().interrupt();
         } catch (Exception e) {
             failed = true;
             LOGGER.error("Unhandled Exception", e);
         } finally {
-            // Done with the adapter. about to close, setting the stage based on the failed ingestion flag and notifying
-            // the runtime manager
-            adapterManager.setFailed(failed);
-            adapterManager.setDone(true);
-            synchronized (adapterManager) {
-                adapterManager.notifyAll();
+            if (failed) {
+                adapterManager.setFailed();
+            } else {
+                adapterManager.setFinished();
             }
         }
     }

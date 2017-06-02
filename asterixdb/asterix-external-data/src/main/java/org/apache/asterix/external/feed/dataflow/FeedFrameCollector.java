@@ -47,13 +47,14 @@ public class FeedFrameCollector implements IFrameWriter {
     public synchronized void close() throws HyracksDataException {
         writer.close();
         state = State.FINISHED;
-        notify();
+        notifyAll();
     }
 
     public synchronized void waitForFinish() throws HyracksDataException {
         while(state != State.FINISHED) {
             try {
                 wait();
+                System.out.println("Collector finished!");
             } catch (InterruptedException e) {
                 throw new HyracksDataException(e);
             }

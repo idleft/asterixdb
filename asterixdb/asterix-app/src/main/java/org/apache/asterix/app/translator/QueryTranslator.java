@@ -2040,6 +2040,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         try {
             // Intake job
             // TODO: Enforce the policy at the intake layer
+            feed.initConnectionsCount = feedConnections.size();
             org.apache.commons.lang3.tuple.Pair<JobSpecification, String[]> intakeInfo = FeedOperations
                     .buildIntakeJobSpec(feed, metadataProvider, new FeedPolicyAccessor(new HashMap<>()));
             JobSpecification intakeJob = intakeInfo.getLeft();
@@ -2114,20 +2115,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
             eventSubscriber.sync();
             // stop all collectors as well
-            List<FeedConnection> feedConnections = MetadataManager.INSTANCE.getFeedConections(mdTxnCtx, dataverseName,
-                    feedName);
-            for (FeedConnection feedConn : feedConnections) {
-                EntityId feedConnEntityId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName,
-                        feedConn.getConnectionId());
-                FeedEventsListener collEventListener = (FeedEventsListener) activeEventHandler
-                        .getActiveEntityListener(feedConnEntityId);
-                IActiveEventSubscriber collEventSubscriber = listener.subscribe(ActivityState.STOPPED);
-                for (int iter2 = 0; iter2 < collEventListener.getSources().length; iter2++) {
-                    String collectLocation = collEventListener.getSources()[iter2];
-                    FeedOperations.StopCollectActiveEntity(appCtx, feedConnEntityId, collectLocation, iter2);
-                }
-                collEventSubscriber.sync();
-            }
+            // all collectors are closed by intake automatically.
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;
