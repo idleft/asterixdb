@@ -68,5 +68,12 @@
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
     </dependency>
+    <dependency>
+      <groupId>org.apache.hyracks.examples</groupId>
+      <artifactId>hyracks-integration-tests</artifactId>
+      <version>0.3.2-SNAPSHOT</version>
+      <type>test-jar</type>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>

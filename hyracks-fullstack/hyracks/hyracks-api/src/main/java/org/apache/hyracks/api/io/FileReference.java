@@ -18,7 +18,10 @@
  */
 package org.apache.hyracks.api.io;
 
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 
 /**
@@ -85,5 +88,22 @@ public final class FileReference implements Serializable {
      */
     public String getAbsolutePath() {
         return file.getAbsolutePath();
+    }
+
+    /**
+     * Refresh the file with empty content
+     * @return true if file was successfully refreshed
+     * @throws IOException
+     */
+    public boolean refresh() throws HyracksDataException {
+        if (file.exists()) {
+            // if delete fail, it will cause the createNewFile throw a exception.
+            file.delete();
+        }
+        try {
+            return file.createNewFile();
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 }
