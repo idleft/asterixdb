@@ -17,9 +17,8 @@
  * under the License.
  */
 
-package org.apache.hyracks.storage.common;
+package org.apache.hyracks.tests.unit;
 
-import org.apache.commons.logging.Log;
 import org.apache.hyracks.api.comm.IFrame;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -33,10 +32,8 @@ import org.apache.hyracks.test.support.TestUtils;
 import org.apache.hyracks.tests.util.InputFrameGenerator;
 import org.apache.hyracks.tests.util.OutputFrameVerifier;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -44,11 +41,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import java.util.logging.ConsoleHandler;
-import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 import static junit.framework.TestCase.fail;
 
