@@ -139,6 +139,7 @@ public class RotateRunFileReader implements IFrameReader {
     @Override
     public void close() throws HyracksDataException {
         if (handle != null) {
+            rotateRunFileWriter.dereferenceFile(currentFileIdx);
             ioManager.close(handle);
             handle = null;
             this.finished = true;
