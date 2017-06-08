@@ -23,20 +23,17 @@ import java.util.Map;
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
-import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveRuntime;
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.util.FeedConstants;
-import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
+import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
-import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
-import org.w3c.dom.Entity;
+import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
 
 /**
  * The first operator in a collect job in a feed.
@@ -48,11 +45,12 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager activeManager;
     private final ActiveRuntimeId intakeRuntimeId;
-    private FeedFrameCollector frameCollector;
     private FeedIntakeOperatorNodePushable feedIntakeRuntime;
+    private RotateRunFileReader rotateRunFileReader;
+    private VSizeFrame readerBufferFrame;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
-            Map<String, String> feedPolicy, int partition) {
+            Map<String, String> feedPolicy, int partition) throws HyracksDataException{
         // TODO: get rid of feed connection id if possible
         super(ctx, new ActiveRuntimeId(feedConnectionId.getConnEntityId(),
                 FeedCollectOperatorNodePushable.class.getSimpleName(), partition));
@@ -64,6 +62,7 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
         this.intakeRuntimeId = new ActiveRuntimeId(feedConnectionId.getFeedId(),
                 FeedIntakeOperatorNodePushable.class.getSimpleName(), partition);
         this.feedIntakeRuntime = (FeedIntakeOperatorNodePushable) activeManager.getRuntime(intakeRuntimeId);
+        this.readerBufferFrame = new VSizeFrame(ctx);
     }
 
     @Override
@@ -77,19 +76,25 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
             //                        activeManager.getFramePool());
             //            } else {
             writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
-            frameCollector = new FeedFrameCollector(writer, connectionId);
-            feedIntakeRuntime.subscribe(frameCollector);
-            frameCollector.waitForFinish();
-//            feedIntakeRuntime.unsubscribe(frameCollector);
-            System.out.println("Dummy1");
+            rotateRunFileReader = feedIntakeRuntime.subscribe(connectionId);
+            rotateRunFileReader.open();
+            writer.open();
+            while (rotateRunFileReader.nextFrame(readerBufferFrame)) {
+                writer.nextFrame(readerBufferFrame.getBuffer());
+            }
+            System.out.println("Collector finished");
             //            }
         } catch (Exception e) {
             throw new HyracksDataException(e);
+        } finally {
+            rotateRunFileReader.close();
+            writer.close();
         }
     }
 
     @Override
     protected void abort() throws HyracksDataException, InterruptedException {
-        feedIntakeRuntime.unsubscribe(frameCollector);
+        System.out.println("Collector aborted");
+        feedIntakeRuntime.unsubscribe(connectionId);
     }
 }

@@ -30,8 +30,7 @@ public class AdapterExecutor implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(AdapterExecutor.class.getName());
 
-    private final IFrameWriter writer; // A writer that sends frames to multiple receivers (that can
-    // increase or decrease at any time)
+    private final IFrameWriter writer; // A writer that sends frames to multiple receivers
     private final FeedAdapter adapter; // The adapter
     private final AdapterRuntimeManager adapterManager;// The runtime manager <-- two way visibility -->
 

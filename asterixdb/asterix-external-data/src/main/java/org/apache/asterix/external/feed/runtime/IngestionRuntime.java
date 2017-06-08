@@ -45,7 +45,7 @@ public class IngestionRuntime implements IActiveRuntime {
         return this.runtimeId;
     }
 
-    public void start() {
+    public void start() throws Exception{
         adapterRuntimeManager.start();
         LOGGER.log(Level.INFO, "Feed " + feedId.getEntityName() + " running on partition " + runtimeId);
     }

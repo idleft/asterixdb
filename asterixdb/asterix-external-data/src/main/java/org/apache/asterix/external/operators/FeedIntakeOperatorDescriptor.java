@@ -67,6 +67,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     private Map<String, String> adaptorConfiguration;
 
     private final int initConnectionsCount;
+    private final int defaultFrameSize;
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
             ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
@@ -78,6 +79,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
         this.initConnectionsCount = primaryFeed.getInitConnectionsCount();
+        this.defaultFrameSize = spec.getFrameSize();
     }
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, String adapterLibraryName,
@@ -93,6 +95,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
         this.initConnectionsCount = primaryFeed.getInitConnectionsCount();
+        this.defaultFrameSize = spec.getFrameSize();
     }
 
     @Override
@@ -102,7 +105,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
         return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, policyAccessor,
-                recordDescProvider, this, initConnectionsCount);
+                recordDescProvider, this, initConnectionsCount, defaultFrameSize);
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {

@@ -28,6 +28,8 @@ import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
+import org.apache.hyracks.dataflow.common.io.RotateRunFileWriter;
 
 /**
  * This class manages the execution of an adapter within a feed
@@ -57,17 +59,28 @@ public class AdapterRuntimeManager {
 
     private volatile State state;
 
+    private RotateRunFileWriter rotateRunFileWriter;
+
+    private final int initConnectionN;
+    private Integer currentConnectionN;
+
     public AdapterRuntimeManager(IHyracksTaskContext ctx, EntityId entityId, FeedAdapter feedAdapter,
-            IFrameWriter writer, int partition) {
+            RotateRunFileWriter writer, int partition, int initConnectionN) {
         this.ctx = ctx;
         this.feedId = entityId;
         this.feedAdapter = feedAdapter;
         this.partition = partition;
         this.adapterExecutor = new AdapterExecutor(writer, feedAdapter, this);
-        state = State.CREATED;
+        this.rotateRunFileWriter = writer;
+        this.initConnectionN = initConnectionN;
+        this.state = State.CREATED;
+        this.currentConnectionN = 0;
     }
 
-    public synchronized void start() {
+    public synchronized void start() throws InterruptedException {
+        while (currentConnectionN < initConnectionN) {
+            wait();
+        }
         synchronized (adapterExecutor) {
             if (state != State.FINISHED) {
                 execution = ctx.getExecutorService().submit(adapterExecutor);
@@ -88,7 +101,7 @@ public class AdapterRuntimeManager {
                                 execution.get();
                             }
                             return null;
-                        }).get(30, TimeUnit.SECONDS);
+                        }).get(60, TimeUnit.SECONDS);
                     } catch (InterruptedException e) {
                         LOGGER.log(Level.WARNING, "Interrupted while trying to stop an adapter runtime", e);
                         this.state = State.FAILED;
@@ -154,4 +167,11 @@ public class AdapterRuntimeManager {
             }
         }
     }
+
+    public synchronized RotateRunFileReader subscribe() {
+        currentConnectionN += 1;
+        notify();
+        return rotateRunFileWriter.getReader();
+    }
+
 }

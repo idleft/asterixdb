@@ -70,7 +70,7 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
         currentSubscriber = 0;
     }
 
-    public synchronized void subscribe(FeedFrameCollector collector) throws HyracksDataException {
+    public synchronized void subscribe(FeedFrameCollector collector) throws Exception {
         if (!started) {
             currentSubscriber++;
             if (adapterRuntimeManager == null) {

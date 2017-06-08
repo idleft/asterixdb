@@ -27,11 +27,18 @@ import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.DistributeFeedFrameWriter;
 import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
+import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
+import org.apache.hyracks.dataflow.common.io.RotateRunFileWriter;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * The runtime for @see{FeedIntakeOperationDescriptor}.
@@ -40,20 +47,27 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
  */
 public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePushable {
 
+    private static final int ROTATE_BUFFER_SIZE = 16;
+    private static final int ROTATE_FRAME_PER_FILE = 10;
+
     private final int partition;
     private final IAdapterFactory adapterFactory;
     private volatile AdapterRuntimeManager adapterRuntimeManager;
-    private DistributeFeedFrameWriter distributeFeedFrameWriter;
+    private RotateRunFileWriter rotateRunFileWriter;
     private final int initConnectionsCount;
+    private final int frameSize;
+    private Map<FeedConnectionId, RotateRunFileReader> readersList;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount) {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount, int frameSize) {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         this.partition = partition;
         this.adapterFactory = adapterFactory;
         this.initConnectionsCount = initConnectionsCount;
+        this.frameSize = frameSize;
+        this.readersList = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -61,12 +75,14 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         try {
             Thread.currentThread().setName("Intake Thread " + runtimeId.getEntityId().getEntityName());
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
-            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition,
-                    initConnectionsCount);
+            rotateRunFileWriter = new RotateRunFileWriter(this.getRuntimeId().getRuntimeName(), ctx, ROTATE_BUFFER_SIZE,
+                    ROTATE_FRAME_PER_FILE, frameSize);
+            // the rotateRunFileWriter has to be opened here, as we need to make sure the writer is ready before
+            // collectJob starts.
+            rotateRunFileWriter.open();
             adapterRuntimeManager = new AdapterRuntimeManager(ctx, runtimeId.getEntityId(), adapter,
-                    distributeFeedFrameWriter, partition);
-            distributeFeedFrameWriter.setAdapterRuntimeManager(adapterRuntimeManager);
-            distributeFeedFrameWriter.open();
+                    rotateRunFileWriter, partition, initConnectionsCount);
+            adapterRuntimeManager.start();
             adapterRuntimeManager.waitForFinish();
             if (adapterRuntimeManager.isFailed()) {
                 throw new RuntimeDataException(
@@ -93,11 +109,22 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         }
     }
 
-    public synchronized void subscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
-        distributeFeedFrameWriter.subscribe(frameCollector);
+    public RotateRunFileReader subscribe(FeedConnectionId connectionId) throws HyracksDataException {
+        if (readersList.containsKey(connectionId)) {
+            return readersList.get(connectionId);
+        } else {
+            RotateRunFileReader newReader = adapterRuntimeManager.subscribe();
+            readersList.put(connectionId, newReader);
+            return newReader;
+        }
     }
 
-    public synchronized void unsubscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
-        distributeFeedFrameWriter.unsubscribeFeed(frameCollector.getConnectionId());
+    public void unsubscribe(FeedConnectionId connectionId) throws HyracksDataException {
+        if (!readersList.containsKey(connectionId)) {
+            throw new HyracksDataException("Connection " + connectionId + "is not registered!");
+        } else {
+            readersList.get(connectionId).close();
+            readersList.remove(connectionId);
+        }
     }
 }
