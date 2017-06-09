@@ -59,8 +59,6 @@ public class AdapterRuntimeManager {
 
     private volatile State state;
 
-    private RotateRunFileWriter rotateRunFileWriter;
-
     private final int initConnectionN;
     private Integer currentConnectionN;
 
@@ -71,7 +69,6 @@ public class AdapterRuntimeManager {
         this.feedAdapter = feedAdapter;
         this.partition = partition;
         this.adapterExecutor = new AdapterExecutor(writer, feedAdapter, this);
-        this.rotateRunFileWriter = writer;
         this.initConnectionN = initConnectionN;
         this.state = State.CREATED;
         this.currentConnectionN = 0;
@@ -168,10 +165,8 @@ public class AdapterRuntimeManager {
         }
     }
 
-    public synchronized RotateRunFileReader subscribe() {
+    public synchronized void subscribe() {
         currentConnectionN += 1;
         notify();
-        return rotateRunFileWriter.getReader();
     }
-
 }

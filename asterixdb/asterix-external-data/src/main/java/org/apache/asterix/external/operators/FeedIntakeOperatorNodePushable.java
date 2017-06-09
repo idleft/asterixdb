@@ -108,7 +108,10 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     }
 
     public RotateRunFileReader subscribe(FeedConnectionId connectionId) throws HyracksDataException {
-        return rotateRunFileWriter.getReader(connectionId.toString().hashCode());
+        // This order cannot be changed. Need to update the writer before the adapter can start.
+        RotateRunFileReader newReader = rotateRunFileWriter.getReader(connectionId.toString().hashCode());
+        adapterRuntimeManager.subscribe();
+        return newReader;
     }
 
     public void unsubscribe(FeedConnectionId connectionId) throws HyracksDataException {
