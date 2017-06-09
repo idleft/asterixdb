@@ -29,6 +29,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RotateRunFileWriter implements IFrameWriter {
@@ -71,6 +72,7 @@ public class RotateRunFileWriter implements IFrameWriter {
 
     @Override
     public void open() throws HyracksDataException {
+        LOGGER.setLevel(Level.ALL);
         for (int iter1 = 0; iter1 < bufferFileNumber; iter1++) {
             FileReference file = ctx.getJobletContext().createManagedWorkspaceFile(bufferFilesPrefix + iter1);
             bufferFileList[iter1] = file;
@@ -92,6 +94,7 @@ public class RotateRunFileWriter implements IFrameWriter {
                 while (bufferSignatures[nextWriterIdx] != 0) {
                     try {
                         LOGGER.finest("Waits for reader to finish at " + currentWriterIdx);
+                        System.out.println("Waits for reader to finish at " + currentWriterIdx);
                         writeToReadMutex.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -102,6 +105,7 @@ public class RotateRunFileWriter implements IFrameWriter {
             bwList[nextWriterIdx].open();
             bufferSignatures[nextWriterIdx] ^= writerSignature;
             LOGGER.fine("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
+            System.out.println("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
             bwList[currentWriterIdx.get()].close();
             currentWriterIdx.set(nextWriterIdx);
             synchronized (readToWriteMutex) {

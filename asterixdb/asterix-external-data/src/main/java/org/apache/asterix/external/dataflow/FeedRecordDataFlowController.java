@@ -55,6 +55,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         try {
             failed = false;
             tupleForwarder.initialize(ctx, writer);
+            int tupleCount = 0;
             while (recordReader.hasNext()) {
                 IRawRecord<? extends T> record = recordReader.next();
                 if (record == null) {
@@ -64,6 +65,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
                 }
                 tb.reset();
                 parseAndForward(record);
+//                System.out.println("RecordDataFlowController count: " + tupleCount++);
             }
         } catch (InterruptedException e) {
             //TODO: Find out what could cause an interrupted exception beside termination of a job/feed
