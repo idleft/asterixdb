@@ -107,9 +107,7 @@ public class RunFileWriter implements IFrameWriter {
 
     public void refresh() throws HyracksDataException {
         ioManager.close(handle);
-        file.refresh();
-        handle = ioManager.open(file, IIOManager.FileReadWriteMode.READ_WRITE,
-                IIOManager.FileSyncMode.METADATA_ASYNC_DATA_ASYNC);
+        file.delete();
         size = 0;
         maxOutputFrameSize = 0;
     }

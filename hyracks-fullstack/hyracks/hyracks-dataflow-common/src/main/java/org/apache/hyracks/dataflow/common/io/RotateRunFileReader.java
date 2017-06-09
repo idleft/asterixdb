@@ -43,9 +43,10 @@ public class RotateRunFileReader implements IFrameReader {
     private boolean finished;
     private final RotateRunFileWriter rotateRunFileWriter;
     private int currentFileIdx;
+    private final int token;
 
     public RotateRunFileReader(int currentFileIdx, IIOManager ioManager, long initLength,
-            FileReference[] bufferFileList, RotateRunFileWriter rotateRunFileWriter) {
+            FileReference[] bufferFileList, RotateRunFileWriter rotateRunFileWriter, int token) {
         this.ioManager = ioManager;
         this.currentSize = initLength;
         this.file = bufferFileList[currentFileIdx];
@@ -53,12 +54,11 @@ public class RotateRunFileReader implements IFrameReader {
         this.rotateRunFileWriter = rotateRunFileWriter;
         this.currentFileIdx = currentFileIdx;
         this.finished = false;
-        rotateRunFileWriter.referenceFile(currentFileIdx);
+        this.token = token;
     }
 
     @Override
     public void open() throws HyracksDataException {
-        LOGGER.setLevel(Level.FINE);
         handle = ioManager.open(file, IIOManager.FileReadWriteMode.READ_ONLY,
                 IIOManager.FileSyncMode.METADATA_ASYNC_DATA_ASYNC);
         readPtr = 0;
@@ -67,8 +67,8 @@ public class RotateRunFileReader implements IFrameReader {
     @Override
     public synchronized boolean nextFrame(IFrame frame) throws HyracksDataException {
         try {
-//            System.out.println("Reader: readPtr " + readPtr + " currentSize " + currentSize + " writerSize "
-//                    + rotateRunFileWriter.getWriterSize(currentFileIdx));
+            //            System.out.println("Reader: readPtr " + readPtr + " currentSize " + currentSize + " writerSize "
+            //                    + rotateRunFileWriter.getWriterSize(currentFileIdx));
             while (readPtr >= currentSize) {
                 if ((rotateRunFileWriter.isFinished() && currentFileIdx == rotateRunFileWriter.currentWriterIdx.get())
                         || finished) {
@@ -92,7 +92,6 @@ public class RotateRunFileReader implements IFrameReader {
                         }
                     }
                     int nextFileIdx = (currentFileIdx + 1) % bufferFileList.length;
-                    rotateRunFileWriter.referenceFile(nextFileIdx);
                     LOGGER.fine("Reader: Moving to next file from " + currentFileIdx + " to " + nextFileIdx);
                     currentSize = rotateRunFileWriter.getWriterSize(nextFileIdx);
                     file = bufferFileList[nextFileIdx];
@@ -100,10 +99,7 @@ public class RotateRunFileReader implements IFrameReader {
                     handle = ioManager.open(file, IIOManager.FileReadWriteMode.READ_ONLY,
                             IIOManager.FileSyncMode.METADATA_ASYNC_DATA_ASYNC);
                     readPtr = 0;
-                    rotateRunFileWriter.dereferenceFile(currentFileIdx);
-                    synchronized (rotateRunFileWriter.writeToReadMutex) {
-                        rotateRunFileWriter.writeToReadMutex.notify();
-                    }
+                    rotateRunFileWriter.detachFile(currentFileIdx, token);
                     currentFileIdx = nextFileIdx;
                 }
             }
@@ -139,7 +135,7 @@ public class RotateRunFileReader implements IFrameReader {
     @Override
     public void close() throws HyracksDataException {
         if (handle != null) {
-            rotateRunFileWriter.dereferenceFile(currentFileIdx);
+            rotateRunFileWriter.detachFile(currentFileIdx, token);
             ioManager.close(handle);
             handle = null;
             this.finished = true;

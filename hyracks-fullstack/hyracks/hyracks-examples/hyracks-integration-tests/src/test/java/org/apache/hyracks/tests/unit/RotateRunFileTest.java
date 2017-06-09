@@ -73,7 +73,7 @@ public class RotateRunFileTest {
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-01", ctx, bufferSize, framePerFile,
                 DEFAULT_FRAME_SIZE);
         writer.open();
-        RotateRunFileReader reader = writer.getReader();
+        RotateRunFileReader reader = writer.getReader(1);
         reader.open();
         OutputFrameVerifier outputFrameVerifier = new OutputFrameVerifier(recordDesc, expectedAnswers);
         for (int iter1 = 0; iter1 < frameN; iter1++) {
@@ -105,7 +105,7 @@ public class RotateRunFileTest {
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-02", ctx, bufferSize, framePerFile,
                 DEFAULT_FRAME_SIZE);
         writer.open();
-        RotateRunFileReader reader = writer.getReader();
+        RotateRunFileReader reader = writer.getReader(1);
         reader.open();
         OutputFrameVerifier outputFrameVerifier = new OutputFrameVerifier(recordDesc, expectedAnswers);
         for (int iter1 = 0; iter1 < frameN; iter1++) {
@@ -140,7 +140,7 @@ public class RotateRunFileTest {
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-03", ctx, bufferSize, framePerFile,
                 DEFAULT_FRAME_SIZE);
         writer.open();
-        RotateRunFileReader reader = writer.getReader();
+        RotateRunFileReader reader = writer.getReader(1);
         reader.open();
         try {
             executorService.submit(() -> {
@@ -175,7 +175,7 @@ public class RotateRunFileTest {
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-04", ctx, bufferSize, framePerFile,
                 DEFAULT_FRAME_SIZE);
         writer.open();
-        RotateRunFileReader reader = writer.getReader();
+        RotateRunFileReader reader = writer.getReader(1);
         reader.open();
         OutputFrameVerifier outputFrameVerifier = new OutputFrameVerifier(recordDesc, expectedAnswers);
         Future writerFuture, readerFuture;
@@ -222,7 +222,7 @@ public class RotateRunFileTest {
         writer.open();
         List<RotateRunFileReader> readers = new ArrayList<>();
         for (int iter1 = 0; iter1 < readerN; iter1++) {
-            readers.add(writer.getReader());
+            readers.add(writer.getReader(iter1));
             readers.get(iter1).open();
         }
         Future writerFuture;

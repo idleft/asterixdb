@@ -56,7 +56,6 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private RotateRunFileWriter rotateRunFileWriter;
     private final int initConnectionsCount;
     private final int frameSize;
-    private Map<FeedConnectionId, RotateRunFileReader> readersList;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
@@ -67,7 +66,6 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         this.adapterFactory = adapterFactory;
         this.initConnectionsCount = initConnectionsCount;
         this.frameSize = frameSize;
-        this.readersList = new ConcurrentHashMap<>();
     }
 
     @Override
@@ -110,21 +108,10 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     }
 
     public RotateRunFileReader subscribe(FeedConnectionId connectionId) throws HyracksDataException {
-        if (readersList.containsKey(connectionId)) {
-            return readersList.get(connectionId);
-        } else {
-            RotateRunFileReader newReader = adapterRuntimeManager.subscribe();
-            readersList.put(connectionId, newReader);
-            return newReader;
-        }
+        return rotateRunFileWriter.getReader(connectionId.toString().hashCode());
     }
 
     public void unsubscribe(FeedConnectionId connectionId) throws HyracksDataException {
-        if (!readersList.containsKey(connectionId)) {
-            throw new HyracksDataException("Connection " + connectionId + "is not registered!");
-        } else {
-            readersList.get(connectionId).close();
-            readersList.remove(connectionId);
-        }
+        rotateRunFileWriter.removeReader(connectionId.toString().hashCode());
     }
 }

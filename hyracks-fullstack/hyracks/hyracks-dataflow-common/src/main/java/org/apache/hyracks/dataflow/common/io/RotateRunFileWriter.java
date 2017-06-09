@@ -29,7 +29,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class RotateRunFileWriter implements IFrameWriter {
@@ -46,11 +45,13 @@ public class RotateRunFileWriter implements IFrameWriter {
     private final IIOManager ioManager;
     private RunFileWriter[] bwList = new RunFileWriter[bufferFileNumber];
     private FileReference[] bufferFileList = new FileReference[bufferFileNumber];
-    private List<Integer> readerOnFileCount = new ArrayList<>();
+    private List<RotateRunFileReader> registeredReaderList = new ArrayList<>();
+    private Integer[] bufferSignatures = new Integer[bufferFileNumber];
     private boolean failed;
     private boolean finished;
-    public AtomicInteger currentWriterIdx;
+    private volatile int writerSignature;
 
+    public AtomicInteger currentWriterIdx;
     public Object writeToReadMutex = new Object();
     public Object readToWriteMutex = new Object();
 
@@ -65,6 +66,7 @@ public class RotateRunFileWriter implements IFrameWriter {
         this.framePerBufferFile = framePerFile;
         this.defaultFrameSize = frameSize;
         this.bufferFileSize = framePerBufferFile * defaultFrameSize;
+        this.writerSignature = 0;
     }
 
     @Override
@@ -73,9 +75,9 @@ public class RotateRunFileWriter implements IFrameWriter {
             FileReference file = ctx.getJobletContext().createManagedWorkspaceFile(bufferFilesPrefix + iter1);
             bufferFileList[iter1] = file;
             bwList[iter1] = new RunFileWriter(file, ioManager);
-            bwList[iter1].open();
-            readerOnFileCount.add(0);
+            bufferSignatures[iter1] = 0;
         }
+        bwList[0].open();
         currentWriterIdx = new AtomicInteger(0);
     }
 
@@ -87,7 +89,7 @@ public class RotateRunFileWriter implements IFrameWriter {
             // proceed to next writer
             int nextWriterIdx = (currentWriterIdx.get() + 1) % bufferFileNumber;
             synchronized (writeToReadMutex) {
-                while (readerOnFileCount.get(nextWriterIdx) > 0) {
+                while (bufferSignatures[nextWriterIdx] != 0) {
                     try {
                         LOGGER.finest("Waits for reader to finish at " + currentWriterIdx);
                         writeToReadMutex.wait();
@@ -97,10 +99,10 @@ public class RotateRunFileWriter implements IFrameWriter {
                     }
                 }
             }
-            if (bwList[nextWriterIdx].getFileSize() > 0) {
-                bwList[nextWriterIdx].refresh();
-            }
+            bwList[nextWriterIdx].open();
+            bufferSignatures[nextWriterIdx] ^= writerSignature;
             LOGGER.fine("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
+            bwList[currentWriterIdx.get()].close();
             currentWriterIdx.set(nextWriterIdx);
             synchronized (readToWriteMutex) {
                 readToWriteMutex.notifyAll();
@@ -139,23 +141,36 @@ public class RotateRunFileWriter implements IFrameWriter {
         return bwList[writerIdx].getFileSize();
     }
 
-    public RotateRunFileReader getReader() {
-        int writerIdxSnapshot = currentWriterIdx.get();
-        return new RotateRunFileReader(writerIdxSnapshot, ioManager, bwList[writerIdxSnapshot].getFileSize(),
-                bufferFileList, this);
+    public RotateRunFileReader getReader(int token) {
+        RotateRunFileReader readerReq;
+        if (registeredReaderList.contains(token)) {
+            readerReq = registeredReaderList.get(token);
+        } else {
+            synchronized (writeToReadMutex) {
+                int writerIdxSnapshot = currentWriterIdx.get();
+                readerReq = new RotateRunFileReader(writerIdxSnapshot, ioManager, bwList[writerIdxSnapshot].getFileSize(),
+                        bufferFileList, this, token);
+                registeredReaderList.add(readerReq);
+                writerSignature = writerSignature ^ token;
+                bufferSignatures[writerIdxSnapshot] = writerSignature;
+            }
+        }
+        return readerReq;
     }
 
-    public int referenceFile(int fileIdx) {
-        synchronized (writeToReadMutex) {
-            readerOnFileCount.set(fileIdx, readerOnFileCount.get(fileIdx) + 1);
-            return readerOnFileCount.get(fileIdx);
+    public void removeReader(int token) throws HyracksDataException {
+        if (registeredReaderList.contains(token)) {
+            registeredReaderList.get(token).close();
+            registeredReaderList.remove(token);
+        } else {
+            throw new HyracksDataException("Reader with token " + token + " is not registered.");
         }
     }
 
-    public int dereferenceFile(int fileIdx) {
+    public void detachFile(int fileIdx, int token) throws HyracksDataException {
         synchronized (writeToReadMutex) {
-            readerOnFileCount.set(fileIdx, readerOnFileCount.get(fileIdx) - 1);
-            return readerOnFileCount.get(fileIdx);
+            bufferSignatures[fileIdx] ^= token;
+            writeToReadMutex.notify();
         }
     }
 }
