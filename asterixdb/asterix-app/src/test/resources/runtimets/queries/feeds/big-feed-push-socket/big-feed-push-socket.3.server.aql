@@ -23,4 +23,4 @@
  * Expected Res : Success
  * Date         : 24th Feb 2016
  */
-start client 10001 file-client 127.0.0.1 /Volumes/Storage/Users/Xikui/Work/Demos/Data/100kTweets.json 200000 50 1000
+start client 10001 file-client 127.0.0.1 /Volumes/Storage/Users/Xikui/Work/Demos/Data/100kTweets.json 1000 50 1000

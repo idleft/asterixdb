@@ -2019,7 +2019,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
         // Runtime handler
-        EntityId entityId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName, feedName);
+        EntityId feedEntityId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName, feedName);
         // Feed & Feed Connections
         Feed feed = FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName,
                 metadataProvider.getMetadataTxnContext());
@@ -2030,7 +2030,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory();
         ActiveLifecycleListener activeListener = (ActiveLifecycleListener) appCtx.getActiveLifecycleListener();
         ActiveJobNotificationHandler activeEventHandler = activeListener.getNotificationHandler();
-        FeedEventsListener listener = (FeedEventsListener) activeEventHandler.getActiveEntityListener(entityId);
+        FeedEventsListener listener = (FeedEventsListener) activeEventHandler.getActiveEntityListener(feedEntityId);
         if (listener != null) {
             throw new AlgebricksException("Feed " + feedName + " is started already.");
         }
@@ -2044,10 +2044,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             org.apache.commons.lang3.tuple.Pair<JobSpecification, String[]> intakeInfo = FeedOperations
                     .buildIntakeJobSpec(feed, metadataProvider, new FeedPolicyAccessor(new HashMap<>()));
             JobSpecification intakeJob = intakeInfo.getLeft();
-            listener = new FeedEventsListener(appCtx, entityId, null, intakeInfo.getRight());
+            listener = new FeedEventsListener(appCtx, feedEntityId, null, intakeInfo.getRight());
             activeEventHandler.registerListener(listener);
             IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STARTED);
-            intakeJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
+            intakeJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, feedEntityId);
             JobUtils.runJob(hcc, intakeJob, false);
             eventSubscriber.sync();
             // Connect job
@@ -2058,6 +2058,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 datasets.add(ds);
                 EntityId connEntityId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName,
                         feedName + ":" + connection.getDatasetName());
+                FeedConnectionId connectionId = new FeedConnectionId(feedEntityId, connection.getDatasetName());
                 FeedEventsListener connEventListener = new FeedEventsListener(appCtx, connEntityId, datasets,
                         intakeInfo.getRight());
                 activeEventHandler.registerListener(connEventListener);
@@ -2066,6 +2067,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         connection, intakeInfo.getRight(), compilationProvider, storageComponentProvider, qtFactory,
                         hcc);
                 connJobSpec.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, connEntityId);
+                connJobSpec = FeedOperations.makeRobustCollectJob(connJobSpec, connectionId, new HashMap<>());
                 //connJobList.add(connJobSpec);
                 JobUtils.runJob(hcc, connJobSpec, false);
                 collectEventSubscriber.sync();

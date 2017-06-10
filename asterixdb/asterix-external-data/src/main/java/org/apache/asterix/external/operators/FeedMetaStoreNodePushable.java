@@ -79,7 +79,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
 
     private final IHyracksTaskContext ctx;
 
-    private final VSizeFrame message;
+//    private final VSizeFrame message;
 
     private final IRecordDescriptorProvider recordDescProvider;
 
@@ -97,8 +97,8 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         this.connectionId = feedConnectionId;
         this.feedManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
-        this.message = new VSizeFrame(ctx);
-        TaskUtil.putInSharedMap(HyracksConstants.KEY_MESSAGE, message, ctx);
+//        this.message = new VSizeFrame(ctx);
+//        TaskUtil.putInSharedMap(HyracksConstants.KEY_MESSAGE, message, ctx);
         this.recordDescProvider = recordDescProvider;
         this.opDesc = feedMetaOperatorDescriptor;
     }
@@ -137,7 +137,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         try {
-            FeedUtils.processFeedMessage(buffer, message, fta);
+//            FeedUtils.processFeedMessage(buffer, message, fta);
             writer.nextFrame(buffer);
         } catch (Exception e) {
             e.printStackTrace();

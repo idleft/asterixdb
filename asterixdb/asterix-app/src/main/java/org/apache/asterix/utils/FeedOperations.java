@@ -73,6 +73,7 @@ import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.SessionOutput;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.hadoop.ipc.Client;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
@@ -176,6 +177,62 @@ public class FeedOperations {
         CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
                 subscribeStmt.getSubscriptionRequest(), subscribeStmt.getVarCounter());
         return translator.rewriteCompileQuery(hcc, metadataProvider, subscribeStmt.getQuery(), csfs);
+    }
+
+    public static JobSpecification makeRobustCollectJob(JobSpecification connJob,
+            FeedConnectionId connectionId, Map<String, String> policyProps) {
+        JobSpecification dummyJob = new JobSpecification();
+        FeedMetaOperatorDescriptor metaOp = null;
+        OperatorDescriptorId oldOpId = null;
+        LSMTreeInsertDeleteOperatorDescriptor insertOp = null;
+        for (Entry<OperatorDescriptorId, IOperatorDescriptor> entry : connJob.getOperatorMap().entrySet()) {
+            IOperatorDescriptor opDesc = entry.getValue();
+            if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                    && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
+                metaOp = new FeedMetaOperatorDescriptor(dummyJob, connectionId, opDesc, policyProps,
+                        FeedRuntimeType.STORE);
+                oldOpId = opDesc.getOperatorId();
+                insertOp = (LSMTreeInsertDeleteOperatorDescriptor) opDesc;
+                break;
+            }
+        }
+
+//        insertOp.setOperatorId(metaOp.getOperatorId());
+        metaOp.setOperatorId(oldOpId);
+        connJob.getOperatorMap().put(oldOpId, metaOp);
+
+        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : connJob
+                .getConnectorOperatorMap().entrySet()) {
+            IConnectorDescriptor connOp = connJob.getConnectorMap().get(entry.getKey());
+            Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
+            Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
+            if (rightOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                connJob.connect(connOp, leftOp.getLeft(), leftOp.getRight(), metaOp, rightOp.getRight());
+            }
+            if (leftOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                connJob.connect(connOp, metaOp, leftOp.getRight(), rightOp.getLeft(), rightOp.getRight());
+            }
+        }
+
+//        for (Constraint constraint : connJob.getUserConstraints()) {
+//            LValueConstraintExpression lexpr = constraint.getLValue();
+//            ConstraintExpression rexpr = constraint.getRValue();
+//            OperatorDescriptorId opId;
+//            if (lexpr.getTag() == ConstraintExpression.ExpressionTag.PARTITION_LOCATION) {
+//                opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
+//                if (opId == oldOpId) {
+//                    PartitionConstraintHelper.addAbsoluteLocationConstraint(connJob, metaOp,
+//                            (String) ((ConstantExpression) rexpr).getValue());
+//                }
+//            } else if (rexpr.getTag() == ConstraintExpression.ExpressionTag.CONSTANT) {
+//                opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
+//                if (opId == oldOpId) {
+//                    PartitionConstraintHelper.addPartitionCountConstraint(connJob, metaOp,
+//                            (int) ((ConstantExpression) rexpr).getValue());
+//                }
+//            }
+//        }
+        return connJob;
     }
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
