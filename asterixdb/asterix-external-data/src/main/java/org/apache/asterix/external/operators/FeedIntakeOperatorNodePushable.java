@@ -39,6 +39,7 @@ import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
 import org.apache.hyracks.dataflow.common.io.RotateRunFileWriter;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,10 +62,12 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private final int frameSize;
     private final JobId jobId;
 
+    private byte[] partitionMessage;
+
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
             FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount, int frameSize,
-            JobId jobId) {
+            JobId jobId) throws IOException{
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         this.partition = partition;
@@ -72,6 +75,8 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         this.initConnectionsCount = initConnectionsCount;
         this.frameSize = frameSize;
         this.jobId = jobId;
+        this.partitionMessage = JavaSerializationUtils.serialize(new ActivePartitionMessage(this.runtimeId, this.jobId,
+                ActivePartitionMessage.EXECUTE_PRECOMPILED_JOB));
     }
 
     @Override
@@ -80,7 +85,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
             Thread.currentThread().setName("Intake Thread " + runtimeId.getEntityId().getEntityName());
             FeedAdapter adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, partition);
             rotateRunFileWriter = new RotateRunFileWriter(this.getRuntimeId().getRuntimeName(), ctx, ROTATE_BUFFER_SIZE,
-                    ROTATE_FRAME_PER_FILE, frameSize);
+                    ROTATE_FRAME_PER_FILE, frameSize, partitionMessage);
             // the rotateRunFileWriter has to be opened here, as we need to make sure the writer is ready before
             // collectJob starts.
             rotateRunFileWriter.open();
@@ -88,15 +93,16 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
                     rotateRunFileWriter, partition, initConnectionsCount);
 
             // Invoke conn jobs from CC
-            ActivePartitionMessage partitionMessage = new ActivePartitionMessage(this.runtimeId, this.jobId,
-                    ActivePartitionMessage.EXECUTE_PRECOMPILED_JOB);
             ctx.sendApplicationMessageToCC(JavaSerializationUtils.serialize(partitionMessage), null);
             adapterRuntimeManager.start();
+            ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
+                    ActivePartitionMessage.FEED_ADAPTER_STARTED), null);
             adapterRuntimeManager.waitForFinish();
             if (adapterRuntimeManager.isFailed()) {
                 throw new RuntimeDataException(
                         ErrorCode.OPERATORS_FEED_INTAKE_OPERATOR_NODE_PUSHABLE_FAIL_AT_INGESTION);
             }
+            System.out.println("Intaker finished.");
         } catch (Exception e) {
             /*
              * An Interrupted Exception is thrown if the Intake job cannot progress further due to failure of another
@@ -120,6 +126,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
 
     public RotateRunFileReader subscribe(FeedConnectionId connectionId) throws HyracksDataException {
         // This order cannot be changed. Need to update the writer before the adapter can start.
+        System.out.println("Asked for reader " + connectionId.toString().hashCode());
         RotateRunFileReader newReader = rotateRunFileWriter.getReader(connectionId.toString().hashCode());
         adapterRuntimeManager.subscribe();
         return newReader;

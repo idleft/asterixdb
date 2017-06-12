@@ -27,6 +27,7 @@ import org.apache.hyracks.api.io.IIOManager;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
@@ -46,7 +47,7 @@ public class RotateRunFileWriter implements IFrameWriter {
     private final IIOManager ioManager;
     private RunFileWriter[] bwList = new RunFileWriter[bufferFileNumber];
     private FileReference[] bufferFileList = new FileReference[bufferFileNumber];
-    private List<RotateRunFileReader> registeredReaderList = new ArrayList<>();
+    private HashMap<Integer, RotateRunFileReader> registeredReaderList = new HashMap<>();
     private Integer[] bufferSignatures = new Integer[bufferFileNumber];
     private boolean failed;
     private boolean finished;
@@ -56,8 +57,12 @@ public class RotateRunFileWriter implements IFrameWriter {
     public Object writeToReadMutex = new Object();
     public Object readToWriteMutex = new Object();
 
+    // Hacky implementation for precompiled job
+    private int frameCounter;
+    private byte[] invokeMSG;
+
     public RotateRunFileWriter(String prefix, IHyracksTaskContext ctx, int bufferFileN, int framePerFile,
-            int frameSize) {
+            int frameSize, byte[] partitionMessage) {
         this.bufferFilesPrefix = prefix;
         this.ctx = ctx;
         this.ioManager = ctx.getIoManager();
@@ -68,6 +73,8 @@ public class RotateRunFileWriter implements IFrameWriter {
         this.defaultFrameSize = frameSize;
         this.bufferFileSize = framePerBufferFile * defaultFrameSize;
         this.writerSignature = 0;
+        this.frameCounter = 0;
+        this.invokeMSG = partitionMessage;
     }
 
     @Override
@@ -86,6 +93,13 @@ public class RotateRunFileWriter implements IFrameWriter {
     @Override
     public synchronized void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         // add rotate logic here
+        if (++frameCounter % 2 == 0) {
+            try {
+                ctx.sendApplicationMessageToCC(invokeMSG, null);
+            } catch (Exception e) {
+                throw new HyracksDataException(e);
+            }
+        }
         long currentBufferUsage = bwList[currentWriterIdx.get()].getFileSize() / defaultFrameSize;
         if (currentBufferUsage >= framePerBufferFile) {
             // proceed to next writer
@@ -145,16 +159,16 @@ public class RotateRunFileWriter implements IFrameWriter {
         return bwList[writerIdx].getFileSize();
     }
 
-    public RotateRunFileReader getReader(int token) {
+    public synchronized RotateRunFileReader getReader(int token) {
         RotateRunFileReader readerReq;
-        if (registeredReaderList.contains(token)) {
+        if (registeredReaderList.containsKey(token)) {
             readerReq = registeredReaderList.get(token);
         } else {
             synchronized (writeToReadMutex) {
                 int writerIdxSnapshot = currentWriterIdx.get();
                 readerReq = new RotateRunFileReader(writerIdxSnapshot, ioManager, bwList[writerIdxSnapshot].getFileSize(),
                         bufferFileList, this, token);
-                registeredReaderList.add(readerReq);
+                registeredReaderList.put(token, readerReq);
                 writerSignature = writerSignature ^ token;
                 bufferSignatures[writerIdxSnapshot] = writerSignature;
             }
@@ -163,7 +177,7 @@ public class RotateRunFileWriter implements IFrameWriter {
     }
 
     public void removeReader(int token) throws HyracksDataException {
-        if (registeredReaderList.contains(token)) {
+        if (registeredReaderList.containsKey(token)) {
             registeredReaderList.get(token).close();
             registeredReaderList.remove(token);
         } else {

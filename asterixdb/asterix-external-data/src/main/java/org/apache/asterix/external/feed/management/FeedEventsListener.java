@@ -70,7 +70,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         try {
             switch (event.getEventKind()) {
                 case JOB_CREATED:
-                    this.state = ActivityState.STOPPED;
+                    this.state = ActivityState.CREATED;
                     break;
                 case JOB_STARTED:
                     start(event);
@@ -108,7 +108,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     }
 
     private void partition(ActivePartitionMessage message) throws Exception{
-        if (message.getEvent() == ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED) {
+        if (message.getEvent() == ActivePartitionMessage.FEED_ADAPTER_STARTED) {
             numRegistered++;
             if (numRegistered == getSources().length) {
                 state = ActivityState.STARTED;

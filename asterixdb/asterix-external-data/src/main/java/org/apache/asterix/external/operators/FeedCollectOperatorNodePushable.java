@@ -40,7 +40,6 @@ import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
  */
 public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePushable implements IActiveRuntime {
 
-    private final int partition;
     private final FeedConnectionId connectionId;
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager activeManager;
@@ -48,13 +47,13 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
     private FeedIntakeOperatorNodePushable feedIntakeRuntime;
     private RotateRunFileReader rotateRunFileReader;
     private VSizeFrame readerBufferFrame;
+    private int batchCounter;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition) throws HyracksDataException{
         // TODO: get rid of feed connection id if possible
         super(ctx, new ActiveRuntimeId(feedConnectionId.getConnEntityId(),
                 FeedCollectOperatorNodePushable.class.getSimpleName(), partition));
-        this.partition = partition;
         this.connectionId = feedConnectionId;
         this.policyAccessor = new FeedPolicyAccessor(feedPolicy);
         this.activeManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
@@ -63,6 +62,7 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
                 FeedIntakeOperatorNodePushable.class.getSimpleName(), partition);
         this.feedIntakeRuntime = (FeedIntakeOperatorNodePushable) activeManager.getRuntime(intakeRuntimeId);
         this.readerBufferFrame = new VSizeFrame(ctx);
+        this.batchCounter = 2;
     }
 
     @Override
@@ -79,7 +79,7 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
             rotateRunFileReader = feedIntakeRuntime.subscribe(connectionId);
             rotateRunFileReader.open();
             writer.open();
-            while (rotateRunFileReader.nextFrame(readerBufferFrame)) {
+            while (rotateRunFileReader.nextFrame(readerBufferFrame) && (batchCounter-- > 0)) {
                 writer.nextFrame(readerBufferFrame.getBuffer());
             }
             System.out.println("Collector finished");
@@ -87,7 +87,7 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
         } catch (Exception e) {
             throw new HyracksDataException(e);
         } finally {
-            rotateRunFileReader.close();
+//            rotateRunFileReader.close();
             writer.close();
         }
     }

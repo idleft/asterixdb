@@ -58,11 +58,13 @@ public class RotateRunFileReader implements IFrameReader {
     }
 
     @Override
-    public void open() throws HyracksDataException {
-        LOGGER.setLevel(Level.ALL);
-        handle = ioManager.open(file, IIOManager.FileReadWriteMode.READ_ONLY,
-                IIOManager.FileSyncMode.METADATA_ASYNC_DATA_ASYNC);
-        readPtr = 0;
+    public synchronized void open() throws HyracksDataException {
+        if (handle == null) {
+            LOGGER.setLevel(Level.ALL);
+            handle = ioManager.open(file, IIOManager.FileReadWriteMode.READ_ONLY,
+                    IIOManager.FileSyncMode.METADATA_ASYNC_DATA_ASYNC);
+            readPtr = 0;
+        }
     }
 
     @Override
@@ -108,6 +110,7 @@ public class RotateRunFileReader implements IFrameReader {
             }
 
             LOGGER.finest("Reader Proceed");
+//            System.out.println("Reader reads file " + currentFileIdx + " loc " + readPtr);
             frame.reset();
             int readLength = ioManager.syncRead(handle, readPtr, frame.getBuffer());
             if (readLength <= 0) {
@@ -136,7 +139,7 @@ public class RotateRunFileReader implements IFrameReader {
     }
 
     @Override
-    public void close() throws HyracksDataException {
+    public synchronized void close() throws HyracksDataException {
         if (handle != null) {
             rotateRunFileWriter.detachFile(currentFileIdx, token);
             ioManager.close(handle);

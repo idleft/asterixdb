@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.operators;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -104,8 +105,12 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         if (adaptorFactory == null) {
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
-        return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, policyAccessor,
-                recordDescProvider, this, initConnectionsCount, defaultFrameSize, ctx.getJobletContext().getJobId());
+        try {
+            return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, policyAccessor,
+                    recordDescProvider, this, initConnectionsCount, defaultFrameSize, ctx.getJobletContext().getJobId());
+        } catch (IOException e) {
+            throw new HyracksDataException(e);
+        }
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {
