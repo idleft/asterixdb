@@ -2069,7 +2069,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
             JobUtils.runJob(hcc, intakeJob, false);
             eventSubscriber.sync();
-            LOGGER.log(Level.INFO, "Intake job started. Connection Job Submitted.");
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             if (intakeEventListener != null) {
@@ -2108,6 +2108,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 FeedOperations.StopIntakeAcitveEntity(appCtx, feedId, intakeLocation, iter1);
             }
             eventSubscriber.sync();
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
             // stop all collectors as well
             // all collectors are closed by intake automatically.
         } catch (Exception e) {
