@@ -32,6 +32,7 @@ public class ActivePartitionMessage implements ICcAddressedMessage {
     public static final byte ACTIVE_RUNTIME_REGISTERED = 0x00;
     public static final byte ACTIVE_RUNTIME_DEREGISTERED = 0x01;
     public static final byte GENERIC_EVENT = 0x02;
+    public static final byte EXECUTE_PRECOMPILED_JOB = 0x03;
     private static final long serialVersionUID = 1L;
     private final ActiveRuntimeId activeRuntimeId;
     private final JobId jobId;

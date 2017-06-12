@@ -39,4 +39,12 @@ public class JobUtils {
         }
         return jobId;
     }
+
+    public static JobId distributeJob(IHyracksClientConnection hcc, JobSpecification spec) throws Exception {
+        return hcc.distributeJob(spec);
+    }
+
+    public static JobId startPrecompiledJob(IHyracksClientConnection hcc, JobId jobId) throws Exception {
+        return hcc.startJob(jobId);
+    }
 }

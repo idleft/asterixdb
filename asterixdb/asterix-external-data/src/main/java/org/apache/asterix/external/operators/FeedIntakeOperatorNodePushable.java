@@ -21,6 +21,7 @@ package org.apache.asterix.external.operators;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.active.message.ActivePartitionMessage;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IAdapterFactory;
@@ -33,6 +34,8 @@ import org.apache.asterix.external.feed.runtime.AdapterRuntimeManager;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.dataflow.common.io.RotateRunFileReader;
 import org.apache.hyracks.dataflow.common.io.RotateRunFileWriter;
 
@@ -56,16 +59,19 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private RotateRunFileWriter rotateRunFileWriter;
     private final int initConnectionsCount;
     private final int frameSize;
+    private final JobId jobId;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, FeedPolicyAccessor policyAccessor, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount, int frameSize) {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnectionsCount, int frameSize,
+            JobId jobId) {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         this.partition = partition;
         this.adapterFactory = adapterFactory;
         this.initConnectionsCount = initConnectionsCount;
         this.frameSize = frameSize;
+        this.jobId = jobId;
     }
 
     @Override
@@ -80,6 +86,11 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
             rotateRunFileWriter.open();
             adapterRuntimeManager = new AdapterRuntimeManager(ctx, runtimeId.getEntityId(), adapter,
                     rotateRunFileWriter, partition, initConnectionsCount);
+
+            // Invoke conn jobs from CC
+            ActivePartitionMessage partitionMessage = new ActivePartitionMessage(this.runtimeId, this.jobId,
+                    ActivePartitionMessage.EXECUTE_PRECOMPILED_JOB);
+            ctx.sendApplicationMessageToCC(JavaSerializationUtils.serialize(partitionMessage), null);
             adapterRuntimeManager.start();
             adapterRuntimeManager.waitForFinish();
             if (adapterRuntimeManager.isFailed()) {

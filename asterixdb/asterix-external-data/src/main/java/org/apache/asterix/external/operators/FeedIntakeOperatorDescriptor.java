@@ -105,7 +105,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
         return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, policyAccessor,
-                recordDescProvider, this, initConnectionsCount, defaultFrameSize);
+                recordDescProvider, this, initConnectionsCount, defaultFrameSize, ctx.getJobletContext().getJobId());
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {

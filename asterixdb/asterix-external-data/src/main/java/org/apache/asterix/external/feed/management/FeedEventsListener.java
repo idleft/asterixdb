@@ -32,10 +32,12 @@ import org.apache.asterix.active.IActiveEventSubscriber;
 import org.apache.asterix.active.message.ActivePartitionMessage;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.metadata.IDataset;
+import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.external.feed.watch.FeedEventSubscriber;
 import org.apache.asterix.external.feed.watch.NoOpSubscriber;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
 
 public class FeedEventsListener extends ActiveEntityEventsListener {
@@ -46,6 +48,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     private final String[] sources;
     private final List<IActiveEventSubscriber> subscribers;
     private int numRegistered;
+    private List<JobId> registeredJobIds;
 
     public FeedEventsListener(ICcApplicationContext appCtx, EntityId entityId, List<IDataset> datasets,
             String[] sources) {
@@ -53,14 +56,22 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         this.entityId = entityId;
         this.datasets = datasets;
         this.sources = sources;
+        registeredJobIds = new ArrayList<>();
         subscribers = new ArrayList<>();
         state = ActivityState.STOPPED;
+    }
+
+    public boolean registerJobId(JobId jobId) {
+        return this.registeredJobIds.add(jobId);
     }
 
     @Override
     public synchronized void notify(ActiveEvent event) {
         try {
             switch (event.getEventKind()) {
+                case JOB_CREATED:
+                    this.state = ActivityState.STOPPED;
+                    break;
                 case JOB_STARTED:
                     start(event);
                     break;
@@ -96,11 +107,15 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         }
     }
 
-    private void partition(ActivePartitionMessage message) {
+    private void partition(ActivePartitionMessage message) throws Exception{
         if (message.getEvent() == ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED) {
             numRegistered++;
             if (numRegistered == getSources().length) {
                 state = ActivityState.STARTED;
+            }
+        } else if (message.getEvent() == ActivePartitionMessage.EXECUTE_PRECOMPILED_JOB) {
+            for (JobId jobId : registeredJobIds) {
+                JobUtils.startPrecompiledJob(this.appCtx.getHcc(), jobId);
             }
         }
     }

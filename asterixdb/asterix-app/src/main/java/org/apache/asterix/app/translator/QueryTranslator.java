@@ -2030,8 +2030,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory();
         ActiveLifecycleListener activeListener = (ActiveLifecycleListener) appCtx.getActiveLifecycleListener();
         ActiveJobNotificationHandler activeEventHandler = activeListener.getNotificationHandler();
-        FeedEventsListener listener = (FeedEventsListener) activeEventHandler.getActiveEntityListener(feedEntityId);
-        if (listener != null) {
+        FeedEventsListener intakeEventListener = (FeedEventsListener) activeEventHandler.getActiveEntityListener(feedEntityId);
+        if (intakeEventListener != null) {
             throw new AlgebricksException("Feed " + feedName + " is started already.");
         }
         // Start
@@ -2044,14 +2044,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             org.apache.commons.lang3.tuple.Pair<JobSpecification, String[]> intakeInfo = FeedOperations
                     .buildIntakeJobSpec(feed, metadataProvider, new FeedPolicyAccessor(new HashMap<>()));
             JobSpecification intakeJob = intakeInfo.getLeft();
-            listener = new FeedEventsListener(appCtx, feedEntityId, null, intakeInfo.getRight());
-            activeEventHandler.registerListener(listener);
-            IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STARTED);
+            intakeEventListener = new FeedEventsListener(appCtx, feedEntityId, null, intakeInfo.getRight());
+            activeEventHandler.registerListener(intakeEventListener);
+            IActiveEventSubscriber eventSubscriber = intakeEventListener.subscribe(ActivityState.STARTED);
             intakeJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, feedEntityId);
-            JobUtils.runJob(hcc, intakeJob, false);
-            eventSubscriber.sync();
             // Connect job
-            List<JobSpecification> connJobList = new ArrayList<>();
             for (FeedConnection connection : feedConnections) {
                 Dataset ds = metadataProvider.findDataset(connection.getDataverseName(), connection.getDatasetName());
                 List<IDataset> datasets = new ArrayList<>();
@@ -2062,26 +2059,21 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 FeedEventsListener connEventListener = new FeedEventsListener(appCtx, connEntityId, datasets,
                         intakeInfo.getRight());
                 activeEventHandler.registerListener(connEventListener);
-                IActiveEventSubscriber collectEventSubscriber = connEventListener.subscribe(ActivityState.STARTED);
                 JobSpecification connJobSpec = FeedOperations.buildConnectJobSpec(sessionOutput, metadataProvider,
                         connection, intakeInfo.getRight(), compilationProvider, storageComponentProvider, qtFactory,
                         hcc);
                 connJobSpec.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, connEntityId);
                 connJobSpec = FeedOperations.makeRobustCollectJob(connJobSpec, connectionId, new HashMap<>());
-                //connJobList.add(connJobSpec);
-                JobUtils.runJob(hcc, connJobSpec, false);
-                collectEventSubscriber.sync();
+                JobId connJobId = JobUtils.distributeJob(hcc, connJobSpec);
+                intakeEventListener.registerJobId(connJobId);
             }
-            // Execute connJobs
-            // TODO: Change this to preditributed job and have intake job trigger it make sure all starts together
-//            for (JobSpecification connJob : connJobList) {
-//                JobUtils.runJob(hcc, connJob, false);
-//            }
+            JobUtils.runJob(hcc, intakeJob, false);
+            eventSubscriber.sync();
             LOGGER.log(Level.INFO, "Intake job started. Connection Job Submitted.");
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
-            if (listener != null) {
-                activeEventHandler.unregisterListener(listener);
+            if (intakeEventListener != null) {
+                activeEventHandler.unregisterListener(intakeEventListener);
             }
             throw e;
         } finally {
