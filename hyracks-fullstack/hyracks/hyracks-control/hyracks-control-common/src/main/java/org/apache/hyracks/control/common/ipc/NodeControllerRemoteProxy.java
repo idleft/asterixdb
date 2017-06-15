@@ -31,6 +31,7 @@ import org.apache.hyracks.api.deployment.DeploymentId;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.partitions.PartitionId;
 import org.apache.hyracks.control.common.base.INodeController;
 import org.apache.hyracks.control.common.job.TaskAttemptDescriptor;
@@ -46,9 +47,9 @@ public class NodeControllerRemoteProxy implements INodeController {
     @Override
     public void startTasks(DeploymentId deploymentId, JobId jobId, byte[] planBytes,
             List<TaskAttemptDescriptor> taskDescriptors, Map<ConnectorDescriptorId, IConnectorPolicy> connectorPolicies,
-            Set<JobFlag> flags) throws Exception {
+            Set<JobFlag> flags, PreDistJobId preDistJobId) throws Exception {
         CCNCFunctions.StartTasksFunction stf = new CCNCFunctions.StartTasksFunction(deploymentId, jobId, planBytes,
-                taskDescriptors, connectorPolicies, flags);
+                taskDescriptors, connectorPolicies, flags, preDistJobId);
         ipcHandle.send(-1, stf, null);
     }
 
@@ -84,14 +85,14 @@ public class NodeControllerRemoteProxy implements INodeController {
     }
 
     @Override
-    public void distributeJob(JobId jobId, byte[] planBytes) throws Exception {
-        CCNCFunctions.DistributeJobFunction fn = new CCNCFunctions.DistributeJobFunction(jobId, planBytes);
+    public void distributeJob(PreDistJobId preDistJobId, byte[] planBytes) throws Exception {
+        CCNCFunctions.DistributeJobFunction fn = new CCNCFunctions.DistributeJobFunction(preDistJobId, planBytes);
         ipcHandle.send(-1, fn, null);
     }
 
     @Override
-    public void destroyJob(JobId jobId) throws Exception {
-        CCNCFunctions.DestroyJobFunction fn = new CCNCFunctions.DestroyJobFunction(jobId);
+    public void destroyJob(PreDistJobId preDistJobId) throws Exception {
+        CCNCFunctions.DestroyJobFunction fn = new CCNCFunctions.DestroyJobFunction(preDistJobId);
         ipcHandle.send(-1, fn, null);
     }
 

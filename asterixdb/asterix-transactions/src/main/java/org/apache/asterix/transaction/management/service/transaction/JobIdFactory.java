@@ -28,7 +28,7 @@ import org.apache.asterix.common.transactions.JobId;
 public class JobIdFactory {
     private static final AtomicInteger Id = new AtomicInteger();
 
-    public static JobId generateJobId() {
+    public synchronized static JobId generateJobId() {
         return new JobId(Id.incrementAndGet());
     }
 

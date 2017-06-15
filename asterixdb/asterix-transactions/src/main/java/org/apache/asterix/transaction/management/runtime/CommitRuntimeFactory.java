@@ -29,7 +29,7 @@ public class CommitRuntimeFactory implements IPushRuntimeFactory {
 
     private static final long serialVersionUID = 1L;
 
-    protected final JobId jobId;
+    protected JobId jobId;
     protected final int datasetId;
     protected final int[] primaryKeyFields;
     protected final boolean isTemporaryDatasetWriteJob;
@@ -55,7 +55,7 @@ public class CommitRuntimeFactory implements IPushRuntimeFactory {
 
     @Override
     public IPushRuntime createPushRuntime(IHyracksTaskContext ctx) throws HyracksDataException {
-            return new CommitRuntime(ctx, jobId, datasetId, primaryKeyFields, isTemporaryDatasetWriteJob,
+            return new CommitRuntime(ctx, new JobId(ctx.getJobletContext().getTxnJobId()), datasetId, primaryKeyFields, isTemporaryDatasetWriteJob,
                     isWriteTransaction, datasetPartitions[ctx.getTaskAttemptId().getTaskId().getPartition()], isSink);
     }
 }

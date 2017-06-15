@@ -42,6 +42,7 @@ import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobInfo;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.topology.ClusterTopology;
 import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.ipc.api.IIPCHandle;
@@ -108,27 +109,27 @@ public final class HyracksConnection implements IHyracksClientConnection {
     }
 
     @Override
-    public JobId distributeJob(JobSpecification jobSpec) throws Exception {
+    public PreDistJobId distributeJob(JobSpecification jobSpec) throws Exception {
         JobSpecificationActivityClusterGraphGeneratorFactory jsacggf =
                 new JobSpecificationActivityClusterGraphGeneratorFactory(jobSpec);
         return distributeJob(jsacggf);
     }
 
     @Override
-    public JobId destroyJob(JobId jobId) throws Exception {
-        return hci.destroyJob(jobId);
+    public PreDistJobId destroyJob(PreDistJobId preDistJobId) throws Exception {
+        return hci.destroyJob(preDistJobId);
     }
 
     @Override
-    public JobId startJob(JobId jobId) throws Exception {
-        return hci.startJob(jobId);
+    public JobId startJob(PreDistJobId preDistJobId) throws Exception {
+        return hci.startJob(preDistJobId);
     }
 
     public JobId startJob(IActivityClusterGraphGeneratorFactory acggf, EnumSet<JobFlag> jobFlags) throws Exception {
         return hci.startJob(JavaSerializationUtils.serialize(acggf), jobFlags);
     }
 
-    public JobId distributeJob(IActivityClusterGraphGeneratorFactory acggf) throws Exception {
+    public PreDistJobId distributeJob(IActivityClusterGraphGeneratorFactory acggf) throws Exception {
         return hci.distributeJob(JavaSerializationUtils.serialize(acggf));
     }
 

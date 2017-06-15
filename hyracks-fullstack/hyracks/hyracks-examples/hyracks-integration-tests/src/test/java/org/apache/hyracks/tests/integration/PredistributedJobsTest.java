@@ -31,6 +31,7 @@ import org.apache.hyracks.api.client.HyracksConnection;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.control.cc.ClusterControllerService;
 import org.apache.hyracks.control.common.controllers.CCConfig;
 import org.apache.hyracks.control.common.controllers.NCConfig;
@@ -108,8 +109,9 @@ public class PredistributedJobsTest {
         JobSpecification spec2 = HeapSortMergeTest.createSortMergeJobSpec();
 
         //distribute both jobs
-        JobId jobId1 = hcc.distributeJob(spec1);
-        JobId jobId2 = hcc.distributeJob(spec2);
+        PreDistJobId jobId1 = hcc.distributeJob(spec1);
+        PreDistJobId jobId2 = hcc.distributeJob(spec2);
+        JobId invocationId;
 
         //make sure it finished
         //cc will get the store once to check for duplicate insertion and once to insert per job
@@ -126,8 +128,8 @@ public class PredistributedJobsTest {
         Assert.assertTrue(cc.getPreDistributedJobStore().getDistributedJobDescriptor(jobId2) != null);
 
         //run the first job
-        hcc.startJob(jobId1);
-        hcc.waitForCompletion(jobId1);
+        invocationId = hcc.startJob(jobId1);
+        hcc.waitForCompletion(invocationId);
 
         //destroy the first job
         hcc.destroyJob(jobId1);
@@ -142,16 +144,16 @@ public class PredistributedJobsTest {
         cc.getPreDistributedJobStore().checkForExistingDistributedJobDescriptor(jobId1);
 
         //run the second job
-        hcc.startJob(jobId2);
-        hcc.waitForCompletion(jobId2);
+        invocationId = hcc.startJob(jobId2);
+        hcc.waitForCompletion(invocationId);
 
         //wait ten seconds to ensure the result sweeper does not break the job
         //The result sweeper runs every 5 seconds during the tests
         Thread.sleep(10000);
 
         //run the second job again
-        hcc.startJob(jobId2);
-        hcc.waitForCompletion(jobId2);
+        invocationId = hcc.startJob(jobId2);
+        hcc.waitForCompletion(invocationId);
 
         //destroy the second job
         hcc.destroyJob(jobId2);

@@ -21,7 +21,7 @@ package org.apache.hyracks.control.nc.work;
 
 import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.api.job.ActivityClusterGraph;
-import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.control.common.deployment.DeploymentUtils;
 import org.apache.hyracks.control.common.work.AbstractWork;
 import org.apache.hyracks.control.nc.NodeControllerService;
@@ -34,24 +34,25 @@ public class DistributeJobWork extends AbstractWork {
 
     private final NodeControllerService ncs;
     private final byte[] acgBytes;
-    private final JobId jobId;
+    private final PreDistJobId preDistJobId;
 
-    public DistributeJobWork(NodeControllerService ncs, JobId jobId, byte[] acgBytes) {
+    public DistributeJobWork(NodeControllerService ncs, PreDistJobId preDistJobId, byte[] acgBytes) {
         this.ncs = ncs;
-        this.jobId = jobId;
+        this.preDistJobId = preDistJobId;
         this.acgBytes = acgBytes;
     }
 
     @Override
     public void run() {
         try {
-            ncs.checkForDuplicateDistributedJob(jobId);
-            ActivityClusterGraph acg =
-                    (ActivityClusterGraph) DeploymentUtils.deserialize(acgBytes, null, ncs.getContext());
-            ncs.storeActivityClusterGraph(jobId, acg);
+            ncs.checkForDuplicateDistributedJob(preDistJobId);
+//            ActivityClusterGraph acg =
+//                    (ActivityClusterGraph) DeploymentUtils.deserialize(acgBytes, null, ncs.getContext());
+            ncs.storeActivityClusterGraph(preDistJobId, acgBytes);
         } catch (HyracksException e) {
             try {
-                ncs.getClusterController().notifyDistributedJobFailure(jobId, ncs.getId());
+                // TODO: this has nothing to do with the hyracks job routine. Can be handled separately.
+//                ncs.getClusterController().notifyDistributedJobFailure(preDistJobId, ncs.getId());
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

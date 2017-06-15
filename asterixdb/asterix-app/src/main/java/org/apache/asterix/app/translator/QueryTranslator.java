@@ -191,6 +191,7 @@ import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.io.UnmanagedFileSplit;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMMergePolicyFactory;
 
 /*
@@ -2056,15 +2057,15 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 EntityId connEntityId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName,
                         feedName + ":" + connection.getDatasetName());
                 FeedConnectionId connectionId = new FeedConnectionId(feedEntityId, connection.getDatasetName());
-                FeedEventsListener connEventListener = new FeedEventsListener(appCtx, connEntityId, datasets,
-                        intakeInfo.getRight());
-                activeEventHandler.registerListener(connEventListener);
+//                FeedEventsListener connEventListener = new FeedEventsListener(appCtx, connEntityId, datasets,
+//                        intakeInfo.getRight());
+//                activeEventHandler.registerListener(connEventListener);
                 JobSpecification connJobSpec = FeedOperations.buildConnectJobSpec(sessionOutput, metadataProvider,
                         connection, intakeInfo.getRight(), compilationProvider, storageComponentProvider, qtFactory,
                         hcc);
                 connJobSpec.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, connEntityId);
                 connJobSpec = FeedOperations.makeRobustCollectJob(connJobSpec, connectionId, new HashMap<>());
-                JobId connJobId = JobUtils.distributeJob(hcc, connJobSpec);
+                PreDistJobId connJobId = JobUtils.distributeJob(hcc, connJobSpec);
                 intakeEventListener.registerJobId(connJobId);
             }
             JobUtils.runJob(hcc, intakeJob, false);

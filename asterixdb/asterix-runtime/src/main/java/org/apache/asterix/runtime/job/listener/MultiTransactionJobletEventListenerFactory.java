@@ -30,6 +30,7 @@ import org.apache.hyracks.api.context.IHyracksJobletContext;
 import org.apache.hyracks.api.job.IJobletEventListener;
 import org.apache.hyracks.api.job.IJobletEventListenerFactory;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 
 /**
  * This Joblet enable transactions on multiple datasets to take place in the same Hyracks Job
@@ -44,6 +45,11 @@ public class MultiTransactionJobletEventListenerFactory implements IJobletEventL
     public MultiTransactionJobletEventListenerFactory(List<JobId> jobIds, boolean transactionalWrite) {
         this.jobIds = jobIds;
         this.transactionalWrite = transactionalWrite;
+    }
+
+    @Override
+    public void updateJobId(int jobId) {
+        // no op
     }
 
     @Override

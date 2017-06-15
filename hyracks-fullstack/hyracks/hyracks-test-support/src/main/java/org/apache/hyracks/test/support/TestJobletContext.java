@@ -73,6 +73,11 @@ public class TestJobletContext implements IHyracksJobletContext {
     }
 
     @Override
+    public int getTxnJobId() {
+        return -1;
+    }
+
+    @Override
     public FileReference createManagedWorkspaceFile(String prefix) throws HyracksDataException {
         return fileFactory.createManagedWorkspaceFile(prefix);
     }

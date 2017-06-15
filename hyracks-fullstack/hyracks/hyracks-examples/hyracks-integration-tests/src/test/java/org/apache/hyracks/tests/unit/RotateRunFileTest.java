@@ -48,6 +48,7 @@ import static junit.framework.TestCase.fail;
 
 public class RotateRunFileTest {
 
+    // TODO: Figure out a better to handle msg and invocation
     private static int DEFAULT_FRAME_SIZE = 32768;
 
     private static final Logger LOGGER = Logger.getLogger(RotateRunFileTest.class.getName());
@@ -71,7 +72,7 @@ public class RotateRunFileTest {
 
         prepareTestFrames(inputFrames, expectedAnswers, frameN, frameGenerator);
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-01", ctx, bufferSize, framePerFile,
-                DEFAULT_FRAME_SIZE);
+                DEFAULT_FRAME_SIZE, null);
         writer.open();
         RotateRunFileReader reader = writer.getReader(1);
         reader.open();
@@ -103,7 +104,7 @@ public class RotateRunFileTest {
 
         prepareTestFrames(inputFrames, expectedAnswers, frameN, frameGenerator);
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-02", ctx, bufferSize, framePerFile,
-                DEFAULT_FRAME_SIZE);
+                DEFAULT_FRAME_SIZE,null);
         writer.open();
         RotateRunFileReader reader = writer.getReader(1);
         reader.open();
@@ -138,7 +139,7 @@ public class RotateRunFileTest {
 
         prepareTestFrames(inputFrames, expectedAnswers, frameN, frameGenerator);
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-03", ctx, bufferSize, framePerFile,
-                DEFAULT_FRAME_SIZE);
+                DEFAULT_FRAME_SIZE,null);
         writer.open();
         RotateRunFileReader reader = writer.getReader(1);
         reader.open();
@@ -173,7 +174,7 @@ public class RotateRunFileTest {
 
         prepareTestFrames(inputFrames, expectedAnswers, frameN, frameGenerator);
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-04", ctx, bufferSize, framePerFile,
-                DEFAULT_FRAME_SIZE);
+                DEFAULT_FRAME_SIZE,null);
         writer.open();
         RotateRunFileReader reader = writer.getReader(1);
         reader.open();
@@ -218,7 +219,7 @@ public class RotateRunFileTest {
 
         prepareTestFrames(inputFrames, expectedAnswers, frameN, frameGenerator);
         RotateRunFileWriter writer = new RotateRunFileWriter("Test-05", ctx, bufferSize, framePerFile,
-                DEFAULT_FRAME_SIZE);
+                DEFAULT_FRAME_SIZE, null);
         writer.open();
         List<RotateRunFileReader> readers = new ArrayList<>();
         for (int iter1 = 0; iter1 < readerN; iter1++) {

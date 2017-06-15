@@ -22,6 +22,7 @@ package org.apache.asterix.common.utils;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.api.job.PreDistJobId;
 
 public class JobUtils {
 
@@ -40,11 +41,11 @@ public class JobUtils {
         return jobId;
     }
 
-    public static JobId distributeJob(IHyracksClientConnection hcc, JobSpecification spec) throws Exception {
+    public static PreDistJobId distributeJob(IHyracksClientConnection hcc, JobSpecification spec) throws Exception {
         return hcc.distributeJob(spec);
     }
 
-    public static JobId startPrecompiledJob(IHyracksClientConnection hcc, JobId jobId) throws Exception {
-        return hcc.startJob(jobId);
+    public static JobId startPrecompiledJob(IHyracksClientConnection hcc, PreDistJobId preDistJobId) throws Exception {
+        return hcc.startJob(preDistJobId);
     }
 }

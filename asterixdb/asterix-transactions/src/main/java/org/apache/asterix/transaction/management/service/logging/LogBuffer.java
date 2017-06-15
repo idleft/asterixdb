@@ -218,6 +218,7 @@ public class LogBuffer implements ILogBuffer {
                 batchUnlock(beginOffset, endOffset);
             }
         } catch (Exception e) {
+            e.printStackTrace();
             throw new IllegalStateException(e);
         }
     }
@@ -233,36 +234,38 @@ public class LogBuffer implements ILogBuffer {
             ITransactionContext txnCtx = null;
 
             LogRecord logRecord = logBufferTailReader.next();
-            while (logRecord != null) {
-                if (logRecord.getLogSource() == LogSource.LOCAL) {
-                    if (logRecord.getLogType() == LogType.ENTITY_COMMIT) {
-                        reusableJobId.setId(logRecord.getJobId());
-                        reusableDatasetId.setId(logRecord.getDatasetId());
-                        txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
-                        txnSubsystem.getLockManager().unlock(reusableDatasetId, logRecord.getPKHashValue(),
-                                LockMode.ANY, txnCtx);
-                        txnCtx.notifyOptracker(false);
-                        if (txnSubsystem.getTransactionProperties().isCommitProfilerEnabled()) {
-                            txnSubsystem.incrementEntityCommitCount();
+            synchronized (reusableJobId) {
+                while (logRecord != null) {
+                    if (logRecord.getLogSource() == LogSource.LOCAL) {
+                        if (logRecord.getLogType() == LogType.ENTITY_COMMIT) {
+                            reusableJobId.setId(logRecord.getJobId());
+                            reusableDatasetId.setId(logRecord.getDatasetId());
+                            txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
+                            txnSubsystem.getLockManager().unlock(reusableDatasetId, logRecord.getPKHashValue(),
+                                    LockMode.ANY, txnCtx);
+                            txnCtx.notifyOptracker(false);
+                            if (txnSubsystem.getTransactionProperties().isCommitProfilerEnabled()) {
+                                txnSubsystem.incrementEntityCommitCount();
+                            }
+                        } else if (logRecord.getLogType() == LogType.JOB_COMMIT
+                                || logRecord.getLogType() == LogType.ABORT) {
+                            reusableJobId.setId(logRecord.getJobId());
+                            txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
+                            txnCtx.notifyOptracker(true);
+                            notifyJobTermination();
+                        } else if (logRecord.getLogType() == LogType.FLUSH) {
+                            notifyFlushTermination();
+                        } else if (logRecord.getLogType() == LogType.WAIT) {
+                            notifyWaitTermination();
                         }
-                    } else if (logRecord.getLogType() == LogType.JOB_COMMIT
-                            || logRecord.getLogType() == LogType.ABORT) {
-                        reusableJobId.setId(logRecord.getJobId());
-                        txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
-                        txnCtx.notifyOptracker(true);
-                        notifyJobTermination();
-                    } else if (logRecord.getLogType() == LogType.FLUSH) {
-                        notifyFlushTermination();
-                    } else if (logRecord.getLogType() == LogType.WAIT) {
-                        notifyWaitTermination();
+                    } else if (logRecord.getLogSource() == LogSource.REMOTE) {
+                        if (logRecord.getLogType() == LogType.JOB_COMMIT || logRecord.getLogType() == LogType.ABORT) {
+                            notifyReplicationTermination();
+                        }
                     }
-                } else if (logRecord.getLogSource() == LogSource.REMOTE) {
-                    if (logRecord.getLogType() == LogType.JOB_COMMIT || logRecord.getLogType() == LogType.ABORT) {
-                        notifyReplicationTermination();
-                    }
-                }
 
-                logRecord = logBufferTailReader.next();
+                    logRecord = logBufferTailReader.next();
+                }
             }
         }
     }

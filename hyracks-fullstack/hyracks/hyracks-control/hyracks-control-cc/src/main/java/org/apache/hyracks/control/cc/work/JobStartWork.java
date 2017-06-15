@@ -25,6 +25,7 @@ import org.apache.hyracks.api.job.IActivityClusterGraphGenerator;
 import org.apache.hyracks.api.job.IActivityClusterGraphGeneratorFactory;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.control.cc.ClusterControllerService;
 import org.apache.hyracks.control.cc.application.CCServiceContext;
 import org.apache.hyracks.control.cc.job.IJobManager;
@@ -40,17 +41,17 @@ public class JobStartWork extends SynchronizableWork {
     private final DeploymentId deploymentId;
     private final JobId jobId;
     private final IResultCallback<JobId> callback;
-    private final boolean predestributed;
+    private final PreDistJobId preDistJobId;
 
     public JobStartWork(ClusterControllerService ccs, DeploymentId deploymentId, byte[] acggfBytes,
-            EnumSet<JobFlag> jobFlags, JobId jobId, IResultCallback<JobId> callback, boolean predestributed) {
+            EnumSet<JobFlag> jobFlags, JobId jobId, IResultCallback<JobId> callback, PreDistJobId preDistJobId) {
         this.deploymentId = deploymentId;
         this.jobId = jobId;
         this.ccs = ccs;
         this.acggfBytes = acggfBytes;
         this.jobFlags = jobFlags;
         this.callback = callback;
-        this.predestributed = predestributed;
+        this.preDistJobId = preDistJobId;
     }
 
     @Override
@@ -59,7 +60,7 @@ public class JobStartWork extends SynchronizableWork {
         try {
             final CCServiceContext ccServiceCtx = ccs.getContext();
             JobRun run;
-            if (!predestributed) {
+            if (preDistJobId == null) {
                 //Need to create the ActivityClusterGraph
                 IActivityClusterGraphGeneratorFactory acggf = (IActivityClusterGraphGeneratorFactory) DeploymentUtils
                         .deserialize(acggfBytes, deploymentId, ccServiceCtx);
@@ -69,7 +70,7 @@ public class JobStartWork extends SynchronizableWork {
             } else {
                 //ActivityClusterGraph has already been distributed
                 run = new JobRun(ccs, deploymentId, jobId,
-                        ccs.getPreDistributedJobStore().getDistributedJobDescriptor(jobId));
+                        ccs.getPreDistributedJobStore().getDistributedJobDescriptor(preDistJobId), preDistJobId);
             }
             jobManager.add(run);
             callback.setValue(jobId);

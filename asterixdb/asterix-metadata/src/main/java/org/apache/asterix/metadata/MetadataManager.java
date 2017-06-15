@@ -120,6 +120,7 @@ public class MetadataManager implements IMetadataManager {
     public MetadataTransactionContext beginTransaction() throws RemoteException, ACIDException {
         JobId jobId = JobIdFactory.generateJobId();
         metadataNode.beginTransaction(jobId);
+        System.out.println("Begin transaction jobId " + jobId);
         return new MetadataTransactionContext(jobId);
     }
 

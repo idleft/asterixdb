@@ -27,6 +27,7 @@ import org.apache.hyracks.api.dataset.DatasetJobRecord.Status;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobIdFactory;
 import org.apache.hyracks.api.job.JobInfo;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.control.cc.work.CancelJobWork;
 import org.apache.hyracks.control.cc.work.CliDeployBinaryWork;
 import org.apache.hyracks.control.cc.work.CliUnDeployBinaryWork;
@@ -86,14 +87,14 @@ class ClientInterfaceIPCI implements IIPCI {
             case DISTRIBUTE_JOB:
                 HyracksClientInterfaceFunctions.DistributeJobFunction djf =
                         (HyracksClientInterfaceFunctions.DistributeJobFunction) fn;
-                ccs.getWorkQueue().schedule(new DistributeJobWork(ccs, djf.getACGGFBytes(), jobIdFactory.create(),
-                        new IPCResponder<JobId>(handle, mid)));
+                ccs.getWorkQueue().schedule(new DistributeJobWork(ccs, djf.getACGGFBytes(),
+                        jobIdFactory.createPreDistId(), new IPCResponder<>(handle, mid)));
                 break;
             case DESTROY_JOB:
                 HyracksClientInterfaceFunctions.DestroyJobFunction dsjf =
                         (HyracksClientInterfaceFunctions.DestroyJobFunction) fn;
                 ccs.getWorkQueue()
-                        .schedule(new DestroyJobWork(ccs, dsjf.getJobId(), new IPCResponder<JobId>(handle, mid)));
+                        .schedule(new DestroyJobWork(ccs, dsjf.getPreDistJobId(), new IPCResponder<PreDistJobId>(handle, mid)));
                 break;
             case CANCEL_JOB:
                 HyracksClientInterfaceFunctions.CancelJobFunction cjf =
@@ -104,19 +105,13 @@ class ClientInterfaceIPCI implements IIPCI {
             case START_JOB:
                 HyracksClientInterfaceFunctions.StartJobFunction sjf =
                         (HyracksClientInterfaceFunctions.StartJobFunction) fn;
-                JobId jobId = sjf.getJobId();
                 byte[] acggfBytes = null;
-                boolean predistributed = false;
-                if (jobId == null) {
-                    //The job is new
-                    jobId = jobIdFactory.create();
+                //The job is new
+                if (sjf.getPreDistJobId() == null) {
                     acggfBytes = sjf.getACGGFBytes();
-                } else {
-                    //The job has been predistributed. We don't need to send an ActivityClusterGraph
-                    predistributed = true;
                 }
                 ccs.getWorkQueue().schedule(new JobStartWork(ccs, sjf.getDeploymentId(), acggfBytes, sjf.getJobFlags(),
-                        jobId, new IPCResponder<JobId>(handle, mid), predistributed));
+                        jobIdFactory.create(), new IPCResponder<JobId>(handle, mid), sjf.getPreDistJobId()));
                 break;
             case GET_DATASET_DIRECTORY_SERIVICE_INFO:
                 ccs.getWorkQueue().schedule(new GetDatasetDirectoryServiceInfoWork(ccs,

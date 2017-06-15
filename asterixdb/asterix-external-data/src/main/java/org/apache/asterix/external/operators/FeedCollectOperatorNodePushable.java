@@ -62,13 +62,14 @@ public class FeedCollectOperatorNodePushable extends ActiveSourceOperatorNodePus
                 FeedIntakeOperatorNodePushable.class.getSimpleName(), partition);
         this.feedIntakeRuntime = (FeedIntakeOperatorNodePushable) activeManager.getRuntime(intakeRuntimeId);
         this.readerBufferFrame = new VSizeFrame(ctx);
-        this.batchCounter = 2;
+        this.batchCounter = 20;
     }
 
     @Override
     public void start() throws HyracksDataException {
         try {
-            Thread.currentThread().setName("Collector Thread " + this.runtimeId.getEntityId().getEntityName());
+//            Thread.currentThread().setName("Collector Thread " + this.runtimeId.getEntityId().getEntityName());
+            System.out.println("Collector started");
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             // TODO: restore policy handler
             //            if (policyAccessor.flowControlEnabled()) {

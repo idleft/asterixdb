@@ -49,6 +49,7 @@ import org.apache.hyracks.api.job.ActivityCluster;
 import org.apache.hyracks.api.job.ActivityClusterGraph;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.partitions.PartitionId;
 import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.control.cc.ClusterControllerService;
@@ -76,7 +77,7 @@ public class JobExecutor {
 
     private final PartitionConstraintSolver solver;
 
-    private final boolean predistributed;
+    private final PreDistJobId preDistJobId;
 
     private final Map<PartitionId, TaskCluster> partitionProducingTaskClusterMap;
 
@@ -87,19 +88,15 @@ public class JobExecutor {
     private boolean cancelled = false;
 
     public JobExecutor(ClusterControllerService ccs, JobRun jobRun, Collection<Constraint> constraints,
-            boolean predistributed) {
+            PreDistJobId preDistJobId) {
         this.ccs = ccs;
         this.jobRun = jobRun;
-        this.predistributed = predistributed;
+        this.preDistJobId = preDistJobId;
         solver = new PartitionConstraintSolver();
         partitionProducingTaskClusterMap = new HashMap<>();
         inProgressTaskClusters = new HashSet<>();
         solver.addConstraints(constraints);
         random = new Random();
-    }
-
-    public boolean isPredistributed() {
-        return predistributed;
     }
 
     public JobRun getJobRun() {
@@ -500,7 +497,12 @@ public class JobExecutor {
                 jobRun.getConnectorPolicyMap());
         INodeManager nodeManager = ccs.getNodeManager();
         try {
-            byte[] acgBytes = predistributed ? null : JavaSerializationUtils.serialize(acg);
+            byte[] acgBytes;
+            synchronized (acg) {
+                // TODO: this seems not necessary
+//                acg.getJobletEventListenerFactory().updateJobId(preDistJobId.getAsterxJobId());
+                acgBytes = preDistJobId != null ? null : JavaSerializationUtils.serialize(acg);
+            }
             for (Map.Entry<String, List<TaskAttemptDescriptor>> entry : taskAttemptMap.entrySet()) {
                 String nodeId = entry.getKey();
                 final List<TaskAttemptDescriptor> taskDescriptors = entry.getValue();
@@ -513,7 +515,7 @@ public class JobExecutor {
                     }
                     byte[] jagBytes = changed ? acgBytes : null;
                     node.getNodeController().startTasks(deploymentId, jobId, jagBytes, taskDescriptors,
-                            connectorPolicies, jobRun.getFlags());
+                            connectorPolicies, jobRun.getFlags(), preDistJobId);
                 }
             }
         } catch (Exception e) {

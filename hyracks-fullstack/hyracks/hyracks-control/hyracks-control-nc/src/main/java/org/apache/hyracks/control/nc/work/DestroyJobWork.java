@@ -20,7 +20,7 @@
 package org.apache.hyracks.control.nc.work;
 
 import org.apache.hyracks.api.exceptions.HyracksException;
-import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.control.common.work.AbstractWork;
 import org.apache.hyracks.control.nc.NodeControllerService;
 
@@ -31,20 +31,20 @@ import org.apache.hyracks.control.nc.NodeControllerService;
 public class DestroyJobWork extends AbstractWork {
 
     private final NodeControllerService ncs;
-    private final JobId jobId;
+    private final PreDistJobId preDistJobId;
 
-    public DestroyJobWork(NodeControllerService ncs, JobId jobId) {
+    public DestroyJobWork(NodeControllerService ncs, PreDistJobId jobId) {
         this.ncs = ncs;
-        this.jobId = jobId;
+        this.preDistJobId = jobId;
     }
 
     @Override
     public void run() {
         try {
-            ncs.removeActivityClusterGraph(jobId);
+            ncs.removeActivityClusterGraph(preDistJobId);
         } catch (HyracksException e) {
             try {
-                ncs.getClusterController().notifyDistributedJobFailure(jobId, ncs.getId());
+                ncs.getClusterController().notifyDistributedJobFailure(preDistJobId, ncs.getId());
             } catch (Exception e1) {
                 e1.printStackTrace();
             }

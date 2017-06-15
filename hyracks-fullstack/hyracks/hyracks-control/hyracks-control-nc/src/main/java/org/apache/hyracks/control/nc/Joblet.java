@@ -46,6 +46,7 @@ import org.apache.hyracks.api.job.IJobletEventListenerFactory;
 import org.apache.hyracks.api.job.IOperatorEnvironment;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.job.profiling.counters.ICounter;
 import org.apache.hyracks.api.job.profiling.counters.ICounterContext;
 import org.apache.hyracks.api.partitions.PartitionId;
@@ -99,8 +100,10 @@ public class Joblet implements IHyracksJobletContext, ICounterContext {
 
     private boolean cleanupPending;
 
+    private PreDistJobId preDistJobId;
+
     public Joblet(NodeControllerService nodeController, DeploymentId deploymentId, JobId jobId,
-            INCServiceContext serviceCtx, ActivityClusterGraph acg) {
+            INCServiceContext serviceCtx, ActivityClusterGraph acg, PreDistJobId preDistJobId) {
         this.nodeController = nodeController;
         this.serviceCtx = serviceCtx;
         this.deploymentId = deploymentId;
@@ -116,6 +119,7 @@ public class Joblet implements IHyracksJobletContext, ICounterContext {
         deallocatableRegistry = new DefaultDeallocatableRegistry();
         fileFactory = new WorkspaceFileFactory(this, serviceCtx.getIoManager());
         cleanupPending = false;
+        this.preDistJobId = preDistJobId;
         IJobletEventListenerFactory jelf = acg.getJobletEventListenerFactory();
         if (jelf != null) {
             IJobletEventListener listener = jelf.createListener(this);
@@ -126,6 +130,11 @@ public class Joblet implements IHyracksJobletContext, ICounterContext {
         }
         IGlobalJobDataFactory gjdf = acg.getGlobalJobDataFactory();
         globalJobData = gjdf != null ? gjdf.createGlobalJobData(this) : null;
+    }
+
+    @Override
+    public int getTxnJobId() {
+        return preDistJobId.getAsterxJobId();
     }
 
     @Override
@@ -154,6 +163,10 @@ public class Joblet implements IHyracksJobletContext, ICounterContext {
 
     public Map<TaskAttemptId, Task> getTaskMap() {
         return taskMap;
+    }
+
+    public PreDistJobId getPreDistJobId() {
+        return preDistJobId;
     }
 
     private final class OperatorEnvironmentImpl implements IOperatorEnvironment {

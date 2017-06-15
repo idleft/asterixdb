@@ -28,11 +28,12 @@ import org.apache.hyracks.api.context.IHyracksJobletContext;
 import org.apache.hyracks.api.job.IJobletEventListener;
 import org.apache.hyracks.api.job.IJobletEventListenerFactory;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 
 public class JobEventListenerFactory implements IJobletEventListenerFactory {
 
     private static final long serialVersionUID = 1L;
-    private final JobId jobId;
+    private JobId jobId;
     private final boolean transactionalWrite;
 
     public JobEventListenerFactory(JobId jobId, boolean transactionalWrite) {
@@ -44,6 +45,11 @@ public class JobEventListenerFactory implements IJobletEventListenerFactory {
         return jobId;
     }
 
+    public void updateJobId(int newJobId) {
+        this.jobId.setId(newJobId);
+    }
+
+    // TODO: Handle the preDisJobId better
     @Override
     public IJobletEventListener createListener(final IHyracksJobletContext jobletContext) {
 

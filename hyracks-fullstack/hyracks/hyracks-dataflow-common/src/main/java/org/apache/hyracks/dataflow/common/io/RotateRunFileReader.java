@@ -84,7 +84,7 @@ public class RotateRunFileReader implements IFrameReader {
                     // current file still growing
                     synchronized (rotateRunFileWriter.readToWriteMutex) {
                         LOGGER.fine("Waiting for writer at " + currentFileIdx);
-                        System.out.println("Waiting for writer at " + currentFileIdx);
+//                        System.out.println("Waiting for writer at " + currentFileIdx);
                         rotateRunFileWriter.readToWriteMutex.wait();
                         currentSize = rotateRunFileWriter.getWriterSize(currentFileIdx);
                     }
@@ -97,7 +97,7 @@ public class RotateRunFileReader implements IFrameReader {
                     }
                     int nextFileIdx = (currentFileIdx + 1) % bufferFileList.length;
                     LOGGER.fine("Reader: Moving to next file from " + currentFileIdx + " to " + nextFileIdx);
-                    System.out.println("Reader: Moving to next file from " + currentFileIdx + " to " + nextFileIdx);
+//                    System.out.println("Reader: Moving to next file from " + currentFileIdx + " to " + nextFileIdx);
                     currentSize = rotateRunFileWriter.getWriterSize(nextFileIdx);
                     file = bufferFileList[nextFileIdx];
                     ioManager.close(handle);

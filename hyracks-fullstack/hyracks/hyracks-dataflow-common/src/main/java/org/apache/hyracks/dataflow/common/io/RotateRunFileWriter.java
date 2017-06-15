@@ -93,9 +93,10 @@ public class RotateRunFileWriter implements IFrameWriter {
     @Override
     public synchronized void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         // add rotate logic here
-        if (++frameCounter % 2 == 0) {
+        if (++frameCounter % 20 == 0) {
             try {
                 ctx.sendApplicationMessageToCC(invokeMSG, null);
+                System.out.println("Writer starts a new collector");
             } catch (Exception e) {
                 throw new HyracksDataException(e);
             }
@@ -108,7 +109,7 @@ public class RotateRunFileWriter implements IFrameWriter {
                 while (bufferSignatures[nextWriterIdx] != 0) {
                     try {
                         LOGGER.finest("Waits for reader to finish at " + currentWriterIdx);
-                        System.out.println("Waits for reader to finish at " + currentWriterIdx);
+//                        System.out.println("Waits for reader to finish at " + currentWriterIdx);
                         writeToReadMutex.wait();
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -119,7 +120,7 @@ public class RotateRunFileWriter implements IFrameWriter {
             bwList[nextWriterIdx].open();
             bufferSignatures[nextWriterIdx] ^= writerSignature;
             LOGGER.fine("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
-            System.out.println("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
+//            System.out.println("Writer: shift from " + currentWriterIdx + " to " + nextWriterIdx);
             bwList[currentWriterIdx.get()].close();
             currentWriterIdx.set(nextWriterIdx);
             synchronized (readToWriteMutex) {

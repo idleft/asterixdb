@@ -25,6 +25,7 @@ import org.apache.hyracks.api.job.IActivityClusterGraphGenerator;
 import org.apache.hyracks.api.job.IActivityClusterGraphGeneratorFactory;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.control.cc.ClusterControllerService;
 import org.apache.hyracks.control.cc.NodeControllerState;
@@ -37,12 +38,12 @@ import org.apache.hyracks.control.common.work.SynchronizableWork;
 public class DistributeJobWork extends SynchronizableWork {
     private final ClusterControllerService ccs;
     private final byte[] acggfBytes;
-    private final JobId jobId;
-    private final IResultCallback<JobId> callback;
+    private final PreDistJobId preDistJobId;
+    private final IResultCallback<PreDistJobId> callback;
 
-    public DistributeJobWork(ClusterControllerService ccs, byte[] acggfBytes, JobId jobId,
-            IResultCallback<JobId> callback) {
-        this.jobId = jobId;
+    public DistributeJobWork(ClusterControllerService ccs, byte[] acggfBytes, PreDistJobId preDistJobId,
+            IResultCallback<PreDistJobId> callback) {
+        this.preDistJobId = preDistJobId;
         this.ccs = ccs;
         this.acggfBytes = acggfBytes;
         this.callback = callback;
@@ -52,25 +53,26 @@ public class DistributeJobWork extends SynchronizableWork {
     protected void doRun() throws Exception {
         try {
             final CCServiceContext ccServiceCtx = ccs.getContext();
-            ccs.getPreDistributedJobStore().checkForExistingDistributedJobDescriptor(jobId);
+            ccs.getPreDistributedJobStore().checkForExistingDistributedJobDescriptor(preDistJobId);
             IActivityClusterGraphGeneratorFactory acggf =
                     (IActivityClusterGraphGeneratorFactory) DeploymentUtils.deserialize(acggfBytes, null, ccServiceCtx);
             IActivityClusterGraphGenerator acgg =
-                    acggf.createActivityClusterGraphGenerator(jobId, ccServiceCtx, EnumSet.noneOf(JobFlag.class));
+                    acggf.createActivityClusterGraphGenerator(null, ccServiceCtx, EnumSet.noneOf(JobFlag.class));
             ActivityClusterGraph acg = acgg.initialize();
-            ccs.getPreDistributedJobStore().addDistributedJobDescriptor(jobId, acg, acggf.getJobSpecification(),
+            ccs.getPreDistributedJobStore().addDistributedJobDescriptor(preDistJobId, acg, acggf.getJobSpecification(),
                     acgg.getConstraints());
 
-            ccServiceCtx.notifyJobCreation(jobId, acggf.getJobSpecification());
+            // TODO: temporary disabled job creation notification
+//            ccServiceCtx.notifyJobCreation(preDistJobId, acggf.getJobSpecification());
 
             byte[] acgBytes = JavaSerializationUtils.serialize(acg);
 
             INodeManager nodeManager = ccs.getNodeManager();
             for (NodeControllerState node : nodeManager.getAllNodeControllerStates()) {
-                node.getNodeController().distributeJob(jobId, acgBytes);
+                node.getNodeController().distributeJob(preDistJobId, acgBytes);
             }
 
-            callback.setValue(jobId);
+            callback.setValue(preDistJobId);
         } catch (Exception e) {
             callback.setException(e);
         }

@@ -19,6 +19,8 @@
 package org.apache.asterix.transaction.management.service.transaction;
 
 import java.io.OutputStream;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -92,6 +94,7 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
                 synchronized (this) {
                     txnCtx = transactionContextRepository.get(jobId);
                     if (txnCtx == null) {
+                        System.out.println("Create txnContext for "+jobId + " " + this.getClass() + " " + Thread.currentThread());
                         txnCtx = new TransactionContext(jobId);
                         transactionContextRepository.put(jobId, txnCtx);
                     }
@@ -104,7 +107,7 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
     }
 
     @Override
-    public void commitTransaction(ITransactionContext txnCtx, DatasetId datasetId, int PKHashVal)
+    public synchronized void commitTransaction(ITransactionContext txnCtx, DatasetId datasetId, int PKHashVal)
             throws ACIDException {
         //Only job-level commits call this method.
         try {
@@ -121,6 +124,7 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
         } finally {
             txnSubsystem.getLockManager().releaseLocks(txnCtx);
             transactionContextRepository.remove(txnCtx.getJobId());
+            System.out.println("Transaction commit jobid " + txnCtx.getJobId() + " " + this.getClass() + " " + Thread.currentThread());
             txnCtx.setTxnState(ITransactionManager.COMMITTED);
         }
     }

@@ -52,6 +52,7 @@ import org.apache.hyracks.api.deployment.DeploymentId;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.partitions.PartitionId;
 import org.apache.hyracks.control.common.controllers.NodeParameters;
 import org.apache.hyracks.control.common.controllers.NodeRegistration;
@@ -289,11 +290,11 @@ public class CCNCFunctions {
     public static class ReportDistributedJobFailureFunction extends Function {
         private static final long serialVersionUID = 1L;
 
-        private final JobId jobId;
+        private final PreDistJobId preDistJobId;
         private final String nodeId;
 
-        public ReportDistributedJobFailureFunction(JobId jobId, String nodeId) {
-            this.jobId = jobId;
+        public ReportDistributedJobFailureFunction(PreDistJobId preDistJobId, String nodeId) {
+            this.preDistJobId = preDistJobId;
             this.nodeId = nodeId;
         }
 
@@ -302,8 +303,8 @@ public class CCNCFunctions {
             return FunctionId.DISTRIBUTED_JOB_FAILURE;
         }
 
-        public JobId getJobId() {
-            return jobId;
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
 
         public String getNodeId() {
@@ -702,12 +703,12 @@ public class CCNCFunctions {
     public static class DistributeJobFunction extends Function {
         private static final long serialVersionUID = 1L;
 
-        private final JobId jobId;
+        private final PreDistJobId preDistJobId;
 
         private final byte[] acgBytes;
 
-        public DistributeJobFunction(JobId jobId, byte[] acgBytes) {
-            this.jobId = jobId;
+        public DistributeJobFunction(PreDistJobId preDistJobId, byte[] acgBytes) {
+            this.preDistJobId = preDistJobId;
             this.acgBytes = acgBytes;
         }
 
@@ -716,8 +717,8 @@ public class CCNCFunctions {
             return FunctionId.DISTRIBUTE_JOB;
         }
 
-        public JobId getJobId() {
-            return jobId;
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
 
         public byte[] getacgBytes() {
@@ -728,10 +729,10 @@ public class CCNCFunctions {
     public static class DestroyJobFunction extends Function {
         private static final long serialVersionUID = 1L;
 
-        private final JobId jobId;
+        private final PreDistJobId preDistJobId;
 
-        public DestroyJobFunction(JobId jobId) {
-            this.jobId = jobId;
+        public DestroyJobFunction(PreDistJobId preDistJobId) {
+            this.preDistJobId = preDistJobId;
         }
 
         @Override
@@ -739,8 +740,8 @@ public class CCNCFunctions {
             return FunctionId.DESTROY_JOB;
         }
 
-        public JobId getJobId() {
-            return jobId;
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
     }
 
@@ -753,16 +754,19 @@ public class CCNCFunctions {
         private final List<TaskAttemptDescriptor> taskDescriptors;
         private final Map<ConnectorDescriptorId, IConnectorPolicy> connectorPolicies;
         private final Set<JobFlag> flags;
+        private final PreDistJobId preDistJobId;
 
         public StartTasksFunction(DeploymentId deploymentId, JobId jobId, byte[] planBytes,
                 List<TaskAttemptDescriptor> taskDescriptors,
-                Map<ConnectorDescriptorId, IConnectorPolicy> connectorPolicies, Set<JobFlag> flags) {
+                Map<ConnectorDescriptorId, IConnectorPolicy> connectorPolicies, Set<JobFlag> flags,
+                PreDistJobId preDistJobId) {
             this.deploymentId = deploymentId;
             this.jobId = jobId;
             this.planBytes = planBytes;
             this.taskDescriptors = taskDescriptors;
             this.connectorPolicies = connectorPolicies;
             this.flags = flags;
+            this.preDistJobId = preDistJobId;
         }
 
         @Override
@@ -838,7 +842,14 @@ public class CCNCFunctions {
                 flags.add(JobFlag.values()[(dis.readInt())]);
             }
 
-            return new StartTasksFunction(deploymentId, jobId, planBytes, taskDescriptors, connectorPolicies, flags);
+            // read pre-distributed job id
+            PreDistJobId preDistJobId = null;
+            if (dis.readBoolean()) {
+                preDistJobId = PreDistJobId.create(dis);
+            }
+
+            return new StartTasksFunction(deploymentId, jobId, planBytes, taskDescriptors, connectorPolicies, flags,
+                    preDistJobId);
         }
 
         public static void serialize(OutputStream out, Object object) throws Exception {
@@ -876,6 +887,16 @@ public class CCNCFunctions {
             for (JobFlag flag : fn.flags) {
                 dos.writeInt(flag.ordinal());
             }
+
+            // write pre-distributed job id
+            dos.writeBoolean(fn.getPreDistJobId() == null ? false : true);
+            if (fn.getPreDistJobId() != null) {
+                fn.preDistJobId.writeFields(dos);
+            }
+        }
+
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
     }
 

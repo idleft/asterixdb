@@ -93,6 +93,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
                     rotateRunFileWriter, partition, initConnectionsCount);
 
             // Invoke conn jobs from CC
+            // start the initial conn job
             ctx.sendApplicationMessageToCC(JavaSerializationUtils.serialize(partitionMessage), null);
             adapterRuntimeManager.start();
             ctx.sendApplicationMessageToCC(new ActivePartitionMessage(runtimeId, ctx.getJobletContext().getJobId(),
@@ -126,7 +127,6 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
 
     public RotateRunFileReader subscribe(FeedConnectionId connectionId) throws HyracksDataException {
         // This order cannot be changed. Need to update the writer before the adapter can start.
-        System.out.println("Asked for reader " + connectionId.toString().hashCode());
         RotateRunFileReader newReader = rotateRunFileWriter.getReader(connectionId.toString().hashCode());
         adapterRuntimeManager.subscribe();
         return newReader;

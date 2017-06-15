@@ -28,6 +28,7 @@ import org.apache.hyracks.api.dataset.ResultSetId;
 import org.apache.hyracks.api.deployment.DeploymentId;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 
 public class HyracksClientInterfaceFunctions {
     public enum FunctionId {
@@ -145,10 +146,10 @@ public class HyracksClientInterfaceFunctions {
     public static class DestroyJobFunction extends Function {
         private static final long serialVersionUID = 1L;
 
-        private final JobId jobId;
+        private final PreDistJobId preDistJobId;
 
-        public DestroyJobFunction(JobId jobId) {
-            this.jobId = jobId;
+        public DestroyJobFunction(PreDistJobId preDistJobId) {
+            this.preDistJobId = preDistJobId;
         }
 
         @Override
@@ -156,8 +157,8 @@ public class HyracksClientInterfaceFunctions {
             return FunctionId.DESTROY_JOB;
         }
 
-        public JobId getJobId() {
-            return jobId;
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
     }
 
@@ -168,24 +169,27 @@ public class HyracksClientInterfaceFunctions {
         private final EnumSet<JobFlag> jobFlags;
         private final DeploymentId deploymentId;
         private final JobId jobId;
+        private final PreDistJobId preDistJobId;
 
-        public StartJobFunction(DeploymentId deploymentId, byte[] acggfBytes, EnumSet<JobFlag> jobFlags, JobId jobId) {
+        public StartJobFunction(DeploymentId deploymentId, byte[] acggfBytes, EnumSet<JobFlag> jobFlags, JobId jobId,
+                PreDistJobId preDistJobId) {
             this.acggfBytes = acggfBytes;
             this.jobFlags = jobFlags;
             this.deploymentId = deploymentId;
             this.jobId = jobId;
+            this.preDistJobId = preDistJobId;
         }
 
-        public StartJobFunction(JobId jobId) {
-            this(null, null, null, jobId);
+        public StartJobFunction(PreDistJobId preDistJobId) {
+            this(null, null, null, null, preDistJobId);
         }
 
         public StartJobFunction(byte[] acggfBytes, EnumSet<JobFlag> jobFlags) {
-            this(null, acggfBytes, jobFlags, null);
+            this(null, acggfBytes, jobFlags, null, null);
         }
 
         public StartJobFunction(DeploymentId deploymentId, byte[] acggfBytes, EnumSet<JobFlag> jobFlags) {
-            this(deploymentId, acggfBytes, jobFlags, null);
+            this(deploymentId, acggfBytes, jobFlags, null, null);
         }
 
         @Override
@@ -207,6 +211,10 @@ public class HyracksClientInterfaceFunctions {
 
         public DeploymentId getDeploymentId() {
             return deploymentId;
+        }
+
+        public PreDistJobId getPreDistJobId() {
+            return preDistJobId;
         }
     }
 

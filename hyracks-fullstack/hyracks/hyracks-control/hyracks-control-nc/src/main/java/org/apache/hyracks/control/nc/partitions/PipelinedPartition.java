@@ -67,7 +67,6 @@ public class PipelinedPartition implements IFrameWriter, IPartition {
 
     @Override
     public synchronized void writeTo(IFrameWriter writer) {
-        System.out.println("Write to pid " + this.pid + " taid " + taId);
         delegate = writer;
         notifyAll();
     }
@@ -92,7 +91,6 @@ public class PipelinedPartition implements IFrameWriter, IPartition {
             synchronized (this) {
                 while (delegate == null) {
                     try {
-                        System.out.println("Wait at pid " + this.pid + " taid " + taId);
                         wait();
                     } catch (InterruptedException e) {
                         throw new HyracksDataException(e);

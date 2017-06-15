@@ -53,7 +53,10 @@ import org.apache.hyracks.api.job.ActivityCluster;
 import org.apache.hyracks.api.job.ActivityClusterGraph;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.PreDistJobId;
 import org.apache.hyracks.api.partitions.PartitionId;
+import org.apache.hyracks.api.rewriter.OneToOneConnectedActivityCluster;
+import org.apache.hyracks.api.rewriter.runtime.SuperActivity;
 import org.apache.hyracks.comm.channels.NetworkInputChannel;
 import org.apache.hyracks.control.common.deployment.DeploymentUtils;
 import org.apache.hyracks.control.common.job.TaskAttemptDescriptor;
@@ -86,9 +89,12 @@ public class StartTasksWork extends AbstractWork {
 
     private final Set<JobFlag> flags;
 
+    private final PreDistJobId preDistJobId;
+
     public StartTasksWork(NodeControllerService ncs, DeploymentId deploymentId, JobId jobId, byte[] acgBytes,
             List<TaskAttemptDescriptor> taskDescriptors,
-            Map<ConnectorDescriptorId, IConnectorPolicy> connectorPoliciesMap, Set<JobFlag> flags) {
+            Map<ConnectorDescriptorId, IConnectorPolicy> connectorPoliciesMap, Set<JobFlag> flags,
+            PreDistJobId preDistJobId) {
         this.ncs = ncs;
         this.deploymentId = deploymentId;
         this.jobId = jobId;
@@ -96,6 +102,7 @@ public class StartTasksWork extends AbstractWork {
         this.taskDescriptors = taskDescriptors;
         this.connectorPoliciesMap = connectorPoliciesMap;
         this.flags = flags;
+        this.preDistJobId = preDistJobId;
     }
 
     @Override
@@ -187,14 +194,18 @@ public class StartTasksWork extends AbstractWork {
         Map<JobId, Joblet> jobletMap = ncs.getJobletMap();
         Joblet ji = jobletMap.get(jobId);
         if (ji == null) {
-            ActivityClusterGraph acg = ncs.getActivityClusterGraph(jobId);
-            if (acg == null) {
+            ActivityClusterGraph acg;
+            if (preDistJobId != null) {
+                byte[] preDistAcgBytes = ncs.getActivityClusterGraph(preDistJobId);
+                acg = (ActivityClusterGraph) DeploymentUtils.deserialize(preDistAcgBytes, null, appCtx);
+                acg.getJobletEventListenerFactory().updateJobId(preDistJobId.getAsterxJobId());
+            } else {
                 if (acgBytes == null) {
                     throw HyracksException.create(ErrorCode.ERROR_FINDING_DISTRIBUTED_JOB, jobId);
                 }
                 acg = (ActivityClusterGraph) DeploymentUtils.deserialize(acgBytes, deploymentId, appCtx);
             }
-            ji = new Joblet(ncs, deploymentId, jobId, appCtx, acg);
+            ji = new Joblet(ncs, deploymentId, jobId, appCtx, acg, preDistJobId);
             jobletMap.put(jobId, ji);
         }
         return ji;

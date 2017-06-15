@@ -20,8 +20,13 @@ package org.apache.hyracks.api.job;
 
 public class JobIdFactory {
     private long id = 0;
+    private long pdid = 0;
 
     public JobId create() {
         return new JobId(id++);
+    }
+
+    public PreDistJobId createPreDistId() {
+        return new PreDistJobId(pdid++);
     }
 }

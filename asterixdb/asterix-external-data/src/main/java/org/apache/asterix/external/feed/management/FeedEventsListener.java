@@ -35,10 +35,12 @@ import org.apache.asterix.common.metadata.IDataset;
 import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.external.feed.watch.FeedEventSubscriber;
 import org.apache.asterix.external.feed.watch.NoOpSubscriber;
+import org.apache.asterix.transaction.management.service.transaction.JobIdFactory;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.hyracks.api.job.PreDistJobId;
 
 public class FeedEventsListener extends ActiveEntityEventsListener {
     // constants
@@ -48,7 +50,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     private final String[] sources;
     private final List<IActiveEventSubscriber> subscribers;
     private int numRegistered;
-    private List<JobId> registeredJobIds;
+    private List<PreDistJobId> registeredJobIds;
 
     public FeedEventsListener(ICcApplicationContext appCtx, EntityId entityId, List<IDataset> datasets,
             String[] sources) {
@@ -61,7 +63,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         state = ActivityState.STOPPED;
     }
 
-    public boolean registerJobId(JobId jobId) {
+    public boolean registerJobId(PreDistJobId jobId) {
         return this.registeredJobIds.add(jobId);
     }
 
@@ -114,8 +116,10 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
                 state = ActivityState.STARTED;
             }
         } else if (message.getEvent() == ActivePartitionMessage.EXECUTE_PRECOMPILED_JOB) {
-            for (JobId jobId : registeredJobIds) {
-                JobUtils.startPrecompiledJob(this.appCtx.getHcc(), jobId);
+            for (PreDistJobId preDistJobId : registeredJobIds) {
+                org.apache.asterix.common.transactions.JobId asterixJobId = JobIdFactory.generateJobId();
+                preDistJobId.setAsterxJobId(asterixJobId.getId());
+                JobUtils.startPrecompiledJob(this.appCtx.getHcc(), preDistJobId);
             }
         }
     }
@@ -123,6 +127,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     private void finish() throws Exception {
         IHyracksClientConnection hcc = appCtx.getHcc();
         JobStatus status = hcc.getJobStatus(jobId);
+        if (status == null)
+            System.out.println("Job " + jobId + " status " + status);
         state = status.equals(JobStatus.FAILURE) ? ActivityState.FAILED : ActivityState.STOPPED;
         ActiveLifecycleListener activeLcListener = (ActiveLifecycleListener) appCtx.getActiveLifecycleListener();
         activeLcListener.getNotificationHandler().removeListener(this);
