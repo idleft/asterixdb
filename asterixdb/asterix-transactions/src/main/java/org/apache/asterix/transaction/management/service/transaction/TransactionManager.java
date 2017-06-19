@@ -94,7 +94,6 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
                 synchronized (this) {
                     txnCtx = transactionContextRepository.get(jobId);
                     if (txnCtx == null) {
-                        System.out.println("Create txnContext for "+jobId + " " + this.getClass() + " " + Thread.currentThread());
                         txnCtx = new TransactionContext(jobId);
                         transactionContextRepository.put(jobId, txnCtx);
                     }
@@ -114,7 +113,6 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
             if (txnCtx.isWriteTxn()) {
                 LogRecord logRecord = ((TransactionContext) txnCtx).getLogRecord();
                 TransactionUtil.formJobTerminateLogRecord(txnCtx, logRecord, true);
-                System.out.println("Entity log jobId " + txnCtx.getJobId() + " log " + logRecord.getLogRecordForDisplay());
                 txnSubsystem.getLogManager().log(logRecord);
             }
         } catch (Exception ae) {
@@ -126,7 +124,6 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
         } finally {
             txnSubsystem.getLockManager().releaseLocks(txnCtx);
             transactionContextRepository.remove(txnCtx.getJobId());
-            System.out.println("Transaction commit jobid " + txnCtx.getJobId() + " write" + txnCtx.isWriteTxn() + this.getClass() + " " + Thread.currentThread());
             txnCtx.setTxnState(ITransactionManager.COMMITTED);
         }
     }

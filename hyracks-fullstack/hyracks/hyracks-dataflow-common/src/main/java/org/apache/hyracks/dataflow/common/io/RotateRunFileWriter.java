@@ -129,6 +129,7 @@ public class RotateRunFileWriter implements IFrameWriter {
         }
         LOGGER.finest("Writer proceed");
         bwList[currentWriterIdx.get()].nextFrame(buffer);
+        System.out.println("Writer frame counter: " + frameCounter);
     }
 
     @Override

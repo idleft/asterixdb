@@ -45,6 +45,8 @@ public class RotateRunFileReader implements IFrameReader {
     private int currentFileIdx;
     private final int token;
 
+    private int frameCounter;
+
     public RotateRunFileReader(int currentFileIdx, IIOManager ioManager, long initLength,
             FileReference[] bufferFileList, RotateRunFileWriter rotateRunFileWriter, int token) {
         this.ioManager = ioManager;
@@ -55,6 +57,7 @@ public class RotateRunFileReader implements IFrameReader {
         this.currentFileIdx = currentFileIdx;
         this.finished = false;
         this.token = token;
+        this.frameCounter = 0;
     }
 
     @Override
@@ -134,6 +137,7 @@ public class RotateRunFileReader implements IFrameReader {
                 }
             }
             frame.getBuffer().flip();
+            System.out.println("Reader frame count: " + frameCounter++);
             return true;
         } catch (InterruptedException e) {
             throw new HyracksDataException(e);
