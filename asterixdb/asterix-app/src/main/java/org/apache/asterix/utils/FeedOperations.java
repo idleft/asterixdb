@@ -173,6 +173,7 @@ public class FeedOperations {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, "" + subscribeStmt.getPolicy());
         metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
                 StringUtils.join(subscribeStmt.getLocations(), ','));
+        metadataProvider.setWriteTransaction(true);
 
         CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
                 subscribeStmt.getSubscriptionRequest(), subscribeStmt.getVarCounter());

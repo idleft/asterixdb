@@ -73,13 +73,15 @@ public class RotateRunFileReader implements IFrameReader {
             //            System.out.println("Reader: readPtr " + readPtr + " currentSize " + currentSize + " writerSize "
             //                    + rotateRunFileWriter.getWriterSize(currentFileIdx));
             while (readPtr >= currentSize) {
-                if ((rotateRunFileWriter.isFinished() && currentFileIdx == rotateRunFileWriter.currentWriterIdx.get())
-                        || finished) {
-                    return false;
-                } else if (readPtr < rotateRunFileWriter.getWriterSize(currentFileIdx)) {
+                if (readPtr < rotateRunFileWriter.getWriterSize(currentFileIdx)) {
                     // update the current file size
                     currentSize = rotateRunFileWriter.getWriterSize(currentFileIdx);
                     LOGGER.fine("Catch up with writer in " + currentFileIdx);
+                } else if ((rotateRunFileWriter.isFinished() && currentFileIdx == rotateRunFileWriter.currentWriterIdx.get())
+                        || finished) {
+                    close();
+//                    System.out.println("Reader finished at " + currentFileIdx + " position " + readPtr);
+                    return false;
                 } else if (readPtr < rotateRunFileWriter.bufferFileSize) {
                     // current file still growing
                     synchronized (rotateRunFileWriter.readToWriteMutex) {
@@ -141,6 +143,7 @@ public class RotateRunFileReader implements IFrameReader {
     @Override
     public synchronized void close() throws HyracksDataException {
         if (handle != null) {
+//            System.out.println("Reader closed at " + currentFileIdx + " position " + readPtr);
             rotateRunFileWriter.detachFile(currentFileIdx, token);
             ioManager.close(handle);
             handle = null;

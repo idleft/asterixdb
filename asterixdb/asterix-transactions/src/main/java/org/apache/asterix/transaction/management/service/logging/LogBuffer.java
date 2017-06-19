@@ -240,6 +240,7 @@ public class LogBuffer implements ILogBuffer {
                         if (logRecord.getLogType() == LogType.ENTITY_COMMIT) {
                             reusableJobId.setId(logRecord.getJobId());
                             reusableDatasetId.setId(logRecord.getDatasetId());
+                            System.out.println("Transaction log flushed " + reusableJobId + Thread.currentThread() + " log " + logRecord.getLogRecordForDisplay() + " flushed " + logRecord.isFlushed());
                             txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
                             txnSubsystem.getLockManager().unlock(reusableDatasetId, logRecord.getPKHashValue(),
                                     LockMode.ANY, txnCtx);
@@ -251,6 +252,7 @@ public class LogBuffer implements ILogBuffer {
                                 || logRecord.getLogType() == LogType.ABORT) {
                             reusableJobId.setId(logRecord.getJobId());
                             txnCtx = txnSubsystem.getTransactionManager().getTransactionContext(reusableJobId, false);
+                            System.out.println("Transaction log flushed " + reusableJobId + Thread.currentThread() + " log " + logRecord.getLogRecordForDisplay() + " flushed " + logRecord.isFlushed());
                             txnCtx.notifyOptracker(true);
                             notifyJobTermination();
                         } else if (logRecord.getLogType() == LogType.FLUSH) {
@@ -302,6 +304,7 @@ public class LogBuffer implements ILogBuffer {
         }
         synchronized (logRecord) {
             logRecord.isFlushed(true);
+            System.out.println("LogRecord Notify: " + logRecord.getLogRecordForDisplay() + " Thread " + Thread.currentThread());
             logRecord.notifyAll();
         }
         PrimaryIndexOperationTracker opTracker = logRecord.getOpTracker();

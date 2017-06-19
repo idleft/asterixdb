@@ -100,23 +100,25 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
                     }
                 }
             } else {
-                throw new ACIDException("TransactionContext of " + jobId + " doesn't exist.");
+                throw new ACIDException("TransactionContext of " + jobId + " doesn't exist." + Thread.currentThread());
             }
         }
         return txnCtx;
     }
 
     @Override
-    public synchronized void commitTransaction(ITransactionContext txnCtx, DatasetId datasetId, int PKHashVal)
+    public void commitTransaction(ITransactionContext txnCtx, DatasetId datasetId, int PKHashVal)
             throws ACIDException {
         //Only job-level commits call this method.
         try {
             if (txnCtx.isWriteTxn()) {
                 LogRecord logRecord = ((TransactionContext) txnCtx).getLogRecord();
                 TransactionUtil.formJobTerminateLogRecord(txnCtx, logRecord, true);
+                System.out.println("Entity log jobId " + txnCtx.getJobId() + " log " + logRecord.getLogRecordForDisplay());
                 txnSubsystem.getLogManager().log(logRecord);
             }
         } catch (Exception ae) {
+            System.out.println("Exception ! " + ae);
             if (LOGGER.isLoggable(Level.SEVERE)) {
                 LOGGER.severe(" caused exception in commit !" + txnCtx.getJobId());
             }
@@ -124,7 +126,7 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
         } finally {
             txnSubsystem.getLockManager().releaseLocks(txnCtx);
             transactionContextRepository.remove(txnCtx.getJobId());
-            System.out.println("Transaction commit jobid " + txnCtx.getJobId() + " " + this.getClass() + " " + Thread.currentThread());
+            System.out.println("Transaction commit jobid " + txnCtx.getJobId() + " write" + txnCtx.isWriteTxn() + this.getClass() + " " + Thread.currentThread());
             txnCtx.setTxnState(ITransactionManager.COMMITTED);
         }
     }

@@ -59,7 +59,8 @@ public class JobEventListenerFactory implements IJobletEventListenerFactory {
                 try {
                     ITransactionManager txnManager = ((INcApplicationContext) jobletContext.getServiceContext()
                             .getApplicationContext()).getTransactionSubsystem().getTransactionManager();
-                    ITransactionContext txnContext = txnManager.getTransactionContext(jobId, false);
+                    ITransactionContext txnContext;
+                    txnContext = txnManager.getTransactionContext(jobId, false);
                     txnContext.setWriteTxn(transactionalWrite);
                     txnManager.completedTransaction(txnContext, DatasetId.NULL, -1,
                             !(jobStatus == JobStatus.FAILURE));
@@ -71,8 +72,8 @@ public class JobEventListenerFactory implements IJobletEventListenerFactory {
             @Override
             public void jobletStart() {
                 try {
-                    ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
-                            .getTransactionSubsystem().getTransactionManager().getTransactionContext(jobId, true);
+                        ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
+                                .getTransactionSubsystem().getTransactionManager().getTransactionContext(jobId, true);
                 } catch (ACIDException e) {
                     throw new Error(e);
                 }

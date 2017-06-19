@@ -111,10 +111,10 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
              * indicative of a failure at the sibling intake operator location. The surviving intake partitions must
              * continue to live and receive data from the external source.
              */
-            writer.fail();
+            rotateRunFileWriter.fail();
             throw new HyracksDataException(e);
         } finally {
-            writer.close();
+            rotateRunFileWriter.close();
         }
     }
 

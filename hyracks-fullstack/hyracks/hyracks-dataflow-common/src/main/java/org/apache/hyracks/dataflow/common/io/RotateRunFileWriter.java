@@ -142,6 +142,7 @@ public class RotateRunFileWriter implements IFrameWriter {
     @Override
     public void close() throws HyracksDataException {
         if (!failed) {
+//            System.out.println("Writer finished at " + currentWriterIdx + " position " + bwList[currentWriterIdx.get()].getFileSize());
             this.finished = true;
             synchronized (readToWriteMutex) {
                 readToWriteMutex.notifyAll();
