@@ -35,6 +35,7 @@ public class NoOpSubscriber implements IActiveEventSubscriber {
 
     @Override
     public void notify(ActiveEvent event) {
+        // no op
     }
 
     @Override
@@ -44,13 +45,16 @@ public class NoOpSubscriber implements IActiveEventSubscriber {
 
     @Override
     public void sync() {
+        // no op
     }
 
     @Override
     public void unsubscribe() {
+        // no op
     }
 
     @Override
     public void subscribed(IActiveEntityEventsListener eventsListener) throws HyracksDataException {
+        // no op
     }
 }

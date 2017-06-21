@@ -272,7 +272,8 @@ public class FeedOperations {
             }
 
             // make connections between operators
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : subJob
+            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
+                    Pair<IOperatorDescriptor, Integer>>> entry : subJob
                     .getConnectorOperatorMap().entrySet()) {
                 ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
                 IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
