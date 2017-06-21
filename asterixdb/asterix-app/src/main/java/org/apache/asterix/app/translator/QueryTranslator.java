@@ -75,6 +75,7 @@ import org.apache.asterix.compiler.provider.AqlCompilationProvider;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.management.FeedEventsListener;
+import org.apache.asterix.external.feed.watch.WaitForStateSubscriber;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.indexing.IndexingConstants;
 import org.apache.asterix.external.util.ExternalDataConstants;
@@ -935,7 +936,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             // #. add a new index with PendingAddOp
             index = new Index(dataverseName, datasetName, indexName, stmtCreateIndex.getIndexType(), indexFields,
                     keySourceIndicators, indexFieldTypes, stmtCreateIndex.getGramLength(), overridesFieldTypes,
-                    stmtCreateIndex.isEnforced(),false, MetadataUtil.PENDING_ADD_OP);
+                    stmtCreateIndex.isEnforced(), false, MetadataUtil.PENDING_ADD_OP);
             MetadataManager.INSTANCE.addIndex(metadataProvider.getMetadataTxnContext(), index);
 
             // #. prepare to create the index artifact in NC.
@@ -1080,8 +1081,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
     protected void validateIndexKeyFields(CreateIndexStatement stmtCreateIndex, List<Integer> keySourceIndicators,
             ARecordType aRecordType, ARecordType metaRecordType, List<List<String>> indexFields,
             List<IAType> indexFieldTypes) throws AlgebricksException {
-        ValidateUtil.validateKeyFields(aRecordType, metaRecordType, indexFields, keySourceIndicators,
-                indexFieldTypes, stmtCreateIndex.getIndexType());
+        ValidateUtil.validateKeyFields(aRecordType, metaRecordType, indexFields, keySourceIndicators, indexFieldTypes,
+                stmtCreateIndex.getIndexType());
     }
 
     protected void handleCreateTypeStatement(MetadataProvider metadataProvider, Statement stmt) throws Exception {
@@ -1185,11 +1186,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                             MetadataManager.INSTANCE.getDatasetIndexes(mdTxnCtx, dataverseName, datasetName);
                     for (int k = 0; k < indexes.size(); k++) {
                         if (ExternalIndexingOperations.isFileIndex(indexes.get(k))) {
-                            jobsToExecute.add(ExternalIndexingOperations.buildDropFilesIndexJobSpec(metadataProvider,
-                                    dataset));
-                        } else {
                             jobsToExecute.add(
-                                    IndexUtil.buildDropIndexJobSpec(indexes.get(k), metadataProvider, dataset));
+                                    ExternalIndexingOperations.buildDropFilesIndexJobSpec(metadataProvider, dataset));
+                        } else {
+                            jobsToExecute
+                                    .add(IndexUtil.buildDropIndexJobSpec(indexes.get(k), metadataProvider, dataset));
                         }
                     }
                     ExternalDatasetsRegistry.INSTANCE.removeDatasetInfo(dataset);
@@ -2040,11 +2041,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                             compilationProvider, storageComponentProvider, qtFactory, hcc);
 
             JobSpecification feedJob = jobInfo.getLeft();
-            listener = new FeedEventsListener(appCtx, entityId, datasets, jobInfo.getRight().getLocations());
+            listener = new FeedEventsListener(appCtx, entityId, datasets, jobInfo.getRight());
             activeEventHandler.registerListener(listener);
-            IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STARTED);
+            IActiveEventSubscriber eventSubscriber = new WaitForStateSubscriber(listener, ActivityState.STARTED);
             feedJob.setProperty(ActiveJobNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
-
             // TODO(Yingyi): currently we do not check IFrameWriter protocol violations for Feed jobs.
             // We will need to design general exception handling mechanism for feeds.
             JobUtils.runJob(hcc, feedJob,
@@ -2074,7 +2074,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         if (listener == null) {
             throw new AlgebricksException("Feed " + feedName + " is not started.");
         }
-        IActiveEventSubscriber eventSubscriber = listener.subscribe(ActivityState.STOPPED);
+        IActiveEventSubscriber eventSubscriber = new WaitForStateSubscriber(listener, ActivityState.STOPPED);
         // Transaction
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
@@ -2083,8 +2083,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             // validate
             FeedMetadataUtil.validateIfFeedExists(dataverseName, feedName, mdTxnCtx);
             // Construct ActiveMessage
-            for (int i = 0; i < listener.getSources().length; i++) {
-                String intakeLocation = listener.getSources()[i];
+            for (int i = 0; i < listener.getLocations().getLocations().length; i++) {
+                // TODO: Figure out where PartitionId is i
+                String intakeLocation = listener.getLocations().getLocations()[i];
                 FeedOperations.SendStopMessageToNode(appCtx, feedId, intakeLocation, i);
             }
             eventSubscriber.sync();
@@ -2224,8 +2225,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (ds.getDatasetType() == DatasetType.INTERNAL) {
                 for (Index index : indexes) {
                     if (index.isSecondaryIndex()) {
-                        jobsToExecute
-                                .add(IndexUtil.buildSecondaryIndexCompactJobSpec(ds, index, metadataProvider));
+                        jobsToExecute.add(IndexUtil.buildSecondaryIndexCompactJobSpec(ds, index, metadataProvider));
                     }
                 }
             } else {
@@ -2250,8 +2250,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
     }
 
     protected void prepareCompactJobsForExternalDataset(List<Index> indexes, Dataset ds,
-            List<JobSpecification> jobsToExecute, MetadataProvider metadataProvider)
-            throws AlgebricksException {
+            List<JobSpecification> jobsToExecute, MetadataProvider metadataProvider) throws AlgebricksException {
         for (int j = 0; j < indexes.size(); j++) {
             jobsToExecute.add(IndexUtil.buildSecondaryIndexCompactJobSpec(ds, indexes.get(j), metadataProvider));
 

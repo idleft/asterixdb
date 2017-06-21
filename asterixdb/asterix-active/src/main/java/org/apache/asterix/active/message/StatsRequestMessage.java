@@ -16,35 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.active;
+package org.apache.asterix.active.message;
 
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.job.JobId;
+import java.io.Serializable;
 
-public interface IActiveRuntime {
+public class StatsRequestMessage extends ActiveManagerMessage {
+    private static final long serialVersionUID = 1L;
+    private final long reqId;
 
-    /**
-     * @return the unique runtime id associated with the active runtime
-     */
-    ActiveRuntimeId getRuntimeId();
+    public StatsRequestMessage(byte kind, Serializable payload, long reqId) {
+        super(kind, payload);
+        this.reqId = reqId;
+    }
 
-    /**
-     * Stops the running activity
-     *
-     * @throws HyracksDataException
-     * @throws InterruptedException
-     */
-    void stop() throws HyracksDataException, InterruptedException;
-
-    /**
-     * @return the job id associated with this active runtime
-     */
-    JobId getJobId();
-
-    /**
-     * @return the runtime stats for monitoring purposes
-     */
-    default String getStats() {
-        return "Runtime stats is not available.";
+    public long getReqId() {
+        return reqId;
     }
 }
