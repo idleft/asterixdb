@@ -104,7 +104,7 @@ public class ActiveManager {
             IActiveRuntime runtime = runtimes.get(runtimeId);
             long reqId = message.getReqId();
             if (runtime == null) {
-                LOGGER.warn("Request to stop a runtime that is not registered " + runtimeId);
+                LOGGER.warn("Request stats of a runtime that is not registered " + runtimeId);
                 // Send a failure message
                 ((NodeControllerService) serviceCtx.getControllerService())
                         .sendApplicationMessageToCC(
