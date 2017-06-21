@@ -19,6 +19,7 @@
 package org.apache.asterix.external.feed.management;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
@@ -26,14 +27,19 @@ import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveEvent;
 import org.apache.asterix.active.ActiveLifecycleListener;
+import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEventSubscriber;
+import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.active.message.ActivePartitionMessage;
+import org.apache.asterix.active.message.StatsRequestMessage;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
+import org.apache.asterix.common.messaging.api.ICCMessageBroker;
+import org.apache.asterix.common.messaging.api.INcAddressedMessage;
 import org.apache.asterix.common.metadata.IDataset;
-import org.apache.asterix.external.feed.watch.FeedEventSubscriber;
-import org.apache.asterix.external.feed.watch.NoOpSubscriber;
+import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
+import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobStatus;
@@ -42,24 +48,21 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     // constants
     private static final Logger LOGGER = Logger.getLogger(FeedEventsListener.class.getName());
     // members
-    private final ICcApplicationContext appCtx;
-    private final String[] sources;
-    private final List<IActiveEventSubscriber> subscribers;
+    private final AlgebricksAbsolutePartitionConstraint locations;
+    private final String[] feedStats;
     private int numRegistered;
 
     public FeedEventsListener(ICcApplicationContext appCtx, EntityId entityId, List<IDataset> datasets,
-            String[] sources) {
-        this.appCtx = appCtx;
-        this.entityId = entityId;
-        this.datasets = datasets;
-        this.sources = sources;
-        subscribers = new ArrayList<>();
-        state = ActivityState.STOPPED;
+            AlgebricksAbsolutePartitionConstraint locations) {
+        super(appCtx, entityId, datasets);
+        this.locations = locations;
+        feedStats = new String[locations.getLocations().length];
     }
 
     @Override
     public synchronized void notify(ActiveEvent event) {
         try {
+            LOGGER.finer("EventListener is notified.");
             switch (event.getEventKind()) {
                 case JOB_STARTED:
                     start(event);
@@ -85,23 +88,29 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         Iterator<IActiveEventSubscriber> it = subscribers.iterator();
         while (it.hasNext()) {
             IActiveEventSubscriber subscriber = it.next();
-            if (subscriber.done()) {
+            if (subscriber.isDone()) {
                 it.remove();
             } else {
-                subscriber.notify(event);
-                if (subscriber.done()) {
+                try {
+                    subscriber.notify(event);
+                } catch (HyracksDataException e) {
+                    LOGGER.log(Level.WARNING, "Failed to notify subscriber", e);
+                }
+                if (subscriber.isDone()) {
                     it.remove();
                 }
             }
         }
     }
 
-    private void partition(ActivePartitionMessage message) {
+    private synchronized void partition(ActivePartitionMessage message) {
         if (message.getEvent() == ActivePartitionMessage.ACTIVE_RUNTIME_REGISTERED) {
             numRegistered++;
-            if (numRegistered == getSources().length) {
+            if (numRegistered == getLocations().getLocations().length) {
                 state = ActivityState.STARTED;
             }
+        } else if (message.getEvent() == ActivePartitionMessage.ACTIVE_RUNTIME_STATS) {
+            feedStats[message.getActiveRuntimeId().getPartition()] = (String) message.getPayload();
         }
     }
 
@@ -118,29 +127,41 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         state = ActivityState.STARTING;
     }
 
+    public AlgebricksAbsolutePartitionConstraint getLocations() {
+        return locations;
+    }
+
+    @SuppressWarnings("unchecked")
     @Override
-    public IActiveEventSubscriber subscribe(ActivityState state) throws HyracksDataException {
-        if (state != ActivityState.STARTED && state != ActivityState.STOPPED) {
-            throw new HyracksDataException("Can only wait for STARTED or STOPPED state");
-        }
+    public void refreshStats(long timeout) throws HyracksDataException {
         synchronized (this) {
-            if (this.state == ActivityState.FAILED) {
-                throw new HyracksDataException("Feed has failed");
-            } else if (this.state == state) {
-                return NoOpSubscriber.INSTANCE;
+            if (statsRequestState == RequestState.STARTED) {
+                return;
+            } else {
+                statsRequestState = RequestState.STARTED;
             }
-            return doSubscribe(state);
         }
-    }
-
-    // Called within synchronized block
-    private FeedEventSubscriber doSubscribe(ActivityState state) {
-        FeedEventSubscriber subscriber = new FeedEventSubscriber(this, state);
-        subscribers.add(subscriber);
-        return subscriber;
-    }
-
-    public String[] getSources() {
-        return sources;
+        ICCMessageBroker messageBroker = (ICCMessageBroker) appCtx.getServiceContext().getMessageBroker();
+        long reqId = messageBroker.newRequestId();
+        List<INcAddressedMessage> requests = new ArrayList<>();
+        List<String> ncs = Arrays.asList(locations.getLocations());
+        for (int i = 0; i < ncs.size(); i++) {
+            requests.add(new StatsRequestMessage(ActiveManagerMessage.REQUEST_STATS,
+                    new ActiveRuntimeId(entityId, FeedIntakeOperatorNodePushable.class.getSimpleName(), i), reqId));
+        }
+        try {
+            List<String> response = (List<String>) messageBroker.sendSyncRequestToNCs(reqId, ncs, requests, timeout);
+            StringBuilder strBuilder = new StringBuilder();
+            strBuilder.append('[').append(response.get(0));
+            for (int i = 1; i < response.size(); i++) {
+                strBuilder.append(',').append(response.get(i));
+            }
+            strBuilder.append(']');
+            stats = strBuilder.toString();
+            statsTimestamp = System.currentTimeMillis();
+            notifySubscribers(statsUpdatedEvent);
+        } catch (Exception e) {
+            throw HyracksDataException.create(e);
+        }
     }
 }

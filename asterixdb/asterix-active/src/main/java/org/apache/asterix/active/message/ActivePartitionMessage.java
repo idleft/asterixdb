@@ -19,6 +19,7 @@
 package org.apache.asterix.active.message;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.apache.asterix.active.ActiveLifecycleListener;
 import org.apache.asterix.active.ActiveRuntimeId;
@@ -29,18 +30,15 @@ import org.apache.hyracks.api.job.JobId;
 
 public class ActivePartitionMessage implements ICcAddressedMessage {
 
+    private static final long serialVersionUID = 1L;
     public static final byte ACTIVE_RUNTIME_REGISTERED = 0x00;
     public static final byte ACTIVE_RUNTIME_DEREGISTERED = 0x01;
     public static final byte GENERIC_EVENT = 0x02;
-    private static final long serialVersionUID = 1L;
+    public static final byte ACTIVE_RUNTIME_STATS = 0x03;
     private final ActiveRuntimeId activeRuntimeId;
     private final JobId jobId;
     private final Serializable payload;
     private final byte event;
-
-    public ActivePartitionMessage(ActiveRuntimeId activeRuntimeId, JobId jobId, byte event) {
-        this(activeRuntimeId, jobId, event, null);
-    }
 
     public ActivePartitionMessage(ActiveRuntimeId activeRuntimeId, JobId jobId, byte event, Serializable payload) {
         this.activeRuntimeId = activeRuntimeId;
@@ -73,6 +71,24 @@ public class ActivePartitionMessage implements ICcAddressedMessage {
 
     @Override
     public String toString() {
-        return ActivePartitionMessage.class.getSimpleName();
+        return ActivePartitionMessage.class.getSimpleName() + event;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(activeRuntimeId, jobId, payload, event);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || !(o instanceof ActivePartitionMessage)) {
+            return false;
+        }
+        if (this == o) {
+            return true;
+        }
+        ActivePartitionMessage other = (ActivePartitionMessage) o;
+        return activeRuntimeId.equals(other.activeRuntimeId) && jobId.equals(other.jobId) && event == other.event
+                && payload.equals(other.payload);
     }
 }

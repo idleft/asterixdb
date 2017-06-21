@@ -18,21 +18,63 @@
  */
 package org.apache.asterix.external.feed.management;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.asterix.active.ActiveEvent;
+import org.apache.asterix.active.ActiveEvent.Kind;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventsListener;
+import org.apache.asterix.active.IActiveEventSubscriber;
+import org.apache.asterix.common.dataflow.ICcApplicationContext;
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.metadata.IDataset;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 
 public abstract class ActiveEntityEventsListener implements IActiveEntityEventsListener {
 
+    enum RequestState {
+        INIT,
+        STARTED,
+        TIMEDOUT,
+        FINISHED
+    }
+
     // members
-    protected EntityId entityId;
-    protected List<IDataset> datasets;
     protected volatile ActivityState state;
     protected JobId jobId;
+    protected final List<IActiveEventSubscriber> subscribers = new ArrayList<>();
+    protected final ICcApplicationContext appCtx;
+    protected final EntityId entityId;
+    protected final List<IDataset> datasets;
+    protected final ActiveEvent statsUpdatedEvent;
+    protected long statsTimestamp;
+    protected String stats;
+    protected RequestState statsRequestState;
+
+    public ActiveEntityEventsListener(ICcApplicationContext appCtx, EntityId entityId, List<IDataset> datasets) {
+        this.appCtx = appCtx;
+        this.entityId = entityId;
+        this.datasets = datasets;
+        state = ActivityState.STOPPED;
+        statsTimestamp = Long.MIN_VALUE;
+        statsRequestState = RequestState.INIT;
+        statsUpdatedEvent = new ActiveEvent(null, Kind.STATS_UPDATED, entityId);
+    }
+
+    @Override
+    public synchronized void subscribe(IActiveEventSubscriber subscriber) throws HyracksDataException {
+        if (this.state == ActivityState.FAILED) {
+            throw new RuntimeDataException(ErrorCode.CANNOT_SUBSCRIBE_TO_FAILED_ACTIVE_ENTITY);
+        }
+        subscriber.subscribed(this);
+        if (!subscriber.isDone()) {
+            subscribers.add(subscriber);
+        }
+    }
 
     @Override
     public EntityId getEntityId() {
@@ -51,5 +93,15 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityEventsL
 
     public JobId getJobId() {
         return jobId;
+    }
+
+    @Override
+    public String getStats() {
+        return stats;
+    }
+
+    @Override
+    public long getStatsTimeStamp() {
+        return statsTimestamp;
     }
 }
