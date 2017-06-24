@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -63,7 +64,11 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     public synchronized void notify(ActiveEvent event) {
         try {
             LOGGER.finer("EventListener is notified.");
-            switch (event.getEventKind()) {
+            ActiveEvent.Kind eventKind = event.getEventKind();
+            switch (eventKind) {
+                case JOB_CREATED:
+                    state = ActivityState.CREATED;
+                    break;
                 case JOB_STARTED:
                     start(event);
                     break;
@@ -135,7 +140,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     @Override
     public void refreshStats(long timeout) throws HyracksDataException {
         synchronized (this) {
-            if (statsRequestState == RequestState.STARTED) {
+            if (state != ActivityState.STARTED || statsRequestState == RequestState.STARTED) {
                 return;
             } else {
                 statsRequestState = RequestState.STARTED;
@@ -154,14 +159,19 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
             StringBuilder strBuilder = new StringBuilder();
             strBuilder.append('[').append(response.get(0));
             for (int i = 1; i < response.size(); i++) {
-                strBuilder.append(',').append(response.get(i));
+                strBuilder.append(", ").append(response.get(i));
             }
             strBuilder.append(']');
             stats = strBuilder.toString();
             statsTimestamp = System.currentTimeMillis();
             notifySubscribers(statsUpdatedEvent);
+        } catch (TimeoutException e) {
+            // Following two state changes are synchronized
+            statsRequestState = RequestState.TIMEDOUT;
         } catch (Exception e) {
             throw HyracksDataException.create(e);
         }
+        // Same as above
+        statsRequestState = RequestState.FINISHED;
     }
 }

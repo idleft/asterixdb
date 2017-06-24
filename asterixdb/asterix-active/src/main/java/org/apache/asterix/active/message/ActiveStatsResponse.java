@@ -55,6 +55,8 @@ public class ActiveStatsResponse implements ICcAddressedMessage, INcResponse {
             case UNINITIALIZED:
                 // First to arrive
                 result.setRight(new ArrayList<String>());
+                // No failure, change state to success
+                result.setLeft(ResponseState.SUCCESS);
                 // Fallthrough
             case SUCCESS:
                 List<String> response = (List<String>) result.getRight();

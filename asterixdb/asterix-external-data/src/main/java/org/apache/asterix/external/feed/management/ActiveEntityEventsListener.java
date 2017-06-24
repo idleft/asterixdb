@@ -63,6 +63,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityEventsL
         statsTimestamp = Long.MIN_VALUE;
         statsRequestState = RequestState.INIT;
         statsUpdatedEvent = new ActiveEvent(null, Kind.STATS_UPDATED, entityId);
+        stats = "N/A";
     }
 
     @Override
