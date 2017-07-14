@@ -45,7 +45,7 @@
   tasks:
     - name: Ship master key to slaves
       copy:
-        src: conf/master.key
+        src: ../conf/master.key
         dest: "~/master.key"
         mode: 0600
     - name: Add master key to authorized_keys list

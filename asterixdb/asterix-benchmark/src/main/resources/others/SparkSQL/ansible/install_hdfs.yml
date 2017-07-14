@@ -20,7 +20,7 @@
 - name: Install HDFS
   hosts: all
   tasks:
-    - include_vars: spark_sql_settings.xml
+    - include_vars: spark_sql_settings.yml
     - unarchive:
         src: http://apache.mirrors.hoobly.com/hadoop/common/hadoop-2.8.0/hadoop-2.8.0.tar.gz
         dest: /home/{{ user }}
@@ -30,7 +30,7 @@
   hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
-    - file: 
+    - file:
         path: '{{ hadoop_base }}/etc/hadoop/slaves'
         state: absent
     - shell: 'echo {{ item }} >> {{ hadoop_base }}/etc/hadoop/slaves'
@@ -43,11 +43,11 @@
     - include_vars: spark_sql_settings.yml
     - name: Populate core-site-template.xml
       template:
-        src: conf/core-site-template.xml
+        src: ../conf/core-site-template.xml
         dest: "{{ hadoop_base }}/etc/hadoop/core-site.xml"
     - name: Populate hdfs-site-template.xml
       template:
-        src: conf/hdfs-site-template.xml
+        src: ../conf/hdfs-site-template.xml
         dest: "{{ hadoop_base }}/etc/hadoop/hdfs-site.xml"
     - name: Add memory constraint on all nodes
       shell: echo "export HADOOP_HEAPSIZE={{ hdfs_memory }}" >> {{ hadoop_base }}/etc/hadoop/hadoop-env.sh
