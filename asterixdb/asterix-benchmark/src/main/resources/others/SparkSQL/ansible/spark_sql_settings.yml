@@ -27,7 +27,7 @@ home_dir: "/home/{{ user }}"
 
 data_dir: "{{ home_dir }}/tpch"
 
-hdfs_memory: 256
+hdfs_memory: 128
 
 spark_memory: 512
 
