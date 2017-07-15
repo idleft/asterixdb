@@ -34,14 +34,14 @@ then
 fi
 
 # Configure HDFS
-ansible-playbook -i $INVENTORY install_hdfs.yml
-ansible-playbook -i $INVENTORY start_hdfs.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
 # Configure Sparks
-ansible-playbook -i $INVENTORY install_sparks.yml
-ansible-playbook -i $INVENTORY start_sparks.yml
-# Generate data
-ansible-playbook -i $INVENTORY gen_tpch.yml
-ansible-playbook -i $INVENTORY load_tpch.yml
-# Execute queries
-ansible-playbook -i $INVENTORY prepare_queries.yml
-ansible-playbook -i $INVENTORY execute_queries.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_sparks.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_sparks.yml
+## Generate data
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/gen_tpch.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
+## Execute queries
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/prepare_queries.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml
