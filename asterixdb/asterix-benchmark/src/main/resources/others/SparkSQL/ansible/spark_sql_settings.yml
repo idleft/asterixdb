@@ -38,3 +38,9 @@ query_files_root: "queries"
 dfs_replication: 1
 
 result_file: "result.txt"
+
+generator: dbgen
+
+binary_dir: "{{ home_dir }}/{{ generator }}"
+
+data_dir: "{{ home_dir }}/tpch"

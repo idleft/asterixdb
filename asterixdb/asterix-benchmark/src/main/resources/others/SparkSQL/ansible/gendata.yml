@@ -17,9 +17,20 @@
 # under the License.
 # ------------------------------------------------------------
 
-- hosts: cc
-  tasks:
-    - name: Configure binary on master
-      include: ../../../benchmarks/tpch/gen/compile.yml
-    - name: Populate dataset on master
-      include: gendata.yml
+- include_vars: spark_sql_settings.yml
+
+- name: Generate data
+  command: "./{{ generator }} -s 1"
+  args:
+     chdir: "{{ binary_dir }}"
+
+- name: Ensure data directory exits
+  file:
+    path: "{{ data_dir }}"
+    state: directory
+
+- name: Cleanup data directory
+  shell: "rm -rf {{ data_dir }}/*"
+
+- name: Move generated files
+  shell: "mv {{ binary_dir }}/*.tbl {{ data_dir }}/"
