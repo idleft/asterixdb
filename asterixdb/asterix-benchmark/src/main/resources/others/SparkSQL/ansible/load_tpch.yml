@@ -21,6 +21,10 @@
   tasks:
     - include_vars: spark_sql_settings.yml
     - name: Create TPCH data dir on HDFS
-      shell: '{{ hadoop_base }}/bin/hdfs dfs -mkdir -p {{ data_dir }}'
+      shell: './hdfs dfs -mkdir -p {{ data_dir }}'
+      args:
+        chdir: '{{ hadoop_base }}/bin/'
     - name: Put data onto HDFS
-      shell: ' {{hadoop_base }}/bin/hdfs dfs -put {{ data_dir }}/* {{ data_dir }}'
+      shell: './hdfs dfs -put {{ data_dir }}/* {{ data_dir }}'
+      args:
+        chdir: '{{ hadoop_base }}/bin/'
