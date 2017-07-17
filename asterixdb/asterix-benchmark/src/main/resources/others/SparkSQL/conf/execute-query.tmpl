@@ -87,6 +87,6 @@ for (i <- 1 to round) {
 
 // Write result
 val writer = new PrintWriter(new File("{{ result_file }}"))
-for ((k, v) <- etime) writer.print("{\"group\": \""+ k.split('.')(0) + ".sqlpp\", \"metric\": \"" + metric + "\", \"value\": "+ v +"}\n")
+for ((k, v) <- etime) writer.print("'{\"group\": \""+ k.split('.')(0) + ".sqlpp\", \"metric\": \"" + metric + "\", \"value\": "+ v +"}'\n")
 writer.close()
 System.exit(0)
