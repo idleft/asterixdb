@@ -22,7 +22,7 @@ import scala.io.Source
 import java.io._
 import org.apache.http.impl.client.DefaultHttpClient
 
-val hdfs_host = "{{ groups['master'][0] }}:9000"
+val hdfs_host = "{{ groups['cc'][0] }}:9000"
 val hdfs_data_root = "hdfs://" + hdfs_host + "/home/{{ user }}/tpch/"
 val queries_root = "{{ query_files_root }}/"
 val round = {{ test_round }}
