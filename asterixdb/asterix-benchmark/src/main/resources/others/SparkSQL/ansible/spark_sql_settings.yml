@@ -27,7 +27,7 @@ home_dir: "/home/{{ user }}"
 
 data_dir: "{{ home_dir }}/t"
 
-hdfs_memory: 128
+hdfs_memory: 256
 
 spark_memory: 512
 

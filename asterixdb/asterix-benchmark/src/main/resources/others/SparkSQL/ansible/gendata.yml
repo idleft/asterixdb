@@ -24,7 +24,7 @@
   args:
      chdir: "{{ binary_dir }}"
 
-- name: Ensure data directory exits
+- name: Ensure data directory exists
   file:
     path: "{{ data_dir }}"
     state: directory

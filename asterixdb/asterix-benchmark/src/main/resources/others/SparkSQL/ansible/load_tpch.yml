@@ -24,7 +24,7 @@
       shell: './hdfs dfs -mkdir -p {{ data_dir }}'
       args:
         chdir: '{{ hadoop_base }}/bin/'
-    - name: Put data onto HDFS
+    - name: Put data on to HDFS
       shell: './hdfs dfs -put {{ data_dir }}/* {{ data_dir }}'
       args:
         chdir: '{{ hadoop_base }}/bin/'

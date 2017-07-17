@@ -24,4 +24,4 @@
     - name: Execute query with Spark
       shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala
     - name: Report result to REST
-      shell: while read LINE; do curl -XPOST -m 3600 -d '$LINE' {{ result_url }}; done <~/{{ result_file }}
+      shell: <~/{{ result_file }} xargs -I % curl -XPOST -m 3600 -d % {{ result_url }}
