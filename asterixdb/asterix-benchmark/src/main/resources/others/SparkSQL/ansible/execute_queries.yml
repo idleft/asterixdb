@@ -24,12 +24,12 @@
     - name: Execute query with Spark
       shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala
     - stat:
-        path: "~/{{ result_file }}"
+        path: "{{ result_file }}"
       register: p
     - name: Report result to REST
-      shell: <~/{{ result_file }} xargs -I % curl -XPOST -m 3600 -d % http://ec2-34-209-65-185.us-west-2.compute.amazonaws.com:8080/api/v1/benchmarks
+      shell: <{{ result_file }} xargs -I % curl -XPOST -m 3600 -d % http://ec2-34-209-65-185.us-west-2.compute.amazonaws.com:8080/api/v1/benchmarks
       when: p.stat.exists
     - name: Remove result
       file:
-        path: "~/{{ result_file }}"
+        path: "{{ result_file }}"
         state: absent
