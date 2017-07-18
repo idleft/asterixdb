@@ -37,7 +37,7 @@ query_files_root: "queries"
 
 dfs_replication: 1
 
-result_file: "result.txt"
+result_file: "{{home_dir}}/result.txt"
 
 generator: dbgen
 
