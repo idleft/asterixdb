@@ -27,14 +27,8 @@
         path: "{{ result_file }}"
       register: p
     - name: Report result to REST
-      shell: <{{ result_file }} xargs -I % curl -XPOST -m 3600 -d % http://ec2-34-209-65-185.us-west-2.compute.amazonaws.com:8080/api/v1/benchmarks
+      shell: <{{ result_file }} xargs -I % curl -XPOST -m 3600 -d % {{ result_url }}
       when: p.stat.exists
-    - name: Find out what the results are
-      slurp:
-        src: "{{ result_file}}"
-      register: res
-    - debug:
-        msg: "{{ result_file }} + {{ res['content'] | b64decode }}"
     - name: Remove result
       file:
         path: "{{ result_file }}"
