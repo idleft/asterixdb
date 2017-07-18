@@ -42,3 +42,5 @@ result_file: "{{home_dir}}/result.txt"
 generator: dbgen
 
 binary_dir: "{{ home_dir }}/{{ generator }}"
+
+local_result: "~/sparkSQL_Result.txt"
