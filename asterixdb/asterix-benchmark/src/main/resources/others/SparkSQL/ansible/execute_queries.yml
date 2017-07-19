@@ -24,7 +24,7 @@
       shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala
     - name: Find out what the results are
       slurp:
-        src: "{{ local_result }}"
+        src: "{{ result_file }}"
       register: remoteres
     - debug:
         msg: "{{ remoteres['content'] | b64decode }}"
