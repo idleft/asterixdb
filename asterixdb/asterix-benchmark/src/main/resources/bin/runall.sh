@@ -60,23 +60,23 @@ for benchmark in $BENCHMARK_PATH/*; do
     ansible-playbook -i $INVENTORY $gen/gen.yml
 
     # Loads generated data into those created datasets.
-    ansible-playbook -i $INVENTORY --extra-vars="inventory=${INVENTORY}" $load/load.yml
-
-    # Runs queries for heating the system.
-    for query in $queries/*.sqlpp; do
-      ansible-playbook -i $INVENTORY --extra-vars="query_file=${query} report=false" \
-        $ANSIBLE_PATH/runquery.yml
-    done
-
-    # Runs all queries three times and collect numbers.
-    for number in 1 2 3
-    do
-        for query in $queries/*.sqlpp; do
-           ansible-playbook -i $INVENTORY --extra-vars="query_file=${query} report=true metric=${SYSTEM_NAME}" \
-                 $ANSIBLE_PATH/runquery.yml
-        done
-    done
-
-    # Removes all loaded datasets.
-    ansible-playbook -i $INVENTORY  --extra-vars="inventory=${INVENTORY}" $teardown/teardown.yml
+#    ansible-playbook -i $INVENTORY --extra-vars="inventory=${INVENTORY}" $load/load.yml
+#
+#    # Runs queries for heating the system.
+#    for query in $queries/*.sqlpp; do
+#      ansible-playbook -i $INVENTORY --extra-vars="query_file=${query} report=false" \
+#        $ANSIBLE_PATH/runquery.yml
+#    done
+#
+#    # Runs all queries three times and collect numbers.
+#    for number in 1 2 3
+#    do
+#        for query in $queries/*.sqlpp; do
+#           ansible-playbook -i $INVENTORY --extra-vars="query_file=${query} report=true metric=${SYSTEM_NAME}" \
+#                 $ANSIBLE_PATH/runquery.yml
+#        done
+#    done
+#
+#    # Removes all loaded datasets.
+#    ansible-playbook -i $INVENTORY  --extra-vars="inventory=${INVENTORY}" $teardown/teardown.yml
 done
