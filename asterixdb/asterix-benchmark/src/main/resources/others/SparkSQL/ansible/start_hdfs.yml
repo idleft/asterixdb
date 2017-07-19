@@ -54,10 +54,6 @@
 - name: Start HDFS
   hosts: cc
   tasks:
-    - name: Empty tmp
-      shell: "sudo rm -rf *"
-      args:
-        chdir: /tmp/
     - name: Format HDFS
       shell: 'bash {{ hadoop_base }}/bin/hadoop namenode -format'
     - name: Start name node

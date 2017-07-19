@@ -23,7 +23,6 @@ pushd `dirname $0` > /dev/null
 SCRIPT_PATH=`pwd -P`
 popd > /dev/null
 export ANSIBLE_HOST_KEY_CHECKING=false
-export ANSIBLE_SSH_CONTROL_PATH='%(directory)s/%%h-%%r'
 
 INVENTORY=$1
 
