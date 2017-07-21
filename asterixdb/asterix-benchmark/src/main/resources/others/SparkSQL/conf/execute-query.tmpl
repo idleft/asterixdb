@@ -65,7 +65,7 @@ lineitem.createOrReplaceTempView("LINEITEM")
 // Execute Query
 val queries_dir = new File(queries_root)
 val etime = collection.mutable.Map[String, Float]()
-for (i <- 1 to round) {
+for (i <- 0 to round) {
     for (query_file <- queries_dir.listFiles()) {
         print("Processing Query "+ query_file)
         val file_name = query_file.getName()
@@ -87,6 +87,6 @@ for (i <- 1 to round) {
 
 // Write result
 val writer = new PrintWriter(new File("{{ result_file }}"))
-for ((k, v) <- etime) writer.print("'{\"group\": \""+ k.split('.')(0) + ".sqlpp\", \"metric\": \"" + metric + "\", \"value\": "+ v +"}'\n")
+for ((k, v) <- etime) writer.print("'{\"group\": \""+ k.split('.')(0) + ".sqlpp\", \"metric\": \"" + metric + "\", \"value\": "+ v / round +"}'\n")
 writer.close()
 System.exit(0)

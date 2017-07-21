@@ -17,30 +17,14 @@
 # under the License.
 # ------------------------------------------------------------
 
-user: ec2-user
+#!bin/sh
+pushd `dirname $0` > /dev/null
+SCRIPT_PATH=`pwd -P`
+popd > /dev/null
 
-hadoop_base: /home/{{ user }}/hadoop-2.8.0
+export ANSIBLE_HOST_KEY_CHECKING=false
+AWS_SETTING=$1
+INVENTORY=$SCRIPT_PATH/conf/inventory
 
-spark_base: /home/{{ user }}/spark-2.1.1-bin-hadoop2.7
-
-home_dir: "/home/{{ user }}"
-
-data_dir: "{{ home_dir }}/tpch"
-
-hdfs_memory: 256
-
-spark_memory: 512
-
-test_round: 3
-
-query_files_root: "queries"
-
-dfs_replication: 1
-
-result_file: "{{home_dir}}/result.txt"
-
-generator: dbgen
-
-binary_dir: "{{ home_dir }}/{{ generator }}"
-
-local_result: "/tmp/sparkSQL_Result.txt"
+ansible-playbook -i "localhost," --extra-vars="aws_setting=${AWS_SETTING}" $SCRIPT_PATH/ansible/create_aws_cluster.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/instance_init.yml

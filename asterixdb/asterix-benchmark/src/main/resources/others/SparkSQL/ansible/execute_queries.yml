@@ -22,12 +22,7 @@
     - include_vars: spark_sql_settings.yml
     - name: Execute query with Spark
       shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala
-    - name: Find out what the results are
-      slurp:
-        src: "{{ result_file }}"
-      register: remoteres
-    - debug:
-        msg: "{{ remoteres['content'] | b64decode }}"
+      async: 2700
     - name: Fetch the result file from cc
       fetch:
         src: "{{ result_file }}"

@@ -51,10 +51,17 @@
     - name: Add master key to authorized_keys list
       shell: "cat ~/master.key >> ~/.ssh/authorized_keys"
 
+- hosts: all
+  tasks:
+    - name: Empty tmp
+      shell: "sudo rm -rf *"
+      args:
+        chdir: /tmp/
+
 - name: Start HDFS
   hosts: cc
   tasks:
     - name: Format HDFS
-      shell: 'bash {{ hadoop_base }}/bin/hadoop namenode -format'
+      shell: 'bash {{ hadoop_base }}/bin/hdfs namenode -format -force'
     - name: Start name node
       shell: 'bash {{ hadoop_base }}/sbin/start-dfs.sh'
