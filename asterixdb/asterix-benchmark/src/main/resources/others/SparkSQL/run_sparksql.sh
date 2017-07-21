@@ -24,7 +24,7 @@ SCRIPT_PATH=`pwd -P`
 popd > /dev/null
 export ANSIBLE_HOST_KEY_CHECKING=false
 
-INVENTORY=$1
+INVENTORY=$SCRIPT_PATH/$1
 
 # Checks the existence of the inventory file.
 if [ ! -f "$INVENTORY" ];
