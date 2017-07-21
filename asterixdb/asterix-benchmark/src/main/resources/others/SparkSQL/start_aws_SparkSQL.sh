@@ -23,7 +23,11 @@ SCRIPT_PATH=`pwd -P`
 popd > /dev/null
 
 export ANSIBLE_HOST_KEY_CHECKING=false
-AWS_SETTING=$1
+if [[ "$1" = /* ]]; then
+    AWS_SETTING=$1
+else
+    AWS_SETTING=`pwd`/$1
+fi
 INVENTORY=$SCRIPT_PATH/conf/inventory
 
 ansible-playbook -i "localhost," --extra-vars="aws_setting=${AWS_SETTING}" $SCRIPT_PATH/ansible/create_aws_cluster.yml
