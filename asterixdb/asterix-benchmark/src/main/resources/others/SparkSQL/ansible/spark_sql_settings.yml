@@ -45,6 +45,6 @@ binary_dir: "{{ home_dir }}/{{ generator }}"
 
 local_result: "/tmp/sparkSQL_Result.txt"
 
-tpch_scale: 2.0
+tpch_scale: 2
 
 metric: SparkSQL(small x 2)
