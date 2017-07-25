@@ -19,7 +19,7 @@
 
 - include_vars: spark_sql_settings.yml
 
-- name: Generate data
+- name: Generate datas with scale factor {{ tpch_scale }}
   command: "./{{ generator }} -s {{ tpch_scale }}"
   args:
      chdir: "{{ binary_dir }}"

@@ -21,8 +21,9 @@
   tasks:
     - include_vars: spark_sql_settings.yml
     - name: Execute query with Spark
-      shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala
-      async: 2700
+      shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala > ~/sparkLog.txt 2>&1
+      async: 5400
+      poll: 100
     - name: Fetch the result file from cc
       fetch:
         src: "{{ result_file }}"

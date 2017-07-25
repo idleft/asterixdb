@@ -27,9 +27,9 @@ home_dir: "/home/{{ user }}"
 
 data_dir: "{{ home_dir }}/tpch"
 
-hdfs_memory: 256
+hdfs_memory: 512
 
-spark_memory: 512
+spark_memory: 1024
 
 test_round: 3
 
@@ -45,6 +45,6 @@ binary_dir: "{{ home_dir }}/{{ generator }}"
 
 local_result: "/tmp/sparkSQL_Result.txt"
 
-tpch_scale: 1
+tpch_scale: 2.0
 
 metric: SparkSQL(small x 2)
