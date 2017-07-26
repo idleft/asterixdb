@@ -31,7 +31,7 @@ hdfs_memory: 512
 
 spark_memory: 1024
 
-test_round: 1
+test_round: 3
 
 query_files_root: "queries"
 
