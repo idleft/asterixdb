@@ -65,7 +65,7 @@ lineitem.createOrReplaceTempView("LINEITEM")
 // Execute Query
 val queries_dir = new File(queries_root)
 val etime = collection.mutable.Map[String, Float]()
-for (i <- 0 to round) {
+for (i <- 1 to round) {
     for (query_file <- queries_dir.listFiles()) {
         print("Processing Query "+ query_file)
         val file_name = query_file.getName()
