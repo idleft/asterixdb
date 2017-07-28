@@ -402,8 +402,6 @@ public interface IMetadataManager extends IMetadataBootstrap {
      */
     void dropFunction(MetadataTransactionContext ctx, FunctionSignature functionSignature) throws MetadataException;
 
-    void updateFunction(MetadataTransactionContext ctx, Function function) throws MetadataException;
-
     /**
      * @param mdTxnCtx
      *            MetadataTransactionContext of an active metadata transaction.
