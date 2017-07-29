@@ -62,6 +62,15 @@ customer.createOrReplaceTempView("CUSTOMER")
 orders.createOrReplaceTempView("ORDERS")
 lineitem.createOrReplaceTempView("LINEITEM")
 
+spark.sqlContext.cacheTable("NATION")
+spark.sqlContext.cacheTable("REGION")
+spark.sqlContext.cacheTable("PART")
+spark.sqlContext.cacheTable("SUPPLIER")
+spark.sqlContext.cacheTable("PARTSUPP")
+spark.sqlContext.cacheTable("CUSTOMER")
+spark.sqlContext.cacheTable("ORDERS")
+spark.sqlContext.cacheTable("LINEITEM")
+
 // Execute Query
 val queries_dir = new File(queries_root)
 val etime = collection.mutable.Map[String, Float]()
