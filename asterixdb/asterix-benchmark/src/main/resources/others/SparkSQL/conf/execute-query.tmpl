@@ -38,7 +38,7 @@ case class CUSTOMER (C_CUSTKEY: Int, C_NAME : String, C_ADDRESS : String, C_NATI
 case class ORDERS (O_ORDERKEY: Int, O_CUSTKEY: Int, O_ORDERSTATUS : String, O_TOTALPRICE: Float, O_ORDERDATE: java.sql.Timestamp,
  O_ORDERPRIORITY: String, O_CLERK : String, O_SHIPPRIORITY: Int, O_COMMENT: String)
 case class LINEITEM (L_ORDERKEY: Int, L_PARTKEY: Int, L_SUPPKEY: Int, L_LINENUMBER: Int, L_QUANTITY: Float,
- L_EXTENDEDPRICE: Float, L_DISCOUNT: Float, L_TAX: Float, L_RETURNFLAG: String, L_LINESTATUS : String, 
+ L_EXTENDEDPRICE: Float, L_DISCOUNT: Float, L_TAX: Float, L_RETURNFLAG: String, L_LINESTATUS : String,
  L_SHIPDATE: java.sql.Timestamp, L_COMMITDATE: java.sql.Timestamp, L_RECEIPTDATE: java.sql.Timestamp, L_SHIPINSTRUCT: String,
  L_SHIPMODE: String, L_COMMENT: String)
 

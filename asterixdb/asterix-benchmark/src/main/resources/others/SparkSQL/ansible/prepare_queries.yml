@@ -21,7 +21,7 @@
   tasks:
     - include_vars: spark_sql_settings.yml
     - name: Sync queries directory
-      synchronize: 
+      synchronize:
         src: ../{{ query_files_root }}
         dest: /home/{{ user }}/
     - name: Ship script template

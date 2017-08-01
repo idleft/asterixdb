@@ -27,9 +27,9 @@ home_dir: "/home/{{ user }}"
 
 data_dir: "{{ home_dir }}/tpch"
 
-hdfs_memory: 512
+hdfs_memory: "{{ (ansible_memtotal_mb * 0.25)|int|abs }}"
 
-spark_memory: 1024
+spark_memory: "{{ (ansible_memtotal_mb * 0.5)|int|abs }}"
 
 test_round: 3
 
@@ -45,6 +45,4 @@ binary_dir: "{{ home_dir }}/{{ generator }}"
 
 local_result: "/tmp/sparkSQL_Result.txt"
 
-tpch_scale: 2
-
-metric: SparkSQL(small x 2)
+tpch_scale: 0.5

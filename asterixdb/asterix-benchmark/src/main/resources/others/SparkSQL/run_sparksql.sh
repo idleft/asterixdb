@@ -25,6 +25,12 @@ popd > /dev/null
 export ANSIBLE_HOST_KEY_CHECKING=false
 
 INVENTORY=$SCRIPT_PATH/$1
+SYSTEM_NAME=$2
+
+if [ ! -z "$SYSTEM_NAME" ];
+then
+    SYSTEM_NAME="SparkSQL"
+fi
 
 # Checks the existence of the inventory file.
 if [ ! -f "$INVENTORY" ];
@@ -37,11 +43,11 @@ fi
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
 # Configure Sparks
-ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_sparks.yml
-ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_sparks.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
 ## Generate data
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/gen_tpch.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
 ## Execute queries
-ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/prepare_queries.yml
+ansible-playbook -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml

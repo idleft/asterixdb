@@ -18,8 +18,24 @@
 # ------------------------------------------------------------
 
 - hosts: cc
+  vars_files:
+    - spark_sql_settings.yml
+  vars:
+      partitions: "{{ groups['ncs'] | length }}"
+      scale_factor: "{{ partitions|float * (ansible_memtotal_mb/1000)|int * tpch_scale }}"
   tasks:
     - name: Configure binary on master
       include: ../../../benchmarks/tpch/gen/compile.yml
-    - name: Populate dataset on master
-      include: gendata.yml
+
+    - name: Generate datas with scale factor {{ scale_factor }}
+      command: "./{{ generator }} -s {{ scale_factor }}"
+      args:
+         chdir: "{{ binary_dir }}"
+
+    - name: Ensure data directory exists
+      file:
+        path: "{{ data_dir }}"
+        state: directory
+
+    - name: Move generated files
+      shell: "mv {{ binary_dir }}/*.tbl {{ data_dir }}/"
