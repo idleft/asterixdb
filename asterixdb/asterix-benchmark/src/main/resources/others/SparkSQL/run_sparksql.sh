@@ -27,7 +27,7 @@ export ANSIBLE_HOST_KEY_CHECKING=false
 INVENTORY=$SCRIPT_PATH/$1
 SYSTEM_NAME=$2
 
-if [ ! -z "$SYSTEM_NAME" ];
+if [ -z "$SYSTEM_NAME" ];
 then
     SYSTEM_NAME="SparkSQL"
 fi
