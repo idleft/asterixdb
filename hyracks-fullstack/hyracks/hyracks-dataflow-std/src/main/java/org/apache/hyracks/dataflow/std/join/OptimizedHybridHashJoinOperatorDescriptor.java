@@ -64,6 +64,7 @@ import org.apache.hyracks.dataflow.std.buffermanager.FramePoolBackedFrameBufferM
 import org.apache.hyracks.dataflow.std.buffermanager.IDeallocatableFramePool;
 import org.apache.hyracks.dataflow.std.buffermanager.ISimpleFrameBufferManager;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
+import org.apache.hyracks.dataflow.std.structures.LinearProbeHashTable;
 import org.apache.hyracks.dataflow.std.structures.SerializableHashTable;
 import org.apache.hyracks.dataflow.std.util.FrameTuplePairComparator;
 
@@ -716,7 +717,8 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                             state.memForJoin * ctx.getInitialFrameSize());
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
-                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
+//                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
+                    ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
                     InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, tabSize, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
