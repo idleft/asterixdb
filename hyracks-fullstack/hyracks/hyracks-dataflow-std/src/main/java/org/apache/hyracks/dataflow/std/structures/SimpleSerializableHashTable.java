@@ -20,7 +20,6 @@ package org.apache.hyracks.dataflow.std.structures;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hyracks.api.context.IHyracksFrameMgrContext;
@@ -47,7 +46,6 @@ public class SimpleSerializableHashTable implements ISerializableTable {
     // Initial entry slot size
     protected static final int INIT_ENTRY_SIZE = 4;
     protected static final int INVALID_VALUE = 0xFFFFFFFF;
-    protected static final byte INVALID_BYTE_VALUE = (byte) 0xFF;
 
     // Header frame array
     protected IntSerDeBuffer[] headers;
@@ -486,53 +484,7 @@ public class SimpleSerializableHashTable implements ISerializableTable {
         return -1;
     }
 
-    static class IntSerDeBuffer {
 
-        ByteBuffer byteBuffer;
-        byte[] bytes;
-
-        public IntSerDeBuffer(ByteBuffer byteBuffer) {
-            this.byteBuffer = byteBuffer;
-            this.bytes = byteBuffer.array();
-            resetFrame();
-        }
-
-        public int getInt(int pos) {
-            int offset = pos * 4;
-            return ((bytes[offset] & 0xff) << 24) + ((bytes[offset + 1] & 0xff) << 16)
-                    + ((bytes[offset + 2] & 0xff) << 8) + (bytes[offset + 3] & 0xff);
-        }
-
-        public void writeInt(int pos, int value) {
-            int offset = pos * 4;
-            bytes[offset++] = (byte) (value >> 24);
-            bytes[offset++] = (byte) (value >> 16);
-            bytes[offset++] = (byte) (value >> 8);
-            bytes[offset] = (byte) (value);
-        }
-
-        public void writeInvalidVal(int intPos, int intRange) {
-            int offset = intPos * 4;
-            Arrays.fill(bytes, offset, offset + INT_SIZE * intRange, INVALID_BYTE_VALUE);
-        }
-
-        public int capacity() {
-            return bytes.length / 4;
-        }
-
-        public int getByteCapacity() {
-            return bytes.length;
-        }
-
-        public ByteBuffer getByteBuffer() {
-            return byteBuffer;
-        }
-
-        public void resetFrame() {
-            Arrays.fill(bytes, INVALID_BYTE_VALUE);
-        }
-
-    }
 
     @Override
     public String printInfo() {

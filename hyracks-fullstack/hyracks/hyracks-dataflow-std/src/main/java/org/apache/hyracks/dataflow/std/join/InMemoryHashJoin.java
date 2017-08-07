@@ -163,7 +163,10 @@ public class InMemoryHashJoin {
             int entry = tpcProbe.partition(accessorProbe, tid, tableSize);
             int tupleCount = table.getTupleCount(entry);
             for (int i = 0; i < tupleCount; i++) {
-                table.getTuplePointer(entry, i, storedTuplePointer);
+                boolean chk = table.getTuplePointer(entry, i, storedTuplePointer);
+                if (!chk) {
+                    System.out.println("Opps");
+                }
                 int bIndex = storedTuplePointer.getFrameIndex();
                 int tIndex = storedTuplePointer.getTupleIndex();
                 accessorBuild.reset(buffers.get(bIndex));
@@ -175,6 +178,7 @@ public class InMemoryHashJoin {
                         appendToResult(tid, tIndex, writer);
                     }
                 }
+                storedTuplePointer.reset(-1, -1);
             }
         }
         if (!matchFound && isLeftOuter) {
