@@ -38,7 +38,7 @@
         path: "{{ local_result }}"
       register: p
     - name: Report result to REST
-      shell: <{{ local_result }} xargs -I % curl -XPOST -m 3600 -d % {{ result_url }}
+      shell: <{{ local_result }} xargs -I % curl -XPOST -m 120 -d % {{ result_url }}
       when: p.stat.exists
     - name: Find out what the results are
       slurp:
