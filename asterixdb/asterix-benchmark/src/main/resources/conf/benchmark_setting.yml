@@ -18,7 +18,7 @@
 # ------------------------------------------------------------
 
 # scale = (dataset size)/(aggregated RAM)
-scale: 0.5
+scale: 1.0
 
 # performance testing directory.
 perfdir: "perf"

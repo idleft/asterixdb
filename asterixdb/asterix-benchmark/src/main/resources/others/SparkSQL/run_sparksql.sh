@@ -45,9 +45,9 @@ ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
 # Configure Sparks
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
-## Generate data
-ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/gen_tpch.yml
+# Generate data
+ansible-playbook -i $INVENTORY $SCRIPT_PATH/../../benchmarks/tpch/gen/gen.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
-## Execute queries
+# Execute queries
 ansible-playbook -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.yml
 ansible-playbook -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml

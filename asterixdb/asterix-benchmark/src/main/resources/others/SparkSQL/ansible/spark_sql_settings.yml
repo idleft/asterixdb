@@ -19,13 +19,11 @@
 
 user: ec2-user
 
-hadoop_base: /home/{{ user }}/hadoop-2.8.0
-
-spark_base: /home/{{ user }}/spark-2.1.1-bin-hadoop2.7
-
 home_dir: "/home/{{ user }}"
 
-data_dir: "{{ home_dir }}/tpch"
+hadoop_base: "{{ home_dir }}/hadoop-2.8.0"
+
+spark_base: "{{ home_dir }}/spark-2.1.1-bin-hadoop2.7"
 
 hdfs_memory: "{{ (ansible_memtotal_mb * 0.25)|int|abs }}"
 
@@ -44,5 +42,3 @@ generator: dbgen
 binary_dir: "{{ home_dir }}/{{ generator }}"
 
 local_result: "/tmp/sparkSQL_Result.txt"
-
-tpch_scale: 0.5

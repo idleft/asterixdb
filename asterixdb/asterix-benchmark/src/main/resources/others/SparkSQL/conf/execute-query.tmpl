@@ -43,14 +43,14 @@ case class LINEITEM (L_ORDERKEY: Int, L_PARTKEY: Int, L_SUPPKEY: Int, L_LINENUMB
  L_SHIPMODE: String, L_COMMENT: String)
 
 
-val nation = spark.read.option("delimiter","|").schema(Encoders.product[NATION].schema).csv(hdfs_data_root + "nation.tbl")
-val region = spark.read.option("delimiter","|").schema(Encoders.product[REGION].schema).csv(hdfs_data_root + "region.tbl")
-val part = spark.read.option("delimiter","|").schema(Encoders.product[PART].schema).csv(hdfs_data_root + "part.tbl")
-val supp = spark.read.option("delimiter","|").schema(Encoders.product[SUPPLIER].schema).csv(hdfs_data_root + "supplier.tbl")
-val part_supp = spark.read.option("delimiter","|").schema(Encoders.product[PARTSUPP].schema).csv(hdfs_data_root + "partsupp.tbl")
-val customer = spark.read.option("delimiter","|").schema(Encoders.product[CUSTOMER].schema).csv(hdfs_data_root + "customer.tbl")
-val orders = spark.read.option("delimiter","|").schema(Encoders.product[ORDERS].schema).csv(hdfs_data_root + "orders.tbl")
-val lineitem = spark.read.option("delimiter","|").schema(Encoders.product[LINEITEM].schema).csv(hdfs_data_root + "lineitem.tbl")
+val nation = spark.read.option("delimiter","|").schema(Encoders.product[NATION].schema).csv(hdfs_data_root + "nation.*")
+val region = spark.read.option("delimiter","|").schema(Encoders.product[REGION].schema).csv(hdfs_data_root + "region.*")
+val part = spark.read.option("delimiter","|").schema(Encoders.product[PART].schema).csv(hdfs_data_root + "part.*")
+val supp = spark.read.option("delimiter","|").schema(Encoders.product[SUPPLIER].schema).csv(hdfs_data_root + "supplier.*")
+val part_supp = spark.read.option("delimiter","|").schema(Encoders.product[PARTSUPP].schema).csv(hdfs_data_root + "partsupp.*")
+val customer = spark.read.option("delimiter","|").schema(Encoders.product[CUSTOMER].schema).csv(hdfs_data_root + "customer.*")
+val orders = spark.read.option("delimiter","|").schema(Encoders.product[ORDERS].schema).csv(hdfs_data_root + "orders.*")
+val lineitem = spark.read.option("delimiter","|").schema(Encoders.product[LINEITEM].schema).csv(hdfs_data_root + "lineitem.*")
 
 
 nation.createOrReplaceTempView("NATION")

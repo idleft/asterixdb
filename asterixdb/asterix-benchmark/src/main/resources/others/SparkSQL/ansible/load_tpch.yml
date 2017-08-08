@@ -20,7 +20,12 @@
 - hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
+    - include_vars: ../../../benchmarks/tpch/gen/settings.yml
     - name: Create TPCH data dir on HDFS
       shell: 'bash {{ hadoop_base }}/bin/hdfs dfs -mkdir -p {{ data_dir }}'
+
+- hosts: ncs
+  tasks:
+    - include_vars: spark_sql_settings.yml
     - name: Put data on to HDFS
-      shell: 'bash {{ hadoop_base }}/bin/hdfs dfs -put {{ data_dir }}/* {{ data_dir }}'
+      shell: for i in "{{ data_dir }}/*"; do {{ hadoop_base }}/bin/hdfs dfs -put -f $i hdfs://{{ groups['cc'][0] }}:9000/{{ data_dir }}; rm $i; done
