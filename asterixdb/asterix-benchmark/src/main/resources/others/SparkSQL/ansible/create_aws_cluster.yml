@@ -23,7 +23,7 @@
   gather_facts: false
   vars:
     inventory: "{{ playbook_dir }}/../conf/inventory"
-    spark_instance_name: "spark_{{ lookup('env','USER') }}"
+    spark_instance_name: "spark_test"
   tasks:
     - include_vars: "{{ aws_setting }}"
 
