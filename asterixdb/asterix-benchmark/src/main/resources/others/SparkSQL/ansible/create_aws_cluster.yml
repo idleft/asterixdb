@@ -23,6 +23,7 @@
   gather_facts: false
   vars:
     inventory: "{{ playbook_dir }}/../conf/inventory"
+    private_ip: "{{ playbook_dir }}/../conf/private_ip"
     spark_instance_name: "spark_test"
   tasks:
     - include_vars: "{{ aws_setting }}"
@@ -30,6 +31,11 @@
     - name: Clean inventory file
       file:
         path: "{{ inventory }}"
+        state: absent
+
+    - name: Clean private ip file
+      file:
+        path: "{{ private_ip }}"
         state: absent
 
     - name: Launch EC2 instances
@@ -52,13 +58,13 @@
         master: "{{ ec2.instances[0] }}"
 
     - name: Populate inventory file for name node
-      shell: printf "[cc]\n{{ master.public_dns_name }}\n" >> "{{ inventory }}"
+      shell: printf "[cc]\n{{ master.public_dns_name }}\n" >> "{{ inventory }}"; printf "cc_ip{{ ":" }} {{ master.private_ip }}\n" >> "{{ private_ip }}";
 
     - name: Populate section head for slave nodes
-      shell: printf "\n[ncs]\n" >> "{{ inventory }}"
+      shell: printf "\n[ncs]\n" >> "{{ inventory }}"; printf "\nnc_ip{{ ":" }}" >> "{{ private_ip }}";
 
     - name: Populate inventory file for slave nodes
-      shell: printf "{{ node.1.public_dns_name }}\n" >> "{{ inventory }}"
+      shell: printf "{{ node.1.public_dns_name }}\n" >> "{{ inventory }}"; printf " {{ node.1.private_ip }}" >> "{{ private_ip }}"
       when: node.0 != 0
       with_indexed_items: "{{ ec2.instances }}"
       loop_control:

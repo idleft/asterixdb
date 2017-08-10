@@ -20,8 +20,9 @@
 - hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
+    - include_vars: "{{ playbook_dir }}/../conf/private_ip"
     - shell: 'echo {{ item }} >> {{ spark_base }}/conf/slaves'
-      with_items:
-        "{{ groups['ncs'] }}"
+      with_items: "{{ nc_ip.split(' ') }}"
+
     - name: Start Sparks
       shell: "bash {{ spark_base }}/sbin/start-all.sh"

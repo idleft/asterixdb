@@ -18,9 +18,12 @@
 # ------------------------------------------------------------
 
 - name: Prepare password-less on master
+  vars:
+
   hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
+    - include_vars: "{{ playbook_dir }}/../conf/private_ip"
     - name: Generate key on master
       user:
         name: "{{ user }}"
@@ -34,11 +37,19 @@
         src: ~/.ssh/id_rsa.pub
         dest: ../conf/master.key
         flat: yes
+    - file:
+        path: ~/.ssh/config
+        state: absent
     - name: Bypass host check on master
-      copy:
-        src: ../conf/ssh_config
-        dest: ~/.ssh/config
+      shell: printf "Host *.amazonaws.com 0.0.0.0 {{ cc_ip }}" >> ~/.ssh/config
+    - name: Add hosts to list
+      shell: printf " {{ item }}" >> ~/.ssh/config
+      with_items: "{{ nc_ip.split(' ') }}"
+    - shell: printf "\n    StrictHostKeyChecking no\n" >> ~/.ssh/config
+    - file:
+        path: ~/.ssh/config
         mode: 0600
+
 
 - name: Prepare password-less on slaves
   hosts: ncs

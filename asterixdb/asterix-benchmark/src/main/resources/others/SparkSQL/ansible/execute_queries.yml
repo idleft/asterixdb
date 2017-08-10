@@ -20,8 +20,9 @@
 - hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
+    - include_vars: "{{ playbook_dir }}/../conf/private_ip"
     - name: Execute query with Spark
-      shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ groups['cc'][0] }}:7077 -i main.scala > ~/sparkLog.txt 2>&1
+      shell: bash {{ spark_base }}/bin/spark-shell --executor-memory {{ spark_memory }}m --master spark://{{ cc_ip }}:7077 -i main.scala > ~/sparkLog.txt 2>&1
       async: 5400
       poll: 100
     - name: Fetch the result file from cc

@@ -24,7 +24,12 @@ SCRIPT_PATH=`pwd -P`
 popd > /dev/null
 export ANSIBLE_HOST_KEY_CHECKING=false
 
-INVENTORY=$SCRIPT_PATH/$1
+if [[ "$1" = /* ]]; then
+    INVENTORY=$1
+else
+    INVENTORY=$SCRIPT_PATH/$1
+fi
+
 SYSTEM_NAME=$2
 
 if [ -z "$SYSTEM_NAME" ];
@@ -40,14 +45,14 @@ then
 fi
 
 # Configure HDFS
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
-# Configure Sparks
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
+# Configure Spark
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
 # Load data
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/../../benchmarks/tpch/gen/gen.yml
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/../../benchmarks/tpch/gen/gen.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
 # Execute queries
-ansible-playbook -c paramiko -vvvv -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.yml
-ansible-playbook -c paramiko -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml
+ansible-playbook  -vvvv -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.yml
+ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml
