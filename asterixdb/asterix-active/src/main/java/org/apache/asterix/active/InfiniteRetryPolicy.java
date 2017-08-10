@@ -16,29 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.asterix.active;
 
-package org.apache.asterix.metadata;
+public class InfiniteRetryPolicy implements IRetryPolicy {
 
-import org.apache.asterix.common.exceptions.CompilationException;
+    private final IActiveEntityEventsListener listener;
 
-import java.io.Serializable;
-
-public class MetadataException extends CompilationException {
-    private static final long serialVersionUID = 1L;
-
-    public MetadataException(String message) {
-        super(message);
+    public InfiniteRetryPolicy(IActiveEntityEventsListener listener) {
+        this.listener = listener;
     }
 
-    public MetadataException(Throwable cause) {
-        super(cause);
+    @Override
+    public boolean retry() {
+        synchronized (listener) {
+            try {
+                listener.wait(5000); //NOSONAR this method is being called in a while loop
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
+            }
+        }
+        return true;
     }
 
-    public MetadataException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public MetadataException(int errorCode, Serializable... params) {
-        super(errorCode, params);
-    }
 }

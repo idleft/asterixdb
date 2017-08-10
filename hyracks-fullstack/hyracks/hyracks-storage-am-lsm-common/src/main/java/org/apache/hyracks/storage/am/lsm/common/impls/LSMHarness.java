@@ -47,6 +47,7 @@ import org.apache.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallback;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndex;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndexAccessor;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndexOperationContext;
+import org.apache.hyracks.storage.am.lsm.common.api.ILSMMemoryComponent;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMMergePolicy;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMOperationTracker;
 import org.apache.hyracks.storage.am.lsm.common.api.LSMOperationType;
@@ -131,6 +132,10 @@ public class LSMHarness implements ILSMHarness {
                     // Flush and merge operations should never reach this wait call, because they are always try operations.
                     // If they fail to enter the components, then it means that there are an ongoing flush/merge operation on
                     // the same components, so they should not proceed.
+                    if (opType == LSMOperationType.MODIFICATION) {
+                        // before waiting, make sure the index is in a modifiable state to avoid waiting forever.
+                        ensureIndexModifiable();
+                    }
                     opTracker.wait();
                 } catch (InterruptedException e) {
                     throw new HyracksDataException(e);
@@ -186,6 +191,7 @@ public class LSMHarness implements ILSMHarness {
                 break;
             case MERGE:
                 lsmIndex.getIOOperationCallback().beforeOperation(LSMOperationType.MERGE);
+                break;
             default:
                 break;
         }
@@ -215,6 +221,7 @@ public class LSMHarness implements ILSMHarness {
                      * See PrefixMergePolicy.isMergeLagging() for more details.
                      */
                     if (opType == LSMOperationType.FLUSH) {
+                        opTracker.notifyAll();
                         while (mergePolicy.isMergeLagging(lsmIndex)) {
                             try {
                                 opTracker.wait();
@@ -498,15 +505,17 @@ public class LSMHarness implements ILSMHarness {
         }
 
         ILSMDiskComponent newComponent = null;
+        boolean failedOperation = false;
         try {
             newComponent = lsmIndex.flush(operation);
             operation.getCallback().afterOperation(LSMOperationType.FLUSH, null, newComponent);
             lsmIndex.markAsValid(newComponent);
         } catch (Throwable e) {
+            failedOperation = true;
             e.printStackTrace();
             throw e;
         } finally {
-            exitComponents(ctx, LSMOperationType.FLUSH, newComponent, false);
+            exitComponents(ctx, LSMOperationType.FLUSH, newComponent, failedOperation);
             operation.getCallback().afterFinalize(LSMOperationType.FLUSH, newComponent);
         }
         if (LOGGER.isLoggable(Level.INFO)) {
@@ -545,15 +554,17 @@ public class LSMHarness implements ILSMHarness {
         }
 
         ILSMDiskComponent newComponent = null;
+        boolean failedOperation = false;
         try {
             newComponent = lsmIndex.merge(operation);
             operation.getCallback().afterOperation(LSMOperationType.MERGE, ctx.getComponentHolder(), newComponent);
             lsmIndex.markAsValid(newComponent);
         } catch (Throwable e) {
+            failedOperation = true;
             e.printStackTrace();
             throw e;
         } finally {
-            exitComponents(ctx, LSMOperationType.MERGE, newComponent, false);
+            exitComponents(ctx, LSMOperationType.MERGE, newComponent, failedOperation);
             operation.getCallback().afterFinalize(LSMOperationType.MERGE, newComponent);
         }
         if (LOGGER.isLoggable(Level.INFO)) {
@@ -659,5 +670,35 @@ public class LSMHarness implements ILSMHarness {
         } finally {
             exit(ctx);
         }
+    }
+
+    /***
+     * Ensures the index is in a modifiable state (no failed flushes)
+     *
+     * @throws HyracksDataException
+     *             if the index is not in a modifiable state
+     */
+    private void ensureIndexModifiable() throws HyracksDataException {
+        // if current memory component has a flush request, it means that flush didn't start for it
+        if (lsmIndex.hasFlushRequestForCurrentMutableComponent()) {
+            return;
+        }
+        // find if there is any memory component which is in a writable state or eventually will be in a writable state
+        for (ILSMMemoryComponent memoryComponent : lsmIndex.getMemoryComponents()) {
+            switch (memoryComponent.getState()) {
+                case INACTIVE:
+                    // will be activated on next modification
+                case UNREADABLE_UNWRITABLE:
+                    // flush completed successfully but readers are still inside
+                case READABLE_WRITABLE:
+                    // writable
+                case READABLE_UNWRITABLE_FLUSHING:
+                    // flush is ongoing
+                    return;
+                default:
+                    // continue to the next component
+            }
+        }
+        throw HyracksDataException.create(ErrorCode.CANNOT_MODIFY_INDEX_DISK_IS_FULL);
     }
 }

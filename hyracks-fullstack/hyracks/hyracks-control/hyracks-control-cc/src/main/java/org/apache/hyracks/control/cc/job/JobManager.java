@@ -45,7 +45,6 @@ import org.apache.hyracks.control.cc.application.CCServiceContext;
 import org.apache.hyracks.control.cc.cluster.INodeManager;
 import org.apache.hyracks.control.cc.scheduler.FIFOJobQueue;
 import org.apache.hyracks.control.cc.scheduler.IJobQueue;
-import org.apache.hyracks.control.cc.work.JobCleanupWork;
 import org.apache.hyracks.control.common.controllers.CCConfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -132,8 +131,8 @@ public class JobManager implements IJobManager {
         // Removes a pending job.
         JobRun jobRun = jobQueue.remove(jobId);
         if (jobRun != null) {
-            List<Exception> exceptions = Collections
-                    .singletonList(HyracksException.create(ErrorCode.JOB_CANCELED, jobId));
+            List<Exception> exceptions =
+                    Collections.singletonList(HyracksException.create(ErrorCode.JOB_CANCELED, jobId));
             // Since the job has not been executed, we only need to update its status and lifecyle here.
             jobRun.setStatus(JobStatus.FAILURE, exceptions);
             runMapArchive.put(jobId, jobRun);
@@ -179,7 +178,7 @@ public class JobManager implements IJobManager {
                 } catch (Exception e) {
                     LOGGER.log(Level.SEVERE, e.getMessage(), e);
                     if (caughtException == null) {
-                        caughtException = new HyracksException(e);
+                        caughtException = HyracksException.create(e);
                     } else {
                         caughtException.addSuppressed(e);
                     }
@@ -208,7 +207,7 @@ public class JobManager implements IJobManager {
         CCServiceContext serviceCtx = ccs.getContext();
         if (serviceCtx != null) {
             try {
-                serviceCtx.notifyJobFinish(jobId);
+                serviceCtx.notifyJobFinish(jobId, run.getPendingStatus(), run.getPendingExceptions());
             } catch (HyracksException e) {
                 LOGGER.log(Level.SEVERE, e.getMessage(), e);
                 caughtException = e;
@@ -248,8 +247,6 @@ public class JobManager implements IJobManager {
             throw caughtException;
         }
     }
-
-
 
     @Override
     public Collection<JobRun> getRunningJobs() {
@@ -320,9 +317,12 @@ public class JobManager implements IJobManager {
         try {
             run.getExecutor().startJob();
         } catch (Exception e) {
-            ccs.getWorkQueue()
-                    .schedule(new JobCleanupWork(ccs.getJobManager(), run.getJobId(), JobStatus.FAILURE,
-                            Collections.singletonList(e)));
+            LOGGER.log(Level.SEVERE, "Aborting " + run.getJobId() + " due to failure during job start", e);
+            final List<Exception> exceptions = Collections.singletonList(e);
+            // fail the job then abort it
+            run.setStatus(JobStatus.FAILURE, exceptions);
+            // abort job will trigger JobCleanupWork
+            run.getExecutor().abortJob(exceptions);
         }
     }
 

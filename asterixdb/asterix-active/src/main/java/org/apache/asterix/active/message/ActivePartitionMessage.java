@@ -21,25 +21,27 @@ package org.apache.asterix.active.message;
 import java.io.Serializable;
 import java.util.Objects;
 
-import org.apache.asterix.active.ActiveLifecycleListener;
 import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.IActiveNotificationHandler;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.messaging.api.ICcAddressedMessage;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 
 public class ActivePartitionMessage implements ICcAddressedMessage {
+    public enum Event {
+        RUNTIME_REGISTERED,
+        RUNTIME_DEREGISTERED,
+        GENERIC_EVENT
+    }
 
     private static final long serialVersionUID = 1L;
-    public static final byte ACTIVE_RUNTIME_REGISTERED = 0x00;
-    public static final byte ACTIVE_RUNTIME_DEREGISTERED = 0x01;
-    public static final byte GENERIC_EVENT = 0x02;
     private final ActiveRuntimeId activeRuntimeId;
     private final JobId jobId;
     private final Serializable payload;
-    private final byte event;
+    private final Event event;
 
-    public ActivePartitionMessage(ActiveRuntimeId activeRuntimeId, JobId jobId, byte event, Serializable payload) {
+    public ActivePartitionMessage(ActiveRuntimeId activeRuntimeId, JobId jobId, Event event, Serializable payload) {
         this.activeRuntimeId = activeRuntimeId;
         this.jobId = jobId;
         this.event = event;
@@ -58,13 +60,13 @@ public class ActivePartitionMessage implements ICcAddressedMessage {
         return payload;
     }
 
-    public byte getEvent() {
+    public Event getEvent() {
         return event;
     }
 
     @Override
     public void handle(ICcApplicationContext appCtx) throws HyracksDataException, InterruptedException {
-        ActiveLifecycleListener activeListener = (ActiveLifecycleListener) appCtx.getActiveLifecycleListener();
+        IActiveNotificationHandler activeListener = (IActiveNotificationHandler) appCtx.getActiveNotificationHandler();
         activeListener.receive(this);
     }
 
@@ -87,7 +89,7 @@ public class ActivePartitionMessage implements ICcAddressedMessage {
             return true;
         }
         ActivePartitionMessage other = (ActivePartitionMessage) o;
-        return Objects.equals(other.activeRuntimeId, activeRuntimeId) && Objects.equals(other.jobId, jobId) && Objects
-                .equals(other.payload, payload);
+        return Objects.equals(other.activeRuntimeId, activeRuntimeId) && Objects.equals(other.jobId, jobId)
+                && Objects.equals(other.payload, payload);
     }
 }
