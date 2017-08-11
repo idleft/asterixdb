@@ -25,11 +25,15 @@
       file:
         path: "{{ spark_base }}"
         state: absent
-    - name: Unarchive Sparks from remote
+    - name: Download Spark
+      get_url:
+        url: https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
+        dest: "{{ home_dir }}/spark.tgz"
+    - name: Unzip Spark
       unarchive:
-        src: https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
-        dest: /home/{{ user }}
-        remote_src: True
+        src: "{{ home_dir }}/spark.tgz"
+        dest: "{{ home_dir }}"
+        remote_src: yes
     - name: Make configuration file
       shell: "cp {{ spark_base }}/conf/spark-env.sh.template {{ spark_base }}/conf/spark-env.sh"
     - name: Add memory option
