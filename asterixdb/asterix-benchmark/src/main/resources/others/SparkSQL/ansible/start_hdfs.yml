@@ -29,16 +29,16 @@
         name: "{{ user }}"
         generate_ssh_key: yes
         ssh_key_bits: 2048
-        ssh_key_file: .ssh/id_rsa
+        ssh_key_file: .ssh/ec2_rsa
     - name: Make passwordless to current host
-      shell: "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys"
+      shell: "cat ~/.ssh/ec2_rsa.pub >> ~/.ssh/authorized_keys"
     - name: Change permissions on master
       file:
         path: ~/.ssh/authorized_keys
         mode: 0600
     - name: Download key from master
       fetch:
-        src: ~/.ssh/id_rsa.pub
+        src: ~/.ssh/ec2_rsa.pub
         dest: ../conf/master.key
         flat: yes
     - file:
@@ -49,6 +49,7 @@
     - name: Add hosts to list
       shell: printf " {{ item }}" >> ~/.ssh/config
       with_items: "{{ nc_ip.split(' ') }}"
+    - shell: printf "\n    IdentityFile /{{ home_dir }}/.ssh/ec2_rsa\n" >> ~/.ssh/config
     - shell: printf "\n    StrictHostKeyChecking no\n" >> ~/.ssh/config
     - file:
         path: ~/.ssh/config
@@ -61,10 +62,10 @@
     - name: Ship master key to slaves
       copy:
         src: ../conf/master.key
-        dest: "~/master.key"
+        dest: "/tmp/master.key"
         mode: 0600
     - name: Add master key to authorized_keys list
-      shell: "cat ~/master.key >> ~/.ssh/authorized_keys"
+      shell: "cat /tmp/master.key >> ~/.ssh/authorized_keys"
     - name: Change permissions on ncs
       file:
         path: ~/.ssh/authorized_keys
