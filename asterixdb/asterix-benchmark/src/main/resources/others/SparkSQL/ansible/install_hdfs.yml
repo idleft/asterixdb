@@ -25,6 +25,7 @@
         src: http://apache.mirrors.hoobly.com/hadoop/common/hadoop-2.8.0/hadoop-2.8.0.tar.gz
         dest: /home/{{ user }}
         remote_src: True
+        retries: 3
 
 - name: Add slaves to name node
   hosts: cc

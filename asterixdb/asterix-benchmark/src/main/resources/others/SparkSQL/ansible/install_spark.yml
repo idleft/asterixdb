@@ -30,6 +30,7 @@
         src: https://d3kbcqa49mib13.cloudfront.net/spark-2.1.1-bin-hadoop2.7.tgz
         dest: /home/{{ user }}
         remote_src: True
+        retries: 3
     - name: Make configuration file
       shell: "cp {{ spark_base }}/conf/spark-env.sh.template {{ spark_base }}/conf/spark-env.sh"
     - name: Add memory option
