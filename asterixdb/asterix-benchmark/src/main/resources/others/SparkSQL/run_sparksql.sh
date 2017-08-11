@@ -23,6 +23,7 @@ pushd `dirname $0` > /dev/null
 SCRIPT_PATH=`pwd -P`
 popd > /dev/null
 export ANSIBLE_HOST_KEY_CHECKING=false
+export ANSIBLE_SSH_RETRIES=3
 
 if [[ "$1" = /* ]]; then
     INVENTORY=$1
