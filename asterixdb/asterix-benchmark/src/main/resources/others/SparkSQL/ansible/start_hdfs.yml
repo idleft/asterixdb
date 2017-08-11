@@ -62,13 +62,6 @@
     - name: Add master key to authorized_keys list
       shell: "cat ~/master.key >> ~/.ssh/authorized_keys"
 
-- hosts: all
-  tasks:
-    - name: Empty tmp
-      shell: "sudo rm -rf *"
-      args:
-        chdir: /tmp/
-
 - name: Start HDFS
   hosts: cc
   tasks:
