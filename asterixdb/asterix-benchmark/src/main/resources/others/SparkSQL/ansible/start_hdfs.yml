@@ -32,6 +32,10 @@
         ssh_key_file: .ssh/id_rsa
     - name: Make passwordless to current host
       shell: "cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys"
+    - name: Change permissions on master
+      file:
+        path: ~/.ssh/authorized_keys
+        mode: 0600
     - name: Download key from master
       fetch:
         src: ~/.ssh/id_rsa.pub
@@ -61,6 +65,10 @@
         mode: 0600
     - name: Add master key to authorized_keys list
       shell: "cat ~/master.key >> ~/.ssh/authorized_keys"
+    - name: Change permissions on ncs
+      file:
+        path: ~/.ssh/authorized_keys
+        mode: 0600
 
 - name: Start HDFS
   hosts: cc
