@@ -38,3 +38,7 @@
       shell: "cp {{ spark_base }}/conf/spark-env.sh.template {{ spark_base }}/conf/spark-env.sh"
     - name: Add memory option
       shell: echo "SPARK_WORKER_MEMORY={{ spark_memory }}m" >> {{ spark_base }}/conf/spark-env.sh
+    - name: Remove install package
+      file:
+        state: absent
+        path: "{{ home_dir }}/spark.tgz"

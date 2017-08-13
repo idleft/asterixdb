@@ -30,6 +30,10 @@
         src: "{{ home_dir }}/hadoop.tar.gz"
         dest: "{{ home_dir }}"
         remote_src: yes
+    - name: Remove install package
+      file:
+        state: absent
+        path: "{{ home_dir }}/hadoop.tar.gz"
 
 - name: Add slaves to name node
   hosts: cc
