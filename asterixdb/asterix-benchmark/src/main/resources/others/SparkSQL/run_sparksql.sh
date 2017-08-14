@@ -46,14 +46,13 @@ then
 fi
 
 # Load data
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/../../benchmarks/tpch/gen/gen.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/../../benchmarks/tpch/gen/gen.yml
 # Configure HDFS
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/install_hdfs.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/start_hdfs.yml
 # Configure Spark
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/install_spark.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/start_spark.yml
+ansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/load_tpch.yml
 # Execute queries
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.yml
-HOME=/root ansible-playbook  -vvvv -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml
+ansible-playbook   -i $INVENTORY --extra-vars="metric='${SYSTEM_NAME}'" $SCRIPT_PATH/ansible/prepare_queries.ymlansible-playbook   -i $INVENTORY $SCRIPT_PATH/ansible/execute_queries.yml
