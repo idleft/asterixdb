@@ -18,16 +18,7 @@
  */
 package org.apache.hyracks.control.cc.executor;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.PriorityQueue;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -440,6 +431,7 @@ public class JobExecutor {
         Collection<String> liveNodes = nodeManager.getAllNodeIds();
         if (nodeId == null) {
             LValueConstraintExpression pLocationExpr = locationMap.get(tid);
+            Object location0 = solver.getValue(pLocationExpr);
             Object location = solver.getValue(pLocationExpr);
             if (location == null) {
                 // pick any

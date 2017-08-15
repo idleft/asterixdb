@@ -163,10 +163,7 @@ public class InMemoryHashJoin {
             int entry = tpcProbe.partition(accessorProbe, tid, tableSize);
             int tupleCount = table.getTupleCount(entry);
             for (int i = 0; i < tupleCount; i++) {
-                boolean chk = table.getTuplePointer(entry, i, storedTuplePointer);
-                if (!chk) {
-                    System.out.println("Opps");
-                }
+                table.getTuplePointer(entry, i, storedTuplePointer);
                 int bIndex = storedTuplePointer.getFrameIndex();
                 int tIndex = storedTuplePointer.getTupleIndex();
                 accessorBuild.reset(buffers.get(bIndex));
