@@ -23,7 +23,7 @@
   hosts: cc
   tasks:
     - include_vars: spark_sql_settings.yml
-    - include_vars: "{{ playbook_dir }}/../conf/private_ip"
+    - include_vars: "{{ playbook_dir }}/../conf/private_ip.yml"
     - name: Generate key on master
       user:
         name: "{{ user }}"
