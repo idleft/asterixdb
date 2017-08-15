@@ -39,6 +39,10 @@
         timeout: 3600
       register: response
 
+    - name: Show full response
+      debug:
+        msg: response
+
     - name: Extract execution time
       shell: printf "exec_time{{':'}} {{ response.json.metrics.elapsedTime | regex_replace('m*s', '') | int }}\n" > "{{ temp_file }}"
       when: report

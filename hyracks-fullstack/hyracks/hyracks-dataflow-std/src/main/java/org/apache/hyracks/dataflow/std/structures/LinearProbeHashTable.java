@@ -70,13 +70,16 @@ public class LinearProbeHashTable implements ISerializableTable {
     @Override
     public boolean insert(int entry, TuplePointer tuplePointer) throws HyracksDataException {
         int entryPtr = entry;
+        int visitedRecords = 0;
         // insert is guaranteed to be good
-        while (safeFrameRead(entryPtr / frameCapacity, entryToTupleOffset(entryPtr)) >= 0) {
+        while (safeFrameRead(entryPtr / frameCapacity, entryToTupleOffset(entryPtr)) >= 0
+                && visitedRecords < tableSize) {
+            visitedRecords++;
             entryPtr = (entryPtr + 1) % tableSize;
         }
-        //        System.out.println(Thread.currentThread().getName() +
-        //                "Insert tuple " + tuplePointer.getFrameIndex() + "-" + tuplePointer.getTupleIndex() + " into "
-        //                        + entryPtr);
+        if (visitedRecords >= tableSize) {
+            return false;
+        }
         writeEntry(entryPtr / frameCapacity, entryToTupleOffset(entryPtr), tuplePointer);
         return true;
     }
@@ -169,5 +172,24 @@ public class LinearProbeHashTable implements ISerializableTable {
     @Override
     public String printInfo() {
         return "NA";
+    }
+
+    public static long getExpectedTableFrameCount(long tableSize, int frameSize) {
+        return (long) (Math.ceil((double) tableSize * ENTRY_SIZE / (double) frameSize));
+    }
+
+    public static long getExpectedTableByteSize(long tableSize, int frameSize) {
+        return getExpectedTableFrameCount(tableSize, frameSize) * frameSize;
+    }
+
+    public static long calculateFrameCountDeltaForTableSizeChange(long origTableSize, long delta, int frameSize) {
+        long originalFrameCount = getExpectedTableFrameCount(origTableSize, frameSize);
+        long newFrameCount = getExpectedTableFrameCount(origTableSize + delta, frameSize);
+        return newFrameCount - originalFrameCount;
+    }
+
+    public static long calculateByteSizeDeltaForTableSizeChange(long origTableSize, long delta, int frameSize,
+            int factor) {
+        return calculateFrameCountDeltaForTableSizeChange(factor* origTableSize, delta, frameSize) * frameSize;
     }
 }

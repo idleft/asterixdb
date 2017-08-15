@@ -46,7 +46,6 @@ import org.apache.hyracks.dataflow.std.buffermanager.PreferToSpillFullyOccupiedF
 import org.apache.hyracks.dataflow.std.buffermanager.VPartitionTupleBufferManager;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.LinearProbeHashTable;
-import org.apache.hyracks.dataflow.std.structures.SerializableHashTable;
 import org.apache.hyracks.dataflow.std.structures.TuplePointer;
 import org.apache.hyracks.dataflow.std.util.FrameTuplePairComparator;
 
@@ -60,8 +59,7 @@ public class OptimizedHybridHashJoin {
     private FrameTupleAppender bigProbeFrameAppender;
 
     enum SIDE {
-        BUILD,
-        PROBE
+        BUILD, PROBE
     }
 
     private IHyracksTaskContext ctx;
@@ -101,18 +99,21 @@ public class OptimizedHybridHashJoin {
     private IDeallocatableFramePool framePool;
     private ISimpleFrameBufferManager bufferManagerForHashTable;
 
-    private boolean isReversed; //Added for handling correct calling for predicate-evaluator upon recursive calls that cause role-reversal
+    private boolean isReversed;
+    //Added for handling correct calling for predicate-evaluator upon recursive calls that cause role-reversal
 
     // stats information
     private int[] buildPSizeInTups;
     private IFrame reloadBuffer;
-    private TuplePointer tempPtr = new TuplePointer(); // this is a reusable object to store the pointer,which is not used anywhere.
-                                                       // we mainly use it to match the corresponding function signature.
+    private TuplePointer tempPtr = new TuplePointer();
+    // this is a reusable object to store the pointer,which is not used anywhere.
+    // we mainly use it to match the corresponding function signature.
     private int[] probePSizeInTups;
 
+    public static final int LOAD_FACTOR = 2;
+
     public OptimizedHybridHashJoin(IHyracksTaskContext ctx, int memSizeInFrames, int numOfPartitions,
-            String probeRelName,
-            String buildRelName, int[] probeKeys, int[] buildKeys, IBinaryComparator[] comparators,
+            String probeRelName, String buildRelName, int[] probeKeys, int[] buildKeys, IBinaryComparator[] comparators,
             RecordDescriptor probeRd, RecordDescriptor buildRd, ITuplePartitionComputer probeHpc,
             ITuplePartitionComputer buildHpc, IPredicateEvaluator predEval, boolean isLeftOuter,
             IMissingWriterFactory[] nullWriterFactories1) {
@@ -260,8 +261,8 @@ public class OptimizedHybridHashJoin {
                 break;
         }
         try {
-            for (int pid = spilledStatus.nextSetBit(0); pid >= 0
-                    && pid < numOfPartitions; pid = spilledStatus.nextSetBit(pid + 1)) {
+            for (int pid = spilledStatus.nextSetBit(0);
+                 pid >= 0 && pid < numOfPartitions; pid = spilledStatus.nextSetBit(pid + 1)) {
                 if (bufferManager.getNumTuples(pid) > 0) {
                     bufferManager.flushPartition(pid, getSpillWriterOrCreateNewOneIfNotExist(pid, whichSide));
                     bufferManager.clearPartition(pid);
@@ -294,16 +295,16 @@ public class OptimizedHybridHashJoin {
 
         // For partitions in main memory, we deduct their size from the free space.
         int inMemTupCount = 0;
-        for (int p = spilledStatus.nextClearBit(0); p >= 0
-                && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
+        for (int p = spilledStatus.nextClearBit(0);
+             p >= 0 && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
             freeSpace -= bufferManager.getPhysicalSize(p);
             inMemTupCount += buildPSizeInTups[p];
         }
 
         // Calculates the expected hash table size for the given number of tuples in main memory
         // and deducts it from the free space.
-        long hashTableByteSizeForInMemTuples = SerializableHashTable.getExpectedTableByteSize(inMemTupCount,
-                frameSize);
+        long hashTableByteSizeForInMemTuples =
+                LinearProbeHashTable.getExpectedTableByteSize(LOAD_FACTOR * inMemTupCount, frameSize);
         freeSpace -= hashTableByteSizeForInMemTuples;
 
         // In the case where free space is less than zero after considering the hash table size,
@@ -318,8 +319,9 @@ public class OptimizedHybridHashJoin {
             int pidToSpill = selectSinglePartitionToSpill(freeSpace, inMemTupCount, frameSize);
             if (pidToSpill >= 0) {
                 // There is a suitable one. We spill that partition to the disk.
-                long hashTableSizeDecrease = -SerializableHashTable.calculateByteSizeDeltaForTableSizeChange(
-                        inMemTupCount, -buildPSizeInTups[pidToSpill], frameSize);
+                long hashTableSizeDecrease = -LinearProbeHashTable
+                        .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -buildPSizeInTups[pidToSpill],
+                                frameSize, LOAD_FACTOR);
                 freeSpace = freeSpace + bufferManager.getPhysicalSize(pidToSpill) + hashTableSizeDecrease;
                 inMemTupCount -= buildPSizeInTups[pidToSpill];
                 spillPartition(pidToSpill);
@@ -328,8 +330,8 @@ public class OptimizedHybridHashJoin {
             } else {
                 // There is no single suitable partition. So, we need to spill multiple partitions to the disk
                 // in order to accommodate the hash table.
-                for (int p = spilledStatus.nextClearBit(0); p >= 0
-                        && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
+                for (int p = spilledStatus.nextClearBit(0);
+                     p >= 0 && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
                     int spaceToBeReturned = bufferManager.getPhysicalSize(p);
                     int numberOfTuplesToBeSpilled = buildPSizeInTups[p];
                     if (spaceToBeReturned == 0 || numberOfTuplesToBeSpilled == 0) {
@@ -341,9 +343,9 @@ public class OptimizedHybridHashJoin {
                     // Since the number of tuples in memory has been decreased,
                     // the hash table size will be decreased, too.
                     // We put minus since the method returns a negative value to represent a newly reclaimed space.
-                    long expectedHashTableSizeDecrease = -SerializableHashTable
+                    long expectedHashTableSizeDecrease = -LinearProbeHashTable
                             .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -numberOfTuplesToBeSpilled,
-                                    frameSize);
+                                    frameSize, LOAD_FACTOR);
                     freeSpace = freeSpace + spaceToBeReturned + expectedHashTableSizeDecrease;
                     // Adjusts the hash table size
                     inMemTupCount -= numberOfTuplesToBeSpilled;
@@ -357,8 +359,8 @@ public class OptimizedHybridHashJoin {
         // If more partitions have been spilled to the disk, calculate the expected hash table size again
         // before bringing some partitions to main memory.
         if (moreSpilled) {
-            hashTableByteSizeForInMemTuples = SerializableHashTable.getExpectedTableByteSize(inMemTupCount,
-                    frameSize);
+            hashTableByteSizeForInMemTuples =
+                    LinearProbeHashTable.getExpectedTableByteSize(LOAD_FACTOR * inMemTupCount, frameSize);
         }
 
         // Brings back some partitions if there is enough free space.
@@ -367,8 +369,9 @@ public class OptimizedHybridHashJoin {
             if (!loadSpilledPartitionToMem(pid, buildRFWriters[pid])) {
                 break;
             }
-            long expectedHashTableByteSizeIncrease = SerializableHashTable
-                    .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, buildPSizeInTups[pid], frameSize);
+            long expectedHashTableByteSizeIncrease = LinearProbeHashTable
+                    .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, buildPSizeInTups[pid], frameSize,
+                            LOAD_FACTOR);
             freeSpace = freeSpace - bufferManager.getPhysicalSize(pid) - expectedHashTableByteSizeIncrease;
             inMemTupCount += buildPSizeInTups[pid];
             // Adjusts the hash table size
@@ -388,14 +391,15 @@ public class OptimizedHybridHashJoin {
         long minSpaceAfterSpill = (long) memSizeInFrames * frameSize;
         int minSpaceAfterSpillPartID = -1;
 
-        for (int p = spilledStatus.nextClearBit(0); p >= 0
-                && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
+        for (int p = spilledStatus.nextClearBit(0);
+             p >= 0 && p < numOfPartitions; p = spilledStatus.nextClearBit(p + 1)) {
             if (buildPSizeInTups[p] == 0 || bufferManager.getPhysicalSize(p) == 0) {
                 continue;
             }
             // We put minus since the method returns a negative value to represent a newly reclaimed space.
-            spaceAfterSpill = currentFreeSpace + bufferManager.getPhysicalSize(p) + (-SerializableHashTable
-                    .calculateByteSizeDeltaForTableSizeChange(currentInMemTupCount, -buildPSizeInTups[p], frameSize));
+            spaceAfterSpill = currentFreeSpace + bufferManager.getPhysicalSize(p) + (-LinearProbeHashTable
+                    .calculateByteSizeDeltaForTableSizeChange(currentInMemTupCount, -buildPSizeInTups[p], frameSize,
+                            LOAD_FACTOR));
             if (spaceAfterSpill == 0) {
                 // Found the perfect one. Just returns this partition.
                 return p;
@@ -409,12 +413,13 @@ public class OptimizedHybridHashJoin {
     }
 
     private int selectPartitionsToReload(long freeSpace, int pid, int inMemTupCount) {
-        for (int i = spilledStatus.nextSetBit(pid); i >= 0
-                && i < numOfPartitions; i = spilledStatus.nextSetBit(i + 1)) {
+        for (int i = spilledStatus.nextSetBit(pid);
+             i >= 0 && i < numOfPartitions; i = spilledStatus.nextSetBit(i + 1)) {
             int spilledTupleCount = buildPSizeInTups[i];
             // Expected hash table size increase after reloading this partition
-            long expectedHashTableByteSizeIncrease = SerializableHashTable.calculateByteSizeDeltaForTableSizeChange(
-                    inMemTupCount, spilledTupleCount, ctx.getInitialFrameSize());
+            long expectedHashTableByteSizeIncrease = LinearProbeHashTable
+                    .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, spilledTupleCount,
+                            ctx.getInitialFrameSize(), LOAD_FACTOR);
             if (freeSpace >= buildRFWriters[i].getFileSize() + expectedHashTableByteSizeIncrease) {
                 return i;
             }
@@ -452,9 +457,9 @@ public class OptimizedHybridHashJoin {
     }
 
     private void createInMemoryJoiner(int inMemTupCount) throws HyracksDataException {
-//        ISerializableTable table = new SerializableHashTable(inMemTupCount, ctx, bufferManagerForHashTable);
-        ISerializableTable table = new LinearProbeHashTable(inMemTupCount, ctx);
-        this.inMemJoiner = new InMemoryHashJoin(ctx, inMemTupCount, new FrameTupleAccessor(probeRd), probeHpc,
+        //        ISerializableTable table = new SerializableHashTable(inMemTupCount, ctx, bufferManagerForHashTable);
+        ISerializableTable table = new LinearProbeHashTable(2 * inMemTupCount, ctx);
+        this.inMemJoiner = new InMemoryHashJoin(ctx, 2 * inMemTupCount, new FrameTupleAccessor(probeRd), probeHpc,
                 new FrameTupleAccessor(buildRd), buildRd, buildHpc,
                 new FrameTuplePairComparator(probeKeys, buildKeys, comparators), isLeftOuter, nonMatchWriters, table,
                 predEvaluator, isReversed, bufferManagerForHashTable);
@@ -634,29 +639,29 @@ public class OptimizedHybridHashJoin {
         buf.append("(A) Spilled partitions" + "\n");
         int spilledTupleCount = 0;
         int spilledPartByteSize = 0;
-        for (int pid = spilledStatus.nextSetBit(0); pid >= 0
-                && pid < numOfPartitions; pid = spilledStatus.nextSetBit(pid + 1)) {
+        for (int pid = spilledStatus.nextSetBit(0);
+             pid >= 0 && pid < numOfPartitions; pid = spilledStatus.nextSetBit(pid + 1)) {
             if (whichSide == SIDE.BUILD) {
                 spilledTupleCount += buildPSizeInTups[pid];
                 spilledPartByteSize += buildRFWriters[pid].getFileSize();
-                buf.append("part:\t" + pid + "\t#tuple:\t" + buildPSizeInTups[pid] + "\tsize(MB):\t"
-                        + ((double) buildRFWriters[pid].getFileSize() / 1048576) + "\n");
+                buf.append("part:\t" + pid + "\t#tuple:\t" + buildPSizeInTups[pid] + "\tsize(MB):\t" + (
+                        (double) buildRFWriters[pid].getFileSize() / 1048576) + "\n");
             } else {
                 spilledTupleCount += probePSizeInTups[pid];
                 spilledPartByteSize += probeRFWriters[pid].getFileSize();
             }
         }
         if (spilledStatus.cardinality() > 0) {
-            buf.append("# of spilled tuples:\t" + spilledTupleCount + "\tsize(MB):\t"
-                    + ((double) spilledPartByteSize / 1048576) + "avg #tuples per spilled part:\t"
-                    + (spilledTupleCount / spilledStatus.cardinality()) + "\tavg size per part(MB):\t"
-                    + ((double) spilledPartByteSize / 1048576 / spilledStatus.cardinality()) + "\n");
+            buf.append("# of spilled tuples:\t" + spilledTupleCount + "\tsize(MB):\t" + ((double) spilledPartByteSize
+                    / 1048576) + "avg #tuples per spilled part:\t" + (spilledTupleCount / spilledStatus.cardinality())
+                    + "\tavg size per part(MB):\t" + ((double) spilledPartByteSize / 1048576 / spilledStatus
+                    .cardinality()) + "\n");
         }
         buf.append("(B) In-memory partitions" + "\n");
         int inMemoryTupleCount = 0;
         int inMemoryPartByteSize = 0;
-        for (int pid = spilledStatus.nextClearBit(0); pid >= 0
-                && pid < numOfPartitions; pid = spilledStatus.nextClearBit(pid + 1)) {
+        for (int pid = spilledStatus.nextClearBit(0);
+             pid >= 0 && pid < numOfPartitions; pid = spilledStatus.nextClearBit(pid + 1)) {
             if (whichSide == SIDE.BUILD) {
                 inMemoryTupleCount += buildPSizeInTups[pid];
                 inMemoryPartByteSize += bufferManager.getPhysicalSize(pid);
@@ -666,19 +671,19 @@ public class OptimizedHybridHashJoin {
             }
         }
         if (spilledStatus.cardinality() > 0) {
-            buf.append("# of in-memory tuples:\t" + inMemoryTupleCount + "\tsize(MB):\t"
-                    + ((double) inMemoryPartByteSize / 1048576) + "avg #tuples per spilled part:\t"
-                    + (inMemoryTupleCount / spilledStatus.cardinality()) + "\tavg size per part(MB):\t"
-                    + ((double) inMemoryPartByteSize / 1048576 / (numOfPartitions - spilledStatus.cardinality()))
-                    + "\n");
+            buf.append(
+                    "# of in-memory tuples:\t" + inMemoryTupleCount + "\tsize(MB):\t" + ((double) inMemoryPartByteSize
+                            / 1048576) + "avg #tuples per spilled part:\t" + (inMemoryTupleCount / spilledStatus
+                            .cardinality()) + "\tavg size per part(MB):\t" + ((double) inMemoryPartByteSize / 1048576
+                            / (numOfPartitions - spilledStatus.cardinality())) + "\n");
         }
         if (inMemoryTupleCount + spilledTupleCount > 0) {
-            buf.append("# of all tuples:\t" + (inMemoryTupleCount + spilledTupleCount) + "\tsize(MB):\t"
-                    + ((double) (inMemoryPartByteSize + spilledPartByteSize) / 1048576) + " ratio of spilled tuples:\t"
-                    + (spilledTupleCount / (inMemoryTupleCount + spilledTupleCount)) + "\n");
+            buf.append("# of all tuples:\t" + (inMemoryTupleCount + spilledTupleCount) + "\tsize(MB):\t" + (
+                    (double) (inMemoryPartByteSize + spilledPartByteSize) / 1048576) + " ratio of spilled tuples:\t" + (
+                    spilledTupleCount / (inMemoryTupleCount + spilledTupleCount)) + "\n");
         } else {
-            buf.append("# of all tuples:\t" + (inMemoryTupleCount + spilledTupleCount) + "\tsize(MB):\t"
-                    + ((double) (inMemoryPartByteSize + spilledPartByteSize) / 1048576) + " ratio of spilled tuples:\t"
+            buf.append("# of all tuples:\t" + (inMemoryTupleCount + spilledTupleCount) + "\tsize(MB):\t" + (
+                    (double) (inMemoryPartByteSize + spilledPartByteSize) / 1048576) + " ratio of spilled tuples:\t"
                     + "N/A" + "\n");
         }
         return buf.toString();

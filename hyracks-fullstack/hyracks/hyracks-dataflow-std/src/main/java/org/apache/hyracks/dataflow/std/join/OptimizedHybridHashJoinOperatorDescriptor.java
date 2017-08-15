@@ -112,6 +112,7 @@ import org.apache.hyracks.dataflow.std.util.FrameTuplePairComparator;
 public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor {
     private static final int BUILD_AND_PARTITION_ACTIVITY_ID = 0;
     private static final int PARTITION_AND_JOIN_ACTIVITY_ID = 1;
+    public static final int LOAD_FACTOR = 2;
 
     private static final long serialVersionUID = 1L;
     private static final double NLJ_SWITCH_THRESHOLD = 0.8;
@@ -493,10 +494,10 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     }
 
                     // Calculate the expected hash table size for the both side.
-                    long expectedHashTableSizeForBuildInFrame = SerializableHashTable
-                            .getExpectedTableFrameCount(buildSizeInTuple, frameSize);
-                    long expectedHashTableSizeForProbeInFrame = SerializableHashTable
-                            .getExpectedTableFrameCount(probeSizeInTuple, frameSize);
+                    long expectedHashTableSizeForBuildInFrame = LinearProbeHashTable
+                            .getExpectedTableFrameCount(LOAD_FACTOR * buildSizeInTuple, frameSize);
+                    long expectedHashTableSizeForProbeInFrame = LinearProbeHashTable
+                            .getExpectedTableFrameCount(LOAD_FACTOR * probeSizeInTuple, frameSize);
 
                     //Apply in-Mem HJ if possible
                     if (!skipInMemoryHJ && ((buildPartSize + expectedHashTableSizeForBuildInFrame < state.memForJoin)
@@ -718,8 +719,8 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
 //                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
-                    ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
-                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, tabSize, new FrameTupleAccessor(probeRDesc),
+                    ISerializableTable table = new LinearProbeHashTable(LOAD_FACTOR * tabSize, ctx);
+                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, LOAD_FACTOR * tabSize, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
                             predEvaluator, isReversed, bufferManager);
