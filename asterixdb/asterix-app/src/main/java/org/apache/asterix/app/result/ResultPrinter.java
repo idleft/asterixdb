@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
 
+import org.apache.asterix.api.http.server.ResultUtil;
 import org.apache.asterix.common.api.IApplicationContext;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.translator.IStatementExecutor.Stats;
@@ -177,7 +178,7 @@ public class ResultPrinter {
             record = record + "\r\n";
         }
         if (conf.is(SessionConfig.FORMAT_HTML)) {
-            record.replace("&", "&amp;");
+            record = ResultUtil.escapeHTML(record);
         }
         if (quoteRecord) {
             // TODO(tillw): this is inefficient as well
