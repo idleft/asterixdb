@@ -176,6 +176,9 @@ public class ResultPrinter {
             // TODO(tillw): this is inefficient as well
             record = record + "\r\n";
         }
+        if (conf.is(SessionConfig.FORMAT_HTML)) {
+            record.replace("&", "&amp;");
+        }
         if (quoteRecord) {
             // TODO(tillw): this is inefficient as well
             record = JSONUtil.quoteAndEscape(record);
