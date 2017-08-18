@@ -55,7 +55,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 public class ResultUtil {
     private static final Logger LOGGER = Logger.getLogger(ResultUtil.class.getName());
     public static final List<Pair<Character, String>> HTML_ENTITIES = Collections.unmodifiableList(
-            Arrays.asList(Pair.of('&', "&amp;"), Pair.of('"', "&quot;"), Pair.of('<', "&lt;"), Pair.of('>', "&gt;")));
+            Arrays.asList(Pair.of('&', "&amp;"), Pair.of('"', "&quot;"), Pair.of('<', "&lt;"), Pair.of('>', "&gt;"),
+                    Pair.of('\'', "&apos;")));
 
     private ResultUtil() {
     }
