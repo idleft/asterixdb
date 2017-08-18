@@ -87,6 +87,7 @@ $(document).ready(function() {
                 $('#output-heading').html('Output');
                 $('#output-heading').removeClass('error');
             }
+            var data = data.replace(/&/g, '&amp;');
             var executedStatements = data.split('<!-- BEGIN -->');
             var executedStatementsWithResultsCount = 0;
             for (var i = 0; i < executedStatements.length; i++) {

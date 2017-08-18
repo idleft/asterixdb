@@ -163,7 +163,7 @@ public class ResultPrinter {
     }
 
     private void displayRecord(String result) throws HyracksDataException {
-        String record = result.replace("&", "&amp;");
+        String record = result;
         if (indentJSON) {
             // TODO(tillw): this is inefficient - do this during record generation
             try {
