@@ -72,6 +72,17 @@ $(document).ready(function() {
         }
     });
 
+    $('#output-format').on('change', function() {
+      if ($('#output-format option:checked').text() == 'JSON (formatted)') {
+        $('input[name=wrapper-array]').attr('disabled', true);
+        $('input[name=wrapper-array]').prop('checked', false);
+        $('input[name=wrapper-array]').parent().css('color', 'grey');
+      } else {
+        $('input[name=wrapper-array]').attr("disabled", false);
+        $('input[name=wrapper-array]').parent().css('color', '');
+      }
+    });
+
     $("form#queryform").submit(function() {
         $('#output-message').html("");
         $.post("/", $("form#queryform").serialize(), function(data) {
