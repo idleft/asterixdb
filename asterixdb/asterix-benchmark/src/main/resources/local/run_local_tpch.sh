@@ -21,16 +21,16 @@
 BENCHMARK_PATH=../benchmarks/tpch
 SYSTEM_NAME=Standard
 
-ansible-playbook -i ",localhost" run_local_query.yml --extra-vars="query_file=$BENCHMARK_PATH/setup/create.sqlpp report=false"
-ansible-playbook -i ",localhost" load/load.yml --extra-vars="query_file=$BENCHMARK_PATH/setup/create.sqlpp report=false"
+#ansible-playbook -i ",localhost" run_local_query.yml --extra-vars="query_file=$BENCHMARK_PATH/setup/create.sqlpp report=false"
+#ansible-playbook -i ",localhost" load/load.yml --extra-vars="query_file=$BENCHMARK_PATH/setup/create.sqlpp report=false"
+#
+#for f in `ls /tmp/asterixdb/dmls/*.sqlpp`; do
+#    ansible-playbook -i ",localhost" run_local_query.yml --extra-vars="query_file=$f report=false"
+#done
 
-for f in `ls /tmp/asterixdb/dmls/*.sqlpp`; do
-    ansible-playbook -i ",localhost" run_local_query.yml --extra-vars="query_file=$f report=false"
-done
-
-for number in 1 2 3
+for number in 1
 do
-    for query in $BENCHMARK_PATH/queries/*.sqlpp; do
+    for query in $BENCHMARK_PATH/queries/q13.sqlpp; do
        echo $query
        ansible-playbook -i ",localhost" --extra-vars="query_file=$query report=true metric=$SYSTEM_NAME" run_local_query.yml
 #       break;
