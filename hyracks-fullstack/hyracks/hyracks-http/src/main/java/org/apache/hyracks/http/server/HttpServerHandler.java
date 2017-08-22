@@ -23,6 +23,7 @@ import java.util.concurrent.RejectedExecutionException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.netty.handler.codec.http.*;
 import org.apache.hyracks.http.api.IServlet;
 import org.apache.hyracks.http.api.IServletRequest;
 import org.apache.hyracks.http.server.utils.HttpUtil;
@@ -30,10 +31,6 @@ import org.apache.hyracks.http.server.utils.HttpUtil;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.DefaultHttpResponse;
-import io.netty.handler.codec.http.FullHttpRequest;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
 
 public class HttpServerHandler<T extends HttpServer> extends SimpleChannelInboundHandler<Object> {
 
@@ -72,7 +69,7 @@ public class HttpServerHandler<T extends HttpServer> extends SimpleChannelInboun
             }
         } catch (Exception e) {
             LOGGER.log(Level.SEVERE, "Failure Submitting HTTP Request", e);
-            respond(ctx, request.protocolVersion(), HttpResponseStatus.INTERNAL_SERVER_ERROR);
+            respond(ctx, request.protocolVersion(), new HttpResponseStatus(500, e.getMessage()));
         }
     }
 
