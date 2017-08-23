@@ -2056,7 +2056,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     metadataProvider.getMetadataTxnContext());
             List<FeedConnection> feedConnections = MetadataManager.INSTANCE
                     .getFeedConections(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
-            if (feedConnections.size() == 0) {
+            if (feedConnections.isEmpty()) {
                 throw new CompilationException(ErrorCode.FEED_START_FEED_WITHOUT_CONNECTION, feedName);
             }
             for (FeedConnection feedConnection : feedConnections) {
