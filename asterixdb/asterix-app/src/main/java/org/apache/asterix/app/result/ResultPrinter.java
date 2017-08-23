@@ -177,12 +177,12 @@ public class ResultPrinter {
             // TODO(tillw): this is inefficient as well
             record = record + "\r\n";
         }
-        if (conf.is(SessionConfig.FORMAT_HTML)) {
-            record = ResultUtil.escapeHTML(record);
-        }
         if (quoteRecord) {
             // TODO(tillw): this is inefficient as well
             record = JSONUtil.quoteAndEscape(record);
+        }
+        if (conf.is(SessionConfig.FORMAT_HTML)) {
+            record = ResultUtil.escapeHTML(record);
         }
         output.out().print(record);
         stats.setCount(stats.getCount() + 1);
