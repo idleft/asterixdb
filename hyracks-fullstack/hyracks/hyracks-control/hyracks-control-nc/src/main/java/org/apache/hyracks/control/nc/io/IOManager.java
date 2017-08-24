@@ -191,7 +191,7 @@ public class IOManager implements IIOManager {
      * @param offset
      * @param data
      * @return The number of bytes read, possibly zero, or -1 if the given offset is greater than or equal to the file's
-     *         current size
+     * current size
      * @throws HyracksDataException
      */
     @Override
@@ -357,17 +357,18 @@ public class IOManager implements IIOManager {
                 }
             }
         } catch (IOException e) {
+            // Swallow the exception intentionally and return an default value.
             freeSpace = -1;
         }
         return freeSpace;
     }
 
     private Pair<String, Long> getDeviceFreeSpace(String path) throws IOException {
-        BufferedReader resultReader = exec("df "+path);
+        BufferedReader resultReader = exec("df " + path);
         String line;
         String[] cols = null;
         int lineCounter = 0;
-        while ((line = resultReader.readLine())!= null) {
+        while ((line = resultReader.readLine()) != null) {
             if (lineCounter == 1) {
                 cols = line.split(" +");
                 break;
