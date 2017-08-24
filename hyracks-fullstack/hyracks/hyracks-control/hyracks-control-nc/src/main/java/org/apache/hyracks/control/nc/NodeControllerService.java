@@ -533,6 +533,7 @@ public class NodeControllerService implements IControllerService {
             hbData.diskReads = ioCounter.getReads();
             hbData.diskWrites = ioCounter.getWrites();
             hbData.numCores = Runtime.getRuntime().availableProcessors() - 1; // Reserves one core for heartbeats.
+            hbData.freeSpace = ioManager.getDiskFreeSpace();
 
             try {
                 cc.nodeHeartbeat(id, hbData);

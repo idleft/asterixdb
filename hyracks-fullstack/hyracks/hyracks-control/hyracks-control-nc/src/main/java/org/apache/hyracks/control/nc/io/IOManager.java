@@ -18,9 +18,11 @@
  */
 package org.apache.hyracks.control.nc.io;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedByInterruptException;
 import java.nio.channels.FileChannel;
@@ -28,9 +30,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Executor;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileReference;
@@ -337,6 +342,44 @@ public class IOManager implements IIOManager {
     @Override
     public long getSize(IFileHandle fileHandle) {
         return fileHandle.getFileReference().getFile().length();
+    }
+
+    @Override
+    public long getDiskFreeSpace() {
+        long freeSpace = 0;
+        Set<String> diskSet = new HashSet<>();
+        try {
+            for (IODeviceHandle deviceHandle : ioDevices) {
+                Pair<String, Long> deviceFreeSpace = getDeviceFreeSpace(deviceHandle.getMount().getAbsolutePath());
+                if (!diskSet.contains(deviceFreeSpace.getLeft())) {
+                    freeSpace += deviceFreeSpace.getRight();
+                    diskSet.add(deviceFreeSpace.getLeft());
+                }
+            }
+        } catch (IOException e) {
+            freeSpace = -1;
+        }
+        return freeSpace;
+    }
+
+    private Pair<String, Long> getDeviceFreeSpace(String path) throws IOException {
+        BufferedReader resultReader = exec("df "+path);
+        String line;
+        String[] cols = null;
+        int lineCounter = 0;
+        while ((line = resultReader.readLine())!= null) {
+            if (lineCounter == 1) {
+                cols = line.split(" +");
+                break;
+            }
+            lineCounter++;
+        }
+        return cols == null ? Pair.of("", 0l) : Pair.of(cols[0], Long.valueOf(cols[3]));
+    }
+
+    private BufferedReader exec(String command) throws IOException {
+        Process p = Runtime.getRuntime().exec(command);
+        return new BufferedReader(new InputStreamReader(p.getInputStream()));
     }
 
     @Override

@@ -139,6 +139,8 @@ public class NodeControllerState {
 
     private final long[] diskWrites;
 
+    private final long[] freeSpace;
+
     private int rrdPtr;
 
     private int lastHeartbeatDuration;
@@ -204,6 +206,7 @@ public class NodeControllerState {
 
         diskReads = new long[RRD_SIZE];
         diskWrites = new long[RRD_SIZE];
+        freeSpace = new long[RRD_SIZE];
 
         rrdPtr = 0;
         capacity = reg.getCapacity();
@@ -243,6 +246,7 @@ public class NodeControllerState {
             ipcMessageBytesReceived[rrdPtr] = hbData.ipcMessageBytesReceived;
             diskReads[rrdPtr] = hbData.diskReads;
             diskWrites[rrdPtr] = hbData.diskWrites;
+            freeSpace[rrdPtr] = hbData.freeSpace;
             rrdPtr = (rrdPtr + 1) % RRD_SIZE;
         }
     }
@@ -279,13 +283,17 @@ public class NodeControllerState {
         return capacity;
     }
 
+    private int currentRRDIdx() {
+        return (rrdPtr + RRD_SIZE - 1) % RRD_SIZE;
+    }
+
     public synchronized ObjectNode toSummaryJSON()  {
         ObjectMapper om = new ObjectMapper();
         ObjectNode o = om.createObjectNode();
         o.put("node-id", ncConfig.getNodeId());
-        o.put("heap-used", heapUsedSize[(rrdPtr + RRD_SIZE - 1) % RRD_SIZE]);
-        o.put("system-load-average", systemLoadAverage[(rrdPtr + RRD_SIZE - 1) % RRD_SIZE]);
-
+        o.put("heap-used", heapUsedSize[currentRRDIdx()]);
+        o.put("system-load-average", systemLoadAverage[currentRRDIdx()]);
+        o.put("free-disk-space", freeSpace[currentRRDIdx()]);
         return o;
     }
 
@@ -344,6 +352,7 @@ public class NodeControllerState {
             o.putPOJO("ipc-message-bytes-received", ipcMessageBytesReceived);
             o.putPOJO("disk-reads", diskReads);
             o.putPOJO("disk-writes", diskWrites);
+            o.putPOJO("free-disk-space", freeSpace);
         }
 
         return o;

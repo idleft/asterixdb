@@ -59,6 +59,8 @@ public interface IIOManager {
 
     public long getSize(IFileHandle fileHandle);
 
+    public long getDiskFreeSpace();
+
     public void deleteWorkspaceFiles() throws HyracksDataException;
 
     /**
