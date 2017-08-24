@@ -163,7 +163,7 @@ public class ApiServlet extends AbstractServlet {
         } catch (AsterixException | TokenMgrError | org.apache.asterix.aqlplus.parser.TokenMgrError pe) {
             GlobalConfig.ASTERIX_LOGGER.log(Level.INFO, pe.toString(), pe);
             ResultUtil.webUIParseExceptionHandler(out, pe, query);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             GlobalConfig.ASTERIX_LOGGER.log(Level.SEVERE, e.getMessage(), e);
             ResultUtil.webUIErrorHandler(out, e);
         }

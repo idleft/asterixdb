@@ -181,7 +181,7 @@ public class ResultUtil {
         return errorResp;
     }
 
-    public static void webUIErrorHandler(PrintWriter out, Exception e) {
+    public static void webUIErrorHandler(PrintWriter out, Throwable e) {
         String errorTemplate = readTemplateFile("/webui/errortemplate.html", "%s\n%s\n%s");
 
         String errorOutput =
