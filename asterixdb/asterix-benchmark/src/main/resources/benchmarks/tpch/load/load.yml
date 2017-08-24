@@ -28,7 +28,8 @@
       include: loadgen.yml
 
     - name: Load all datasets
-      shell: "ansible-playbook -i {{ inventory }} {{ runquery }} --extra-vars=\"query_file={{ dml }} report=false\""
+      shell: "ansible-playbook -i {{ inventory }} {{ runquery }} --extra-vars=\"query_file={{ dml }} report=false\";
+      ansible ncs -i {{ inventory }} -m shell -a \"rm -f {{ data_dir }}/{{ dml | regex_replace('(.*)(load)([^.]*)(.*)', '\\3') | lower}}.tbl*\""
       with_fileglob:
           - "{{ dml_dir }}/*"
       loop_control:
