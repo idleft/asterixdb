@@ -410,6 +410,7 @@ class LangExpressionToPlanTranslator
                             additionalFilteringExpressions, assign);
                     break;
                 case Statement.Kind.CONNECT_FEED:
+                    //TODO: Remove this if it's not used.
                     leafOperator = translateConnectFeed(targetDatasource, varRef, varRefsForLoading,
                             additionalFilteringExpressions, assign);
                     break;
