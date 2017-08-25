@@ -87,6 +87,9 @@ public class ErrorMessageUtil {
      * @return the formatted string
      */
     public static String formatMessage(String component, int errorCode, String message, Serializable... params) {
+        if (params == null) {
+            return message;
+        }
         try (Formatter fmt = new Formatter()) {
             if (!NONE.equals(component)) {
                 fmt.format("%1$s%2$04d: ", component, errorCode);
