@@ -68,8 +68,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     @Override
     public synchronized void remove(Dataset dataset) throws HyracksDataException {
         super.remove(dataset);
-        feedConnections.removeIf(o -> o.getDataverseName().equals(dataset.getDataverseName())
-                && o.getDatasetName().equals(dataset.getDatasetName()));
+        feedConnections.removeIf(o -> o.getDataverseName().equals(dataset.getDataverseName()) && o.getDatasetName()
+                .equals(dataset.getDatasetName()));
     }
 
     public synchronized void addFeedConnection(FeedConnection feedConnection) {
@@ -83,12 +83,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     @Override
     protected void doStart(MetadataProvider mdProvider) throws HyracksDataException, AlgebricksException {
         try {
-            ILangCompilationProvider compilationProvider = new AqlCompilationProvider();
-            IStorageComponentProvider storageComponentProvider = new StorageComponentProvider();
-            DefaultStatementExecutorFactory statementExecutorFactory = new DefaultStatementExecutorFactory();
-            Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> jobInfo = FeedOperations.buildStartFeedJob(
-                    ((QueryTranslator) statementExecutor).getSessionOutput(), mdProvider, feed, feedConnections,
-                    compilationProvider, storageComponentProvider, statementExecutorFactory, hcc);
+            Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> jobInfo =
+                    FeedOperations.buildStartFeedJob(mdProvider, feed, feedConnections, statementExecutor, hcc);
             JobSpecification feedJob = jobInfo.getLeft();
             IActiveEntityEventSubscriber eventSubscriber =
                     new WaitForStateSubscriber(this, Collections.singleton(ActivityState.RUNNING));
@@ -119,8 +115,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
             // Construct ActiveMessage
             for (int i = 0; i < getLocations().getLocations().length; i++) {
                 String intakeLocation = getLocations().getLocations()[i];
-                FeedOperations.SendStopMessageToNode(metadataProvider.getApplicationContext(), entityId, intakeLocation,
-                        i);
+                FeedOperations
+                        .SendStopMessageToNode(metadataProvider.getApplicationContext(), entityId, intakeLocation, i);
             }
             eventSubscriber.sync();
         } catch (AlgebricksException e) {

@@ -152,10 +152,9 @@ public class FeedOperations {
         return spec;
     }
 
-    private static JobSpecification getConnectionJob(SessionOutput sessionOutput, MetadataProvider metadataProvider,
-            FeedConnection feedConnection, String[] locations, ILangCompilationProvider compilationProvider,
-            IStorageComponentProvider storageComponentProvider, DefaultStatementExecutorFactory qtFactory,
-            IHyracksClientConnection hcc) throws AlgebricksException, RemoteException, ACIDException {
+    private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConnection,
+            String[] locations, IStatementExecutor statementExecutor, IHyracksClientConnection hcc)
+            throws AlgebricksException, RemoteException, ACIDException {
         DataverseDecl dataverseDecl = new DataverseDecl(new Identifier(feedConnection.getDataverseName()));
         FeedConnectionRequest fcr =
                 new FeedConnectionRequest(FeedRuntimeType.INTAKE, feedConnection.getAppliedFunctions(),
@@ -165,17 +164,16 @@ public class FeedOperations {
         List<Statement> statements = new ArrayList<>();
         statements.add(dataverseDecl);
         statements.add(subscribeStmt);
-        IStatementExecutor translator = qtFactory.create(metadataProvider.getApplicationContext(), statements,
-                sessionOutput, compilationProvider, storageComponentProvider);
         // configure the metadata provider
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, "" + Boolean.TRUE);
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, "" + subscribeStmt.getPolicy());
-        metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
-                StringUtils.join(subscribeStmt.getLocations(), ','));
+        metadataProvider.getConfig()
+                .put(FeedActivityDetails.COLLECT_LOCATIONS, StringUtils.join(subscribeStmt.getLocations(), ','));
 
-        CompiledStatements.CompiledSubscribeFeedStatement csfs = new CompiledStatements.CompiledSubscribeFeedStatement(
-                subscribeStmt.getSubscriptionRequest(), subscribeStmt.getVarCounter());
-        return translator.rewriteCompileQuery(hcc, metadataProvider, subscribeStmt.getQuery(), csfs);
+        CompiledStatements.CompiledSubscribeFeedStatement csfs =
+                new CompiledStatements.CompiledSubscribeFeedStatement(subscribeStmt.getSubscriptionRequest(),
+                        subscribeStmt.getVarCounter());
+        return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, subscribeStmt.getQuery(), csfs);
     }
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
@@ -218,9 +216,9 @@ public class FeedOperations {
             String datasetName = feedConnections.get(iter1).getDatasetName();
             FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
 
-            FeedPolicyEntity feedPolicyEntity =
-                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
-                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
+            FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil
+                    .validateIfPolicyExists(curFeedConnection.getDataverseName(), curFeedConnection.getPolicyName(),
+                            metadataProvider.getMetadataTxnContext());
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
@@ -273,9 +271,8 @@ public class FeedOperations {
             }
 
             // make connections between operators
-            for (Entry<ConnectorDescriptorId,
-                       Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry
-                       : subJob.getConnectorOperatorMap().entrySet()) {
+            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : subJob
+                    .getConnectorOperatorMap().entrySet()) {
                 ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
                 IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
                 Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
@@ -358,10 +355,8 @@ public class FeedOperations {
     }
 
     public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
-            SessionOutput sessionOutput, MetadataProvider metadataProvider, Feed feed,
-            List<FeedConnection> feedConnections, ILangCompilationProvider compilationProvider,
-            IStorageComponentProvider storageComponentProvider, DefaultStatementExecutorFactory qtFactory,
-            IHyracksClientConnection hcc) throws Exception {
+            MetadataProvider metadataProvider, Feed feed, List<FeedConnection> feedConnections,
+            IStatementExecutor statementExecutor, IHyracksClientConnection hcc) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
         // TODO: Change the default Datasource to use all possible partitions
         Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
@@ -373,8 +368,8 @@ public class FeedOperations {
         String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob = getConnectionJob(sessionOutput, metadataProvider, feedConnection,
-                    ingestionLocations, compilationProvider, storageComponentProvider, qtFactory, hcc);
+            JobSpecification connectionJob =
+                    getConnectionJob(metadataProvider, feedConnection, ingestionLocations, statementExecutor, hcc);
             jobsList.add(connectionJob);
         }
         return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
