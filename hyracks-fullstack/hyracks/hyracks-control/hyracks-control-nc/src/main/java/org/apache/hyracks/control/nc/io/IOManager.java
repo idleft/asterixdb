@@ -45,6 +45,8 @@ import org.apache.hyracks.api.io.IIOFuture;
 import org.apache.hyracks.api.io.IIOManager;
 import org.apache.hyracks.api.io.IODeviceHandle;
 import org.apache.hyracks.api.util.IoUtil;
+import org.apache.hyracks.control.nc.io.profiling.DiskFreeSizeCalculatorFactory;
+import org.apache.hyracks.control.nc.io.profiling.IDiskFreeSpaceCalculator;
 
 public class IOManager implements IIOManager {
     /*
@@ -57,6 +59,9 @@ public class IOManager implements IIOManager {
      */
     private final List<IODeviceHandle> ioDevices;
     private final List<IODeviceHandle> workspaces;
+    private final IDiskFreeSpaceCalculator diskFreeSpaceCalculator =
+            DiskFreeSizeCalculatorFactory.getDiskFreeSpaceCalculator();
+
     /*
      * Mutables
      */
@@ -348,39 +353,15 @@ public class IOManager implements IIOManager {
     public long getDiskFreeSpace() {
         long freeSpace = 0;
         Set<String> diskSet = new HashSet<>();
-        try {
-            for (IODeviceHandle deviceHandle : ioDevices) {
-                Pair<String, Long> deviceFreeSpace = getDeviceFreeSpace(deviceHandle.getMount().getAbsolutePath());
-                if (!diskSet.contains(deviceFreeSpace.getLeft())) {
-                    freeSpace += deviceFreeSpace.getRight();
-                    diskSet.add(deviceFreeSpace.getLeft());
-                }
+        for (IODeviceHandle deviceHandle : ioDevices) {
+            Pair<String, Long> deviceFreeSpace =
+                    diskFreeSpaceCalculator.getFreeDiskSize(deviceHandle.getMount().getAbsolutePath());
+            if (!diskSet.contains(deviceFreeSpace.getLeft())) {
+                freeSpace += deviceFreeSpace.getRight();
+                diskSet.add(deviceFreeSpace.getLeft());
             }
-        } catch (IOException e) {
-            // Swallow the exception intentionally and return an default value.
-            freeSpace = -1;
         }
         return freeSpace;
-    }
-
-    private Pair<String, Long> getDeviceFreeSpace(String path) throws IOException {
-        BufferedReader resultReader = exec("df " + path);
-        String line;
-        String[] cols = null;
-        int lineCounter = 0;
-        while ((line = resultReader.readLine()) != null) {
-            if (lineCounter == 1) {
-                cols = line.split(" +");
-                break;
-            }
-            lineCounter++;
-        }
-        return cols == null ? Pair.of("", 0l) : Pair.of(cols[0], Long.valueOf(cols[3]));
-    }
-
-    private BufferedReader exec(String command) throws IOException {
-        Process p = Runtime.getRuntime().exec(command);
-        return new BufferedReader(new InputStreamReader(p.getInputStream()));
     }
 
     @Override
