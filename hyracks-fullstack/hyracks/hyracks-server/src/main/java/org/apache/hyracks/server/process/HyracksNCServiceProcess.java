@@ -21,6 +21,7 @@ package org.apache.hyracks.server.process;
 import org.apache.hyracks.control.nc.service.NCService;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class HyracksNCServiceProcess extends HyracksServerProcess {
@@ -41,5 +42,6 @@ public class HyracksNCServiceProcess extends HyracksServerProcess {
     protected void addJvmArgs(List<String> cList) {
         // NCService needs little memory
         cList.add("-Xmx128m");
+        cList.add("-Dfile.encoding="+ StandardCharsets.UTF_8);
     }
 }

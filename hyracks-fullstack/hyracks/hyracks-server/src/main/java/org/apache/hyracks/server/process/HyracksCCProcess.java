@@ -19,6 +19,7 @@
 package org.apache.hyracks.server.process;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 import org.apache.hyracks.control.cc.CCDriver;
@@ -41,6 +42,8 @@ public class HyracksCCProcess extends HyracksServerProcess {
     protected void addJvmArgs(List<String> cList) {
         // CC needs more than default memory
         cList.add("-Xmx1024m");
+        // Make sure CC talks in UTF-8
+        cList.add("-Dfile.encoding="+ StandardCharsets.UTF_8);
         //cList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
     }
 }
