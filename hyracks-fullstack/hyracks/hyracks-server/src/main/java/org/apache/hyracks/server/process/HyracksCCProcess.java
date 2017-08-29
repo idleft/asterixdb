@@ -43,7 +43,7 @@ public class HyracksCCProcess extends HyracksServerProcess {
         // CC needs more than default memory
         cList.add("-Xmx1024m");
         // Make sure CC talks in UTF-8
-        cList.add("-Dfile.encoding="+ StandardCharsets.UTF_8);
+        cList.add("-Dfile.encoding=" + StandardCharsets.UTF_8);
         //cList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=5005");
     }
 }

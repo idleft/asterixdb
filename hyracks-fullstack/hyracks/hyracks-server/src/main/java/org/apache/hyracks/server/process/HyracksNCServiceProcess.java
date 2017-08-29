@@ -42,6 +42,6 @@ public class HyracksNCServiceProcess extends HyracksServerProcess {
     protected void addJvmArgs(List<String> cList) {
         // NCService needs little memory
         cList.add("-Xmx128m");
-        cList.add("-Dfile.encoding="+ StandardCharsets.UTF_8);
+        cList.add("-Dfile.encoding=" + StandardCharsets.UTF_8);
     }
 }
