@@ -31,6 +31,7 @@ import org.apache.hyracks.api.dataflow.TaskId;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
 import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
+import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFamily;
 import org.apache.hyracks.api.dataflow.value.IMissingWriter;
 import org.apache.hyracks.api.dataflow.value.IMissingWriterFactory;
 import org.apache.hyracks.api.dataflow.value.IPredicateEvaluator;
@@ -203,10 +204,10 @@ public class InMemoryHashJoinOperatorDescriptor extends AbstractOperatorDescript
                     state = new HashBuildTaskState(ctx.getJobletContext().getJobId(),
                             new TaskId(getActivityId(), partition));
                     ISerializableTable table = new SerializableHashTable(tableSize, ctx, bufferManager);
-                    state.joiner = new InMemoryHashJoin(ctx, tableSize, new FrameTupleAccessor(rd0), hpc0,
+                    state.joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
                             new FrameTupleAccessor(rd1), rd1, hpc1,
                             new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter, nullWriters1, table,
-                            predEvaluator, bufferManager);
+                            predEvaluator, bufferManager, keys0, keys1, hashFunctionFactories);
                 }
 
                 @Override

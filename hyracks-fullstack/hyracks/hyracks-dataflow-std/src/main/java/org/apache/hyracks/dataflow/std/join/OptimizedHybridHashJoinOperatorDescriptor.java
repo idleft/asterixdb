@@ -112,7 +112,6 @@ import org.apache.hyracks.dataflow.std.util.FrameTuplePairComparator;
 public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor {
     private static final int BUILD_AND_PARTITION_ACTIVITY_ID = 0;
     private static final int PARTITION_AND_JOIN_ACTIVITY_ID = 1;
-    public static final int LOAD_FACTOR = 2;
 
     private static final long serialVersionUID = 1L;
     private static final double NLJ_SWITCH_THRESHOLD = 0.8;
@@ -293,7 +292,7 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                             nPartitions);
                     state.hybridHJ = new OptimizedHybridHashJoin(ctx, state.memForJoin, state.numOfPartitions,
                             PROBE_REL, BUILD_REL, probeKeys, buildKeys, comparators, probeRd, buildRd, probeHpc,
-                            buildHpc, predEvaluator, isLeftOuter, nonMatchWriterFactories);
+                            buildHpc, predEvaluator, isLeftOuter, nonMatchWriterFactories, hashFunctionGeneratorFactories);
 
                     state.hybridHJ.initBuild();
                     if (LOGGER.isLoggable(Level.FINE)) {
@@ -495,9 +494,9 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
 
                     // Calculate the expected hash table size for the both side.
                     long expectedHashTableSizeForBuildInFrame = LinearProbeHashTable
-                            .getExpectedTableFrameCount(LOAD_FACTOR * buildSizeInTuple, frameSize);
+                            .getExpectedTableFrameCount(buildSizeInTuple, frameSize);
                     long expectedHashTableSizeForProbeInFrame = LinearProbeHashTable
-                            .getExpectedTableFrameCount(LOAD_FACTOR * probeSizeInTuple, frameSize);
+                            .getExpectedTableFrameCount(probeSizeInTuple, frameSize);
 
                     //Apply in-Mem HJ if possible
                     if (!skipInMemoryHJ && ((buildPartSize + expectedHashTableSizeForBuildInFrame < state.memForJoin)
@@ -577,7 +576,7 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     int n = getNumberOfPartitions(state.memForJoin, tableSize, fudgeFactor, nPartitions);
                     rHHj = new OptimizedHybridHashJoin(ctx, state.memForJoin, n, PROBE_REL, BUILD_REL, probeKeys,
                             buildKeys, comparators, probeRd, buildRd, probeHpc, buildHpc, predEvaluator, isLeftOuter,
-                            nonMatchWriterFactories); //checked-confirmed
+                            nonMatchWriterFactories, hashFunctionGeneratorFactories); //checked-confirmed
 
                     rHHj.setIsReversed(isReversed);
                     try {
@@ -707,7 +706,7 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     }
                 }
 
-                private void applyInMemHashJoin(int[] bKeys, int[] pKeys, int tabSize, RecordDescriptor buildRDesc,
+                private void applyInMemHashJoin(int[] bKeys, int[] pKeys, int inMemTupleCount, RecordDescriptor buildRDesc,
                         RecordDescriptor probeRDesc, ITuplePartitionComputer hpcRepBuild,
                         ITuplePartitionComputer hpcRepProbe, RunFileReader bReader, RunFileReader pReader)
                         throws HyracksDataException {
@@ -719,11 +718,11 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
 //                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
-                    ISerializableTable table = new LinearProbeHashTable(LOAD_FACTOR * tabSize, ctx);
-                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, LOAD_FACTOR * tabSize, new FrameTupleAccessor(probeRDesc),
+                    ISerializableTable table = new LinearProbeHashTable(inMemTupleCount, ctx);
+                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
-                            predEvaluator, isReversed, bufferManager);
+                            predEvaluator, isReversed, bufferManager, pKeys, bKeys, hashFunctionGeneratorFactories);
 
                     try {
                         bReader.open();

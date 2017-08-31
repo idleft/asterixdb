@@ -21,7 +21,7 @@
   <test-group name="failed">
     <test-case FilePath="tpch">
       <compilation-unit name="big_tpch_q10">
-        <output-dir compare="Text">q10_returned_item_int64</output-dir>
+        <output-dir compare="Text">big_tpch_q10</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>

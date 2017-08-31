@@ -16,32 +16,24 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-use dataverse tpch;
-set import-private-functions 'true';
+USE tpch;
 
-for $gco in (
-  for $co in (
-    for $c in dataset('Customer')
-    return {
-      "c_custkey": $c.c_custkey,
-      "o_orderkey_count": count(
-        for $o in dataset('Orders')
-        where  $c.c_custkey = $o.o_custkey and "not"(like($o.o_comment,'%special%requests%'))
-        return $o.o_orderkey
-      )
-    }
-  )
-  group by $c_custkey := $co.c_custkey with $co
-  return {
-    "c_custkey": $c_custkey,
-    "c_count": sum(for $i in $co return $i.o_orderkey_count)
-  }
-)
-group by $c_count := $gco.c_count with $gco
-let $custdist := count($gco)
-order by $custdist desc, $c_count desc
-return {
-  "c_count": $c_count,
-  "custdist": $custdist
-}
-
+SELECT c_count, COUNT(gco) AS custdist
+FROM  (
+        SELECT c_custkey, SUM(o_orderkey_count) AS c_count
+        FROM  (
+                SELECT c.c_custkey,
+                       COLL_COUNT(
+                           (
+                            select element o.o_orderkey
+                            from  Orders o
+                            where c.c_custkey = o.o_custkey and o.o_comment NOT LIKE '%special%requests%'
+                           )
+                         ) AS o_orderkey_count
+                from  Customer c
+        ) co
+        GROUP BY c_custkey
+) gco
+GROUP BY c_count
+ORDER BY custdist DESC,c_count DESC
+;

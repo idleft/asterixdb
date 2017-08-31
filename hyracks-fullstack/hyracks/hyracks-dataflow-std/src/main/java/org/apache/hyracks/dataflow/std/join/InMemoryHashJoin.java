@@ -21,6 +21,7 @@ package org.apache.hyracks.dataflow.std.join;
 import java.io.DataOutput;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -29,11 +30,9 @@ import org.apache.hyracks.api.comm.IFrameTupleAccessor;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.dataflow.value.IMissingWriter;
-import org.apache.hyracks.api.dataflow.value.IPredicateEvaluator;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
-import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
+import org.apache.hyracks.api.dataflow.value.*;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.data.std.accessors.MurmurHash3BinaryHashFunctionFamily;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAppender;
@@ -56,7 +55,6 @@ public class InMemoryHashJoin {
     private final boolean isLeftOuter;
     private final ArrayTupleBuilder missingTupleBuild;
     private final ISerializableTable table;
-    private final int tableSize;
     private final TuplePointer storedTuplePointer;
     private final boolean reverseOutputOrder; //Should we reverse the order of tuples, we are writing in output
     private final IPredicateEvaluator predEvaluator;
@@ -64,26 +62,56 @@ public class InMemoryHashJoin {
     // To release frames
     ISimpleFrameBufferManager bufferManager;
     private final boolean isTableCapacityNotZero;
+    private int bloomFilterSize = 1024;
+    private int bloomHashNum = 5; // Per field
+    private IBinaryHashFunction bloomFilterHashFunctions[];
+    private BitSet bloomFilter;
+
+    private final int[] buildKeys;
+    private final int[] probeKeys;
 
     private static final Logger LOGGER = Logger.getLogger(InMemoryHashJoin.class.getName());
 
-    public InMemoryHashJoin(IHyracksTaskContext ctx, int tableSize, FrameTupleAccessor accessorProbe,
-            ITuplePartitionComputer tpcProbe, FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild,
-            ITuplePartitionComputer tpcBuild, FrameTuplePairComparator comparator, boolean isLeftOuter,
-            IMissingWriter[] missingWritersBuild, ISerializableTable table, IPredicateEvaluator predEval,
-            ISimpleFrameBufferManager bufferManager)
+    public InMemoryHashJoin(IHyracksTaskContext ctx, FrameTupleAccessor accessorProbe, ITuplePartitionComputer tpcProbe,
+            FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild,
+            FrameTuplePairComparator comparator, boolean isLeftOuter, IMissingWriter[] missingWritersBuild,
+            ISerializableTable table, IPredicateEvaluator predEval, ISimpleFrameBufferManager bufferManager,
+            int[] probeKeys, int[] buildKeys, IBinaryHashFunctionFactory[] hashFunctionFactories)
             throws HyracksDataException {
-        this(ctx, tableSize, accessorProbe, tpcProbe, accessorBuild, rDBuild, tpcBuild, comparator, isLeftOuter,
-                missingWritersBuild, table, predEval, false, bufferManager);
+        this(ctx, accessorProbe, tpcProbe, accessorBuild, rDBuild, tpcBuild, comparator, isLeftOuter,
+                missingWritersBuild, table, predEval, false, bufferManager, probeKeys, buildKeys);
+        // initialize with factory
+        for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
+            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
+                bloomFilterHashFunctions[iter1 * buildKeys.length + iter2] =
+                        hashFunctionFactories[iter2].createBinaryHashFunction();
+            }
+        }
     }
 
-    public InMemoryHashJoin(IHyracksTaskContext ctx, int tableSize, FrameTupleAccessor accessorProbe,
-            ITuplePartitionComputer tpcProbe, FrameTupleAccessor accessorBuild,
-            RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild, FrameTuplePairComparator comparator,
-            boolean isLeftOuter, IMissingWriter[] missingWritersBuild, ISerializableTable table,
-            IPredicateEvaluator predEval, boolean reverse, ISimpleFrameBufferManager bufferManager)
-            throws HyracksDataException {
-        this.tableSize = tableSize;
+    public InMemoryHashJoin(IHyracksTaskContext ctx, FrameTupleAccessor accessorProbe, ITuplePartitionComputer tpcProbe,
+            FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild,
+            FrameTuplePairComparator comparator, boolean isLeftOuter, IMissingWriter[] missingWritersBuild,
+            ISerializableTable table, IPredicateEvaluator predEval, boolean reverse,
+            ISimpleFrameBufferManager bufferManager, int[] probeKeys, int[] buildKeys,
+            IBinaryHashFunctionFamily[] hashFunctionFamily) throws HyracksDataException {
+        this(ctx, accessorProbe, tpcProbe, accessorBuild, rDBuild, tpcBuild, comparator, isLeftOuter,
+                missingWritersBuild, table, predEval, reverse, bufferManager, probeKeys, buildKeys);
+        // initialize with factory
+        for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
+            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
+                int idx = iter1 * buildKeys.length + iter2;
+                bloomFilterHashFunctions[idx] =
+                        hashFunctionFamily[iter2].createBinaryHashFunction(idx);
+            }
+        }
+    }
+
+    public InMemoryHashJoin(IHyracksTaskContext ctx, FrameTupleAccessor accessorProbe, ITuplePartitionComputer tpcProbe,
+            FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild,
+            FrameTuplePairComparator comparator, boolean isLeftOuter, IMissingWriter[] missingWritersBuild,
+            ISerializableTable table, IPredicateEvaluator predEval, boolean reverse,
+            ISimpleFrameBufferManager bufferManager, int[] probeKeys, int[] buildKeys) throws HyracksDataException {
         this.table = table;
         storedTuplePointer = new TuplePointer();
         buffers = new ArrayList<>();
@@ -109,13 +137,42 @@ public class InMemoryHashJoin {
         reverseOutputOrder = reverse;
         this.tupleAccessor = new TupleInFrameListAccessor(rDBuild, buffers);
         this.bufferManager = bufferManager;
-        if (tableSize != 0) {
+        if (table.getTableSize() != 0) {
             isTableCapacityNotZero = true;
         } else {
             isTableCapacityNotZero = false;
         }
-        LOGGER.fine("InMemoryHashJoin has been created for a table size of " + tableSize + " for Thread ID "
+        LOGGER.fine("InMemoryHashJoin has been created for a table size of " + table.getTableSize() + " for Thread ID "
                 + Thread.currentThread().getId() + ".");
+        this.bloomFilterHashFunctions = new IBinaryHashFunction[bloomHashNum * buildKeys.length];
+        bloomFilter = new BitSet(bloomFilterSize);
+        this.buildKeys = buildKeys;
+        this.probeKeys = probeKeys;
+    }
+
+    private int hashByBytes(int tupleIdx, int blhIdx, IFrameTupleAccessor accessor, int[] keyIdx)
+            throws HyracksDataException {
+        int h = 0;
+        int startOffset = accessor.getTupleStartOffset(tupleIdx);
+        int slotLength = accessor.getFieldSlotsLength();
+        for (int j = 0; j < keyIdx.length; ++j) {
+            int fIdx = keyIdx[j];
+            IBinaryHashFunction hashFn = bloomFilterHashFunctions[blhIdx * keyIdx.length + j];
+            int fStart = accessor.getFieldStartOffset(tupleIdx, fIdx);
+            int fEnd = accessor.getFieldEndOffset(tupleIdx, fIdx);
+            int fh = hashFn.hash(accessor.getBuffer().array(), startOffset + slotLength + fStart, fEnd - fStart);
+            h += fh;
+        }
+        if (h < 0) {
+            h = -(h + 1);
+        }
+        return h % bloomFilterSize;
+    }
+
+    private void updateBloomFilter(FrameTupleAccessor accessor, int idx, int[] keyIdx) throws HyracksDataException {
+        for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
+            bloomFilter.set(hashByBytes(idx, iter1, accessor, keyIdx));
+        }
     }
 
     public void build(ByteBuffer buffer) throws HyracksDataException {
@@ -124,7 +181,8 @@ public class InMemoryHashJoin {
         accessorBuild.reset(buffer);
         int tCount = accessorBuild.getTupleCount();
         for (int i = 0; i < tCount; ++i) {
-            int entry = tpcBuild.partition(accessorBuild, i, tableSize);
+            int entry = tpcBuild.partition(accessorBuild, i, table.getTableSize());
+            updateBloomFilter(accessorBuild, i, buildKeys);
             storedTuplePointer.reset(bIndex, i);
             // If an insertion fails, then tries to insert the same tuple pointer again after compacting the table.
             if (!table.insert(entry, storedTuplePointer)) {
@@ -153,14 +211,24 @@ public class InMemoryHashJoin {
         return -1;
     }
 
+    private boolean checkBloomFilter(IFrameTupleAccessor accessor, int idx, int[] keyIdx) throws HyracksDataException {
+        for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
+            if (!bloomFilter.get(hashByBytes(idx, iter1, accessor, keyIdx))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /**
      * Reads the given tuple from the probe side and joins it with tuples from the build side.
      * This method assumes that the accessorProbe is already set to the current probe frame.
      */
     void join(int tid, IFrameWriter writer) throws HyracksDataException {
         boolean matchFound = false;
-        if (isTableCapacityNotZero) {
-            int entry = tpcProbe.partition(accessorProbe, tid, tableSize);
+//                if (isTableCapacityNotZero) {
+        if (isTableCapacityNotZero && checkBloomFilter(accessorProbe, tid, probeKeys)) {
+            int entry = tpcProbe.partition(accessorProbe, tid, table.getTableSize());
             int tupleCount = table.getTupleCount(entry);
             for (int i = 0; i < tupleCount; i++) {
                 table.getTuplePointer(entry, i, storedTuplePointer);
@@ -172,6 +240,9 @@ public class InMemoryHashJoin {
                     boolean predEval = evaluatePredicate(tid, tIndex);
                     if (predEval) {
                         matchFound = true;
+                        //                        int val1 = hashByBytes(tid, 0, accessorProbe, probeKeys);
+                        //                        int val2 = hashByBytes(tIndex, 0, accessorBuild, buildKeys);
+                        //                        System.out.println("Hashvalue: " + val1 + "    B: " + val2);
                         appendToResult(tid, tIndex, writer);
                     }
                 }
@@ -179,9 +250,9 @@ public class InMemoryHashJoin {
             }
         }
         if (!matchFound && isLeftOuter) {
-            FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, tid,
-                    missingTupleBuild.getFieldEndOffsets(), missingTupleBuild.getByteArray(), 0,
-                    missingTupleBuild.getSize());
+            FrameUtils
+                    .appendConcatToWriter(writer, appender, accessorProbe, tid, missingTupleBuild.getFieldEndOffsets(),
+                            missingTupleBuild.getByteArray(), 0, missingTupleBuild.getSize());
         }
     }
 
@@ -210,14 +281,17 @@ public class InMemoryHashJoin {
             }
         }
         buffers.clear();
+        bloomFilter.clear();
         if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine("InMemoryHashJoin has finished using " + nFrames + " frames for Thread ID "
-                    + Thread.currentThread().getId() + ".");
+            LOGGER.fine(
+                    "InMemoryHashJoin has finished using " + nFrames + " frames for Thread ID " + Thread.currentThread()
+                            .getId() + ".");
         }
     }
 
     public void closeTable() throws HyracksDataException {
         table.close();
+        bloomFilter.clear();
     }
 
     private boolean evaluatePredicate(int tIx1, int tIx2) {

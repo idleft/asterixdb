@@ -41,36 +41,41 @@ public class MurmurHash3BinaryHash {
         int h = seed;
         int p = offset;
         int remain = length;
-
-        while (remain >= 4) {
-            int k = (bytes[p] & 0xff) | ((bytes[p + 1] & 0xff) << 8) | ((bytes[p + 2] & 0xff) << 16)
-                    | ((bytes[p + 3] & 0xff) << 24);
-            k *= C1;
-            k = Integer.rotateLeft(k, 15);
-            k *= C2;
-            h ^= k;
-            h = Integer.rotateLeft(h, 13);
-            h = h * C3 + C4;
-            p += 4;
-            remain -= 4;
-        }
-        if (remain > 0) {
-            int k = 0;
-            for (int i = 0; remain > 0; i += 8) {
-                k ^= (bytes[p++] & 0xff) << i;
-                remain--;
+        try {
+            while (remain >= 4) {
+                int k = (bytes[p] & 0xff) | ((bytes[p + 1] & 0xff) << 8) | ((bytes[p + 2] & 0xff) << 16) | (
+                        (bytes[p + 3] & 0xff) << 24);
+                k *= C1;
+                k = Integer.rotateLeft(k, 15);
+                k *= C2;
+                h ^= k;
+                h = Integer.rotateLeft(h, 13);
+                h = h * C3 + C4;
+                p += 4;
+                remain -= 4;
             }
-            k *= C1;
-            k = Integer.rotateLeft(k, 15);
-            k *= C2;
-            h ^= k;
+            if (remain > 0) {
+                int k = 0;
+                for (int i = 0; remain > 0; i += 8) {
+                    k ^= (bytes[p++] & 0xff) << i;
+                    remain--;
+                }
+                k *= C1;
+                k = Integer.rotateLeft(k, 15);
+                k *= C2;
+                h ^= k;
+            }
+            h ^= length;
+            h ^= (h >>> 16);
+            h *= C5;
+            h ^= (h >>> 13);
+            h *= C6;
+            h ^= (h >>> 16);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
         }
-        h ^= length;
-        h ^= (h >>> 16);
-        h *= C5;
-        h ^= (h >>> 13);
-        h *= C6;
-        h ^= (h >>> 16);
         return h;
+
     }
+
 }
