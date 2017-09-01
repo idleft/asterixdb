@@ -133,7 +133,7 @@ public class LinearProbeHashTable implements ISerializableTable {
     public int getTupleCount(int entry) {
         int result = 0;
         int ptr = entry;
-        while (frames[entry / frameCapacity] != null
+        while (frames[ptr / frameCapacity] != null
                 && frames[ptr / frameCapacity].getInt(entryToTupleOffset(ptr) * ENTRY_SIZE / INT_SIZE) >= 0
                 && result < tableSize) {
             result++;

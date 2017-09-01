@@ -226,7 +226,6 @@ public class InMemoryHashJoin {
      */
     void join(int tid, IFrameWriter writer) throws HyracksDataException {
         boolean matchFound = false;
-//                if (isTableCapacityNotZero) {
         if (isTableCapacityNotZero && checkBloomFilter(accessorProbe, tid, probeKeys)) {
             int entry = tpcProbe.partition(accessorProbe, tid, table.getTableSize());
             int tupleCount = table.getTupleCount(entry);
