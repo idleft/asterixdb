@@ -495,9 +495,9 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
 
                     // Calculate the expected hash table size for the both side.
                     long expectedHashTableSizeForBuildInFrame = LinearProbeHashTable
-                            .getExpectedTableFrameCount(LOAD_FACTOR * buildSizeInTuple, frameSize);
+                            .getExpectedTableFrameCount(buildSizeInTuple, frameSize);
                     long expectedHashTableSizeForProbeInFrame = LinearProbeHashTable
-                            .getExpectedTableFrameCount(LOAD_FACTOR * probeSizeInTuple, frameSize);
+                            .getExpectedTableFrameCount(probeSizeInTuple, frameSize);
 
                     //Apply in-Mem HJ if possible
                     if (!skipInMemoryHJ && ((buildPartSize + expectedHashTableSizeForBuildInFrame < state.memForJoin)
@@ -719,8 +719,8 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
 //                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
-                    ISerializableTable table = new LinearProbeHashTable(LOAD_FACTOR * tabSize, ctx);
-                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, LOAD_FACTOR * tabSize, new FrameTupleAccessor(probeRDesc),
+                    ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
+                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
                             predEvaluator, isReversed, bufferManager);

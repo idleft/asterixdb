@@ -64,4 +64,6 @@ public interface ISerializableTable {
      * Prints out the internal information of this table.
      */
     String printInfo();
+
+    int getTableSize();
 }
