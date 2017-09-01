@@ -62,8 +62,8 @@ public class InMemoryHashJoin {
     // To release frames
     ISimpleFrameBufferManager bufferManager;
     private final boolean isTableCapacityNotZero;
-    private int bloomFilterSize = 1024;
-    private int bloomHashNum = 5; // Per field
+    private int bloomFilterSize = 16384;
+    private int bloomHashNum = 3; // Per field
     private IBinaryHashFunction bloomFilterHashFunctions[];
     private BitSet bloomFilter;
 
@@ -82,10 +82,10 @@ public class InMemoryHashJoin {
                 missingWritersBuild, table, predEval, false, bufferManager, probeKeys, buildKeys);
         // initialize with factory
         for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
-            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
-                bloomFilterHashFunctions[iter1 * buildKeys.length + iter2] =
-                        hashFunctionFactories[iter2].createBinaryHashFunction();
-            }
+//            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
+                bloomFilterHashFunctions[iter1] =
+                        hashFunctionFactories[0].createBinaryHashFunction();
+//            }
         }
     }
 
@@ -99,11 +99,11 @@ public class InMemoryHashJoin {
                 missingWritersBuild, table, predEval, reverse, bufferManager, probeKeys, buildKeys);
         // initialize with factory
         for (int iter1 = 0; iter1 < bloomHashNum; iter1++) {
-            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
-                int idx = iter1 * buildKeys.length + iter2;
+//            for (int iter2 = 0; iter2 < buildKeys.length; iter2++) {
+                int idx = iter1;
                 bloomFilterHashFunctions[idx] =
-                        hashFunctionFamily[iter2].createBinaryHashFunction(idx);
-            }
+                        hashFunctionFamily[0].createBinaryHashFunction(idx);
+//            }
         }
     }
 
@@ -155,9 +155,9 @@ public class InMemoryHashJoin {
         int h = 0;
         int startOffset = accessor.getTupleStartOffset(tupleIdx);
         int slotLength = accessor.getFieldSlotsLength();
-        for (int j = 0; j < keyIdx.length; ++j) {
+        for (int j = 0; j < 1; ++j) {
             int fIdx = keyIdx[j];
-            IBinaryHashFunction hashFn = bloomFilterHashFunctions[blhIdx * keyIdx.length + j];
+            IBinaryHashFunction hashFn = bloomFilterHashFunctions[blhIdx];
             int fStart = accessor.getFieldStartOffset(tupleIdx, fIdx);
             int fEnd = accessor.getFieldEndOffset(tupleIdx, fIdx);
             int fh = hashFn.hash(accessor.getBuffer().array(), startOffset + slotLength + fStart, fEnd - fStart);
@@ -200,7 +200,7 @@ public class InMemoryHashJoin {
     }
 
     /**
-     * Tries to compact the table to make some space.
+     * Tries to compact the table to make some space.g
      *
      * @return the number of frames that have been reclaimed. If no compaction has happened, the value -1 is returned.
      */
