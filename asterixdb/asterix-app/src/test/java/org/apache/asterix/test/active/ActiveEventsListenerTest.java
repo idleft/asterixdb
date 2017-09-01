@@ -21,7 +21,6 @@ package org.apache.asterix.test.active;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -48,6 +47,7 @@ import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.lock.MetadataLockManager;
 import org.apache.asterix.runtime.utils.CcApplicationContext;
 import org.apache.asterix.test.active.TestEventsListener.Behavior;
+import org.apache.asterix.test.base.TestMethodTracer;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
@@ -59,7 +59,9 @@ import org.apache.hyracks.control.cc.application.CCServiceContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestRule;
 import org.mockito.Mockito;
 
 public class ActiveEventsListenerTest {
@@ -86,6 +88,9 @@ public class ActiveEventsListenerTest {
     static IMetadataLockManager lockManager = new MetadataLockManager();
     static AlgebricksAbsolutePartitionConstraint locations;
     static ExecutorService executor;
+
+    @Rule
+    public TestRule watcher = new TestMethodTracer();
 
     @Before
     public void setUp() throws Exception {
@@ -117,7 +122,6 @@ public class ActiveEventsListenerTest {
         Mockito.when(ccService.getExecutor()).thenReturn(executor);
         locations = new AlgebricksAbsolutePartitionConstraint(nodes);
         metadataProvider = new MetadataProvider(appCtx, null);
-        metadataProvider.setConfig(new HashMap<>());
         clusterController = new TestClusterControllerActor("CC", handler, allDatasets);
         nodeControllers = new TestNodeControllerActor[2];
         nodeControllers[0] = new TestNodeControllerActor(nodes[0], clusterController);
@@ -133,7 +137,6 @@ public class ActiveEventsListenerTest {
 
     TestUserActor newUser(String name, CcApplicationContext appCtx) {
         MetadataProvider actorMdProvider = new MetadataProvider(appCtx, null);
-        actorMdProvider.setConfig(new HashMap<>());
         return new TestUserActor("User: " + name, actorMdProvider, clusterController);
     }
 
@@ -159,6 +162,36 @@ public class ActiveEventsListenerTest {
         action.sync();
         assertSuccess(action);
         Assert.assertEquals(ActivityState.RUNNING, listener.getState());
+    }
+
+    @Test
+    public void testStartWhenOneNodeFinishesBeforeOtherNodeStarts() throws Exception {
+        Assert.assertEquals(ActivityState.STOPPED, listener.getState());
+        listener.onStart(Behavior.SUCCEED);
+        listener.onStop(Behavior.SUCCEED);
+        ActionSubscriber fastSubscriber = new ActionSubscriber();
+        nodeControllers[0].subscribe(fastSubscriber);
+        ActionSubscriber slowSubscriber = new ActionSubscriber();
+        slowSubscriber.stop();
+        nodeControllers[1].subscribe(slowSubscriber);
+        Action startActivityAction = users[0].startActivity(listener);
+        RuntimeRegistration registration = (RuntimeRegistration) fastSubscriber.get(0);
+        registration.sync();
+        registration.deregister();
+        Action deregistration = fastSubscriber.get(1);
+        deregistration.sync();
+        // Node 0 has completed registration and deregistration.. unblock node 1
+        slowSubscriber.resume();
+        registration = (RuntimeRegistration) slowSubscriber.get(0);
+        registration.sync();
+        // now that node 1 is unblocked and completed registration, ensure that start has completed
+        startActivityAction.sync();
+        assertSuccess(startActivityAction);
+        Assert.assertEquals(ActivityState.RUNNING, listener.getState());
+        Action stopAction = users[0].stopActivity(listener);
+        stopAction.sync();
+        assertSuccess(stopAction);
+        Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
     @Test
@@ -305,6 +338,7 @@ public class ActiveEventsListenerTest {
         listener.onStop(Behavior.SUCCEED);
         Action stopAction = users[2].stopActivity(listener);
         stopAction.sync();
+        assertSuccess(stopAction);
         Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
@@ -345,6 +379,10 @@ public class ActiveEventsListenerTest {
         ActivityState state = listener.getState();
         Assert.assertTrue(state == ActivityState.RECOVERING || state == ActivityState.TEMPORARILY_FAILED);
         Assert.assertNotNull(listener.getRecoveryTask());
+        Action stopActivity = users[1].stopActivity(listener);
+        stopActivity.sync();
+        assertSuccess(stopActivity);
+        Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
     @Test
@@ -366,6 +404,10 @@ public class ActiveEventsListenerTest {
         ActivityState state = listener.getState();
         Assert.assertTrue(state == ActivityState.RECOVERING || state == ActivityState.TEMPORARILY_FAILED);
         Assert.assertNotNull(listener.getRecoveryTask());
+        Action stopActivity = users[1].stopActivity(listener);
+        stopActivity.sync();
+        assertSuccess(stopActivity);
+        Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
     @Test
@@ -426,8 +468,10 @@ public class ActiveEventsListenerTest {
         Assert.assertEquals(ActivityState.RUNNING, listener.getState());
         listener.onStop(Behavior.SUCCEED);
         WaitForStateSubscriber subscriber = new WaitForStateSubscriber(listener, EnumSet.of(ActivityState.STOPPED));
-        users[1].stopActivity(listener);
+        Action stopAction = users[1].stopActivity(listener);
         subscriber.sync();
+        stopAction.sync();
+        assertSuccess(stopAction);
         Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
@@ -488,10 +532,12 @@ public class ActiveEventsListenerTest {
                 new WaitForStateSubscriber(listener, EnumSet.of(ActivityState.RECOVERING));
         recoveringSubscriber.sync();
         listener.onStop(Behavior.SUCCEED);
-        users[0].stopActivity(listener);
+        Action stopAction = users[0].stopActivity(listener);
         listener.allowStep();
         runningSubscriber.sync();
         stopSubscriber.sync();
+        stopAction.sync();
+        assertSuccess(stopAction);
         Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
@@ -514,10 +560,12 @@ public class ActiveEventsListenerTest {
                 new WaitForStateSubscriber(listener, EnumSet.of(ActivityState.RECOVERING));
         recoveringSubscriber.sync();
         listener.onStop(Behavior.SUCCEED);
-        users[0].stopActivity(listener);
+        Action stopAction = users[0].stopActivity(listener);
         listener.allowStep();
         secondTempFailSubscriber.sync();
         stopSubscriber.sync();
+        stopAction.sync();
+        assertSuccess(stopAction);
         Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
@@ -540,10 +588,12 @@ public class ActiveEventsListenerTest {
                 new WaitForStateSubscriber(listener, EnumSet.of(ActivityState.RECOVERING));
         recoveringSubscriber.sync();
         listener.onStop(Behavior.SUCCEED);
-        users[0].stopActivity(listener);
+        Action stopAction = users[0].stopActivity(listener);
         listener.allowStep();
         secondTempFailSubscriber.sync();
         stopSubscriber.sync();
+        stopAction.sync();
+        assertSuccess(stopAction);
         Assert.assertEquals(ActivityState.STOPPED, listener.getState());
     }
 
@@ -1387,8 +1437,6 @@ public class ActiveEventsListenerTest {
             Mockito.when(ccService.getExecutor()).thenReturn(executor);
             Mockito.when(ccAppCtx.getStorageComponentProvider()).thenReturn(componentProvider);
             AlgebricksAbsolutePartitionConstraint locations = new AlgebricksAbsolutePartitionConstraint(nodes);
-            MetadataProvider metadataProvider = new MetadataProvider(ccAppCtx, null);
-            metadataProvider.setConfig(new HashMap<>());
             additionalListeners[i] = listener = new TestEventsListener(clusterController, nodeControllers, jobIdFactory,
                     entityId, new ArrayList<>(allDatasets), statementExecutor, ccAppCtx, hcc, locations,
                     new InfiniteRetryPolicyFactory());

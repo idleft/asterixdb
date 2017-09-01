@@ -34,6 +34,7 @@ import java.util.logging.Logger;
 import org.apache.hyracks.http.api.IServlet;
 
 import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.PooledByteBufAllocator;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
@@ -59,6 +60,7 @@ public class HttpServer {
     private final Object lock = new Object();
     private final AtomicInteger threadId = new AtomicInteger();
     private final ConcurrentMap<String, Object> ctx;
+    private final LinkedBlockingQueue<Runnable> workQueue;
     private final List<IServlet> servlets;
     private final EventLoopGroup bossGroup;
     private final EventLoopGroup workerGroup;
@@ -80,9 +82,12 @@ public class HttpServer {
         this.port = port;
         ctx = new ConcurrentHashMap<>();
         servlets = new ArrayList<>();
-        executor = new ThreadPoolExecutor(numExecutorThreads, numExecutorThreads, 0L, TimeUnit.MILLISECONDS,
-                new LinkedBlockingQueue<>(requestQueueSize),
+        workQueue = new LinkedBlockingQueue<>(requestQueueSize);
+        executor = new ThreadPoolExecutor(numExecutorThreads, numExecutorThreads, 0L, TimeUnit.MILLISECONDS, workQueue,
                 runnable -> new Thread(runnable, "HttpExecutor(port:" + port + ")-" + threadId.getAndIncrement()));
+        long directMemoryBudget = numExecutorThreads * (long) HIGH_WRITE_BUFFER_WATER_MARK
+                + numExecutorThreads * HttpServerInitializer.RESPONSE_CHUNK_SIZE;
+        LOGGER.log(Level.INFO, "The direct memory budget for this server is " + directMemoryBudget + " bytes");
     }
 
     public final void start() throws Exception { // NOSONAR
@@ -194,6 +199,7 @@ public class HttpServer {
         Collections.sort(servlets, (l1, l2) -> l2.getPaths()[0].length() - l1.getPaths()[0].length());
         ServerBootstrap b = new ServerBootstrap();
         b.group(bossGroup, workerGroup).channel(NioServerSocketChannel.class)
+                .childOption(ChannelOption.ALLOCATOR, PooledByteBufAllocator.DEFAULT)
                 .childOption(ChannelOption.WRITE_BUFFER_WATER_MARK, WRITE_BUFFER_WATER_MARK)
                 .handler(new LoggingHandler(LogLevel.DEBUG)).childHandler(new HttpServerInitializer(this));
         channel = b.bind(port).sync().channel();
@@ -254,7 +260,7 @@ public class HttpServer {
         return b && (path.length() == cpl || '/' == path.charAt(cpl));
     }
 
-    protected HttpServerHandler createHttpHandler(int chunkSize) {
+    protected HttpServerHandler<HttpServer> createHttpHandler(int chunkSize) {
         return new HttpServerHandler<>(this, chunkSize);
     }
 
@@ -264,5 +270,9 @@ public class HttpServer {
 
     protected EventLoopGroup getWorkerGroup() {
         return workerGroup;
+    }
+
+    public int getWorkQueueSize() {
+        return workQueue.size();
     }
 }

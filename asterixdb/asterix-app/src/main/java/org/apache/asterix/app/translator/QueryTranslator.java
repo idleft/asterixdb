@@ -162,6 +162,7 @@ import org.apache.asterix.translator.CompiledStatements.CompiledUpsertStatement;
 import org.apache.asterix.translator.CompiledStatements.ICompiledDmlStatement;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.IStatementExecutorContext;
+import org.apache.asterix.translator.NoOpStatementExecutorContext;
 import org.apache.asterix.translator.SessionConfig;
 import org.apache.asterix.translator.SessionOutput;
 import org.apache.asterix.translator.TypeTranslator;
@@ -261,13 +262,13 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         FileSplit outputFile = null;
         IAWriterFactory writerFactory = PrinterBasedWriterFactory.INSTANCE;
         IResultSerializerFactoryProvider resultSerializerFactoryProvider = ResultSerializerFactoryProvider.INSTANCE;
-        Map<String, String> config = new HashMap<>();
         /* Since the system runs a large number of threads, when HTTP requests don't return, it becomes difficult to
          * find the thread running the request to determine where it has stopped.
          * Setting the thread name helps make that easier
          */
         String threadName = Thread.currentThread().getName();
         Thread.currentThread().setName(QueryTranslator.class.getSimpleName());
+        Map<String, String> config = new HashMap<>();
         try {
             for (Statement stmt : statements) {
                 if (sessionConfig.is(SessionConfig.FORMAT_HTML)) {
@@ -276,10 +277,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 validateOperation(appCtx, activeDataverse, stmt);
                 rewriteStatement(stmt); // Rewrite the statement's AST.
                 MetadataProvider metadataProvider = new MetadataProvider(appCtx, activeDataverse);
+                metadataProvider.getConfig().putAll(config);
                 metadataProvider.setWriterFactory(writerFactory);
                 metadataProvider.setResultSerializerFactoryProvider(resultSerializerFactoryProvider);
                 metadataProvider.setOutputFile(outputFile);
-                metadataProvider.setConfig(config);
                 switch (stmt.getKind()) {
                     case Statement.Kind.SET:
                         handleSetStatement(stmt, config);
@@ -334,7 +335,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                                     || resultDelivery == ResultDelivery.DEFERRED);
                         }
                         handleInsertUpsertStatement(metadataProvider, stmt, hcc, hdc, resultDelivery, outMetadata,
-                                stats, false, clientContextId, ctx);
+                                stats, false, clientContextId);
                         break;
                     case Statement.Kind.DELETE:
                         handleDeleteStatement(metadataProvider, stmt, hcc, false);
@@ -1727,8 +1728,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
     public JobSpecification handleInsertUpsertStatement(MetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc, IHyracksDataset hdc, ResultDelivery resultDelivery,
-            ResultMetadata outMetadata, Stats stats, boolean compileOnly, String clientContextId,
-            IStatementExecutorContext ctx) throws Exception {
+            ResultMetadata outMetadata, Stats stats, boolean compileOnly, String clientContextId) throws Exception {
         InsertStatement stmtInsertUpsert = (InsertStatement) stmt;
         String dataverseName = getActiveDataverse(stmtInsertUpsert.getDataverseName());
         final IMetadataLocker locker = new IMetadataLocker() {
@@ -1771,7 +1771,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
         if (stmtInsertUpsert.getReturnExpression() != null) {
             deliverResult(hcc, hdc, compiler, metadataProvider, locker, resultDelivery, outMetadata, stats,
-                    clientContextId, ctx);
+                    clientContextId, NoOpStatementExecutorContext.INSTANCE);
         } else {
             locker.lock();
             try {

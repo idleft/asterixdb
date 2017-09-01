@@ -18,7 +18,7 @@
  */
 package org.apache.asterix.api.http.server;
 
-import static org.apache.asterix.api.http.servlet.ServletConstants.HYRACKS_CONNECTION_ATTR;
+import static org.apache.asterix.api.http.server.ServletConstants.HYRACKS_CONNECTION_ATTR;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -180,8 +180,9 @@ public class NodeControllerDetailsApiServlet extends ClusterApiServlet {
         for (int i = 0; i < gcNames.size(); i++) {
             ObjectNode gc = om.createObjectNode();
             gc.set("name", gcNames.get(i));
-            gc.set("collection-time", ((ArrayNode) gcCollectionTimes.get(i)).get(index));
-            gc.set("collection-count", ((ArrayNode) gcCollectionCounts.get(i)).get(index));
+            gc.set("collection-time", gcCollectionTimes.get(i).get(index));
+            gc.set("collection-count", gcCollectionCounts.get(i).get(index));
+            fixupKeys(gc);
             gcs.add(gc);
         }
         json.set("gcs", gcs);
