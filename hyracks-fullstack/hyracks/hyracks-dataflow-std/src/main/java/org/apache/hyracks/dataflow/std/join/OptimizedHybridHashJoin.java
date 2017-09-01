@@ -303,8 +303,7 @@ public class OptimizedHybridHashJoin {
 
         // Calculates the expected hash table size for the given number of tuples in main memory
         // and deducts it from the free space.
-        long hashTableByteSizeForInMemTuples =
-                LinearProbeHashTable.getExpectedTableByteSize(LOAD_FACTOR * inMemTupCount, frameSize);
+        long hashTableByteSizeForInMemTuples = LinearProbeHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
         freeSpace -= hashTableByteSizeForInMemTuples;
 
         // In the case where free space is less than zero after considering the hash table size,
@@ -321,7 +320,7 @@ public class OptimizedHybridHashJoin {
                 // There is a suitable one. We spill that partition to the disk.
                 long hashTableSizeDecrease = -LinearProbeHashTable
                         .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -buildPSizeInTups[pidToSpill],
-                                frameSize, LOAD_FACTOR);
+                                frameSize);
                 freeSpace = freeSpace + bufferManager.getPhysicalSize(pidToSpill) + hashTableSizeDecrease;
                 inMemTupCount -= buildPSizeInTups[pidToSpill];
                 spillPartition(pidToSpill);
@@ -345,7 +344,7 @@ public class OptimizedHybridHashJoin {
                     // We put minus since the method returns a negative value to represent a newly reclaimed space.
                     long expectedHashTableSizeDecrease = -LinearProbeHashTable
                             .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -numberOfTuplesToBeSpilled,
-                                    frameSize, LOAD_FACTOR);
+                                    frameSize);
                     freeSpace = freeSpace + spaceToBeReturned + expectedHashTableSizeDecrease;
                     // Adjusts the hash table size
                     inMemTupCount -= numberOfTuplesToBeSpilled;
@@ -359,8 +358,7 @@ public class OptimizedHybridHashJoin {
         // If more partitions have been spilled to the disk, calculate the expected hash table size again
         // before bringing some partitions to main memory.
         if (moreSpilled) {
-            hashTableByteSizeForInMemTuples =
-                    LinearProbeHashTable.getExpectedTableByteSize(LOAD_FACTOR * inMemTupCount, frameSize);
+            hashTableByteSizeForInMemTuples = LinearProbeHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
         }
 
         // Brings back some partitions if there is enough free space.
@@ -370,8 +368,7 @@ public class OptimizedHybridHashJoin {
                 break;
             }
             long expectedHashTableByteSizeIncrease = LinearProbeHashTable
-                    .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, buildPSizeInTups[pid], frameSize,
-                            LOAD_FACTOR);
+                    .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, buildPSizeInTups[pid], frameSize);
             freeSpace = freeSpace - bufferManager.getPhysicalSize(pid) - expectedHashTableByteSizeIncrease;
             inMemTupCount += buildPSizeInTups[pid];
             // Adjusts the hash table size
@@ -398,8 +395,7 @@ public class OptimizedHybridHashJoin {
             }
             // We put minus since the method returns a negative value to represent a newly reclaimed space.
             spaceAfterSpill = currentFreeSpace + bufferManager.getPhysicalSize(p) + (-LinearProbeHashTable
-                    .calculateByteSizeDeltaForTableSizeChange(currentInMemTupCount, -buildPSizeInTups[p], frameSize,
-                            LOAD_FACTOR));
+                    .calculateByteSizeDeltaForTableSizeChange(currentInMemTupCount, -buildPSizeInTups[p], frameSize));
             if (spaceAfterSpill == 0) {
                 // Found the perfect one. Just returns this partition.
                 return p;
@@ -419,7 +415,7 @@ public class OptimizedHybridHashJoin {
             // Expected hash table size increase after reloading this partition
             long expectedHashTableByteSizeIncrease = LinearProbeHashTable
                     .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, spilledTupleCount,
-                            ctx.getInitialFrameSize(), LOAD_FACTOR);
+                            ctx.getInitialFrameSize());
             if (freeSpace >= buildRFWriters[i].getFileSize() + expectedHashTableByteSizeIncrease) {
                 return i;
             }
@@ -458,8 +454,8 @@ public class OptimizedHybridHashJoin {
 
     private void createInMemoryJoiner(int inMemTupCount) throws HyracksDataException {
         //        ISerializableTable table = new SerializableHashTable(inMemTupCount, ctx, bufferManagerForHashTable);
-        ISerializableTable table = new LinearProbeHashTable(2 * inMemTupCount, ctx);
-        this.inMemJoiner = new InMemoryHashJoin(ctx, 2 * inMemTupCount, new FrameTupleAccessor(probeRd), probeHpc,
+        ISerializableTable table = new LinearProbeHashTable(inMemTupCount, ctx);
+        this.inMemJoiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc,
                 new FrameTupleAccessor(buildRd), buildRd, buildHpc,
                 new FrameTuplePairComparator(probeKeys, buildKeys, comparators), isLeftOuter, nonMatchWriters, table,
                 predEvaluator, isReversed, bufferManagerForHashTable);

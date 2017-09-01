@@ -491,4 +491,9 @@ public class SimpleSerializableHashTable implements ISerializableTable {
         return null;
     }
 
+    @Override
+    public int getTableSize() {
+        return tableSize;
+    }
+
 }

@@ -21,14 +21,15 @@ package org.apache.hyracks.dataflow.std.structures;
 import org.apache.hyracks.api.context.IHyracksFrameMgrContext;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.dataflow.std.buffermanager.ISimpleFrameBufferManager;
+import org.apache.hyracks.data.std.accessors.MurmurHash3BinaryHashFunctionFamily;
 import org.apache.hyracks.dataflow.std.buffermanager.ITuplePointerAccessor;
 
 import java.nio.ByteBuffer;
 
 public class LinearProbeHashTable implements ISerializableTable {
-    private static int INT_SIZE = 4;
-    private static int ENTRY_SIZE = 8;
+    private static final int INT_SIZE = 4;
+    private static final int ENTRY_SIZE = 8;
+    private static final int INVERSE_LOAD_FACTOR = 2;
     private IHyracksFrameMgrContext ctx;
     private int tableSize;
     private int frameCnt;
@@ -39,9 +40,9 @@ public class LinearProbeHashTable implements ISerializableTable {
 
     private IntSerDeBuffer[] frames;
 
-    public LinearProbeHashTable(int tableSize, final IHyracksFrameMgrContext ctx) {
+    public LinearProbeHashTable(int totalTupleCount, final IHyracksFrameMgrContext ctx) {
         this.ctx = ctx;
-        this.tableSize = tableSize;
+        this.tableSize = totalTupleCount * INVERSE_LOAD_FACTOR;
         this.frameSize = ctx.getInitialFrameSize();
         this.frameCapacity = frameSize / (ENTRY_SIZE); // Frame capacity in bucket
         this.frameCnt = (int) Math.ceil(tableSize * 1.0 / frameCapacity);
@@ -84,7 +85,7 @@ public class LinearProbeHashTable implements ISerializableTable {
         return true;
     }
 
-    private void writeEntry(int frameIndex, int tupleOffset, TuplePointer tuplePointer) {
+    private void writeEntry(int frameIndex, int tupleOffset, TuplePointer tuplePointer) throws HyracksDataException {
         int entryOffset = tupleOffset * ENTRY_SIZE / INT_SIZE;
         frames[frameIndex].writeInt(entryOffset, tuplePointer.getFrameIndex());
         frames[frameIndex].writeInt(entryOffset + 1, tuplePointer.getTupleIndex());
@@ -174,22 +175,26 @@ public class LinearProbeHashTable implements ISerializableTable {
         return "NA";
     }
 
-    public static long getExpectedTableFrameCount(long tableSize, int frameSize) {
-        return (long) (Math.ceil((double) tableSize * ENTRY_SIZE / (double) frameSize));
+    @Override
+    public int getTableSize() {
+        return tableSize;
     }
 
-    public static long getExpectedTableByteSize(long tableSize, int frameSize) {
-        return getExpectedTableFrameCount(tableSize, frameSize) * frameSize;
+    public static long getExpectedTableFrameCount(long tupleCount, int frameSize) {
+        return (long) (Math.ceil((double) tupleCount * INVERSE_LOAD_FACTOR * ENTRY_SIZE / (double) frameSize));
     }
 
-    public static long calculateFrameCountDeltaForTableSizeChange(long origTableSize, long delta, int frameSize) {
-        long originalFrameCount = getExpectedTableFrameCount(origTableSize, frameSize);
-        long newFrameCount = getExpectedTableFrameCount(origTableSize + delta, frameSize);
+    public static long getExpectedTableByteSize(long tupleCount, int frameSize) {
+        return getExpectedTableFrameCount(tupleCount, frameSize) * frameSize;
+    }
+
+    public static long calculateFrameCountDeltaForTableSizeChange(long origTupleCount, long delta, int frameSize) {
+        long originalFrameCount = getExpectedTableFrameCount(origTupleCount, frameSize);
+        long newFrameCount = getExpectedTableFrameCount(origTupleCount + delta, frameSize);
         return newFrameCount - originalFrameCount;
     }
 
-    public static long calculateByteSizeDeltaForTableSizeChange(long origTableSize, long delta, int frameSize,
-            int factor) {
-        return calculateFrameCountDeltaForTableSizeChange(factor* origTableSize, delta, frameSize) * frameSize;
+    public static long calculateByteSizeDeltaForTableSizeChange(long origTupleCount, long delta, int frameSize) {
+        return calculateFrameCountDeltaForTableSizeChange(origTupleCount, delta, frameSize) * frameSize;
     }
 }
