@@ -21,7 +21,6 @@ package org.apache.asterix.app.active;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -35,14 +34,11 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActivityState;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventSubscriber;
-import org.apache.asterix.active.IRetryPolicy;
 import org.apache.asterix.active.IRetryPolicyFactory;
 import org.apache.asterix.active.NoRetryPolicyFactory;
 import org.apache.asterix.active.message.ActivePartitionMessage;
 import org.apache.asterix.active.message.ActivePartitionMessage.Event;
 import org.apache.asterix.active.message.StatsRequestMessage;
-import org.apache.asterix.common.api.IClusterManagementWork.ClusterState;
-import org.apache.asterix.common.api.IMetadataLockManager;
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.ErrorCode;
@@ -54,8 +50,6 @@ import org.apache.asterix.external.feed.watch.WaitForStateSubscriber;
 import org.apache.asterix.metadata.api.IActiveEntityController;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Dataset;
-import org.apache.asterix.metadata.utils.DatasetUtil;
-import org.apache.asterix.metadata.utils.MetadataLockUtil;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
@@ -94,8 +88,8 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
     protected String stats;
     protected boolean isFetchingStats;
     protected int numRegistered;
-    protected volatile Future<Void> recoveryTask;
-    protected volatile boolean cancelRecovery;
+    protected int numDeRegistered;
+    protected volatile RecoveryTask rt;
     protected volatile boolean suspended = false;
     // failures
     protected Exception jobFailure;
@@ -112,7 +106,6 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
         this.appCtx = appCtx;
         this.clusterStateManager = appCtx.getClusterStateManager();
         this.metadataProvider = new MetadataProvider(appCtx, null);
-        metadataProvider.setConfig(new HashMap<>());
         this.hcc = hcc;
         this.entityId = entityId;
         this.datasets = datasets;
@@ -125,6 +118,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
         this.runtimeName = runtimeName;
         this.locations = locations;
         this.numRegistered = 0;
+        this.numDeRegistered = 0;
         this.handler =
                 (ActiveNotificationHandler) metadataProvider.getApplicationContext().getActiveNotificationHandler();
         handler.registerListener(this);
@@ -179,13 +173,17 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
                 setState(ActivityState.RUNNING);
             }
         } else if (message.getEvent() == Event.RUNTIME_DEREGISTERED) {
-            numRegistered--;
+            numDeRegistered++;
         }
     }
 
     @SuppressWarnings("unchecked")
     protected void finish(ActiveEvent event) throws HyracksDataException {
         LOGGER.log(level, "the job " + jobId + " finished");
+        if (numRegistered != numDeRegistered) {
+            LOGGER.log(Level.WARNING, "the job " + jobId + " finished with reported runtime registrations = "
+                    + numRegistered + " and deregistrations = " + numDeRegistered + " on node controllers");
+        }
         jobId = null;
         Pair<JobStatus, List<Exception>> status = (Pair<JobStatus, List<Exception>>) event.getEventObject();
         JobStatus jobStatus = status.getLeft();
@@ -195,7 +193,8 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
             jobFailure = exceptions.isEmpty() ? new RuntimeDataException(ErrorCode.UNREPORTED_TASK_FAILURE_EXCEPTION)
                     : exceptions.get(0);
             setState(ActivityState.TEMPORARILY_FAILED);
-            if (prevState != ActivityState.SUSPENDING && prevState != ActivityState.RECOVERING) {
+            if (prevState != ActivityState.SUSPENDING && prevState != ActivityState.RECOVERING
+                    && prevState != ActivityState.RESUMING) {
                 recover();
             }
         } else {
@@ -204,8 +203,9 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
     }
 
     protected void start(ActiveEvent event) {
-        this.jobId = event.getJobId();
+        jobId = event.getJobId();
         numRegistered = 0;
+        numDeRegistered = 0;
     }
 
     @Override
@@ -351,87 +351,16 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
     @Override
     public synchronized void recover() throws HyracksDataException {
         LOGGER.log(level, "Recover is called on " + entityId);
-        if (recoveryTask != null) {
-            LOGGER.log(level, "But recovery task for " + entityId + " is already there!! throwing an exception");
-            throw new RuntimeDataException(ErrorCode.DOUBLE_RECOVERY_ATTEMPTS);
-        }
         if (retryPolicyFactory == NoRetryPolicyFactory.INSTANCE) {
             LOGGER.log(level, "But it has no recovery policy, so it is set to permanent failure");
             setState(ActivityState.PERMANENTLY_FAILED);
         } else {
             ExecutorService executor = appCtx.getServiceContext().getControllerService().getExecutor();
-            IRetryPolicy policy = retryPolicyFactory.create(this);
-            cancelRecovery = false;
             setState(ActivityState.TEMPORARILY_FAILED);
             LOGGER.log(level, "Recovery task has been submitted");
-            recoveryTask = executor.submit(() -> doRecover(policy));
+            rt = new RecoveryTask(appCtx, this, retryPolicyFactory);
+            executor.submit(rt.recover());
         }
-    }
-
-    protected Void doRecover(IRetryPolicy policy)
-            throws AlgebricksException, HyracksDataException, InterruptedException {
-        LOGGER.log(level, "Actual Recovery task has started");
-        if (getState() != ActivityState.TEMPORARILY_FAILED) {
-            LOGGER.log(level, "but its state is not temp failure and so we're just returning");
-            return null;
-        }
-        LOGGER.log(level, "calling the policy");
-        while (policy.retry()) {
-            synchronized (this) {
-                if (cancelRecovery) {
-                    recoveryTask = null;
-                    return null;
-                }
-                while (clusterStateManager.getState() != ClusterState.ACTIVE) {
-                    if (cancelRecovery) {
-                        recoveryTask = null;
-                        return null;
-                    }
-                    wait();
-                }
-            }
-            waitForNonTransitionState();
-            IMetadataLockManager lockManager = metadataProvider.getApplicationContext().getMetadataLockManager();
-            lockManager.acquireActiveEntityWriteLock(metadataProvider.getLocks(),
-                    entityId.getDataverse() + '.' + entityId.getEntityName());
-            for (Dataset dataset : getDatasets()) {
-                MetadataLockUtil.modifyDatasetBegin(lockManager, metadataProvider.getLocks(),
-                        dataset.getDataverseName(), DatasetUtil.getFullyQualifiedName(dataset));
-            }
-            synchronized (this) {
-                try {
-                    setState(ActivityState.RECOVERING);
-                    doStart(metadataProvider);
-                    return null;
-                } catch (Exception e) {
-                    LOGGER.log(level, "Attempt to revive " + entityId + " failed", e);
-                    setState(ActivityState.TEMPORARILY_FAILED);
-                    recoverFailure = e;
-                } finally {
-                    metadataProvider.getLocks().reset();
-                }
-                notifyAll();
-            }
-        }
-        IMetadataLockManager lockManager = metadataProvider.getApplicationContext().getMetadataLockManager();
-        try {
-            lockManager.acquireActiveEntityWriteLock(metadataProvider.getLocks(),
-                    entityId.getDataverse() + '.' + entityId.getEntityName());
-            for (Dataset dataset : getDatasets()) {
-                MetadataLockUtil.modifyDatasetBegin(lockManager, metadataProvider.getLocks(), dataset.getDatasetName(),
-                        DatasetUtil.getFullyQualifiedName(dataset));
-            }
-            synchronized (this) {
-                if (state == ActivityState.TEMPORARILY_FAILED) {
-                    setState(ActivityState.PERMANENTLY_FAILED);
-                    recoveryTask = null;
-                }
-                notifyAll();
-            }
-        } finally {
-            metadataProvider.getLocks().reset();
-        }
-        return null;
     }
 
     @Override
@@ -466,50 +395,42 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
             throws HyracksDataException, AlgebricksException;
 
     @Override
-    public void stop(MetadataProvider metadataProvider) throws HyracksDataException, InterruptedException {
-        Future<Void> aRecoveryTask = null;
-        synchronized (this) {
-            waitForNonTransitionState();
-            if (state != ActivityState.RUNNING && state != ActivityState.PERMANENTLY_FAILED
-                    && state != ActivityState.TEMPORARILY_FAILED) {
-                throw new RuntimeDataException(ErrorCode.ACTIVE_ENTITY_CANNOT_BE_STOPPED, entityId, state);
-            }
-            if (state == ActivityState.TEMPORARILY_FAILED || state == ActivityState.PERMANENTLY_FAILED) {
-                if (recoveryTask != null) {
-                    aRecoveryTask = recoveryTask;
-                    cancelRecovery = true;
-                    recoveryTask.cancel(true);
-                }
-                setState(ActivityState.STOPPED);
-                try {
-                    setRunning(metadataProvider, false);
-                } catch (Exception e) {
-                    LOGGER.log(Level.SEVERE, "Failed to set the entity state as not running " + entityId, e);
-                    throw HyracksDataException.create(e);
-                }
-            } else if (state == ActivityState.RUNNING) {
+    public synchronized void stop(MetadataProvider metadataProvider) throws HyracksDataException, InterruptedException {
+        waitForNonTransitionState();
+        if (state != ActivityState.RUNNING && state != ActivityState.PERMANENTLY_FAILED
+                && state != ActivityState.TEMPORARILY_FAILED) {
+            throw new RuntimeDataException(ErrorCode.ACTIVE_ENTITY_CANNOT_BE_STOPPED, entityId, state);
+        }
+        if (state == ActivityState.TEMPORARILY_FAILED || state == ActivityState.PERMANENTLY_FAILED) {
+            if (rt != null) {
                 setState(ActivityState.STOPPING);
-                try {
-                    doStop(metadataProvider);
-                    setRunning(metadataProvider, false);
-                } catch (Exception e) {
-                    setState(ActivityState.PERMANENTLY_FAILED);
-                    LOGGER.log(Level.SEVERE, "Failed to stop the entity " + entityId, e);
-                    throw HyracksDataException.create(e);
-                }
-            } else {
-                throw new RuntimeDataException(ErrorCode.ACTIVE_ENTITY_CANNOT_BE_STOPPED, entityId, state);
+                rt.cancel();
+                rt = null;
             }
-        }
-        try {
-            if (aRecoveryTask != null) {
-                aRecoveryTask.get();
+            setState(ActivityState.STOPPED);
+            try {
+                setRunning(metadataProvider, false);
+            } catch (Exception e) {
+                LOGGER.log(Level.SEVERE, "Failed to set the entity state as not running " + entityId, e);
+                throw HyracksDataException.create(e);
             }
-        } catch (InterruptedException e) {
-            throw e;
-        } catch (Exception e) {
-            throw HyracksDataException.create(e);
+        } else if (state == ActivityState.RUNNING) {
+            setState(ActivityState.STOPPING);
+            try {
+                doStop(metadataProvider);
+                setRunning(metadataProvider, false);
+            } catch (Exception e) {
+                setState(ActivityState.PERMANENTLY_FAILED);
+                LOGGER.log(Level.SEVERE, "Failed to stop the entity " + entityId, e);
+                throw HyracksDataException.create(e);
+            }
+        } else {
+            throw new RuntimeDataException(ErrorCode.ACTIVE_ENTITY_CANNOT_BE_STOPPED, entityId, state);
         }
+    }
+
+    public RecoveryTask getRecoveryTask() {
+        return rt;
     }
 
     @Override
@@ -581,8 +502,9 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
             setState(ActivityState.RESUMING);
             WaitForStateSubscriber subscriber = new WaitForStateSubscriber(this,
                     EnumSet.of(ActivityState.RUNNING, ActivityState.TEMPORARILY_FAILED));
-            recoveryTask = metadataProvider.getApplicationContext().getServiceContext().getControllerService()
-                    .getExecutor().submit(() -> resumeOrRecover(metadataProvider));
+            rt = new RecoveryTask(appCtx, this, retryPolicyFactory);
+            metadataProvider.getApplicationContext().getServiceContext().getControllerService().getExecutor()
+                    .submit(() -> rt.resumeOrRecover(metadataProvider));
             try {
                 subscriber.sync();
             } catch (Exception e) {
@@ -593,28 +515,6 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
             suspended = false;
             notifyAll();
         }
-    }
-
-    protected Void resumeOrRecover(MetadataProvider metadataProvider)
-            throws HyracksDataException, AlgebricksException, InterruptedException {
-        try {
-            doResume(metadataProvider);
-            synchronized (this) {
-                setState(ActivityState.RUNNING);
-                recoveryTask = null;
-            }
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "First attempt to resume " + entityId + " Failed", e);
-            setState(ActivityState.TEMPORARILY_FAILED);
-            if (retryPolicyFactory == NoRetryPolicyFactory.INSTANCE) {
-                setState(ActivityState.PERMANENTLY_FAILED);
-            } else {
-                IRetryPolicy policy = retryPolicyFactory.create(this);
-                cancelRecovery = false;
-                doRecover(policy);
-            }
-        }
-        return null;
     }
 
     @Override
@@ -629,15 +529,6 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
 
     public void setLocations(AlgebricksAbsolutePartitionConstraint locations) {
         this.locations = locations;
-    }
-
-    public Future<Void> getRecoveryTask() {
-        return recoveryTask;
-    }
-
-    public synchronized void cancelRecovery() {
-        cancelRecovery = true;
-        notifyAll();
     }
 
     @Override
