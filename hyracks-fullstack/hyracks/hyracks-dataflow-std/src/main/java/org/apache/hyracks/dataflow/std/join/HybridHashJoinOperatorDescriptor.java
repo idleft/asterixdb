@@ -57,6 +57,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractStateObject;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.structures.ConciseHashTable;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.LinearProbeHashTable;
 import org.apache.hyracks.dataflow.std.structures.SimpleSerializableHashTable;
@@ -134,7 +135,7 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
 
     public static class BuildAndPartitionTaskState extends AbstractStateObject {
         private RunFileWriter[] fWriters;
-        private InMemoryHashJoin joiner;
+        private ConciseHashJoin joiner;
         private int nPartitions;
         private int memoryForHashtable;
 
@@ -310,8 +311,8 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                             .createPartitioner();
                     int tableSize = (int) (state.memoryForHashtable * recordsPerFrame * factor);
 //                    ISerializableTable table = new SimpleSerializableHashTable(tableSize, ctx);
-                    ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
-                    state.joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
+                    ConciseHashTable table = new ConciseHashTable(tableSize, ctx);
+                    state.joiner = new ConciseHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
                             new FrameTupleAccessor(rd1), rd1, hpc1,
                             new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter, nullWriters1, table,
                             predEvaluator, null);
@@ -500,7 +501,7 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                                 tableSize = (int) (memsize * recordsPerFrame * factor);
                             }
 //                            ISerializableTable table = new SimpleSerializableHashTable(tableSize, ctx);
-                            ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
+                            ConciseHashTable table = new ConciseHashTable(tableSize, ctx);
                             for (int partitionid = 0; partitionid < state.nPartitions; partitionid++) {
                                 RunFileWriter buildWriter = buildWriters[partitionid];
                                 RunFileWriter probeWriter = probeWriters[partitionid];
@@ -508,7 +509,7 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                                     continue;
                                 }
                                 table.reset();
-                                InMemoryHashJoin joiner = new InMemoryHashJoin(ctx,
+                                ConciseHashJoin joiner = new ConciseHashJoin(ctx,
                                         new FrameTupleAccessor(rd0), hpcRep0, new FrameTupleAccessor(rd1), rd1, hpcRep1,
                                         new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter,
                                         nullWriters1, table, predEvaluator, null);

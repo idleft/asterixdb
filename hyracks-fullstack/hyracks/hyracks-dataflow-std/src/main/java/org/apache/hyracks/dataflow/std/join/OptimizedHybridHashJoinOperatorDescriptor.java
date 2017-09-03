@@ -63,6 +63,7 @@ import org.apache.hyracks.dataflow.std.buffermanager.DeallocatableFramePool;
 import org.apache.hyracks.dataflow.std.buffermanager.FramePoolBackedFrameBufferManager;
 import org.apache.hyracks.dataflow.std.buffermanager.IDeallocatableFramePool;
 import org.apache.hyracks.dataflow.std.buffermanager.ISimpleFrameBufferManager;
+import org.apache.hyracks.dataflow.std.structures.ConciseHashTable;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.LinearProbeHashTable;
 import org.apache.hyracks.dataflow.std.structures.SerializableHashTable;
@@ -494,9 +495,9 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     }
 
                     // Calculate the expected hash table size for the both side.
-                    long expectedHashTableSizeForBuildInFrame = LinearProbeHashTable
+                    long expectedHashTableSizeForBuildInFrame = ConciseHashTable
                             .getExpectedTableFrameCount(buildSizeInTuple, frameSize);
-                    long expectedHashTableSizeForProbeInFrame = LinearProbeHashTable
+                    long expectedHashTableSizeForProbeInFrame = ConciseHashTable
                             .getExpectedTableFrameCount(probeSizeInTuple, frameSize);
 
                     //Apply in-Mem HJ if possible
@@ -719,8 +720,8 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
 //                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
-                    ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
-                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
+                    ConciseHashTable table = new ConciseHashTable(tabSize, ctx);
+                    ConciseHashJoin joiner = new ConciseHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
                             predEvaluator, isReversed, bufferManager);

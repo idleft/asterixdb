@@ -44,6 +44,7 @@ import org.apache.hyracks.dataflow.std.buffermanager.IPartitionedTupleBufferMana
 import org.apache.hyracks.dataflow.std.buffermanager.ISimpleFrameBufferManager;
 import org.apache.hyracks.dataflow.std.buffermanager.PreferToSpillFullyOccupiedFramePolicy;
 import org.apache.hyracks.dataflow.std.buffermanager.VPartitionTupleBufferManager;
+import org.apache.hyracks.dataflow.std.structures.ConciseHashTable;
 import org.apache.hyracks.dataflow.std.structures.ISerializableTable;
 import org.apache.hyracks.dataflow.std.structures.LinearProbeHashTable;
 import org.apache.hyracks.dataflow.std.structures.TuplePointer;
@@ -88,7 +89,7 @@ public class OptimizedHybridHashJoin {
     private final BitSet spilledStatus; //0=resident, 1=spilled
     private final int numOfPartitions;
     private final int memSizeInFrames;
-    private InMemoryHashJoin inMemJoiner; //Used for joining resident partitions
+    private ConciseHashJoin inMemJoiner; //Used for joining resident partitions
 
     private IPartitionedTupleBufferManager bufferManager;
     private PreferToSpillFullyOccupiedFramePolicy spillPolicy;
@@ -303,7 +304,7 @@ public class OptimizedHybridHashJoin {
 
         // Calculates the expected hash table size for the given number of tuples in main memory
         // and deducts it from the free space.
-        long hashTableByteSizeForInMemTuples = LinearProbeHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
+        long hashTableByteSizeForInMemTuples = ConciseHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
         freeSpace -= hashTableByteSizeForInMemTuples;
 
         // In the case where free space is less than zero after considering the hash table size,
@@ -318,7 +319,7 @@ public class OptimizedHybridHashJoin {
             int pidToSpill = selectSinglePartitionToSpill(freeSpace, inMemTupCount, frameSize);
             if (pidToSpill >= 0) {
                 // There is a suitable one. We spill that partition to the disk.
-                long hashTableSizeDecrease = -LinearProbeHashTable
+                long hashTableSizeDecrease = -ConciseHashTable
                         .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -buildPSizeInTups[pidToSpill],
                                 frameSize);
                 freeSpace = freeSpace + bufferManager.getPhysicalSize(pidToSpill) + hashTableSizeDecrease;
@@ -342,7 +343,7 @@ public class OptimizedHybridHashJoin {
                     // Since the number of tuples in memory has been decreased,
                     // the hash table size will be decreased, too.
                     // We put minus since the method returns a negative value to represent a newly reclaimed space.
-                    long expectedHashTableSizeDecrease = -LinearProbeHashTable
+                    long expectedHashTableSizeDecrease = -ConciseHashTable
                             .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, -numberOfTuplesToBeSpilled,
                                     frameSize);
                     freeSpace = freeSpace + spaceToBeReturned + expectedHashTableSizeDecrease;
@@ -358,7 +359,7 @@ public class OptimizedHybridHashJoin {
         // If more partitions have been spilled to the disk, calculate the expected hash table size again
         // before bringing some partitions to main memory.
         if (moreSpilled) {
-            hashTableByteSizeForInMemTuples = LinearProbeHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
+            hashTableByteSizeForInMemTuples = ConciseHashTable.getExpectedTableByteSize(inMemTupCount, frameSize);
         }
 
         // Brings back some partitions if there is enough free space.
@@ -367,7 +368,7 @@ public class OptimizedHybridHashJoin {
             if (!loadSpilledPartitionToMem(pid, buildRFWriters[pid])) {
                 break;
             }
-            long expectedHashTableByteSizeIncrease = LinearProbeHashTable
+            long expectedHashTableByteSizeIncrease = ConciseHashTable
                     .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, buildPSizeInTups[pid], frameSize);
             freeSpace = freeSpace - bufferManager.getPhysicalSize(pid) - expectedHashTableByteSizeIncrease;
             inMemTupCount += buildPSizeInTups[pid];
@@ -394,7 +395,7 @@ public class OptimizedHybridHashJoin {
                 continue;
             }
             // We put minus since the method returns a negative value to represent a newly reclaimed space.
-            spaceAfterSpill = currentFreeSpace + bufferManager.getPhysicalSize(p) + (-LinearProbeHashTable
+            spaceAfterSpill = currentFreeSpace + bufferManager.getPhysicalSize(p) + (-ConciseHashTable
                     .calculateByteSizeDeltaForTableSizeChange(currentInMemTupCount, -buildPSizeInTups[p], frameSize));
             if (spaceAfterSpill == 0) {
                 // Found the perfect one. Just returns this partition.
@@ -413,7 +414,7 @@ public class OptimizedHybridHashJoin {
              i >= 0 && i < numOfPartitions; i = spilledStatus.nextSetBit(i + 1)) {
             int spilledTupleCount = buildPSizeInTups[i];
             // Expected hash table size increase after reloading this partition
-            long expectedHashTableByteSizeIncrease = LinearProbeHashTable
+            long expectedHashTableByteSizeIncrease = ConciseHashTable
                     .calculateByteSizeDeltaForTableSizeChange(inMemTupCount, spilledTupleCount,
                             ctx.getInitialFrameSize());
             if (freeSpace >= buildRFWriters[i].getFileSize() + expectedHashTableByteSizeIncrease) {
@@ -454,8 +455,8 @@ public class OptimizedHybridHashJoin {
 
     private void createInMemoryJoiner(int inMemTupCount) throws HyracksDataException {
         //        ISerializableTable table = new SerializableHashTable(inMemTupCount, ctx, bufferManagerForHashTable);
-        ISerializableTable table = new LinearProbeHashTable(inMemTupCount, ctx);
-        this.inMemJoiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc,
+        ConciseHashTable table = new ConciseHashTable(inMemTupCount, ctx);
+        this.inMemJoiner = new ConciseHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc,
                 new FrameTupleAccessor(buildRd), buildRd, buildHpc,
                 new FrameTuplePairComparator(probeKeys, buildKeys, comparators), isLeftOuter, nonMatchWriters, table,
                 predEvaluator, isReversed, bufferManagerForHashTable);

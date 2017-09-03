@@ -26,7 +26,7 @@ public interface ISerializableTable {
 
     boolean insert(int entry, TuplePointer tuplePointer) throws HyracksDataException;
 
-    void delete(int entry);
+    void delete(int entry) throws HyracksDataException;
 
     boolean getTuplePointer(int entry, int offset, TuplePointer tuplePointer);
 
@@ -37,7 +37,7 @@ public interface ISerializableTable {
 
     int getTupleCount();
 
-    int getTupleCount(int entry);
+    int getTupleCount(int entry) throws HyracksDataException;
 
     void reset();
 

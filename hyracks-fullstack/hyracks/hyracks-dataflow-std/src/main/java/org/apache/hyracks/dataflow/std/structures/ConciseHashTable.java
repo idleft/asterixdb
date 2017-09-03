@@ -21,33 +21,56 @@ package org.apache.hyracks.dataflow.std.structures;
 import org.apache.hyracks.api.context.IHyracksFrameMgrContext;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.data.std.accessors.MurmurHash3BinaryHashFunctionFamily;
 import org.apache.hyracks.dataflow.std.buffermanager.ITuplePointerAccessor;
 
 import java.nio.ByteBuffer;
 
-public class LinearProbeHashTable implements ISerializableTable {
+public class ConciseHashTable implements ISerializableTable {
     private static final int INT_SIZE = 4;
     private static final int ENTRY_SIZE = 8;
-    private static final int INVERSE_LOAD_FACTOR = 2;
+    public static final int PROBE_THRESHOLD = 2;
+    public static final int BITMAP_WORD_TOTAL_LENGTH = 64;
+    public static final int BITMAP_WORD_MAP_LENGTH = 32;
+    public static final int BITMAP_WORD_COUNT_LENGTH = BITMAP_WORD_TOTAL_LENGTH - BITMAP_WORD_MAP_LENGTH;
+    public static final long BITMAP_WORD_COUNT_MASK = 0xffffffff;
+    public static final int FILL_FACTOR = 8;
     private IHyracksFrameMgrContext ctx;
     private int tableSize;
     private int frameCnt;
     private int frameSize;
     private int frameCapacity;
     private int currentByteSize;
+    private int actualTableSize;
     private int tupleCount;
+    public int overflowTablePtr;
+    public boolean buildDone;
 
     private IntSerDeBuffer[] frames;
+    public long[] bitmapWords;
+    public int bitWordsNum;
+    public int bitmapSize;
 
-    public LinearProbeHashTable(int totalTupleCount, final IHyracksFrameMgrContext ctx) {
+    // debug
+
+    private int normalCtr = 0;
+    private int ofCtr = 0;
+    private int preNormalCtr = 0;
+    private int preOfCtr = 0;
+
+    public ConciseHashTable(int totalTupleCount, final IHyracksFrameMgrContext ctx) {
         this.ctx = ctx;
-        this.tableSize = totalTupleCount * INVERSE_LOAD_FACTOR;
+        this.actualTableSize = totalTupleCount;
+        this.tableSize = totalTupleCount * FILL_FACTOR;
         this.frameSize = ctx.getInitialFrameSize();
         this.frameCapacity = frameSize / (ENTRY_SIZE); // Frame capacity in bucket
         this.frameCnt = (int) Math.ceil(tableSize * 1.0 / frameCapacity);
         this.frames = new IntSerDeBuffer[frameCnt];
         this.currentByteSize = 0;
+        this.overflowTablePtr = actualTableSize; // Ptr - 1 is the start of OF records
+        this.bitWordsNum = (int) Math.ceil((double) totalTupleCount * FILL_FACTOR / 32);
+        this.bitmapSize = totalTupleCount * FILL_FACTOR;
+        this.bitmapWords = new long[bitWordsNum];
+        buildDone = false;
     }
 
     private ByteBuffer getFrame(int size) throws HyracksDataException {
@@ -64,36 +87,58 @@ public class LinearProbeHashTable implements ISerializableTable {
         return result;
     }
 
+    public int getActualTableSize() {
+        return actualTableSize;
+    }
+
     private int entryToTupleOffset(int entry) {
         return (entry % frameCapacity);
     }
 
+    private boolean peakFrameEmptyByTrueEntry(int trueEntry) {
+        if (frames[trueEntry / frameCapacity] == null
+                || frames[trueEntry / frameCapacity].getInt(entryToTupleOffset(trueEntry) * ENTRY_SIZE / INT_SIZE) < 0)
+            return true;
+        else
+            return false;
+    }
+
     @Override
     public boolean insert(int entry, TuplePointer tuplePointer) throws HyracksDataException {
-        int entryPtr = entry;
-        int visitedRecords = 0;
         // insert is guaranteed to be good
-        while (safeFrameRead(entryPtr / frameCapacity, entryToTupleOffset(entryPtr)) >= 0
-                && visitedRecords < tableSize) {
-            visitedRecords++;
-            entryPtr = (entryPtr + 1) % tableSize;
+        for (int iter1 = 0; iter1 < PROBE_THRESHOLD; iter1++) {
+            int trueEntry = getTrueEntry(entry + iter1);
+            if (peakFrameEmptyByTrueEntry(trueEntry)) {
+                normalCtr++;
+                writeEntry(trueEntry / frameCapacity, entryToTupleOffset(trueEntry), tuplePointer);
+                return true;
+            }
         }
-        if (visitedRecords >= tableSize) {
-            return false;
-        }
-        writeEntry(entryPtr / frameCapacity, entryToTupleOffset(entryPtr), tuplePointer);
+        // failed to insert within limit, insert into OF table
+        overflowTablePtr--;
+        writeEntry(overflowTablePtr / frameCapacity, entryToTupleOffset(overflowTablePtr), tuplePointer);
+        ofCtr++;
         return true;
     }
 
-    private void writeEntry(int frameIndex, int tupleOffset, TuplePointer tuplePointer) throws HyracksDataException {
+    private void writeEntry(int frameIdx, int tupleOffset, TuplePointer tuplePointer) throws HyracksDataException {
+        if (frames[frameIdx] == null) {
+            ByteBuffer newBufferFrame = getFrame(frameSize);
+            frames[frameIdx] = new IntSerDeBuffer(newBufferFrame);
+            frames[frameIdx].resetFrame();
+        }
         int entryOffset = tupleOffset * ENTRY_SIZE / INT_SIZE;
-        frames[frameIndex].writeInt(entryOffset, tuplePointer.getFrameIndex());
-        frames[frameIndex].writeInt(entryOffset + 1, tuplePointer.getTupleIndex());
+        if (frames[frameIdx].getInt(entryOffset) >= 0) {
+//            System.out.println("We screwed");
+            throw new HyracksDataException("YES WE SCREWED.");
+        }
+        frames[frameIdx].writeInt(entryOffset, tuplePointer.getFrameIndex());
+        frames[frameIdx].writeInt(entryOffset + 1, tuplePointer.getTupleIndex());
     }
 
     @Override
     public void delete(int entry) throws HyracksDataException {
-        throw new HyracksDataException("NOT SUPPORTED");
+        throw new HyracksDataException("Not supported.");
     }
 
     @Override
@@ -124,16 +169,8 @@ public class LinearProbeHashTable implements ISerializableTable {
     }
 
     @Override
-    public int getTupleCount(int entry) {
-        int result = 0;
-        int ptr = entry;
-        while (frames[ptr / frameCapacity] != null
-                && frames[ptr / frameCapacity].getInt(entryToTupleOffset(ptr) * ENTRY_SIZE / INT_SIZE) >= 0
-                && result < tableSize) {
-            result++;
-            ptr = (ptr + 1) % tableSize;
-        }
-        return result;
+    public int getTupleCount(int entry) throws HyracksDataException {
+        throw new HyracksDataException("NOT SUPPORT");
     }
 
     @Override
@@ -143,6 +180,10 @@ public class LinearProbeHashTable implements ISerializableTable {
                 frame.resetFrame();
             }
         }
+        for (int iter1 = 0; iter1 < bitmapWords.length; iter1++) {
+            bitmapWords[iter1] = 0;
+        }
+        overflowTablePtr = tableSize - 1;
     }
 
     @Override
@@ -157,6 +198,8 @@ public class LinearProbeHashTable implements ISerializableTable {
         tupleCount = 0;
         currentByteSize = 0;
         ctx.deallocateFrames(framesToDeallocate);
+        bitmapWords = null;
+        buildDone = false;
     }
 
     @Override
@@ -181,7 +224,7 @@ public class LinearProbeHashTable implements ISerializableTable {
     }
 
     public static long getExpectedTableFrameCount(long tupleCount, int frameSize) {
-        return (long) (Math.ceil((double) tupleCount * INVERSE_LOAD_FACTOR * ENTRY_SIZE / (double) frameSize));
+        return (long) (Math.ceil((double) tupleCount * ENTRY_SIZE / (double) frameSize));
     }
 
     public static long getExpectedTableByteSize(long tupleCount, int frameSize) {
@@ -197,4 +240,59 @@ public class LinearProbeHashTable implements ISerializableTable {
     public static long calculateByteSizeDeltaForTableSizeChange(long origTupleCount, long delta, int frameSize) {
         return calculateFrameCountDeltaForTableSizeChange(origTupleCount, delta, frameSize) * frameSize;
     }
+
+    public void updatebitmapWords(int entry) {
+        int idx = entry / BITMAP_WORD_MAP_LENGTH;
+        int bitOffset = (entry % BITMAP_WORD_MAP_LENGTH);
+        for (int iter1 = 0; iter1 < PROBE_THRESHOLD; iter1++) {
+            int safeIdx = (idx + (bitOffset + iter1)/BITMAP_WORD_MAP_LENGTH) % bitWordsNum;
+            int safeOffset = (bitOffset + iter1) % BITMAP_WORD_MAP_LENGTH + BITMAP_WORD_COUNT_LENGTH;
+            if ((bitmapWords[safeIdx] & (1l << (safeOffset))) == 0) {
+                bitmapWords[safeIdx] = bitmapWords[safeIdx] | (1l << (safeOffset));
+                preNormalCtr++;
+                return;
+            }
+        }
+        preOfCtr++;
+    }
+
+    private int popCount(long number) {
+        int counter = 0;
+        for (int iter1 = 0; iter1 < BITMAP_WORD_MAP_LENGTH; iter1++) {
+            if ((number & (1 << iter1)) != 0) {
+                counter++;
+            }
+        }
+        return counter;
+    }
+
+    private int extractCountFromWord(long word) {
+        return (int) (word & BITMAP_WORD_COUNT_MASK);
+    }
+
+    public boolean peakEmptyEntry(int entry) {
+        int wordListIdx = entry / BITMAP_WORD_MAP_LENGTH;
+        int bitPos = entry % BITMAP_WORD_MAP_LENGTH + BITMAP_WORD_COUNT_LENGTH;
+        return (bitmapWords[wordListIdx] & 1l << bitPos) == 0;
+    }
+
+    public int getTrueEntry(int entry) {
+        // This method doesn't guarantee entry is empty
+        int wordListIdx = entry / BITMAP_WORD_MAP_LENGTH;
+        int preWordCount = wordListIdx > 0 ? extractCountFromWord(bitmapWords[wordListIdx - 1]) : 0;
+
+        int currentUpToBit = popCount(
+                bitmapWords[wordListIdx] >> BITMAP_WORD_COUNT_LENGTH & ((1 << entry % BITMAP_WORD_MAP_LENGTH) - 1));
+        return preWordCount + currentUpToBit;
+    }
+
+    public void populateCountsInBitwords() {
+        int aggNum = 0;
+        for (int iter1 = 0; iter1 < bitmapWords.length; iter1++) {
+            long curMap = (bitmapWords[iter1] >> BITMAP_WORD_COUNT_LENGTH);
+            aggNum += popCount(curMap);
+            bitmapWords[iter1] = bitmapWords[iter1] | aggNum;
+        }
+    }
+
 }
