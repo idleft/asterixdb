@@ -42,6 +42,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -64,8 +65,10 @@ public class ConciseHashJoin {
     // To release frames
     ISimpleFrameBufferManager bufferManager;
     private final boolean isTableCapacityNotZero;
+    private Map<String, Integer> hashValueCache;
     // debug
     private int totalRecordNum = 0;
+//    public HashMap<Integer, Integer> freq = new HashMap<>();
 
     private static final Logger LOGGER = Logger.getLogger(ConciseHashJoin.class.getName());
 
@@ -115,6 +118,7 @@ public class ConciseHashJoin {
         }
         LOGGER.fine("InMemoryHashJoin has been created for a table size of " + table.getTableSize() + " for Thread ID "
                 + Thread.currentThread().getId() + ".");
+        hashValueCache = new HashMap<>();
     }
 
     public void build(ByteBuffer buffer) throws HyracksDataException {
@@ -124,6 +128,7 @@ public class ConciseHashJoin {
         totalRecordNum += tCount;
         for (int i = 0; i < tCount; ++i) {
             int entry = tpcBuild.partition(accessorBuild, i, table.getTableSize());
+            hashValueCache.put(String.valueOf(buffers.size() - 1) + "-" + i, entry);
             table.updatebitmapWords(entry);
         }
     }
@@ -164,38 +169,44 @@ public class ConciseHashJoin {
     }
 
     void join(int tid, IFrameWriter writer) throws HyracksDataException {
-        HashMap<Integer, Integer> freq = new HashMap<>();
         if (!table.buildDone) {
             table.populateCountsInBitwords();
             int frameCount = buffers.size();
+            int totalNum = 0;
             for (int iter0 = 0; iter0 < frameCount; iter0++) {
                 ByteBuffer buffer = buffers.get(iter0);
                 accessorBuild.reset(buffer);
                 int tCount = accessorBuild.getTupleCount();
+                totalNum += tCount;
                 for (int iter1 = 0; iter1 < tCount; iter1++) {
-                    int entry = tpcBuild.partition(accessorBuild, iter1, table.getTableSize());
-                    if (freq.containsKey(entry))
-                        freq.put(entry, freq.get(entry) + 1);
-                    else
-                        freq.put(entry, 0);
+                    //                    int entry = tpcBuild.partition(accessorBuild, iter1, table.getTableSize());
+                    int entry = hashValueCache.get(String.valueOf(iter0) + "-" + iter1);
+//                    if (freq.containsKey(entry))
+//                        freq.put(entry, freq.get(entry) + 1);
+//                    else
+//                        freq.put(entry, 0);
                     storedTuplePointer.reset(iter0, iter1);
                     table.insert(entry, storedTuplePointer);
                 }
             }
             table.buildDone = true;
         }
+//        for (Integer key : freq.keySet()) {
+//            System.out.println(key + "  --  " + freq.get(key));
+//        }
         boolean matchFound = false;
         if (isTableCapacityNotZero) {
             int entry = tpcProbe.partition(accessorProbe, tid, table.getTableSize());
             if (!table.peakEmptyEntry(entry)) {
                 // TODO: change trueEntry to entry
-                int trueEntry = table.getTrueEntry(entry);
-                for (int iter1 = 0; iter1 < table.PROBE_THRESHOLD; iter1++) {
-                    if (compareRecord(tid, trueEntry, iter1, writer)) {
+                for (int iter1 = 0; iter1 < table.probeLimit; iter1++) {
+                    // TODO: can be optimized
+                    if (!table.peakEmptyEntry(entry + iter1) && compareRecord(tid, table.getTrueEntry(entry + iter1), 0,
+                            writer)) {
                         matchFound = true;
                     }
                 }
-                for (int iter1 = table.overflowTablePtr + 1; iter1 < table.getActualTableSize(); iter1++) {
+                for (int iter1 = table.overflowTablePtr; iter1 < table.getActualTableSize(); iter1++) {
                     if (compareRecord(tid, iter1, 0, writer)) {
                         matchFound = true;
                     }
@@ -242,6 +253,7 @@ public class ConciseHashJoin {
     }
 
     public void closeTable() throws HyracksDataException {
+        hashValueCache.clear();
         table.close();
     }
 

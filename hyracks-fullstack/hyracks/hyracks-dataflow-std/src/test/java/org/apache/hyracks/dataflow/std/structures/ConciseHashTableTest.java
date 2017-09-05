@@ -36,7 +36,7 @@ public class ConciseHashTableTest {
     @Test
     public void testLinearProbeWithoutCollision() throws Exception {
         int elementRange = 100;
-        ConciseHashTable hashTable = new ConciseHashTable(300, ctx);
+        ConciseHashTable hashTable = new ConciseHashTable(100 * (ConciseHashTable.PROBE_THRESHOLD + 1), ctx);
         TuplePointer tuplePointer = new TuplePointer();
         // update bitmap word list
         for (int iter1 = 0; iter1 < elementRange; iter1++) {
@@ -54,15 +54,17 @@ public class ConciseHashTableTest {
             }
         }
         // read all element out
-        for (int iter1 = 0; iter1 < 300; iter1++) {
+        for (int iter1 = 0; iter1 < 100 * (ConciseHashTable.PROBE_THRESHOLD + 1); iter1++) {
             hashTable.getTuplePointer(iter1, 0, tuplePointer);
             System.out.println("Get " + tuplePointer.getFrameIndex() + "  --  " + tuplePointer.getTupleIndex());
-            if (iter1 < 200) {
-                Assert.assertEquals(iter1 / 2, tuplePointer.getFrameIndex());
-                Assert.assertEquals(iter1 / 2, tuplePointer.getTupleIndex());
+            if (iter1 < 100 * ConciseHashTable.PROBE_THRESHOLD) {
+                Assert.assertEquals(iter1 / hashTable.PROBE_THRESHOLD, tuplePointer.getFrameIndex());
+                Assert.assertEquals(iter1 / hashTable.PROBE_THRESHOLD, tuplePointer.getTupleIndex());
             } else {
-                Assert.assertEquals(300 - iter1 - 1, tuplePointer.getFrameIndex());
-                Assert.assertEquals(300 - iter1 - 1, tuplePointer.getTupleIndex());
+                Assert.assertEquals(100 * (ConciseHashTable.PROBE_THRESHOLD + 1) - iter1 - 1,
+                        tuplePointer.getFrameIndex());
+                Assert.assertEquals(100 * (ConciseHashTable.PROBE_THRESHOLD + 1) - iter1 - 1,
+                        tuplePointer.getTupleIndex());
             }
         }
     }

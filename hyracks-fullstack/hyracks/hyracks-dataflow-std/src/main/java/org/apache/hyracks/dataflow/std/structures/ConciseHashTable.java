@@ -28,7 +28,7 @@ import java.nio.ByteBuffer;
 public class ConciseHashTable implements ISerializableTable {
     private static final int INT_SIZE = 4;
     private static final int ENTRY_SIZE = 8;
-    public static final int PROBE_THRESHOLD = 2;
+    public static final int PROBE_THRESHOLD = 8;
     public static final int BITMAP_WORD_TOTAL_LENGTH = 64;
     public static final int BITMAP_WORD_MAP_LENGTH = 32;
     public static final int BITMAP_WORD_COUNT_LENGTH = BITMAP_WORD_TOTAL_LENGTH - BITMAP_WORD_MAP_LENGTH;
@@ -44,6 +44,7 @@ public class ConciseHashTable implements ISerializableTable {
     private int tupleCount;
     public int overflowTablePtr;
     public boolean buildDone;
+    public int probeLimit;
 
     private IntSerDeBuffer[] frames;
     public long[] bitmapWords;
@@ -52,10 +53,11 @@ public class ConciseHashTable implements ISerializableTable {
 
     // debug
 
-    private int normalCtr = 0;
-    private int ofCtr = 0;
+    public int normalCtr = 0;
+    public int ofCtr = 0;
     private int preNormalCtr = 0;
     private int preOfCtr = 0;
+    public int writeNum = 0;
 
     public ConciseHashTable(int totalTupleCount, final IHyracksFrameMgrContext ctx) {
         this.ctx = ctx;
@@ -70,6 +72,7 @@ public class ConciseHashTable implements ISerializableTable {
         this.bitWordsNum = (int) Math.ceil((double) totalTupleCount * FILL_FACTOR / 32);
         this.bitmapSize = totalTupleCount * FILL_FACTOR;
         this.bitmapWords = new long[bitWordsNum];
+        this.probeLimit = PROBE_THRESHOLD > tableSize ? tableSize : PROBE_THRESHOLD;
         buildDone = false;
     }
 
@@ -106,8 +109,10 @@ public class ConciseHashTable implements ISerializableTable {
     @Override
     public boolean insert(int entry, TuplePointer tuplePointer) throws HyracksDataException {
         // insert is guaranteed to be good
-        for (int iter1 = 0; iter1 < PROBE_THRESHOLD; iter1++) {
-            int trueEntry = getTrueEntry(entry + iter1);
+        tupleCount++;
+        for (int iter1 = 0; iter1 < probeLimit; iter1++) {
+            int shiftEntry = entry + iter1;
+            int trueEntry = getTrueEntry(shiftEntry);
             if (peakFrameEmptyByTrueEntry(trueEntry)) {
                 normalCtr++;
                 writeEntry(trueEntry / frameCapacity, entryToTupleOffset(trueEntry), tuplePointer);
@@ -129,11 +134,12 @@ public class ConciseHashTable implements ISerializableTable {
         }
         int entryOffset = tupleOffset * ENTRY_SIZE / INT_SIZE;
         if (frames[frameIdx].getInt(entryOffset) >= 0) {
-//            System.out.println("We screwed");
+            //            System.out.println("We screwed");
             throw new HyracksDataException("YES WE SCREWED.");
         }
         frames[frameIdx].writeInt(entryOffset, tuplePointer.getFrameIndex());
         frames[frameIdx].writeInt(entryOffset + 1, tuplePointer.getTupleIndex());
+        writeNum++;
     }
 
     @Override
@@ -143,7 +149,7 @@ public class ConciseHashTable implements ISerializableTable {
 
     @Override
     public boolean getTuplePointer(int entry, int tupleOffset, TuplePointer tuplePointer) {
-        int actualEntry = (entry + tupleOffset) % tableSize;
+        int actualEntry = (entry + tupleOffset) % actualTableSize;
         if (frames[actualEntry / frameCapacity] == null
                 || frames[actualEntry / frameCapacity].getInt(entryToTupleOffset(actualEntry) * ENTRY_SIZE / INT_SIZE)
                 < 0) {
@@ -184,6 +190,7 @@ public class ConciseHashTable implements ISerializableTable {
             bitmapWords[iter1] = 0;
         }
         overflowTablePtr = tableSize - 1;
+        buildDone = false;
     }
 
     @Override
@@ -200,6 +207,7 @@ public class ConciseHashTable implements ISerializableTable {
         ctx.deallocateFrames(framesToDeallocate);
         bitmapWords = null;
         buildDone = false;
+        overflowTablePtr = tableSize;
     }
 
     @Override
@@ -242,13 +250,12 @@ public class ConciseHashTable implements ISerializableTable {
     }
 
     public void updatebitmapWords(int entry) {
-        int idx = entry / BITMAP_WORD_MAP_LENGTH;
-        int bitOffset = (entry % BITMAP_WORD_MAP_LENGTH);
-        for (int iter1 = 0; iter1 < PROBE_THRESHOLD; iter1++) {
-            int safeIdx = (idx + (bitOffset + iter1)/BITMAP_WORD_MAP_LENGTH) % bitWordsNum;
-            int safeOffset = (bitOffset + iter1) % BITMAP_WORD_MAP_LENGTH + BITMAP_WORD_COUNT_LENGTH;
-            if ((bitmapWords[safeIdx] & (1l << (safeOffset))) == 0) {
-                bitmapWords[safeIdx] = bitmapWords[safeIdx] | (1l << (safeOffset));
+        for (int iter1 = 0; iter1 < probeLimit; iter1++) {
+            int shiftEntry = (entry + iter1) % tableSize;
+            int idx = shiftEntry / BITMAP_WORD_MAP_LENGTH;
+            int bitOffset = shiftEntry % BITMAP_WORD_MAP_LENGTH + BITMAP_WORD_COUNT_LENGTH;
+            if ((bitmapWords[idx] & (1l << (bitOffset))) == 0) {
+                bitmapWords[idx] = bitmapWords[idx] | (1l << (bitOffset));
                 preNormalCtr++;
                 return;
             }
@@ -266,11 +273,12 @@ public class ConciseHashTable implements ISerializableTable {
         return counter;
     }
 
-    private int extractCountFromWord(long word) {
+    public int extractCountFromWord(long word) {
         return (int) (word & BITMAP_WORD_COUNT_MASK);
     }
 
     public boolean peakEmptyEntry(int entry) {
+        entry = entry % tableSize;
         int wordListIdx = entry / BITMAP_WORD_MAP_LENGTH;
         int bitPos = entry % BITMAP_WORD_MAP_LENGTH + BITMAP_WORD_COUNT_LENGTH;
         return (bitmapWords[wordListIdx] & 1l << bitPos) == 0;
@@ -278,6 +286,7 @@ public class ConciseHashTable implements ISerializableTable {
 
     public int getTrueEntry(int entry) {
         // This method doesn't guarantee entry is empty
+        entry = entry % tableSize;
         int wordListIdx = entry / BITMAP_WORD_MAP_LENGTH;
         int preWordCount = wordListIdx > 0 ? extractCountFromWord(bitmapWords[wordListIdx - 1]) : 0;
 

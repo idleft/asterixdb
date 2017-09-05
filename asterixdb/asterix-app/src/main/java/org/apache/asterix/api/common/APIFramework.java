@@ -237,6 +237,7 @@ public class APIFramework {
         int joinFrameLimit = getFrameLimit(CompilerProperties.COMPILER_JOINMEMORY_KEY,
                 querySpecificConfig.get(CompilerProperties.COMPILER_JOINMEMORY_KEY),
                 compilerProperties.getJoinMemorySize(), frameSize, MIN_FRAME_LIMIT_FOR_JOIN);
+//        int joinFrameLimit = 200;
         OptimizationConfUtil.getPhysicalOptimizationConfig().setFrameSize(frameSize);
         OptimizationConfUtil.getPhysicalOptimizationConfig().setMaxFramesExternalSort(sortFrameLimit);
         OptimizationConfUtil.getPhysicalOptimizationConfig().setMaxFramesExternalGroupBy(groupFrameLimit);
