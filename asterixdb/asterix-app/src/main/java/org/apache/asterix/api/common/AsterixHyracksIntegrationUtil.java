@@ -127,7 +127,7 @@ public class AsterixHyracksIntegrationUtil {
         ccConfig.setClientListenAddress(Inet4Address.getLoopbackAddress().getHostAddress());
         ccConfig.setClientListenPort(DEFAULT_HYRACKS_CC_CLIENT_PORT);
         ccConfig.setClusterListenPort(DEFAULT_HYRACKS_CC_CLUSTER_PORT);
-        ccConfig.setResultTTL(120000L);
+//        ccConfig.setResultTTL(120000L);
         ccConfig.setResultSweepThreshold(1000L);
         ccConfig.setEnforceFrameWriterProtocol(true);
         configManager.set(ControllerConfig.Option.DEFAULT_DIR, joinPath(getDefaultStoragePath(), "asterixdb"));
