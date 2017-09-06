@@ -112,7 +112,6 @@ import org.apache.hyracks.dataflow.std.util.FrameTuplePairComparator;
 public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor {
     private static final int BUILD_AND_PARTITION_ACTIVITY_ID = 0;
     private static final int PARTITION_AND_JOIN_ACTIVITY_ID = 1;
-    public static final int LOAD_FACTOR = 2;
 
     private static final long serialVersionUID = 1L;
     private static final double NLJ_SWITCH_THRESHOLD = 0.8;
@@ -718,7 +717,6 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                             state.memForJoin * ctx.getInitialFrameSize());
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
-//                    ISerializableTable table = new SerializableHashTable(tabSize, ctx, bufferManager);
                     ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
                     InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
                             hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,

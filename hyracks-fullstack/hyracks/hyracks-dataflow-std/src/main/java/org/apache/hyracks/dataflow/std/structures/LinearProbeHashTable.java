@@ -108,7 +108,6 @@ public class LinearProbeHashTable implements ISerializableTable {
                 frames[actualEntry / frameCapacity].getInt(entryToTupleOffset(actualEntry) * ENTRY_SIZE / INT_SIZE);
         int tupleIndex =
                 frames[actualEntry / frameCapacity].getInt(entryToTupleOffset(actualEntry) * ENTRY_SIZE / INT_SIZE + 1);
-        //        System.out.println("Read tuple " + frameIndex + "-" + tupleIndex + " from " + actualEntry);
         tuplePointer.reset(frameIndex, tupleIndex);
         return true;
     }

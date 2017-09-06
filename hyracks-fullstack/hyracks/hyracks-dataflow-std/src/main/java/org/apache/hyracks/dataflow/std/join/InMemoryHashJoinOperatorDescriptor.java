@@ -203,7 +203,6 @@ public class InMemoryHashJoinOperatorDescriptor extends AbstractOperatorDescript
                             .createPartitioner();
                     state = new HashBuildTaskState(ctx.getJobletContext().getJobId(),
                             new TaskId(getActivityId(), partition));
-//                    ISerializableTable table = new SerializableHashTable(tableSize, ctx, bufferManager);
                     ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
                     state.joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
                             new FrameTupleAccessor(rd1), rd1, hpc1,

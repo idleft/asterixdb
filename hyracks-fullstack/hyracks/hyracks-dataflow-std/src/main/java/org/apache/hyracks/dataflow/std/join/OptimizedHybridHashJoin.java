@@ -110,8 +110,6 @@ public class OptimizedHybridHashJoin {
     // we mainly use it to match the corresponding function signature.
     private int[] probePSizeInTups;
 
-    public static final int LOAD_FACTOR = 2;
-
     public OptimizedHybridHashJoin(IHyracksTaskContext ctx, int memSizeInFrames, int numOfPartitions,
             String probeRelName, String buildRelName, int[] probeKeys, int[] buildKeys, IBinaryComparator[] comparators,
             RecordDescriptor probeRd, RecordDescriptor buildRd, ITuplePartitionComputer probeHpc,
@@ -453,7 +451,6 @@ public class OptimizedHybridHashJoin {
     }
 
     private void createInMemoryJoiner(int inMemTupCount) throws HyracksDataException {
-        //        ISerializableTable table = new SerializableHashTable(inMemTupCount, ctx, bufferManagerForHashTable);
         ISerializableTable table = new LinearProbeHashTable(inMemTupCount, ctx);
         this.inMemJoiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc,
                 new FrameTupleAccessor(buildRd), buildRd, buildHpc,

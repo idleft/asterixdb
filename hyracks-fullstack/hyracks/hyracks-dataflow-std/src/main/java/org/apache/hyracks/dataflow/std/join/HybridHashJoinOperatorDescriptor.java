@@ -309,7 +309,6 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                     ITuplePartitionComputer hpc1 = new FieldHashPartitionComputerFactory(keys1, hashFunctionFactories)
                             .createPartitioner();
                     int tableSize = (int) (state.memoryForHashtable * recordsPerFrame * factor);
-//                    ISerializableTable table = new SimpleSerializableHashTable(tableSize, ctx);
                     ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
                     state.joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
                             new FrameTupleAccessor(rd1), rd1, hpc1,
@@ -499,7 +498,6 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                             } else {
                                 tableSize = (int) (memsize * recordsPerFrame * factor);
                             }
-//                            ISerializableTable table = new SimpleSerializableHashTable(tableSize, ctx);
                             ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
                             for (int partitionid = 0; partitionid < state.nPartitions; partitionid++) {
                                 RunFileWriter buildWriter = buildWriters[partitionid];
@@ -508,8 +506,8 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                                     continue;
                                 }
                                 table.reset();
-                                InMemoryHashJoin joiner = new InMemoryHashJoin(ctx,
-                                        new FrameTupleAccessor(rd0), hpcRep0, new FrameTupleAccessor(rd1), rd1, hpcRep1,
+                                InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0),
+                                        hpcRep0, new FrameTupleAccessor(rd1), rd1, hpcRep1,
                                         new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter,
                                         nullWriters1, table, predEvaluator, null);
 

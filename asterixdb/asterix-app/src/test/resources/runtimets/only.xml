@@ -19,10 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="tpch">
-      <compilation-unit name="big_tpch_q10">
-        <output-dir compare="Text">big_tpch_q10</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>
