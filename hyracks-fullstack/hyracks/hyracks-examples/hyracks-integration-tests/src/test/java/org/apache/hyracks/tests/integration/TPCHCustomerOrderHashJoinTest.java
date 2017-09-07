@@ -304,10 +304,10 @@ public class TPCHCustomerOrderHashJoinTest extends AbstractIntegrationTest {
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, printer, NC1_ID);
 
         IConnectorDescriptor ordJoinConn = new MToNBroadcastConnectorDescriptor(spec);
-        spec.connect(ordJoinConn, ordScanner, 0, join, 1);
+        spec.connect(ordJoinConn, ordScanner, 0, join, 0);
 
         IConnectorDescriptor custJoinConn = new OneToOneConnectorDescriptor(spec);
-        spec.connect(custJoinConn, custScanner, 0, join, 0);
+        spec.connect(custJoinConn, custScanner, 0, join, 1);
 
         IConnectorDescriptor joinPrinterConn = new OneToOneConnectorDescriptor(spec);
         spec.connect(joinPrinterConn, join, 0, printer, 0);

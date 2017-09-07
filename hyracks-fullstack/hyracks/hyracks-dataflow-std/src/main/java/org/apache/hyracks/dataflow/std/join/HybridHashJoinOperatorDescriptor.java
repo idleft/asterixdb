@@ -311,9 +311,8 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                     int tableSize = (int) (state.memoryForHashtable * recordsPerFrame * factor);
                     ISerializableTable table = new LinearProbeHashTable(tableSize, ctx);
                     state.joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0), hpc0,
-                            new FrameTupleAccessor(rd1), rd1, hpc1,
-                            new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter, nullWriters1, table,
-                            predEvaluator, null);
+                            new FrameTupleAccessor(rd1), hpc1, new FrameTuplePairComparator(keys0, keys1, comparators),
+                            isLeftOuter, nullWriters1, table, predEvaluator, null);
                     bufferForPartitions = new IFrame[state.nPartitions];
                     state.fWriters = new RunFileWriter[state.nPartitions];
                     for (int i = 0; i < state.nPartitions; i++) {
@@ -507,7 +506,7 @@ public class HybridHashJoinOperatorDescriptor extends AbstractOperatorDescriptor
                                 }
                                 table.reset();
                                 InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(rd0),
-                                        hpcRep0, new FrameTupleAccessor(rd1), rd1, hpcRep1,
+                                        hpcRep0, new FrameTupleAccessor(rd1), hpcRep1,
                                         new FrameTuplePairComparator(keys0, keys1, comparators), isLeftOuter,
                                         nullWriters1, table, predEvaluator, null);
 

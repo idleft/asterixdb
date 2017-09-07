@@ -18,6 +18,8 @@
  */
 package org.apache.hyracks.dataflow.std.structures;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.apache.hyracks.api.context.IHyracksFrameMgrContext;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -55,17 +57,17 @@ public class LinearProbeHashTable implements ISerializableTable {
         return ctx.allocateFrame(size);
     }
 
-    private int safeFrameRead(int frameIdx, int tupleOffset) throws HyracksDataException {
+    private boolean safePeakEmptyBucket(int frameIdx, int tupleOffset) throws HyracksDataException {
         if (frames[frameIdx] == null) {
             ByteBuffer newBufferFrame = getFrame(frameSize);
             frames[frameIdx] = new IntSerDeBuffer(newBufferFrame);
+            return true;
         }
-        int result = frames[frameIdx].getInt(tupleOffset * (ENTRY_SIZE / INT_SIZE));
-        return result;
+        return frames[frameIdx].bytes[tupleOffset * ENTRY_SIZE] < 0;
     }
 
     private int entryToTupleOffset(int entry) {
-        return (entry % frameCapacity);
+        return entry % frameCapacity;
     }
 
     @Override
@@ -73,7 +75,7 @@ public class LinearProbeHashTable implements ISerializableTable {
         int entryPtr = entry;
         int visitedRecords = 0;
         // insert is guaranteed to be good
-        while (safeFrameRead(entryPtr / frameCapacity, entryToTupleOffset(entryPtr)) >= 0
+        while (!safePeakEmptyBucket(entryPtr / frameCapacity, entryToTupleOffset(entryPtr))
                 && visitedRecords < tableSize) {
             visitedRecords++;
             entryPtr = (entryPtr + 1) % tableSize;
@@ -82,6 +84,7 @@ public class LinearProbeHashTable implements ISerializableTable {
             return false;
         }
         writeEntry(entryPtr / frameCapacity, entryToTupleOffset(entryPtr), tuplePointer);
+        tupleCount += 1;
         return true;
     }
 
@@ -171,7 +174,8 @@ public class LinearProbeHashTable implements ISerializableTable {
 
     @Override
     public String printInfo() {
-        return "NA";
+        return "{" + "\"tuple_count\":" + tupleCount + ", \"table_size\":" + tableSize + ",\"current_byte_size\":"
+                + currentByteSize + "}";
     }
 
     @Override

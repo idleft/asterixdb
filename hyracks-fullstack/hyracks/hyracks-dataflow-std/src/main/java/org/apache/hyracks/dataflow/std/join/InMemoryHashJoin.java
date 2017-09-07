@@ -59,7 +59,6 @@ public class InMemoryHashJoin {
     private final TuplePointer storedTuplePointer;
     private final boolean reverseOutputOrder; //Should we reverse the order of tuples, we are writing in output
     private final IPredicateEvaluator predEvaluator;
-    private TupleInFrameListAccessor tupleAccessor;
     // To release frames
     ISimpleFrameBufferManager bufferManager;
     private final boolean isTableCapacityNotZero;
@@ -67,19 +66,18 @@ public class InMemoryHashJoin {
     private static final Logger LOGGER = Logger.getLogger(InMemoryHashJoin.class.getName());
 
     public InMemoryHashJoin(IHyracksTaskContext ctx, FrameTupleAccessor accessorProbe, ITuplePartitionComputer tpcProbe,
-            FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild,
-            FrameTuplePairComparator comparator, boolean isLeftOuter, IMissingWriter[] missingWritersBuild,
-            ISerializableTable table, IPredicateEvaluator predEval, ISimpleFrameBufferManager bufferManager)
-            throws HyracksDataException {
-        this(ctx, accessorProbe, tpcProbe, accessorBuild, rDBuild, tpcBuild, comparator, isLeftOuter,
-                missingWritersBuild, table, predEval, false, bufferManager);
+            FrameTupleAccessor accessorBuild, ITuplePartitionComputer tpcBuild, FrameTuplePairComparator comparator,
+            boolean isLeftOuter, IMissingWriter[] missingWritersBuild, ISerializableTable table,
+            IPredicateEvaluator predEval, ISimpleFrameBufferManager bufferManager) throws HyracksDataException {
+        this(ctx, accessorProbe, tpcProbe, accessorBuild, tpcBuild, comparator, isLeftOuter, missingWritersBuild, table,
+                predEval, false, bufferManager);
     }
 
     public InMemoryHashJoin(IHyracksTaskContext ctx, FrameTupleAccessor accessorProbe, ITuplePartitionComputer tpcProbe,
-            FrameTupleAccessor accessorBuild, RecordDescriptor rDBuild, ITuplePartitionComputer tpcBuild,
-            FrameTuplePairComparator comparator, boolean isLeftOuter, IMissingWriter[] missingWritersBuild,
-            ISerializableTable table, IPredicateEvaluator predEval, boolean reverse,
-            ISimpleFrameBufferManager bufferManager) throws HyracksDataException {
+            FrameTupleAccessor accessorBuild, ITuplePartitionComputer tpcBuild, FrameTuplePairComparator comparator,
+            boolean isLeftOuter, IMissingWriter[] missingWritersBuild, ISerializableTable table,
+            IPredicateEvaluator predEval, boolean reverse, ISimpleFrameBufferManager bufferManager)
+            throws HyracksDataException {
         this.table = table;
         storedTuplePointer = new TuplePointer();
         buffers = new ArrayList<>();
@@ -103,7 +101,6 @@ public class InMemoryHashJoin {
             missingTupleBuild = null;
         }
         reverseOutputOrder = reverse;
-        this.tupleAccessor = new TupleInFrameListAccessor(rDBuild, buffers);
         this.bufferManager = bufferManager;
         if (table.getTableSize() != 0) {
             isTableCapacityNotZero = true;
@@ -122,33 +119,10 @@ public class InMemoryHashJoin {
         for (int i = 0; i < tCount; ++i) {
             int entry = tpcBuild.partition(accessorBuild, i, table.getTableSize());
             storedTuplePointer.reset(bIndex, i);
-            // If an insertion fails, then tries to insert the same tuple pointer again after compacting the table.
-            if (!table.insert(entry, storedTuplePointer)) {
-                compactTableAndInsertAgain(entry, storedTuplePointer);
-            }
+            // If memory complies, insert should never fail
+            table.insert(entry, storedTuplePointer);
         }
     }
-
-    public boolean compactTableAndInsertAgain(int entry, TuplePointer tPointer) throws HyracksDataException {
-        boolean oneMoreTry = false;
-        if (compactHashTable() >= 0) {
-            oneMoreTry = table.insert(entry, tPointer);
-        }
-        return oneMoreTry;
-    }
-
-    /**
-     * Tries to compact the table to make some space.
-     *
-     * @return the number of frames that have been reclaimed. If no compaction has happened, the value -1 is returned.
-     */
-    public int compactHashTable() throws HyracksDataException {
-        if (table.isGarbageCollectionNeeded()) {
-            return table.collectGarbage(tupleAccessor, tpcBuild);
-        }
-        return -1;
-    }
-
     /**
      * Reads the given tuple from the probe side and joins it with tuples from the build side.
      * This method assumes that the accessorProbe is already set to the current probe frame.

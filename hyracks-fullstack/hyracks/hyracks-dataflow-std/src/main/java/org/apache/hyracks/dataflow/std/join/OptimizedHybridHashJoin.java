@@ -451,10 +451,10 @@ public class OptimizedHybridHashJoin {
 
     private void createInMemoryJoiner(int inMemTupCount) throws HyracksDataException {
         ISerializableTable table = new LinearProbeHashTable(inMemTupCount, ctx);
-        this.inMemJoiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc,
-                new FrameTupleAccessor(buildRd), buildRd, buildHpc,
-                new FrameTuplePairComparator(probeKeys, buildKeys, comparators), isLeftOuter, nonMatchWriters, table,
-                predEvaluator, isReversed, bufferManagerForHashTable);
+        this.inMemJoiner =
+                new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRd), probeHpc, new FrameTupleAccessor(buildRd),
+                        buildHpc, new FrameTuplePairComparator(probeKeys, buildKeys, comparators), isLeftOuter,
+                        nonMatchWriters, table, predEvaluator, isReversed, bufferManagerForHashTable);
     }
 
     private void loadDataInMemJoin() throws HyracksDataException {

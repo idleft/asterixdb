@@ -718,8 +718,8 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     ISimpleFrameBufferManager bufferManager = new FramePoolBackedFrameBufferManager(framePool);
 
                     ISerializableTable table = new LinearProbeHashTable(tabSize, ctx);
-                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc),
-                            hpcRepProbe, new FrameTupleAccessor(buildRDesc), buildRDesc, hpcRepBuild,
+                    InMemoryHashJoin joiner = new InMemoryHashJoin(ctx, new FrameTupleAccessor(probeRDesc), hpcRepProbe,
+                            new FrameTupleAccessor(buildRDesc), hpcRepBuild,
                             new FrameTuplePairComparator(pKeys, bKeys, comparators), isLeftOuter, nonMatchWriter, table,
                             predEvaluator, isReversed, bufferManager);
 
@@ -730,17 +730,10 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                             // We need to allocate a copyBuffer, because this buffer gets added to the buffers list
                             // in the InMemoryHashJoin.
                             ByteBuffer copyBuffer = bufferManager.acquireFrame(rPartbuff.getFrameSize());
-                            // If a frame cannot be allocated, there may be a chance if we can compact the table,
-                            // one or more frame may be reclaimed.
                             if (copyBuffer == null) {
-                                if (joiner.compactHashTable() > 0) {
-                                    copyBuffer = bufferManager.acquireFrame(rPartbuff.getFrameSize());
-                                }
-                                if (copyBuffer == null) {
-                                    // Still no frame is allocated? At this point, we have no way to get a frame.
-                                    throw new HyracksDataException(
-                                            "Can't allocate one more frame. Assign more memory to InMemoryHashJoin.");
-                                }
+                                // Still no frame is allocated? At this point, we have no way to get a frame.
+                                throw new HyracksDataException(
+                                        "Can't allocate one more frame. Assign more memory to InMemoryHashJoin.");
                             }
                             FrameUtils.copyAndFlip(rPartbuff.getBuffer(), copyBuffer);
                             joiner.build(copyBuffer);
