@@ -566,9 +566,4 @@ public class SerializableHashTable extends SimpleSerializableHashTable {
             this.second = second;
         }
     }
-
-    @Override
-    public int getTableSize() {
-        return tableSize;
-    }
 }
