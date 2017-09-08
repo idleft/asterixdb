@@ -30,7 +30,7 @@
     - include_vars: "{{ playbook_dir }}/../conf/private_ip.yml"
     - include_vars: ../../../benchmarks/tpch/gen/settings.yml
     - name: Populate data uploading script for 1st node
-      shell: echo "for i in `ls -rS {{ data_dir }}/*.tbl*`; do {{ hadoop_base }}/bin/hdfs dfs -put -f $i hdfs://{{ cc_ip }}:9000/{{ data_dir }}; done" > "{{ upload_script }}"
+      shell: echo "for i in \`ls -rS {{ data_dir }}/*.tbl*\`; do {{ hadoop_base }}/bin/hdfs dfs -put -f $i hdfs://{{ cc_ip }}:9000/{{ data_dir }}; done" > "{{ upload_script }}"
 
 
 - hosts: ncs[1:]
@@ -39,7 +39,7 @@
     - include_vars: "{{ playbook_dir }}/../conf/private_ip.yml"
     - include_vars: ../../../benchmarks/tpch/gen/settings.yml
     - name: Put data uploading generation script for the rest
-      shell: echo "for i in `ls -rS {{ data_dir }}/*.tbl.*`; do {{ hadoop_base }}/bin/hdfs dfs -put -f $i hdfs://{{ cc_ip }}:9000/{{ data_dir }}; done" > "{{ upload_script }}"
+      shell: echo "for i in \`ls -rS {{ data_dir }}/*.tbl.*\`; do {{ hadoop_base }}/bin/hdfs dfs -put -f $i hdfs://{{ cc_ip }}:9000/{{ data_dir }}; done" > "{{ upload_script }}"
 
 - hosts: ncs
   tasks:
