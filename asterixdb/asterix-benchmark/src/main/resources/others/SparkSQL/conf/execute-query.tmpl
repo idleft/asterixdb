@@ -72,7 +72,6 @@ spark.sqlContext.cacheTable("ORDERS")
 spark.sqlContext.cacheTable("LINEITEM")
 
 // Execute Query
-val writer0 = new PrintWriter(new File("{{home_dir}}/detail.txt"))
 val queries_dir = new File(queries_root)
 val etime = collection.mutable.Map[String, Float]()
 for (i <- 0 to round) {
@@ -92,12 +91,8 @@ for (i <- 0 to round) {
             }
             etime(file_name) += elapsed
         }
-        writer0.print(file_name + " " + elapsed + " ")
-        writer0.flush()
     }
-    writer0.print("\n")
 }
-writer0.close()
 
 // Write result
 val writer = new PrintWriter(new File("{{ result_file }}"))
