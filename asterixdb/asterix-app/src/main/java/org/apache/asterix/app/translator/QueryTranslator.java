@@ -56,6 +56,7 @@ import org.apache.asterix.app.active.FeedEventsListener;
 import org.apache.asterix.app.result.ResultHandle;
 import org.apache.asterix.app.result.ResultReader;
 import org.apache.asterix.common.api.IMetadataLockManager;
+import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.config.ClusterProperties;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.config.DatasetConfig.ExternalFilePendingOp;
@@ -152,7 +153,6 @@ import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.IAType;
 import org.apache.asterix.om.types.TypeSignature;
-import org.apache.asterix.runtime.utils.ClusterStateManager;
 import org.apache.asterix.transaction.management.service.transaction.DatasetIdFactory;
 import org.apache.asterix.translator.AbstractLangTranslator;
 import org.apache.asterix.translator.CompiledStatements.CompiledDeleteStatement;
@@ -162,6 +162,7 @@ import org.apache.asterix.translator.CompiledStatements.CompiledUpsertStatement;
 import org.apache.asterix.translator.CompiledStatements.ICompiledDmlStatement;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.IStatementExecutorContext;
+import org.apache.asterix.translator.NoOpStatementExecutorContext;
 import org.apache.asterix.translator.SessionConfig;
 import org.apache.asterix.translator.SessionOutput;
 import org.apache.asterix.translator.TypeTranslator;
@@ -334,7 +335,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                                     || resultDelivery == ResultDelivery.DEFERRED);
                         }
                         handleInsertUpsertStatement(metadataProvider, stmt, hcc, hdc, resultDelivery, outMetadata,
-                                stats, false, clientContextId, ctx);
+                                stats, false, clientContextId);
                         break;
                     case Statement.Kind.DELETE:
                         handleDeleteStatement(metadataProvider, stmt, hcc, false);
@@ -706,7 +707,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
     protected static String configureNodegroupForDataset(ICcApplicationContext appCtx, Map<String, String> hints,
             String dataverseName, String datasetName, MetadataProvider metadataProvider) throws Exception {
-        Set<String> allNodes = ClusterStateManager.INSTANCE.getParticipantNodes(true);
+        IClusterStateManager csm = appCtx.getClusterStateManager();
+        Set<String> allNodes = csm.getParticipantNodes(true);
         Set<String> selectedNodes = new LinkedHashSet<>();
         String hintValue = hints.get(DatasetNodegroupCardinalityHint.NAME);
         if (hintValue == null) {
@@ -1727,8 +1729,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
     public JobSpecification handleInsertUpsertStatement(MetadataProvider metadataProvider, Statement stmt,
             IHyracksClientConnection hcc, IHyracksDataset hdc, ResultDelivery resultDelivery,
-            ResultMetadata outMetadata, Stats stats, boolean compileOnly, String clientContextId,
-            IStatementExecutorContext ctx) throws Exception {
+            ResultMetadata outMetadata, Stats stats, boolean compileOnly, String clientContextId) throws Exception {
         InsertStatement stmtInsertUpsert = (InsertStatement) stmt;
         String dataverseName = getActiveDataverse(stmtInsertUpsert.getDataverseName());
         final IMetadataLocker locker = new IMetadataLocker() {
@@ -1771,7 +1772,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
 
         if (stmtInsertUpsert.getReturnExpression() != null) {
             deliverResult(hcc, hdc, compiler, metadataProvider, locker, resultDelivery, outMetadata, stats,
-                    clientContextId, ctx);
+                    clientContextId, NoOpStatementExecutorContext.INSTANCE);
         } else {
             locker.lock();
             try {
@@ -2056,6 +2057,9 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     metadataProvider.getMetadataTxnContext());
             List<FeedConnection> feedConnections = MetadataManager.INSTANCE
                     .getFeedConections(metadataProvider.getMetadataTxnContext(), dataverseName, feedName);
+            if (feedConnections.isEmpty()) {
+                throw new CompilationException(ErrorCode.FEED_START_FEED_WITHOUT_CONNECTION, feedName);
+            }
             for (FeedConnection feedConnection : feedConnections) {
                 // what if the dataset is in a different dataverse
                 String fqName = feedConnection.getDataverseName() + "." + feedConnection.getDatasetName();

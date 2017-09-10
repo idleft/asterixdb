@@ -29,6 +29,7 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +89,7 @@ import org.apache.hyracks.ipc.exceptions.IPCException;
 import org.apache.hyracks.ipc.impl.IPCSystem;
 import org.apache.hyracks.net.protocols.muxdemux.FullFrameChannelInterfaceFactory;
 import org.apache.hyracks.net.protocols.muxdemux.MuxDemuxPerformanceCounters;
+import org.apache.hyracks.util.ExitUtil;
 import org.kohsuke.args4j.CmdLineException;
 
 public class NodeControllerService implements IControllerService {
@@ -153,7 +155,7 @@ public class NodeControllerService implements IControllerService {
 
     private final MemoryManager memoryManager;
 
-    private boolean shuttedDown = false;
+    private StackTraceElement[] shutdownCallStack;
 
     private IIOCounter ioCounter;
 
@@ -164,6 +166,10 @@ public class NodeControllerService implements IControllerService {
     private NodeRegistration nodeRegistration;
 
     private final AtomicLong maxJobId = new AtomicLong(-1);
+
+    static {
+        ExitUtil.init();
+    }
 
     public NodeControllerService(NCConfig config) throws Exception {
         this(config, getApplication(config));
@@ -369,7 +375,8 @@ public class NodeControllerService implements IControllerService {
 
     @Override
     public synchronized void stop() throws Exception {
-        if (!shuttedDown) {
+        if (shutdownCallStack == null) {
+            shutdownCallStack = new Throwable().getStackTrace();
             LOGGER.log(Level.INFO, "Stopping NodeControllerService");
             application.preStop();
             executor.shutdownNow();
@@ -391,9 +398,9 @@ public class NodeControllerService implements IControllerService {
              */
             heartbeatTask.cancel();
             LOGGER.log(Level.INFO, "Stopped NodeControllerService");
-            shuttedDown = true;
         } else {
-            LOGGER.log(Level.SEVERE, "Double shutdown calls!!", new Exception("Double shutdown calls"));
+            LOGGER.log(Level.SEVERE, "Duplicate shutdown call; original: " + Arrays.toString(shutdownCallStack),
+                    new Exception("Duplicate shutdown call"));
         }
     }
 

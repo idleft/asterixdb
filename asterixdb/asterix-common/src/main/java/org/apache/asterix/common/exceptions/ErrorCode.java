@@ -68,6 +68,9 @@ public class ErrorCode {
     public static final int POLYGON_3_POINTS = 25;
     public static final int POLYGON_INVALID = 26;
     public static final int OPERATION_NOT_SUPPORTED = 27;
+    public static final int INVALID_DURATION = 28;
+    public static final int UNKNOWN_DURATION_UNIT = 29;
+    public static final int QUERY_TIMEOUT = 30;
 
     public static final int INSTANTIATION_ERROR = 100;
 
@@ -230,6 +233,7 @@ public class ErrorCode {
     public static final int FEED_STOPPED_WHILE_WAITING_FOR_A_NEW_RECORD = 3108;
     public static final int METADATA_DROP_FUCTION_IN_USE = 3109;
     public static final int FEED_FAILED_WHILE_GETTING_A_NEW_RECORD = 3110;
+    public static final int FEED_START_FEED_WITHOUT_CONNECTION = 3111;
 
     // Lifecycle management errors
     public static final int DUPLICATE_PARTITION_ID = 4000;
