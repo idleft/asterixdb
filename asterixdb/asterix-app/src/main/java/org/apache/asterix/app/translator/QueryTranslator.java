@@ -2149,7 +2149,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 throw new AlgebricksException("Feed" + feedName + " is already connected dataset " + datasetName);
             }
             fc = new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName,
-                    outputType.toString());
+                    outputType.getTypeName());
             MetadataManager.INSTANCE.addFeedConnection(metadataProvider.getMetadataTxnContext(), fc);
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
             if (listener != null) {
