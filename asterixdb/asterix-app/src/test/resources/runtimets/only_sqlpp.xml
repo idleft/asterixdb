@@ -19,5 +19,10 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries_sqlpp">
   <test-group name="failed">
+    <test-case FilePath="feeds">
+      <compilation-unit name="feeds_11">
+        <output-dir compare="Text">feeds_11</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
 </test-suite>
