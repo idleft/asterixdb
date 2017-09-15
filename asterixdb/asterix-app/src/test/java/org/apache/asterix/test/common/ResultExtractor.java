@@ -54,9 +54,11 @@ public class ResultExtractor {
         String status = "";
         String results = "";
         String field = "";
+        String fieldPrefix = "";
         for (Iterator<String> sIter = result.fieldNames(); sIter.hasNext();) {
             field = sIter.next();
-            switch (field) {
+            fieldPrefix = field.split("-")[0];
+            switch (fieldPrefix) {
                 case "requestID":
                     break;
                 case "clientContextID":
@@ -81,18 +83,18 @@ public class ResultExtractor {
                 case "results":
                     if (result.get(field).size() <= 1) {
                         if (result.get(field).size() == 0) {
-                            results = "";
+                            results += "";
                         } else if (result.get(field).isArray()) {
                             if (result.get(field).get(0).isTextual()) {
-                                results = result.get(field).get(0).asText();
+                                results += result.get(field).get(0).asText();
                             } else {
                                 ObjectMapper omm = new ObjectMapper();
                                 omm.setDefaultPrettyPrinter(singleLine);
                                 omm.enable(SerializationFeature.INDENT_OUTPUT);
-                                results = omm.writer(singleLine).writeValueAsString(result.get(field));
+                                results += omm.writer(singleLine).writeValueAsString(result.get(field));
                             }
                         } else {
-                            results = om.writeValueAsString(result.get(field));
+                            results += om.writeValueAsString(result.get(field));
                         }
                     } else {
                         StringBuilder sb = new StringBuilder();
@@ -106,7 +108,7 @@ public class ResultExtractor {
                                 }
                             }
                         }
-                        results = sb.toString();
+                        results += sb.toString();
                     }
                     break;
                 default:
