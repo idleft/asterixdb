@@ -8125,7 +8125,7 @@
       </compilation-unit>
     </test-case>
   </test-group>
-  <test-group>
+  <test-group name="big-object">
     <test-case FilePath="big-object">
       <compilation-unit name="big_object_sort">
         <output-dir compare="Text">big_object_sort</output-dir>
@@ -9055,6 +9055,13 @@
     <test-case FilePath="upsert">
       <compilation-unit name="multiple-correlated-secondaries">
         <output-dir compare="Text">multiple-secondaries</output-dir>
+      </compilation-unit>
+    </test-case>
+  </test-group>
+  <test-group name="external-library">
+    <test-case FilePath="external-library">
+      <compilation-unit name="upperCase">
+        <output-dir compare="Text">upperCase</output-dir>
       </compilation-unit>
     </test-case>
   </test-group>
