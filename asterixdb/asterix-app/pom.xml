@@ -131,7 +131,7 @@
         <executions>
           <execution>
             <id>copy-external-testlib</id>
-            <phase>process-test-resources</phase>
+            <phase>pre-integration-test</phase>
             <goals>
               <goal>copy-dependencies</goal>
             </goals>
