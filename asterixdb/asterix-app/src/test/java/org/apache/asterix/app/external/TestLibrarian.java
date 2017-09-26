@@ -20,7 +20,6 @@ package org.apache.asterix.app.external;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.util.HashMap;
 import java.util.List;
@@ -47,7 +46,6 @@ public class TestLibrarian implements ITestLibrarian {
     public void install(String dvName, String libName, String libPath) throws Exception {
         // get the directory of the to be installed libraries
         File installLibDir = ExternalLibraryUtils.getLibraryInstallDir();
-        String absolutLibPath = Paths.get(libPath).toAbsolutePath().toString();
         // directory exists?
         if (!installLibDir.exists()) {
             installLibDir.mkdir();
@@ -58,10 +56,10 @@ public class TestLibrarian implements ITestLibrarian {
         FileUtils.deleteQuietly(destinationDir);
         destinationDir.mkdirs();
         try {
-            AsterixEventServiceUtil.unzip(absolutLibPath, destinationDir.getAbsolutePath());
+            AsterixEventServiceUtil.unzip(libPath, destinationDir.getAbsolutePath());
         } catch (Exception e) {
 
-            throw new Exception("Couldn't unzip the file: " + absolutLibPath, e);
+            throw new Exception("Couldn't unzip the file: " + libPath, e);
         }
 
         for (ILibraryManager libraryManager : libraryManagers) {
