@@ -34,7 +34,7 @@ import org.junit.runners.Parameterized.Parameters;
  * Runs the SQLPP runtime tests with the storage parallelism.
  */
 @RunWith(Parameterized.class)
-public class SqlppExecutionTestIT {
+public class SqlppExecutionIT {
     protected static final String TEST_CONFIG_FILE_NAME = "asterix-build-configuration.xml";
 
     @BeforeClass
@@ -47,14 +47,14 @@ public class SqlppExecutionTestIT {
         LangExecutionUtil.tearDown();
     }
 
-    @Parameters(name = "SqlppExecutionTest {index}: {0}")
+    @Parameters(name = "SqlppExecutionIT {index}: {0}")
     public static Collection<Object[]> tests() throws Exception {
         return LangExecutionUtil.tests("only_sqlpp.xml", "testsuite_it_sqlpp.xml");
     }
 
     protected TestCaseContext tcCtx;
 
-    public SqlppExecutionTestIT(TestCaseContext tcCtx) {
+    public SqlppExecutionIT(TestCaseContext tcCtx) {
         this.tcCtx = tcCtx;
     }
 
