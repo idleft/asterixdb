@@ -67,7 +67,7 @@ public class IntroduceDynamicTypeCastForExternalFunctionRule implements IAlgebra
                 changed = true;
             }
         }
-        // if current function is builtin function, skip the type casting
+        // if the current function is builtin function, skip the type casting
         if (BuiltinFunctions.getBuiltinFunctionIdentifier(funcCallExpr.getFunctionIdentifier()) != null) {
             return changed;
         }
