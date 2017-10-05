@@ -40,6 +40,7 @@ import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
+import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.JobId;
 import org.apache.asterix.common.utils.StoragePathUtil;
@@ -58,6 +59,7 @@ import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.file.StorageComponentProvider;
 import org.apache.asterix.lang.common.base.Expression;
 import org.apache.asterix.lang.common.base.Statement;
+import org.apache.asterix.lang.common.clause.LetClause;
 import org.apache.asterix.lang.common.expression.CallExpr;
 import org.apache.asterix.lang.common.expression.LiteralExpr;
 import org.apache.asterix.lang.common.expression.VariableExpr;
@@ -127,6 +129,8 @@ import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
  */
 public class FeedOperations {
 
+    public static final String FEED_DATAFLOW_INTERMEIDATE_VAL_PREFIX = "int_val_for_feed_fun";
+
     private FeedOperations() {
     }
 
@@ -179,18 +183,15 @@ public class FeedOperations {
                 argExprs.add(new LiteralExpr(new IntegerLiteral((Integer) arg)));
             } else if (arg instanceof String) {
                 argExprs.add(new LiteralExpr(new StringLiteral((String) arg)));
+            } else if (arg instanceof VariableExpr){
+                argExprs.add((VariableExpr) arg);
             }
         }
         return argExprs;
     }
 
     private static Query makeConnectionQuery(FeedConnection feedConnection) {
-        // Constructing the query
-        VarIdentifier feedSrcVar = SqlppVariableUtil.toInternalVariableIdentifier(feedConnection.getFeedName());
-        VariableExpr feedSrcVarExpression = new VariableExpr(feedSrcVar);
-        feedSrcVarExpression.setIsNewVar(false);//? why
-        SelectElement selectElement = new SelectElement(feedSrcVarExpression);
-        SelectClause selectClause = new SelectClause(selectElement, null, false);
+        // Construct from clause
         VarIdentifier fromVarId = SqlppVariableUtil.toInternalVariableIdentifier(feedConnection.getFeedName());
         VariableExpr fromTermLeftExpr = new VariableExpr(fromVarId);
         // TODO: remove target feedid from args list (xikui)
@@ -202,8 +203,25 @@ public class FeedOperations {
         CallExpr datasrouceCallFunction = new CallExpr(FeedConstants.FEED_COLLECT_FUN_SIGN, exprList);
         FromTerm fromterm = new FromTerm(datasrouceCallFunction, fromTermLeftExpr, null, null);
         FromClause fromClause = new FromClause(Arrays.asList(fromterm));
-        // TODO: This can be the place to add filter for dataset
-        SelectBlock selectBlock = new SelectBlock(selectClause, fromClause, null, null, null, null, null);
+        // TODO: This can be the place to add select predicate for ingestion
+        // Attaching functions
+        int varIdx = 1;
+        VariableExpr previousVarExpr = fromTermLeftExpr;
+        ArrayList<LetClause> letClauses = new ArrayList<>();
+        for (FunctionSignature funcSig : feedConnection.getAppliedFunctions()) {
+            VarIdentifier intermediateVar = SqlppVariableUtil
+                    .toInternalVariableIdentifier(FEED_DATAFLOW_INTERMEIDATE_VAL_PREFIX + String.valueOf(varIdx));
+            VariableExpr intermediateVarExpr = new VariableExpr(intermediateVar);
+            CallExpr functionCallExpr = new CallExpr(funcSig, addArgs(previousVarExpr));
+            previousVarExpr = intermediateVarExpr;
+            LetClause letClause = new LetClause(intermediateVarExpr, functionCallExpr);
+            letClauses.add(letClause);
+            varIdx++;
+        }
+        // Constructing select clause
+        SelectElement selectElement = new SelectElement(previousVarExpr);
+        SelectClause selectClause = new SelectClause(selectElement, null, false);
+        SelectBlock selectBlock = new SelectBlock(selectClause, fromClause, letClauses, null, null, null, null);
         SelectSetOperation selectSetOperation = new SelectSetOperation(new SetOperationInput(selectBlock, null), null);
         SelectExpression body = new SelectExpression(null, selectSetOperation, null, null, true);
         Query query = new Query(false, true, body, 0);

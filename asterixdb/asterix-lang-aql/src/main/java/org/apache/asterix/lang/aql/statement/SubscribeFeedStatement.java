@@ -47,7 +47,9 @@ import org.apache.asterix.metadata.feeds.FeedMetadataUtil;
 /**
  * Represents the AQL statement for subscribing to a feed.
  * This AQL statement is private and may not be used by the end-user.
+ *
  */
+@Deprecated
 public class SubscribeFeedStatement implements Statement {
 
     public static final String WAIT_FOR_COMPLETION = "wait-for-completion-feed";

@@ -252,8 +252,8 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="feeds">
-      <compilation-unit name="connect-feed-with-aql-function">
-        <output-dir compare="Text">connect-feed-with-aql-function</output-dir>
+      <compilation-unit name="connect-feed-with-function">
+        <output-dir compare="Text">connect-feed-with-function</output-dir>
       </compilation-unit>
     </test-case>
     <test-case FilePath="feeds">
