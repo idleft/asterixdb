@@ -254,6 +254,7 @@
     <test-case FilePath="feeds">
       <compilation-unit name="connect-feed-with-function">
         <output-dir compare="Text">connect-feed-with-function</output-dir>
+        <expected-error>Incompatible function language</expected-error>
       </compilation-unit>
     </test-case>
     <test-case FilePath="feeds">

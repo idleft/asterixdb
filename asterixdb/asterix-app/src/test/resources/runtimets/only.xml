@@ -19,15 +19,5 @@
  !-->
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
   <test-group name="failed">
-    <test-case FilePath="feeds">
-      <compilation-unit name="feed-push-socket">
-        <output-dir compare="Text">feed-push-socket</output-dir>
-      </compilation-unit>
-    </test-case>
-    <test-case FilePath="feeds">
-      <compilation-unit name="connect-feed-with-aql-function">
-        <output-dir compare="Text">connect-feed-with-aql-function</output-dir>
-      </compilation-unit>
-    </test-case>
   </test-group>
 </test-suite>
