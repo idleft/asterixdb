@@ -2158,6 +2158,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         String policyName = cfs.getPolicy();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        // TODO: Check whether we are connecting a change feed to a non-meta dataset
         // Check whether feed is alive
         ActiveNotificationHandler activeEventHandler =
                 (ActiveNotificationHandler) appCtx.getActiveNotificationHandler();

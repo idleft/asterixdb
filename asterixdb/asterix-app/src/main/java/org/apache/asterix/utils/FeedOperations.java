@@ -196,7 +196,7 @@ public class FeedOperations {
         VarIdentifier fromVarId = SqlppVariableUtil.toInternalVariableIdentifier(feedConnection.getFeedName());
         VariableExpr fromTermLeftExpr = new VariableExpr(fromVarId);
         // TODO: remove target feedid from args list (xikui)
-        // TODO: Get rid of this INTAKE thing
+        // TODO: Get rid of this INTAKE
         List<Expression> exprList =
                 addArgs(feedConnection.getDataverseName(), feedConnection.getFeedId().getEntityName(),
                         feedConnection.getFeedId().getEntityName(), FeedRuntimeType.INTAKE.toString(),

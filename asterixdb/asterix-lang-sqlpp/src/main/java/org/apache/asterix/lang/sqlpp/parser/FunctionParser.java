@@ -41,7 +41,7 @@ public class FunctionParser {
     }
 
     public FunctionDecl getFunctionDecl(Function function) throws CompilationException {
-        if (function.getLanguage() != Function.LANGUAGE_SQLPP) {
+        if (!function.getLanguage().equals(Function.LANGUAGE_SQLPP)) {
             throw new CompilationException(ErrorCode.COMPILATION_INCOMPATIBLE_FUNCTION_LANGUAGE,
                     Function.LANGUAGE_SQLPP, function.getLanguage());
         }
