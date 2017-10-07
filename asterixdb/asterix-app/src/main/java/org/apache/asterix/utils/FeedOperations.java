@@ -66,7 +66,6 @@ import org.apache.asterix.lang.common.expression.LiteralExpr;
 import org.apache.asterix.lang.common.expression.VariableExpr;
 import org.apache.asterix.lang.common.literal.IntegerLiteral;
 import org.apache.asterix.lang.common.literal.StringLiteral;
-import org.apache.asterix.lang.common.statement.InsertStatement;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.UpsertStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
@@ -131,7 +130,7 @@ import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
  */
 public class FeedOperations {
 
-    public static final String FEED_DATAFLOW_INTERMEIDATE_VAL_PREFIX = "int_val_for_feed_fun";
+    public static final String FEED_DATAFLOW_INTERMEIDATE_VAL_PREFIX = "val";
 
     private FeedOperations() {
     }
@@ -185,7 +184,7 @@ public class FeedOperations {
                 argExprs.add(new LiteralExpr(new IntegerLiteral((Integer) arg)));
             } else if (arg instanceof String) {
                 argExprs.add(new LiteralExpr(new StringLiteral((String) arg)));
-            } else if (arg instanceof VariableExpr){
+            } else if (arg instanceof VariableExpr) {
                 argExprs.add((VariableExpr) arg);
             }
         }
@@ -338,8 +337,8 @@ public class FeedOperations {
             }
 
             // make connections between operators
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : subJob
-                    .getConnectorOperatorMap().entrySet()) {
+            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>,
+                    Pair<IOperatorDescriptor, Integer>>> entry : subJob.getConnectorOperatorMap().entrySet()) {
                 ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
                 IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
                 Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();

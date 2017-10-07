@@ -743,7 +743,8 @@ class LangExpressionToPlanTranslator
             IFunctionInfo finfo = ExternalFunctionCompilerUtil
                     .getExternalFunctionInfo(metadataProvider.getMetadataTxnContext(), function);
             f = new ScalarFunctionCallExpression(finfo, args);
-        } else if (function.getLanguage().equalsIgnoreCase(Function.LANGUAGE_AQL)) {
+        } else if (function.getLanguage().equalsIgnoreCase(Function.LANGUAGE_AQL)
+                || function.getLanguage().equalsIgnoreCase(Function.LANGUAGE_SQLPP)) {
             IFunctionInfo finfo = FunctionUtil.getFunctionInfo(signature);
             f = new ScalarFunctionCallExpression(finfo, args);
         } else {
