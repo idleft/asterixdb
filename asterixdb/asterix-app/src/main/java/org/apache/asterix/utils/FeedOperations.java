@@ -54,6 +54,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
+import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -66,6 +67,7 @@ import org.apache.asterix.lang.common.expression.LiteralExpr;
 import org.apache.asterix.lang.common.expression.VariableExpr;
 import org.apache.asterix.lang.common.literal.IntegerLiteral;
 import org.apache.asterix.lang.common.literal.StringLiteral;
+import org.apache.asterix.lang.common.statement.InsertStatement;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.lang.common.statement.UpsertStatement;
 import org.apache.asterix.lang.common.struct.Identifier;
@@ -230,15 +232,22 @@ public class FeedOperations {
     }
 
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
-            IStatementExecutor statementExecutor, IHyracksClientConnection hcc)
+            IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
             throws AlgebricksException, RemoteException, ACIDException {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
         Query feedConnQuery = makeConnectionQuery(feedConn);
-        UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
-                new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-        CompiledStatements.CompiledUpsertStatement clfrqs =
-                new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(), feedConn.getDatasetName(),
-                        feedConnQuery, stmtUpsert.getVarCounter(), null, null);
+        CompiledStatements.ICompiledDmlStatement clfrqs;
+        if (insertFeed) {
+            InsertStatement stmtUpsert = new InsertStatement(new Identifier(feedConn.getDataverseName()),
+                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
+            clfrqs = new CompiledStatements.CompiledInsertStatement(feedConn.getDataverseName(),
+                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
+        } else {
+            UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
+                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
+            clfrqs = new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(),
+                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
+        }
         return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, feedConnQuery, clfrqs);
     }
 
@@ -436,6 +445,8 @@ public class FeedOperations {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
         Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
         List<JobSpecification> jobsList = new ArrayList<>();
+        // TODO: Figure out a better way to handle insert/upsert per conn instead of per feed
+        Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getAdapterConfiguration());
         // Construct the ingestion Job
         JobSpecification intakeJob = intakeInfo.getLeft();
         IAdapterFactory ingestionAdaptorFactory = intakeInfo.getRight();
@@ -449,7 +460,8 @@ public class FeedOperations {
                 getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, translator, hcc);
+            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, translator, hcc,
+                    insertFeed);
             jobsList.add(connectionJob);
         }
         return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
