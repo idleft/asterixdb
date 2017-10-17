@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.asterix.app.external;
 
 import java.io.File;
@@ -28,17 +29,16 @@ import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.library.ILibraryManager;
 import org.apache.asterix.event.service.AsterixEventServiceUtil;
-import org.apache.asterix.test.common.ITestLibrarian;
 import org.apache.commons.io.FileUtils;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
-public class TestLibrarian implements ITestLibrarian {
+public class ExternalUDFLibrarian implements IExternalUDFLibrarian {
 
     // The following list includes a library manager for the CC
     // and library managers for NCs (one-per-NC).
     private final List<ILibraryManager> libraryManagers;
 
-    public TestLibrarian(List<ILibraryManager> libraryManagers) {
+    public ExternalUDFLibrarian(List<ILibraryManager> libraryManagers) {
         this.libraryManagers = libraryManagers;
     }
 
