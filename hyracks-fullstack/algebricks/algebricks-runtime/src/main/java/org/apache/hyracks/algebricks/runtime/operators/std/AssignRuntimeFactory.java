@@ -125,37 +125,21 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
                 // what if nTuple is 0?
                 tAccess.reset(buffer);
                 int nTuple = tAccess.getTupleCount();
-                if (nTuple < 1) {
-                    if (nTuple < 0) {
-                        throw new HyracksDataException("Negative number of tuples in the frame: " + nTuple);
-                    }
+                if (nTuple < 0) {
+                    throw new HyracksDataException("Negative number of tuples in the frame: " + nTuple);
+                } else if (nTuple == 0) {
                     appender.flush(writer);
                 } else {
-                    if (nTuple > 1) {
-                        for (; tupleIndex < nTuple - 1; tupleIndex++) {
-                            tRef.reset(tAccess, tupleIndex);
-                            produceTuple(tupleBuilder, tAccess, tupleIndex, tRef);
-                            appendToFrameFromTupleBuilder(tupleBuilder);
-                        }
-                    }
-
-                    if (tupleIndex < nTuple) {
-                        tRef.reset(tAccess, tupleIndex);
-                        produceTuple(tupleBuilder, tAccess, tupleIndex, tRef);
+                    for (int iter1 = 0; iter1 < nTuple; iter1++) {
+                        tRef.reset(tAccess, iter1);
+                        produceTuple(tupleBuilder, tAccess, iter1, tRef);
                         if (flushFramesRapidly) {
-                            // Whenever all the tuples in the incoming frame have been consumed, the assign operator
-                            // will push its frame to the next operator; i.e., it won't wait until the frame gets full.
                             appendToFrameFromTupleBuilder(tupleBuilder, true);
                         } else {
                             appendToFrameFromTupleBuilder(tupleBuilder);
                         }
-                    } else {
-                        if (flushFramesRapidly) {
-                            flushAndReset();
-                        }
                     }
                 }
-                tupleIndex = 0;
             }
 
             private void produceTuple(ArrayTupleBuilder tb, IFrameTupleAccessor accessor, int tIndex,
@@ -172,7 +156,7 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
                         }
                     }
                 } catch (HyracksDataException e) {
-                    throw HyracksDataException.create(ErrorCode.ERROR_PROCESSING_TUPLE, e, tupleIndex);
+                    throw HyracksDataException.create(ErrorCode.ERROR_PROCESSING_TUPLE, e, tIndex);
                 }
             }
 
