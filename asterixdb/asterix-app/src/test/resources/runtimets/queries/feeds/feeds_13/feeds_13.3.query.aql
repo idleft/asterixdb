@@ -20,4 +20,4 @@
 use dataverse test;
 
 for $i in dataset SyntheticTweets
-return $i;
+return testlib#addHashTagsInPlace($i);

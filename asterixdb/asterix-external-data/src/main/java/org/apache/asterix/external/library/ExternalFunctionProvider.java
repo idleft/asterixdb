@@ -85,5 +85,4 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
             throw new HyracksDataException(e);
         }
     }
-
 }

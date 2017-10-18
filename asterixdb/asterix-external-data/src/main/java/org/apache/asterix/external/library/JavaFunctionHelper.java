@@ -97,6 +97,9 @@ public class JavaFunctionHelper implements IFunctionHelper {
             return true;
         }
         if (expectedType.getTypeTag() == ATypeTag.OBJECT) {
+            if (expectedType.getTypeName().equals(((JObjects.JRecord) result).getRecordType().getTypeName())) {
+
+            }
             return !expectedType.getTypeName().equals(((JObjects.JRecord) result).getRecordType().getTypeName());
         }
         return false;

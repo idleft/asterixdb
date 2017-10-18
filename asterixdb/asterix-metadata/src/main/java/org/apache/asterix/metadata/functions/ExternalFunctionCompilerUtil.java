@@ -35,9 +35,11 @@ import org.apache.asterix.om.typecomputer.impl.AFloatTypeComputer;
 import org.apache.asterix.om.typecomputer.impl.AInt32TypeComputer;
 import org.apache.asterix.om.typecomputer.impl.AStringTypeComputer;
 import org.apache.asterix.om.types.AOrderedListType;
+import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.AUnorderedListType;
 import org.apache.asterix.om.types.BuiltinType;
 import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.om.utils.RecordUtil;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalExpression;
 import org.apache.hyracks.algebricks.core.algebra.expressions.AbstractFunctionCallExpression.FunctionKind;
@@ -88,7 +90,9 @@ public class ExternalFunctionCompilerUtil {
 
     private static IAType getTypeInfo(String paramType, MetadataTransactionContext txnCtx, Function function)
             throws MetadataException {
-        if (paramType.equalsIgnoreCase(BuiltinType.AINT32.getDisplayName())) {
+        if (paramType.length() == 0) {
+            return RecordUtil.FULLY_OPEN_RECORD_TYPE;
+        } else if (paramType.equalsIgnoreCase(BuiltinType.AINT32.getDisplayName())) {
             return (BuiltinType.AINT32);
         } else if (paramType.equalsIgnoreCase(BuiltinType.AFLOAT.getDisplayName())) {
             return (BuiltinType.AFLOAT);

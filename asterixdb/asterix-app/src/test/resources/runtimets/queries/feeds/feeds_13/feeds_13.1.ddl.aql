@@ -17,8 +17,6 @@
  * under the License.
  */
 
-drop dataverse test if exists;
-create dataverse test;
 use dataverse test;
 
 create type TwitterUserType as closed {
@@ -39,6 +37,16 @@ create type Tweet as closed {
  created_at: string,
  country: string
 }
+
+create type ProcessedTweet if not exists as open {
+    id: int64,
+    user_name:string,
+    location:point,
+    created_at:string,
+    message_text:string,
+    country: string,
+    topics: {{string}}
+};
 
 create dataset SyntheticTweets(Tweet) primary key id;
 

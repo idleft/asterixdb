@@ -39,7 +39,7 @@
                 <xs:element ref="lib:name" />
                 <xs:element ref="lib:function_type" />
                 <xs:element ref="lib:arguments" />
-                <xs:element ref="lib:return_type" />
+                <xs:element ref="lib:return_type" minOccurs="0"/>
                 <xs:element ref="lib:definition" />
             </xs:sequence>
         </xs:complexType>
