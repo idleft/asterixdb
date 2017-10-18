@@ -22,15 +22,10 @@ import org.apache.asterix.common.api.IApplicationContext;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IExternalFunction;
-import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.om.functions.IExternalFunctionInfo;
-import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.data.std.api.IPointable;
-import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
 
 public class ExternalFunctionProvider {
 
@@ -49,41 +44,3 @@ public class ExternalFunctionProvider {
     }
 }
 
-class ExternalScalarFunction extends ExternalFunction implements IExternalScalarFunction, IScalarEvaluator {
-
-    public ExternalScalarFunction(IExternalFunctionInfo finfo, IScalarEvaluatorFactory args[],
-            IHyracksTaskContext context, IApplicationContext appCtx) throws HyracksDataException {
-        super(finfo, args, context, appCtx);
-        try {
-            initialize(functionHelper);
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
-    }
-
-    @Override
-    public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
-        try {
-            setArguments(tuple);
-            evaluate(functionHelper);
-            result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
-            functionHelper.reset();
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
-    }
-
-    @Override
-    public void evaluate(IFunctionHelper argumentProvider) throws HyracksDataException {
-        try {
-            resultBuffer.reset();
-            ((IExternalScalarFunction) externalFunction).evaluate(argumentProvider);
-            if (!argumentProvider.isValidResult()) {
-                throw new RuntimeDataException(ErrorCode.EXTERNAL_UDF_RESULT_TYPE_ERROR);
-            }
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
-    }
-
-}
