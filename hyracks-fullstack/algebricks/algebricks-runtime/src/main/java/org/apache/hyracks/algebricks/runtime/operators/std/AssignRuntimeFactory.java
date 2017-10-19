@@ -19,8 +19,18 @@
 package org.apache.hyracks.algebricks.runtime.operators.std;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Queue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.algebricks.runtime.operators.base.AbstractOneInputOneOutputOneFramePushRuntime;
@@ -32,11 +42,14 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IPointable;
 import org.apache.hyracks.data.std.primitive.VoidPointable;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
+import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.common.data.accessors.FrameTupleReference;
+import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
 
 public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactory {
 
     private static final long serialVersionUID = 1L;
+    private static final int THREAD_N = 1;
 
     private int[] outColumns;
     private IScalarEvaluatorFactory[] evalFactories;
@@ -92,12 +105,12 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
         }
 
         return new AbstractOneInputOneOutputOneFramePushRuntime() {
-            private IPointable result = VoidPointable.FACTORY.createPointable();
             private IScalarEvaluator[] eval = new IScalarEvaluator[evalFactories.length];
-            private ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(projectionList.length);
             private boolean first = true;
             private boolean isOpen = false;
-            private int tupleIndex = 0;
+            private ExecutorService executorService = Executors.newFixedThreadPool(THREAD_N);
+            private Object frameAccessLock = new Object();
+            private Queue<Pair<Integer, Exception>> exceptionQueue = new LinkedBlockingQueue<>();
 
             @Override
             public void open() throws HyracksDataException {
@@ -130,33 +143,22 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
                 } else if (nTuple == 0) {
                     appender.flush(writer);
                 } else {
+                    List<Future> futureList = new ArrayList<>();
                     for (int iter1 = 0; iter1 < nTuple; iter1++) {
-                        tRef.reset(tAccess, iter1);
-                        produceTuple(tupleBuilder, tAccess, iter1, tRef);
-                        if (flushFramesRapidly) {
-                            appendToFrameFromTupleBuilder(tupleBuilder, true);
-                        } else {
-                            appendToFrameFromTupleBuilder(tupleBuilder);
+                        futureList.add(executorService.submit(new AssignOpWorker(iter1)));
+                    }
+                    for (Future future : futureList) {
+                        try {
+                            future.get();
+                        } catch (InterruptedException | ExecutionException e) {
+                            new HyracksDataException(e);
                         }
                     }
-                }
-            }
-
-            private void produceTuple(ArrayTupleBuilder tb, IFrameTupleAccessor accessor, int tIndex,
-                    FrameTupleReference tupleRef) throws HyracksDataException {
-                try {
-                    tb.reset();
-                    for (int f = 0; f < projectionList.length; f++) {
-                        int k = projectionToOutColumns[f];
-                        if (k >= 0) {
-                            eval[k].evaluate(tupleRef, result);
-                            tb.addField(result.getByteArray(), result.getStartOffset(), result.getLength());
-                        } else {
-                            tb.addField(accessor, tIndex, projectionList[f]);
-                        }
+                    if (!exceptionQueue.isEmpty()) {
+                        Pair<Integer, Exception> exceptionPair = exceptionQueue.poll();
+                        throw HyracksDataException.create(ErrorCode.ERROR_PROCESSING_TUPLE, exceptionPair.getRight(),
+                                exceptionPair.getLeft());
                     }
-                } catch (HyracksDataException e) {
-                    throw HyracksDataException.create(ErrorCode.ERROR_PROCESSING_TUPLE, e, tIndex);
                 }
             }
 
@@ -170,6 +172,46 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
             @Override
             public void flush() throws HyracksDataException {
                 appender.flush(writer);
+            }
+
+            class AssignOpWorker implements Runnable {
+
+                private ArrayTupleBuilder tupleBuilder;
+                private FrameTupleReference tupleRef;
+                private IPointable result = VoidPointable.FACTORY.createPointable();
+                private int tupleIdx;
+
+                public AssignOpWorker(int tupleIdx) {
+                    tupleBuilder = new ArrayTupleBuilder(projectionList.length);
+                    tupleRef = new FrameTupleReference();
+                    tupleRef.reset(tAccess, tupleIdx);
+                    this.tupleIdx = tupleIdx;
+                }
+
+                @Override
+                public void run() {
+                    try {
+                        for (int iter1 = 0; iter1 < projectionList.length; iter1++) {
+                            int k = projectionToOutColumns[iter1];
+                            if (k >= 0) {
+                                eval[k].evaluate(tupleRef, result);
+                                tupleBuilder.addField(result.getByteArray(), result.getStartOffset(),
+                                        result.getLength());
+                            } else {
+                                tupleBuilder.addField(tAccess, tupleIdx, projectionList[iter1]);
+                            }
+                        }
+                        synchronized (frameAccessLock) {
+                            if (flushFramesRapidly) {
+                                appendToFrameFromTupleBuilder(tupleBuilder, true);
+                            } else {
+                                appendToFrameFromTupleBuilder(tupleBuilder);
+                            }
+                        }
+                    } catch (Exception e) {
+                        exceptionQueue.add(Pair.of(tupleIdx, e));
+                    }
+                }
             }
         };
     }
