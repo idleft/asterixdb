@@ -40,7 +40,6 @@ import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
-import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.JobId;
@@ -203,7 +202,7 @@ public class FeedOperations {
                 addArgs(feedConnection.getDataverseName(), feedConnection.getFeedId().getEntityName(),
                         feedConnection.getFeedId().getEntityName(), FeedRuntimeType.INTAKE.toString(),
                         feedConnection.getDatasetName(), feedConnection.getOutputType());
-        CallExpr datasrouceCallFunction = new CallExpr(FeedConstants.FEED_COLLECT_FUN_SIGN, exprList);
+        CallExpr datasrouceCallFunction = new CallExpr(FeedConstants.FEED_COLLECT_FUN_SIGNATURE, exprList);
         FromTerm fromterm = new FromTerm(datasrouceCallFunction, fromTermLeftExpr, null, null);
         FromClause fromClause = new FromClause(Arrays.asList(fromterm));
         // TODO: This can be the place to add select predicate for ingestion

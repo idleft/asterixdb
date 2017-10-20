@@ -23,7 +23,7 @@ import org.apache.asterix.common.functions.FunctionSignature;
 
 public class FeedConstants {
 
-    public static final FunctionSignature FEED_COLLECT_FUN_SIGN =
+    public static final FunctionSignature FEED_COLLECT_FUN_SIGNATURE =
             new FunctionSignature(FunctionConstants.ASTERIX_NS, "feed_collect", 6);
 
     public final static String FEEDS_METADATA_DV = "feeds_metadata";
