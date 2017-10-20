@@ -31,8 +31,7 @@ public class StatsSubscriber extends AbstractSubscriber {
 
     @Override
     public void notify(ActiveEvent event) throws HyracksDataException {
-        if (event.getEventKind() == ActiveEvent.Kind.STATS_UPDATED
-                || event.getEventKind() == ActiveEvent.Kind.JOB_FINISHED) {
+        if (event.getEventKind() == ActiveEvent.Kind.STATS_UPDATED) {
             try {
                 complete(null);
             } catch (Exception e) {
