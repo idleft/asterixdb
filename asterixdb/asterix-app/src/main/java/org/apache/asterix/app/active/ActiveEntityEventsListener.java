@@ -431,6 +431,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
             throw new RuntimeDataException(ErrorCode.ACTIVE_ENTITY_CANNOT_BE_STOPPED, entityId, state);
         }
         this.stats = DEFAULT_ACTIVE_STATS;
+        notifySubscribers(statsUpdatedEvent);
     }
 
     public RecoveryTask getRecoveryTask() {
