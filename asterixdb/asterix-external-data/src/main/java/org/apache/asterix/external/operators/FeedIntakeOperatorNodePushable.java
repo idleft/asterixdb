@@ -144,8 +144,8 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
 
     @Override
     public String getStats() {
-        return "{\""+ ExternalDataConstants.PARTITION_ID_NAME + "\": " + this.runtimeId.getPartition() + ", "
-                + "\"" + ExternalDataConstants.FEED_NODE_ID_NAME + "\": \"" + this.activeManager.getNodeId() + "\", "
+        return "{\"" + ExternalDataConstants.PARTITION_ID_NAME + "\": " + this.runtimeId.getPartition() + ", " + "\""
+                + ExternalDataConstants.FEED_NODE_ID_NAME + "\": \"" + this.activeManager.getNodeId() + "\", "
                 + adapter.getStats() + "}";
     }
 }
