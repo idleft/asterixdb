@@ -1,0 +1,9 @@
+\{
+  "experiments\.TweetFeed\(Feed\)" : \[ \{
+    "adapter-partition-id" : 0,
+    "node_id" : "asterix_nc\d",
+    "incoming-records-count" : 13,
+    "failed-at-parser-records-count" : 3,
+    "failed-record-log-file-location" : "/Volumes/Storage/Users/Xikui/Projects/asterixdb/asterixdb/asterix-app/target/io/dir/asterix_nc\d/iodevice\d/storage/partition_\d/experiments/TweetFeed/asterix_nc\d/failed_record.log"
+  \} \]
+\}
