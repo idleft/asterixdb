@@ -19,6 +19,8 @@
 
 package org.apache.asterix.lang.common.statement;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.asterix.active.IActiveEntityEventsListener;
 import org.apache.asterix.common.api.IMetadataLockManager;
 import org.apache.asterix.common.config.DatasetConfig;
@@ -45,8 +47,6 @@ import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -123,8 +123,8 @@ public class StartFeedStatement implements Statement {
                 failedRecordsFilePath.append(',');
             }
             JsonNode partitionNode = statsNode.get(iter1);
-            failedRecordsFilePath.append(partitionNode.get(ExternalDataConstants.FEED_NODE_ID_NAME).getTextValue()
-                    + "://" + partitionNode.get(ExternalDataConstants.FAILED_RECORD_LOG_LOCATION_NAME).getTextValue());
+            failedRecordsFilePath.append(partitionNode.get(ExternalDataConstants.FEED_NODE_ID_NAME).asText()
+                    + "://" + partitionNode.get(ExternalDataConstants.FAILED_RECORD_LOG_LOCATION_NAME).asText());
         }
 
         // create a new failed record dataset
