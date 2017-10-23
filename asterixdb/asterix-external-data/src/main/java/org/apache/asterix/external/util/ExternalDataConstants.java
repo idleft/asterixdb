@@ -224,6 +224,17 @@ public class ExternalDataConstants {
     public static final String KEY_READER_FACTORY = "reader-factory";
     public static final String READER_RSS = "rss_feed";
     public static final String FORMAT_CSV = "csv";
+    public static final String LOG_EXTERNAL_DATASET = "log-dataset";
+
+
+    /**
+     * External Runtime stats attributes
+     * */
+    public static final String PARTITION_ID_NAME = "adapter-partition-id";
+    public static final String FEED_NODE_ID_NAME = "node_id";
+    public static final String INCOMING_RECORDS_COUNT_FIELD_NAME = "incoming-records-count";
+    public static final String FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME = "failed-at-parser-records-count";
+    public static final String FAILED_RECORD_LOG_LOCATION_NAME = "failed-record-log-file-location";
 
     public static final String ERROR_PARSE_RECORD = "Parser failed to parse record";
 }

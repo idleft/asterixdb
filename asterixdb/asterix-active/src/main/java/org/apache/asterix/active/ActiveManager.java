@@ -87,6 +87,10 @@ public class ActiveManager {
         return runtimes.get(runtimeId);
     }
 
+    public String getNodeId() {
+        return this.nodeId;
+    }
+
     @Override
     public String toString() {
         return ActiveManager.class.getSimpleName() + "[" + nodeId + "]";

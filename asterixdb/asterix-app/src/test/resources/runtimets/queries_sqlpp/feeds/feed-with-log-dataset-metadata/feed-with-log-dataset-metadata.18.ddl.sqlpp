@@ -16,30 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.lang.common.statement;
 
-import java.util.Map;
-
-public class ExternalDetailsDecl implements IDatasetDetailsDecl {
-    private final Map<String, String> properties;
-    private final String adapter;
-
-    public ExternalDetailsDecl(String adapter, Map<String, String> properties) {
-        this.adapter = adapter;
-        this.properties = properties;
-    }
-
-    public String getAdapter() {
-        return adapter;
-    }
-
-    public Map<String, String> getProperties() {
-        return properties;
-    }
-
-    @Override
-    public boolean isTemp() {
-        return false;
-    }
-
-}
+use experiments;
+drop dataverse experiments;

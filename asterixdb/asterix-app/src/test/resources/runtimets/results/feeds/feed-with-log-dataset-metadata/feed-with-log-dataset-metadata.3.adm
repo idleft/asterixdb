@@ -1,0 +1,1 @@
+{ "DataverseName": "experiments", "DatasetName": "TweetLog", "DatatypeDataverseName": "Metadata", "DatatypeName": "AnyObject", "DatasetType": "EXTERNAL", "GroupName": "experiments.TweetLog", "CompactionPolicy": "prefix" }
