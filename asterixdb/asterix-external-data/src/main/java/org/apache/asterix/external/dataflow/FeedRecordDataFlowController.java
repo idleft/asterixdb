@@ -18,11 +18,13 @@
  */
 package org.apache.asterix.external.dataflow;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import com.sun.tools.doclets.internal.toolkit.util.Extern;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IRawRecord;
@@ -36,8 +38,6 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 
 public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowController {
-    public static final String INCOMING_RECORDS_COUNT_FIELD_NAME = "incoming-records-count";
-    public static final String FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME = "failed-at-parser-records-count";
 
     public enum State {
         CREATED,
@@ -281,7 +281,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
 
     @Override
     public String getStats() {
-        return "{\"" + INCOMING_RECORDS_COUNT_FIELD_NAME + "\": " + incomingRecordsCount + ", \"" +
-                FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME + "\": " + failedRecordsCount + "}";
+        return "\"" + ExternalDataConstants.INCOMING_RECORDS_COUNT_FIELD_NAME + "\": " + incomingRecordsCount + ", \""
+                + ExternalDataConstants.FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME + "\": " + failedRecordsCount + ", \""
+                + ExternalDataConstants.FAILED_RECORD_LOG_LOCATION_NAME + "\": \""
+                + feedLogManager.getDir().toAbsolutePath() + File.separator + FeedLogManager.BAD_RECORDS_FILE_NAME
+                + "\"";
     }
 }

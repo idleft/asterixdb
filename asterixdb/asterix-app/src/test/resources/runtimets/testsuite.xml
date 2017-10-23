@@ -297,6 +297,16 @@
         <expected-error>Function fundv.test_func0@1 is being used. It cannot be dropped</expected-error>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="feed-with-log-dataset-metadata">
+        <output-dir compare="Text">feed-with-log-dataset-metadata</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="feed-with-log-dataset-runtime">
+        <output-dir compare="Text">feed-with-log-dataset-runtime</output-dir>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="upsert">
     <test-case FilePath="upsert">
