@@ -19,40 +19,11 @@
 
 package org.apache.asterix.lang.common.statement;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.asterix.active.IActiveEntityEventsListener;
-import org.apache.asterix.common.api.IMetadataLockManager;
-import org.apache.asterix.common.config.DatasetConfig;
-import org.apache.asterix.common.config.GlobalConfig;
-import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.CompilationException;
-import org.apache.asterix.common.utils.JobUtils;
-import org.apache.asterix.external.feed.watch.StatsSubscriber;
-import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.lang.common.base.Statement;
 import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
-import org.apache.asterix.metadata.MetadataManager;
-import org.apache.asterix.metadata.MetadataTransactionContext;
-import org.apache.asterix.metadata.bootstrap.MetadataBuiltinEntities;
-import org.apache.asterix.metadata.declared.MetadataProvider;
-import org.apache.asterix.metadata.entities.Dataset;
-import org.apache.asterix.metadata.entities.ExternalDatasetDetails;
-import org.apache.asterix.metadata.utils.DatasetUtil;
-import org.apache.asterix.metadata.utils.MetadataLockUtil;
-import org.apache.asterix.metadata.utils.MetadataUtil;
-import org.apache.asterix.transaction.management.service.transaction.DatasetIdFactory;
-import org.apache.commons.lang3.mutable.MutableBoolean;
-import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.utils.Pair;
-import org.apache.hyracks.api.client.IHyracksClientConnection;
-
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 public class StartFeedStatement implements Statement {
 
@@ -87,5 +58,4 @@ public class StartFeedStatement implements Statement {
     public Identifier getFeedName() {
         return feedName;
     }
-
 }
