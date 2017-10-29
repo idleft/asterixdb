@@ -1994,23 +1994,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             }
             doDropFeed(hcc, metadataProvider, feed);
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
-            // drop log dataset
-            if (feed.getAdapterConfiguration().containsKey(ExternalDataConstants.LOG_EXTERNAL_DATASET)) {
-                mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
-                metadataProvider.setMetadataTxnContext(mdTxnCtx);
-                String failedDatasetName = feed.getAdapterConfiguration()
-                        .get(ExternalDataConstants.LOG_EXTERNAL_DATASET);
-                MetadataLockUtil.dropDatasetBegin(lockManager, metadataProvider.getLocks(), dataverseName,
-                        dataverseName + "." + failedDatasetName);
-                Dataset ds = metadataProvider.findDataset(dataverseName, failedDatasetName);
-                if (ds != null) {
-                    ds.drop(metadataProvider, new MutableObject<>(mdTxnCtx), new ArrayList<>(),
-                            new MutableBoolean(true), new MutableObject<>(JobUtils.ProgressState.NO_PROGRESS), hcc,
-                            true);
-                }
-                mdTxnCtx = metadataProvider.getMetadataTxnContext();
-                MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
-            }
         } catch (Exception e) {
             abort(e, e, mdTxnCtx);
             throw e;
@@ -2114,12 +2097,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             committed = true;
             listener.start(metadataProvider);
 
-            if (feed.getAdapterConfiguration().containsKey(ExternalDataConstants.LOG_EXTERNAL_DATASET)) {
-                String failedDatasetName = feed.getAdapterConfiguration()
-                        .get(ExternalDataConstants.LOG_EXTERNAL_DATASET);
-                ((StartFeedStatement) stmt).addLogDataset(appCtx, failedDatasetName, lockManager, metadataProvider,
-                        hcc, listener, dataverseName);
-            }
         } catch (Exception e) {
             if (!committed) {
                 abort(e, e, mdTxnCtx);
