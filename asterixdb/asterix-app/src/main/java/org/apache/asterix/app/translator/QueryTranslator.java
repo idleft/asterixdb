@@ -33,7 +33,6 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,9 +75,7 @@ import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.common.utils.JobUtils.ProgressState;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.asterix.external.dataflow.FeedRecordDataFlowController;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
-import org.apache.asterix.external.feed.watch.StatsSubscriber;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.indexing.IndexingConstants;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
@@ -129,7 +126,6 @@ import org.apache.asterix.metadata.IDatasetDetails;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.metadata.MetadataTransactionContext;
 import org.apache.asterix.metadata.bootstrap.MetadataBuiltinEntities;
-import org.apache.asterix.metadata.bootstrap.MetadataRecordTypes;
 import org.apache.asterix.metadata.dataset.hints.DatasetHints;
 import org.apache.asterix.metadata.dataset.hints.DatasetHints.DatasetNodegroupCardinalityHint;
 import org.apache.asterix.metadata.declared.MetadataProvider;
@@ -209,9 +205,6 @@ import org.apache.hyracks.control.common.job.profiling.om.JobProfile;
 import org.apache.hyracks.control.common.job.profiling.om.JobletProfile;
 import org.apache.hyracks.control.common.job.profiling.om.TaskProfile;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMMergePolicyFactory;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.node.ObjectNode;
 
 /*
  * Provides functionality for executing a batch of Query statements (queries included)
@@ -561,8 +554,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 throw new AlgebricksException(": type " + itemTypeName + " could not be found.");
             }
             String ngName = ngNameId != null ? ngNameId.getValue()
-                    : DatasetUtil.configureNodegroupForDataset(appCtx, dd.getHints(), dataverseName, datasetName,
-                            metadataProvider);
+                    : configureNodegroupForDataset(appCtx, dd.getHints(), dataverseName, datasetName, metadataProvider);
 
             if (compactionPolicy == null) {
                 compactionPolicy = GlobalConfig.DEFAULT_COMPACTION_POLICY_NAME;
@@ -719,6 +711,33 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             throw new CompilationException("Dataset " + dataset.getDataverseName() + "." + dataset.getDatasetName()
                     + " is currently being " + "fed into by the following active entities.\n" + builder.toString());
         }
+    }
+
+    protected static String configureNodegroupForDataset(ICcApplicationContext appCtx, Map<String, String> hints,
+            String dataverseName, String datasetName, MetadataProvider metadataProvider) throws Exception {
+        IClusterStateManager csm = appCtx.getClusterStateManager();
+        Set<String> allNodes = csm.getParticipantNodes(true);
+        Set<String> selectedNodes = new LinkedHashSet<>();
+        String hintValue = hints.get(DatasetNodegroupCardinalityHint.NAME);
+        if (hintValue == null) {
+            selectedNodes.addAll(allNodes);
+        } else {
+            int nodegroupCardinality;
+            final Pair<Boolean, String> validation = DatasetHints.validate(appCtx, DatasetNodegroupCardinalityHint.NAME,
+                    hints.get(DatasetNodegroupCardinalityHint.NAME));
+            boolean valid = validation.first;
+            if (!valid) {
+                throw new CompilationException(
+                        "Incorrect use of hint '" + DatasetNodegroupCardinalityHint.NAME + "': " + validation.second);
+            } else {
+                nodegroupCardinality = Integer.parseInt(hints.get(DatasetNodegroupCardinalityHint.NAME));
+            }
+            List<String> allNodeList = new ArrayList<>(allNodes);
+            Collections.shuffle(allNodeList);
+            selectedNodes.addAll(allNodeList.subList(0, nodegroupCardinality));
+        }
+        // Creates the associated node group for the dataset.
+        return DatasetUtil.createNodeGroupForNewDataset(dataverseName, datasetName, selectedNodes, metadataProvider);
     }
 
     protected void handleCreateIndexStatement(MetadataProvider metadataProvider, Statement stmt,
@@ -2058,11 +2077,11 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         String dataverseName = getActiveDataverse(sfs.getDataverseName());
         String feedName = sfs.getFeedName().getValue();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
-        metadataProvider.setMetadataTxnContext(mdTxnCtx);
         boolean committed = false;
         MetadataLockUtil.startFeedBegin(lockManager, metadataProvider.getLocks(), dataverseName,
                 dataverseName + "." + feedName);
         try {
+            metadataProvider.setMetadataTxnContext(mdTxnCtx);
             // Runtime handler
             EntityId entityId = new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName);
             // Feed & Feed Connections
@@ -2096,7 +2115,6 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
             committed = true;
             listener.start(metadataProvider);
-
         } catch (Exception e) {
             if (!committed) {
                 abort(e, e, mdTxnCtx);

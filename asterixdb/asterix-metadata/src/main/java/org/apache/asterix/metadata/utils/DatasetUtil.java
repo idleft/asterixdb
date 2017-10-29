@@ -21,8 +21,6 @@ package org.apache.asterix.metadata.utils;
 import java.io.DataOutput;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +29,6 @@ import java.util.logging.Logger;
 
 import org.apache.asterix.builders.IARecordBuilder;
 import org.apache.asterix.builders.RecordBuilder;
-import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
 import org.apache.asterix.common.context.CorrelatedPrefixMergePolicyFactory;
 import org.apache.asterix.common.context.IStorageComponentProvider;
@@ -40,7 +37,6 @@ import org.apache.asterix.common.context.TransactionSubsystemProvider;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
-import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.exceptions.MetadataException;
 import org.apache.asterix.common.transactions.IRecoveryManager;
 import org.apache.asterix.common.transactions.JobId;
@@ -49,7 +45,6 @@ import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.formats.nontagged.TypeTraitProvider;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.metadata.MetadataTransactionContext;
-import org.apache.asterix.metadata.dataset.hints.DatasetHints;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.CompactionPolicy;
 import org.apache.asterix.metadata.entities.Dataset;
@@ -563,33 +558,5 @@ public class DatasetUtil {
         }
         MetadataManager.INSTANCE.addNodegroup(mdTxnCtx, new NodeGroup(nodeGroup, new ArrayList<>(ncNames)));
         return nodeGroup;
-    }
-
-    public static String configureNodegroupForDataset(ICcApplicationContext appCtx, Map<String, String> hints,
-            String dataverseName, String datasetName, MetadataProvider metadataProvider) throws Exception {
-        IClusterStateManager csm = appCtx.getClusterStateManager();
-        Set<String> allNodes = csm.getParticipantNodes(true);
-        Set<String> selectedNodes = new LinkedHashSet<>();
-        String hintValue = hints.get(DatasetHints.DatasetNodegroupCardinalityHint.NAME);
-        if (hintValue == null) {
-            selectedNodes.addAll(allNodes);
-        } else {
-            int nodegroupCardinality;
-            final Pair<Boolean, String> validation = DatasetHints.validate(appCtx,
-                    DatasetHints.DatasetNodegroupCardinalityHint.NAME,
-                    hints.get(DatasetHints.DatasetNodegroupCardinalityHint.NAME));
-            boolean valid = validation.first;
-            if (!valid) {
-                throw new CompilationException("Incorrect use of hint '"
-                        + DatasetHints.DatasetNodegroupCardinalityHint.NAME + "': " + validation.second);
-            } else {
-                nodegroupCardinality = Integer.parseInt(hints.get(DatasetHints.DatasetNodegroupCardinalityHint.NAME));
-            }
-            List<String> allNodeList = new ArrayList<>(allNodes);
-            Collections.shuffle(allNodeList);
-            selectedNodes.addAll(allNodeList.subList(0, nodegroupCardinality));
-        }
-        // Creates the associated node group for the dataset.
-        return DatasetUtil.createNodeGroupForNewDataset(dataverseName, datasetName, selectedNodes, metadataProvider);
     }
 }
