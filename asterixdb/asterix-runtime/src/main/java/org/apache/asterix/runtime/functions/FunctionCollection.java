@@ -226,6 +226,7 @@ import org.apache.asterix.runtime.evaluators.functions.StringLTrimDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringLengthDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringLikeDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringLowerCaseDescriptor;
+import org.apache.asterix.runtime.evaluators.functions.StringObjectifyDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringPositionDescriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringRTrim2Descriptor;
 import org.apache.asterix.runtime.evaluators.functions.StringRTrimDescriptor;
@@ -545,6 +546,7 @@ public final class FunctionCollection {
         functionsToInjectUnkownHandling.add(StringPositionDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(StringRepeatDescriptor.FACTORY);
         functionsToInjectUnkownHandling.add(StringSplitDescriptor.FACTORY);
+//        functionsToInjectUnkownHandling.add(StringObjectifyDescriptor.FACTORY);
 
         // Constructors
         functionsToInjectUnkownHandling.add(ABooleanConstructorDescriptor.FACTORY);

@@ -198,5 +198,20 @@
       <version>1.10.19</version>
       <scope>test</scope>
     </dependency>
+    <!--<dependency>-->
+      <!--<groupId>org.apache.asterix</groupId>-->
+      <!--<artifactId>asterix-external-data</artifactId>-->
+      <!--<version>0.9.3-SNAPSHOT</version>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.apache.asterix</groupId>-->
+      <!--<artifactId>asterix-metadata</artifactId>-->
+      <!--<version>0.9.3-SNAPSHOT</version>-->
+    <!--</dependency>-->
+    <!--<dependency>-->
+      <!--<groupId>org.apache.asterix</groupId>-->
+      <!--<artifactId>asterix-metadata</artifactId>-->
+      <!--<version>0.9.3-SNAPSHOT</version>-->
+    <!--</dependency>-->
   </dependencies>
 </project>
