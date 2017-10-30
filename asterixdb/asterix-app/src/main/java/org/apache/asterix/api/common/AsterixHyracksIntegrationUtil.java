@@ -125,7 +125,7 @@ public class AsterixHyracksIntegrationUtil {
         this.ncs = nodeControllers.toArray(new NodeControllerService[nodeControllers.size()]);
     }
 
-    public void initLocalInstance(boolean deleteOldInstanceData, String externalLibPath) throws Exception {
+    public void init(boolean deleteOldInstanceData, String externalLibPath) throws Exception {
         List<ILibraryManager> libraryManagers = new ArrayList<>();
         ExternalUDFLibrarian librarian = new ExternalUDFLibrarian(libraryManagers);
         librarian.cleanup();
@@ -290,16 +290,15 @@ public class AsterixHyracksIntegrationUtil {
     public static void main(String[] args) throws Exception {
         AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
         try {
-            integrationUtil.runLocalInstance(Boolean.getBoolean("cleanup.start"),
-                    Boolean.getBoolean("cleanup.shutdown"), System.getProperty("external.lib", ""));
+            integrationUtil.run(Boolean.getBoolean("cleanup.start"), Boolean.getBoolean("cleanup.shutdown"),
+                    System.getProperty("external.lib", ""));
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Unexpected exception", e);
             System.exit(1);
         }
     }
 
-    protected void runLocalInstance(boolean cleanupOnStart, boolean cleanupOnShutdown, String loadExternalLibs)
-            throws Exception {
+    protected void run(boolean cleanupOnStart, boolean cleanupOnShutdown, String loadExternalLibs) throws Exception {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
@@ -312,7 +311,7 @@ public class AsterixHyracksIntegrationUtil {
         });
         System.setProperty(GlobalConfig.CONFIG_FILE_PROPERTY, "asterix-build-configuration.xml");
 
-        initLocalInstance(cleanupOnStart, loadExternalLibs);
+        init(cleanupOnStart, loadExternalLibs);
         while (true) {
             Thread.sleep(10000);
         }
