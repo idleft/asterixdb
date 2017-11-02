@@ -36,6 +36,7 @@ import org.apache.asterix.active.message.ActiveManagerMessage.Kind;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.app.translator.QueryTranslator;
 import org.apache.asterix.common.cluster.IClusterStateManager;
+import org.apache.asterix.common.config.CompilerProperties;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
@@ -234,6 +235,7 @@ public class FeedOperations {
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
             throws AlgebricksException, RemoteException, ACIDException {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
+//        metadataProvider.getConfig().put(CompilerProperties.COMPILER_PARALLELISM_KEY,"7");
         Query feedConnQuery = makeConnectionQuery(feedConn);
         CompiledStatements.ICompiledDmlStatement clfrqs;
         if (insertFeed) {

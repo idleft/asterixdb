@@ -73,6 +73,7 @@ public class NetworkOutputChannel implements IFrameWriter {
                         break;
                     }
                     try {
+                        System.out.println(Thread.currentThread().getName() + " waits for empty frame.");
                         wait();
                     } catch (InterruptedException e) {
                         throw new HyracksDataException(e);

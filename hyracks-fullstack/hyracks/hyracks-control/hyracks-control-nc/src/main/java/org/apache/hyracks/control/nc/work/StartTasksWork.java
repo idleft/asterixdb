@@ -288,7 +288,7 @@ public class StartTasksWork extends AbstractWork {
                                         new InetSocketAddress(
                                                 InetAddress.getByAddress(networkAddress.lookupIpAddress()),
                                                 networkAddress.getPort()),
-                                        pid, 5));
+                                        pid, 1));
                         channels.add(channel);
                     }
                 }

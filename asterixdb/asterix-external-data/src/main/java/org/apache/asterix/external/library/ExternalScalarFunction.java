@@ -33,6 +33,7 @@ import org.apache.hyracks.data.std.api.IPointable;
 import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
 
 class ExternalScalarFunction extends ExternalFunction implements IExternalScalarFunction, IScalarEvaluator {
+    int count = 0;
 
     public ExternalScalarFunction(IExternalFunctionInfo finfo, IScalarEvaluatorFactory args[],
             IHyracksTaskContext context, IApplicationContext appCtx) throws HyracksDataException {
@@ -48,7 +49,11 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
     public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
         try {
             setArguments(tuple);
+            long sleepTime = 4;
+            long startTime = System.currentTimeMillis();
+            while (System.currentTimeMillis() - startTime < sleepTime);
             evaluate(functionHelper);
+//            functionHelper.setResult(functionHelper.getArgument(0));
             result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
             functionHelper.reset();
         } catch (Exception e) {
@@ -59,6 +64,7 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
     @Override
     public void evaluate(IFunctionHelper argumentProvider) throws HyracksDataException {
         try {
+//            System.out.println("Worker " + Thread.currentThread().getName() + "Looked " + count++);
             resultBuffer.reset();
             ((IExternalScalarFunction) externalFunction).evaluate(argumentProvider);
             if (!argumentProvider.isValidResult()) {

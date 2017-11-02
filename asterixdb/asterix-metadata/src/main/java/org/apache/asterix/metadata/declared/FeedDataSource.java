@@ -75,7 +75,7 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
         this.locations = locations;
         this.pkTypes = pkTypes;
         this.keyAccessExpression = keyAccessExpression;
-        this.computeCardinality = appCtx.getClusterStateManager().getParticipantNodes().size();
+        this.computeCardinality = domain.cardinality();
         this.feedConnection = feedConnection;
         initFeedDataSource();
     }

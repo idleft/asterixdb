@@ -26,9 +26,14 @@ import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
+import java.time.Instant;
+import java.util.Random;
+
 public class ParseTweetFunction implements IExternalScalarFunction {
 
     private JUnorderedList list = null;
+    Random randomSleeper = new Random(Instant.now().toEpochMilli());
+    long sleepTime = randomSleeper.nextInt(2000)+2000;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
@@ -61,6 +66,8 @@ public class ParseTweetFunction implements IExternalScalarFunction {
         result.setField("text", text);
         result.setField("timestamp", inputRecord.getValueByName("timestamp"));
         result.setField("topics", list);
+        System.out.println("I'm going to sleep " + sleepTime);
+        Thread.sleep(sleepTime);
         functionHelper.setResult(result);
     }
 

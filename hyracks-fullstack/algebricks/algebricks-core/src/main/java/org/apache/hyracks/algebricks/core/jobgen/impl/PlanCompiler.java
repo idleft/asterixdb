@@ -105,6 +105,7 @@ public class PlanCompiler {
                 .entrySet()) {
             Mutable<ILogicalOperator> child = entry.getKey();
             List<Mutable<ILogicalOperator>> parents = entry.getValue();
+            // shouldn't it be parent.child > 1?
             if (parents.size() > 1) {
                 if (child.getValue().getOperatorTag() == LogicalOperatorTag.REPLICATE
                         || child.getValue().getOperatorTag() == LogicalOperatorTag.SPLIT) {

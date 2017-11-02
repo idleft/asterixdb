@@ -88,6 +88,8 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private boolean opened;
 
+    int ctr = 0;
+
     /*
      * In this operator:
      * writer is the network partitioner
@@ -140,6 +142,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         try {
             FeedUtils.processFeedMessage(buffer, message, fta);
+            System.out.println(Thread.currentThread().getName() + " received " + ctr++ + " buffer info " + buffer.getChar(1024)  + " " + buffer.limit());
             writer.nextFrame(buffer);
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, e.getMessage(), e);

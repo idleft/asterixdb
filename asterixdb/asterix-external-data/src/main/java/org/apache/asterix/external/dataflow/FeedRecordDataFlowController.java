@@ -53,6 +53,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected State state = State.CREATED;
     protected long incomingRecordsCount = 0;
     protected long failedRecordsCount = 0;
+    int counter = 0;
 
     public FeedRecordDataFlowController(IHyracksTaskContext ctx, FeedTupleForwarder tupleForwarder,
             FeedLogManager feedLogManager, int numOfOutputFields, IRecordDataParser<T> dataParser,
@@ -211,6 +212,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         tb.addFieldEndOffset();
         addMetaPart(tb, record);
         addPrimaryKeys(tb, record);
+        System.out.println("Feed RecordReader Counter: " + counter++);
         tupleForwarder.addTuple(tb);
         return true;
     }

@@ -44,6 +44,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutp
     private final FeedPolicyAccessor policyAccessor;
     private final ActiveManager activeManager;
     private final IHyracksTaskContext ctx;
+    int ctr;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition) {
@@ -79,6 +80,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryInputUnaryOutp
 
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+        System.out.println("Feed Collect Op frame " + ctr++ + " buffer info " + buffer.getChar(1024) + " " + buffer.limit());
         writer.nextFrame(buffer);
     }
 

@@ -20,6 +20,7 @@ package org.apache.asterix.external.input.stream;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -32,6 +33,7 @@ public class SocketServerInputStream extends AsterixInputStream {
     private ServerSocket server;
     private Socket socket;
     private InputStream connectionStream;
+    private OutputStream connectionOutputStream;
 
     public SocketServerInputStream(ServerSocket server) {
         this.server = server;
@@ -40,6 +42,12 @@ public class SocketServerInputStream extends AsterixInputStream {
             @Override
             public int read() throws IOException {
                 return -1;
+            }
+        };
+        connectionOutputStream = new OutputStream() {
+            @Override
+            public void write(int n) throws IOException {
+                // no op
             }
         };
     }
@@ -70,6 +78,7 @@ public class SocketServerInputStream extends AsterixInputStream {
                 controller.flush();
             }
             read = connectionStream.read(b, off, len);
+            connectionOutputStream.write(b, off, read < 0 ? 0 : read);
         } catch (IOException e) {
             // exception is expected when no connection available
             LOGGER.info("Exhausted all pending connections. Waiting for new ones to come.");
@@ -81,6 +90,7 @@ public class SocketServerInputStream extends AsterixInputStream {
             }
             try {
                 read = connectionStream.read(b, off, len);
+                connectionOutputStream.write(b, off, read);
             } catch (IOException e) {
                 e.printStackTrace();
                 read = -1;
@@ -136,10 +146,13 @@ public class SocketServerInputStream extends AsterixInputStream {
         try {
             connectionStream.close();
             connectionStream = null;
+            connectionOutputStream.close();
+            connectionOutputStream = null;
             socket.close();
             socket = null;
             socket = server.accept();
             connectionStream = socket.getInputStream();
+            connectionOutputStream = socket.getOutputStream();
             return true;
         } catch (Exception e) {
             close();

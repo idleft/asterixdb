@@ -140,6 +140,7 @@ public class FrameUtils {
         int flushedBytes = 0;
         if (!frameTupleAppender.append(tupleAccessor, tIndex)) {
             flushedBytes = frameTupleAppender.getBuffer().capacity();
+            System.out.println("Frame appender write " + " buffer info " + frameTupleAppender.getBuffer().getChar(1024)  + " " + frameTupleAppender.getBuffer().limit());
             frameTupleAppender.write(writer, true);
             if (!frameTupleAppender.append(tupleAccessor, tIndex)) {
                 throw HyracksDataException.create(ErrorCode.TUPLE_CANNOT_FIT_INTO_EMPTY_FRAME,

@@ -418,6 +418,7 @@ public class APIFramework {
             int parallelismHint) {
         // Unifies the handling of non-positive parallelism.
         int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+        parallelism = 8;
 
         // Calculates per node parallelism, with load balance, i.e., randomly selecting nodes with larger
         // parallelism.
@@ -441,7 +442,7 @@ public class APIFramework {
         List<String> locations = new ArrayList<>();
         for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
             String nodeId = entry.getKey();
-            int availableCores = entry.getValue().getNumAvailableCores();
+            int availableCores = 4; //entry.getValue().getNumAvailableCores();
             int nodeParallelism =
                     selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
             int coresToUse =

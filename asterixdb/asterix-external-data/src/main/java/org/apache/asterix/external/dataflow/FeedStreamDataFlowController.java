@@ -48,6 +48,7 @@ public class FeedStreamDataFlowController extends AbstractFeedDataFlowController
                 }
                 tb.addFieldEndOffset();
                 tupleForwarder.addTuple(tb);
+//                System.out.println("Feed Read "+ incomingRecordsCount);
                 incomingRecordsCount++;
             }
         } catch (Exception e) {
