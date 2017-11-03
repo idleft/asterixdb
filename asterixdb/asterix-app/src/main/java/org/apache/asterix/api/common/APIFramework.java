@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -113,13 +114,13 @@ public class APIFramework {
     private static final int MIN_FRAME_LIMIT_FOR_JOIN = 5;
 
     // A white list of supported configurable parameters.
-    private static final Set<String> CONFIGURABLE_PARAMETER_NAMES =
-            ImmutableSet.of(CompilerProperties.COMPILER_JOINMEMORY_KEY, CompilerProperties.COMPILER_GROUPMEMORY_KEY,
-                    CompilerProperties.COMPILER_SORTMEMORY_KEY, CompilerProperties.COMPILER_PARALLELISM_KEY,
-                    FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, FuzzyUtils.SIM_FUNCTION_PROP_NAME,
-                    FuzzyUtils.SIM_THRESHOLD_PROP_NAME, StartFeedStatement.WAIT_FOR_COMPLETION,
-                    FeedActivityDetails.FEED_POLICY_NAME, FeedActivityDetails.COLLECT_LOCATIONS, "inline_with",
-                    "hash_merge", "output-record-type");
+    private static final Set<String> CONFIGURABLE_PARAMETER_NAMES = ImmutableSet.of(
+            CompilerProperties.COMPILER_JOINMEMORY_KEY, CompilerProperties.COMPILER_GROUPMEMORY_KEY,
+            CompilerProperties.COMPILER_SORTMEMORY_KEY, CompilerProperties.COMPILER_PARALLELISM_KEY,
+            CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY, FunctionUtil.IMPORT_PRIVATE_FUNCTIONS,
+            FuzzyUtils.SIM_FUNCTION_PROP_NAME, FuzzyUtils.SIM_THRESHOLD_PROP_NAME,
+            StartFeedStatement.WAIT_FOR_COMPLETION, FeedActivityDetails.FEED_POLICY_NAME,
+            FeedActivityDetails.COLLECT_LOCATIONS, "inline_with", "hash_merge", "output-record-type");
 
     private final IRewriterFactory rewriterFactory;
     private final IAstPrintVisitorFactory astPrintVisitorFactory;
@@ -258,8 +259,10 @@ public class APIFramework {
 
         int parallelism = getParallelism(querySpecificConfig.get(CompilerProperties.COMPILER_PARALLELISM_KEY),
                 compilerProperties.getParallelism());
+        String computationLocationHint = querySpecificConfig.get(CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY);
         AlgebricksAbsolutePartitionConstraint computationLocations =
-                chooseLocations(clusterInfoCollector, parallelism, metadataProvider.getClusterLocations());
+                chooseLocations(clusterInfoCollector, parallelism, metadataProvider.getClusterLocations(),
+                        computationLocationHint);
         builder.setClusterLocations(computationLocations);
 
         ICompiler compiler = compilerFactory.createCompiler(plan, metadataProvider, t.getVarCounter());
@@ -393,7 +396,8 @@ public class APIFramework {
     // Chooses the location constraints, i.e., whether to use storage parallelism or use a user-sepcified number
     // of cores.
     private static AlgebricksAbsolutePartitionConstraint chooseLocations(IClusterInfoCollector clusterInfoCollector,
-            int parallelismHint, AlgebricksAbsolutePartitionConstraint storageLocations) throws AlgebricksException {
+            int parallelismHint, AlgebricksAbsolutePartitionConstraint storageLocations, String computationLocationHint)
+            throws AlgebricksException {
         try {
             Map<String, NodeControllerInfo> ncMap = clusterInfoCollector.getNodeControllerInfos();
 
@@ -402,56 +406,75 @@ public class APIFramework {
 
             // If storage parallelism is not larger than the total number of cores, we use the storage parallelism.
             // Otherwise, we will use all available cores.
-            if (parallelismHint == CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE
+            String[] computationLocations = computationLocationHint.split(";");
+            if (computationLocationHint.equals(CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE)
+                    && parallelismHint == CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE
                     && storageLocations.getLocations().length <= totalNumCores) {
                 return storageLocations;
             }
-            return getComputationLocations(ncMap, parallelismHint);
+            return getComputationLocations(ncMap, parallelismHint, computationLocationHint);
         } catch (HyracksException e) {
             throw new AlgebricksException(e);
         }
     }
 
+    private static boolean verifyComputationLocations(Map<String, NodeControllerInfo> ncMap, String[] nodeIds) {
+        for (String nodeId : nodeIds) {
+            if (!ncMap.keySet().contains(nodeId)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // Computes the location constraints based on user-configured parallelism parameter.
     // Note that the parallelism parameter is only a hint -- it will not be respected if it is too small or too large.
     private static AlgebricksAbsolutePartitionConstraint getComputationLocations(Map<String, NodeControllerInfo> ncMap,
-            int parallelismHint) {
+            int parallelismHint, String computationLocationHint) throws CompilationException {
         // Unifies the handling of non-positive parallelism.
         int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
-        parallelism = 8;
+        String[] computationLocations = computationLocationHint.split(";");
+
+        // Calculate computation nodes. If no computation node is found, all nodes will be used for computation.
+        List<String> computationNodes = new ArrayList<>();
+        if (computationLocations.length > 0) {
+            if (!verifyComputationLocations(ncMap, computationLocations)) {
+                throw new CompilationException(ErrorCode.COMPILATION_INVALID_COMPUTATION_LOCATION);
+            }
+            computationNodes.addAll(Arrays.asList(computationLocations));
+        } else {
+            for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
+                computationNodes.add(entry.getKey());
+            }
+        }
 
         // Calculates per node parallelism, with load balance, i.e., randomly selecting nodes with larger
         // parallelism.
-        int numNodes = ncMap.size();
+        int numNodes = computationNodes.size();
         int numNodesWithOneMorePartition = parallelism % numNodes;
         int perNodeParallelismMin = parallelism / numNodes;
         int perNodeParallelismMax = parallelism / numNodes + 1;
-        List<String> allNodes = new ArrayList<>();
+
+        // Handle nodes with one more partition.
         Set<String> selectedNodesWithOneMorePartition = new HashSet<>();
-        for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
-            allNodes.add(entry.getKey());
-        }
-        Random random = new Random();
-        for (int index = numNodesWithOneMorePartition; index >= 1; --index) {
-            int pick = random.nextInt(index);
-            selectedNodesWithOneMorePartition.add(allNodes.get(pick));
-            Collections.swap(allNodes, pick, index - 1);
+        Collections.shuffle(computationNodes);
+        for (int iter1 = 0; iter1 < numNodesWithOneMorePartition; iter1++) {
+            selectedNodesWithOneMorePartition.add(computationNodes.get(iter1));
         }
 
         // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
-        List<String> locations = new ArrayList<>();
-        for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
-            String nodeId = entry.getKey();
-            int availableCores = 4; //entry.getValue().getNumAvailableCores();
+        List<String> computationPartitions = new ArrayList<>();
+        for (String nodeId : computationLocations) {
+            int availableCores = ncMap.get(nodeId).getNumAvailableCores();
             int nodeParallelism =
                     selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
             int coresToUse =
                     nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
             for (int count = 0; count < coresToUse; ++count) {
-                locations.add(nodeId);
+                computationPartitions.add(nodeId);
             }
         }
-        return new AlgebricksAbsolutePartitionConstraint(locations.toArray(new String[0]));
+        return new AlgebricksAbsolutePartitionConstraint(computationPartitions.toArray(new String[0]));
     }
 
     // Gets the total number of available cores in the cluster.

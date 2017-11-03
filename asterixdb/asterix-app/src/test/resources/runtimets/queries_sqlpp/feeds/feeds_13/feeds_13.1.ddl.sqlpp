@@ -40,12 +40,16 @@ create type Tweet as open {
  country: string
 };
 
-create dataset SyntheticTweets(Tweet) primary key id;
+drop nodegroup group_test if exists;
+create  nodegroup group_test  on
+    asterix_nc1;
+
+create dataset SyntheticTweets(Tweet) primary key id on group_test;
 
 create feed  SyntheticTweetFeed using stream
-(("duration"="120"),
+(("duration"="5"),
 ("stream-source"="org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory"),
-("tps"="900"),
+("tps"="10"),
 ("type-name"="Tweet"),
 ("dataverse-dataset"="feeds:SyntheticTweets"),
 ("format"="adm"),

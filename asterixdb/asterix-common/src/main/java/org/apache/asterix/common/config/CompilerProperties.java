@@ -46,6 +46,13 @@ public class CompilerProperties extends AbstractProperties {
                 "other integer values dictate the number of query execution parallel partitions. The system will " +
                 "fall back to use the number of all available CPU cores in the cluster as the degree of parallelism " +
                 "if the number set by a user is too large or too small"),
+        COMPILER_COMPUTATION_LOCATION(
+                STRING,
+                COMPILER_COMPUTATION_LOCATION_AS_STORAGE,
+                "A list of nodes that are used for computing the query. If empty, the compiler will use all available"
+                        + " nodes for computation. If specified, e.g., \"nc1;nc2\", the compiler will only use the "
+                        + "specified nodes for computation. If the parallelism degree is specified "
+                        + "as well, the parallel partitions will be distributed among the specified nodes only"),
         COMPILER_PREGELIX_HOME(STRING, "~/pregelix", "Pregelix installation root directory");
 
         private final IOptionType type;
@@ -91,7 +98,11 @@ public class CompilerProperties extends AbstractProperties {
 
     public static final String COMPILER_PARALLELISM_KEY = Option.COMPILER_PARALLELISM.ini();
 
+    public static final String COMPILER_COMPUTATION_LOCATION_KEY = Option.COMPILER_COMPUTATION_LOCATION.ini();
+
     public static final int COMPILER_PARALLELISM_AS_STORAGE = 0;
+
+    public static final String COMPILER_COMPUTATION_LOCATION_AS_STORAGE = "";
 
     public CompilerProperties(PropertiesAccessor accessor) {
         super(accessor);
