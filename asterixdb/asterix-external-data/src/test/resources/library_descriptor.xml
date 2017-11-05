@@ -39,7 +39,7 @@
       <function_type>SCALAR</function_type>
       <name>addHashTagsInPlace</name>
       <arguments>Tweet</arguments>
-      <return_type>ProcessedTweet</return_type>
+      <return_type>Tweet</return_type>
       <definition>org.apache.asterix.external.library.AddHashTagsInPlaceFactory
       </definition>
     </libraryFunction>
