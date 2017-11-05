@@ -146,6 +146,7 @@ public class ErrorCode {
     public static final int CANNOT_SERIALIZE_A_VALUE = 1066;
     public static final int CANNOT_FIND_NON_MISSING_SELECT_OPERATOR = 1067;
     public static final int CANNOT_GET_CONDITIONAL_SPLIT_KEY_VARIABLE = 1068;
+    public static final int COMPILATION_INVALID_COMPUTATION_LOCATION = 1080;
 
     // Feed errors
     public static final int DATAFLOW_ILLEGAL_STATE = 3001;
