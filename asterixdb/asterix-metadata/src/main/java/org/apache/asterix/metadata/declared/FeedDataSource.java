@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -61,10 +60,10 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
     private final List<ScalarFunctionCallExpression> keyAccessExpression;
     private final FeedConnection feedConnection;
 
-    public FeedDataSource(MetadataProvider metadataProvider, Feed feed, DataSourceId id, String targetDataset,
-            IAType itemType, IAType metaType, List<IAType> pkTypes,
-            List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId, FeedRuntimeType location,
-            String[] locations, INodeDomain domain, FeedConnection feedConnection) throws AlgebricksException {
+    public FeedDataSource(Feed feed, DataSourceId id, String targetDataset, IAType itemType, IAType metaType,
+            List<IAType> pkTypes, List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId,
+            FeedRuntimeType location, String[] locations, INodeDomain domain, FeedConnection feedConnection)
+            throws AlgebricksException {
         super(id, itemType, metaType, Type.FEED, domain);
         this.feed = feed;
         this.targetDataset = targetDataset;
