@@ -7308,6 +7308,11 @@
       </compilation-unit>
     </test-case>
     <test-case FilePath="tpch-sql-sugar">
+      <compilation-unit name="q01_pricing_summary_report_computation_location">
+        <output-dir compare="Text">q01_pricing_summary_report_nt</output-dir>
+      </compilation-unit>
+    </test-case>
+    <test-case FilePath="tpch-sql-sugar">
       <compilation-unit name="q01_pricing_summary_report_parameter">
         <output-dir compare="Text">none</output-dir>
         <expected-error>Invalid query parameter compiler.sortmemory -- value has to be greater than or equal to</expected-error>

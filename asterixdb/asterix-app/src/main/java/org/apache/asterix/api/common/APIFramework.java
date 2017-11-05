@@ -454,15 +454,15 @@ public class APIFramework {
             int parallelismHint, String computationLocationHint) throws CompilationException {
         // Unifies the handling of non-positive parallelism.
         int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
-        String[] computationLocations = computationLocationHint.split(";");
 
         // Calculate computation nodes. If no computation node is found, all nodes will be used for computation.
         List<String> computationNodes = new ArrayList<>();
-        if (computationLocations.length > 0) {
-            if (!verifyComputationLocations(ncMap, computationLocations)) {
+        if (!computationLocationHint.equals(CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE)) {
+            String[] assignedComputationLocations = computationLocationHint.split(";");
+            if (!verifyComputationLocations(ncMap, assignedComputationLocations)) {
                 throw new CompilationException(ErrorCode.COMPILATION_INVALID_COMPUTATION_LOCATION);
             }
-            computationNodes.addAll(Arrays.asList(computationLocations));
+            computationNodes.addAll(Arrays.asList(assignedComputationLocations));
         } else {
             for (Map.Entry<String, NodeControllerInfo> entry : ncMap.entrySet()) {
                 computationNodes.add(entry.getKey());
@@ -485,7 +485,7 @@ public class APIFramework {
 
         // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
         List<String> computationPartitions = new ArrayList<>();
-        for (String nodeId : computationLocations) {
+        for (String nodeId : computationNodes) {
             int availableCores = ncMap.get(nodeId).getNumAvailableCores();
             int nodeParallelism =
                     selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
