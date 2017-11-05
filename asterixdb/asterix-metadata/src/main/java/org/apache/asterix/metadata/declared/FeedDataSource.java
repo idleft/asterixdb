@@ -56,7 +56,7 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
     private final FeedRuntimeType location;
     private final String targetDataset;
     private final String[] locations;
-    private final int computeCardinality;
+    private final INodeDomain computationNodeDomain;
     private final List<IAType> pkTypes;
     private final List<ScalarFunctionCallExpression> keyAccessExpression;
     private final FeedConnection feedConnection;
@@ -73,7 +73,7 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
         this.locations = locations;
         this.pkTypes = pkTypes;
         this.keyAccessExpression = keyAccessExpression;
-        this.computeCardinality = domain.cardinality();
+        this.computationNodeDomain = domain;
         this.feedConnection = feedConnection;
         initFeedDataSource();
     }
@@ -116,10 +116,6 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
                 schemaTypes[i++] = type;
             }
         }
-    }
-
-    public int getComputeCardinality() {
-        return computeCardinality;
     }
 
     public List<IAType> getPkTypes() {
@@ -206,5 +202,9 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
 
     public FeedConnection getFeedConnection() {
         return feedConnection;
+    }
+
+    public INodeDomain getComputationNodeDomain() {
+        return computationNodeDomain;
     }
 }
