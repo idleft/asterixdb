@@ -35,8 +35,12 @@ import org.apache.hyracks.algebricks.core.algebra.operators.logical.DataSourceSc
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExchangeOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AssignPOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionExchangePOperator;
+import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
+
+import java.util.Arrays;
+import java.util.Collection;
 
 public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebraicRewriteRule {
 
@@ -66,17 +70,7 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
         }
 
         ExchangeOperator exchangeOp = new ExchangeOperator();
-        INodeDomain domain = new INodeDomain() {
-            @Override
-            public boolean sameAs(INodeDomain domain) {
-                return domain == this;
-            }
-
-            @Override
-            public Integer cardinality() {
-                return feedDataSource.getComputeCardinality();
-            }
-        };
+        INodeDomain domain = feedDataSource.getComputationNodeDomain();
 
         exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
         op.getInputs().get(0).setValue(exchangeOp);
@@ -88,7 +82,11 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
 
         AssignOperator assignOp = (AssignOperator) opRef.getValue();
         AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
-        assignPhyOp.setCardinalityConstraint(domain.cardinality());
+
+        // set computation locations
+        DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
+        String[] nodes = computationNode.getNodes().toArray(new String[0]);
+        assignPhyOp.setLocationConstraint(nodes);
 
         return true;
     }
