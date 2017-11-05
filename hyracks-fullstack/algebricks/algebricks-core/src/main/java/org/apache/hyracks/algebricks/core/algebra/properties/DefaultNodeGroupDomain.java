@@ -67,4 +67,8 @@ public class DefaultNodeGroupDomain implements INodeDomain {
     public Integer cardinality() {
         return nodes.size();
     }
+
+    public List<String> getNodes() {
+        return nodes;
+    }
 }
