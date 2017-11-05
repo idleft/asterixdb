@@ -72,24 +72,27 @@ public class APIFrameworkTest {
         AlgebricksAbsolutePartitionConstraint computationLocations =
                 (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
                         "chooseLocations(" + IClusterInfoCollector.class.getName() + ",int,"
-                                + AlgebricksAbsolutePartitionConstraint.class.getName() + ")",
-                        clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations);
+                                + AlgebricksAbsolutePartitionConstraint.class.getName() + ", String)",
+                        clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations,
+                        CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(computationLocations.getLocations().length == 2);
 
         // Tests suitable storage locations.
         storageLocations = new AlgebricksAbsolutePartitionConstraint(new String[] { "node1", "node2" });
         computationLocations = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
                 "chooseLocations(" + IClusterInfoCollector.class.getName() + ",int,"
-                        + AlgebricksAbsolutePartitionConstraint.class.getName() + ")",
-                clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations);
+                        + AlgebricksAbsolutePartitionConstraint.class.getName() + ", String)",
+                clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(computationLocations.getLocations().length == 2);
 
         // Tests small storage locations.
         storageLocations = new AlgebricksAbsolutePartitionConstraint(new String[] { "node1" });
         computationLocations = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
                 "chooseLocations(" + IClusterInfoCollector.class.getName() + ",int,"
-                        + AlgebricksAbsolutePartitionConstraint.class.getName() + ")",
-                clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations);
+                        + AlgebricksAbsolutePartitionConstraint.class.getName() + ", String)",
+                clusterInfoCollector, CompilerProperties.COMPILER_PARALLELISM_AS_STORAGE, storageLocations,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(computationLocations.getLocations().length == 1);
 
         // Verifies the number of calls on clusterInfoCollector.getNodeControllerInfos() in
@@ -115,7 +118,8 @@ public class APIFrameworkTest {
 
         // Tests odd number parallelism.
         AlgebricksAbsolutePartitionConstraint loc = (AlgebricksAbsolutePartitionConstraint) PA
-                .invokeMethod(apiFramework, "getComputationLocations(java.util.Map,int)", map, 5);
+                .invokeMethod(apiFramework, "getComputationLocations(java.util.Map,String)", map, 5,
+                        CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         int nc1Count = 0, nc2Count = 0;
         String[] partitions = loc.getLocations();
         for (String partition : partitions) {
@@ -133,7 +137,8 @@ public class APIFrameworkTest {
 
         // Tests even number parallelism.
         loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
-                "getComputationLocations(java.util.Map,int)", map, 8);
+                "getComputationLocations(java.util.Map,int,String)", map, 8,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         nc1Count = 0;
         nc2Count = 0;
         partitions = loc.getLocations();
@@ -154,29 +159,72 @@ public class APIFrameworkTest {
 
         // Tests the case when parallelism is one.
         loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
-                "getComputationLocations(java.util.Map,int)", map, 1);
+                "getComputationLocations(java.util.Map,int,String)", map, 1,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(loc.getLocations().length == 1);
 
         // Tests the case when parallelism is a negative.
         // In this case, the compiler has no idea and falls back to the default setting where all possible cores
         // are used.
         loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
-                "getComputationLocations(java.util.Map,int)", map, -100);
+                "getComputationLocations(java.util.Map,int,String)", map, -100,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(loc.getLocations().length == 8);
 
         // Tests the case when parallelism is -1.
         // In this case, the compiler has no idea and falls back to the default setting where all possible cores
         // are used.
         loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
-                "getComputationLocations(java.util.Map,int)", map, -1);
+                "getComputationLocations(java.util.Map,int,String)", map, -1,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(loc.getLocations().length == 8);
 
         // Tests the case when parallelism is zero.
         // In this case, the compiler has no idea and falls back to the default setting where all possible cores
         // are used.
         loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
-                "getComputationLocations(java.util.Map,int)", map, 0);
+                "getComputationLocations(java.util.Map,int,String)", map, 0,
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         Assert.assertTrue(loc.getLocations().length == 8);
+
+        // Test single node with multiple partitions
+        loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                "getComputationLocations(java.util.Map,int,String)", map, 2, nc1);
+        Assert.assertTrue(loc.getLocations().length == 2);
+
+        // Test single node with all partitions
+        loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                "getComputationLocations(java.util.Map,int,String)", map, 0, nc1);
+        Assert.assertTrue(loc.getLocations().length == 4);
+
+        // Test multiple node with all partitions
+        loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                "getComputationLocations(java.util.Map,int,String)", map, 0, nc1 + ";" + nc2);
+        Assert.assertTrue(loc.getLocations().length == 8);
+
+        // Test multiple node with multiple partitions
+        loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                "getComputationLocations(java.util.Map,int,String)", map, 2, nc1 + ";" + nc2);
+        Assert.assertTrue(loc.getLocations().length == 2);
+
+        // Test multiple node with odd partitions
+        loc = (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                "getComputationLocations(java.util.Map,int,String)", map, 7, nc1 + ";" + nc2);
+        nc1Count = 0;
+        nc2Count = 0;
+        partitions = loc.getLocations();
+        for (String partition : partitions) {
+            if (partition.equals(nc1)) {
+                ++nc1Count;
+            }
+            if (partition.equals(nc2)) {
+                ++nc2Count;
+            }
+        }
+        Assert.assertTrue(nc1Count > 0);
+        Assert.assertTrue(nc2Count > 0);
+        Assert.assertTrue(Math.abs(nc1Count - nc2Count) == 1); // Tests load balance.
+        Assert.assertTrue(partitions.length == 7);
     }
 
     @Test

@@ -23,7 +23,6 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.Mutable;
 
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
-import org.apache.hyracks.algebricks.common.constraints.AlgebricksCountPartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.IHyracksJobBuilder;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalExpression;
@@ -45,7 +44,6 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 public class AssignPOperator extends AbstractPhysicalOperator {
 
     private boolean flushFramesRapidly;
-    private int cardinalityConstraint = 0;
     private String[] locations;
 
     @Override
