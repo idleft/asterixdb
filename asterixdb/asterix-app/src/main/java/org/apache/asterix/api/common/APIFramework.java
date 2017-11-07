@@ -276,7 +276,8 @@ public class APIFramework {
         int parallelism = getParallelism(querySpecificConfig.get(CompilerProperties.COMPILER_PARALLELISM_KEY),
                 compilerProperties.getParallelism());
         String computationLocationHint = querySpecificConfig
-                .getOrDefault(CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY, "");
+                .getOrDefault(CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY,
+                        compilerProperties.getComputationLocation());
         AlgebricksAbsolutePartitionConstraint computationLocations = chooseLocations(clusterInfoCollector, parallelism,
                 metadataProvider.getClusterLocations(), computationLocationHint);
         builder.setClusterLocations(computationLocations);
