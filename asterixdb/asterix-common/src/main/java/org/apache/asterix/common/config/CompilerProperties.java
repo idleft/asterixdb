@@ -128,6 +128,10 @@ public class CompilerProperties extends AbstractProperties {
         return accessor.getInt(Option.COMPILER_PARALLELISM);
     }
 
+    public String getComputationLocation() {
+        return accessor.getString(Option.COMPILER_COMPUTATION_LOCATION);
+    }
+    
     public String getPregelixHome() {
         return accessor.getString(Option.COMPILER_PREGELIX_HOME);
     }
