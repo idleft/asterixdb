@@ -151,4 +151,8 @@ public class CompilerProperties extends AbstractProperties {
         int value = accessor.getInt(Option.COMPILER_STRINGOFFSET);
         return value > 0 ? 1 : 0;
     }
+
+    public String getComputationLocation() {
+        return accessor.getString(Option.COMPILER_COMPUTATION_LOCATION);
+    }
 }
