@@ -131,7 +131,7 @@ public class CompilerProperties extends AbstractProperties {
     public String getComputationLocation() {
         return accessor.getString(Option.COMPILER_COMPUTATION_LOCATION);
     }
-    
+
     public String getPregelixHome() {
         return accessor.getString(Option.COMPILER_PREGELIX_HOME);
     }
