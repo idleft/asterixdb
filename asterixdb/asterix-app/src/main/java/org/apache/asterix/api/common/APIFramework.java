@@ -448,7 +448,8 @@ public class APIFramework {
     private static AlgebricksAbsolutePartitionConstraint getComputationLocations(Map<String, NodeControllerInfo> ncMap,
             int parallelismHint, String computationLocationHint) throws CompilationException {
         // Unifies the handling of non-positive parallelism.
-        int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+//        int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+        int parallelism = parallelismHint;
 
         // Calculate computation nodes. If no computation node is found, all nodes will be used for computation.
         List<String> computationNodes = new ArrayList<>();
@@ -481,11 +482,12 @@ public class APIFramework {
         // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
         List<String> computationPartitions = new ArrayList<>();
         for (String nodeId : computationNodes) {
-            int availableCores = ncMap.get(nodeId).getNumAvailableCores();
+//            int availableCores = ncMap.get(nodeId).getNumAvailableCores();
             int nodeParallelism =
                     selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
-            int coresToUse =
-                    nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
+//            int coresToUse =
+//                    nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
+            int coresToUse = nodeParallelism;
             for (int count = 0; count < coresToUse; ++count) {
                 computationPartitions.add(nodeId);
             }

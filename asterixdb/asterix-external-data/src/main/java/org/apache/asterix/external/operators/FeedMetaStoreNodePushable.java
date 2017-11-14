@@ -18,6 +18,8 @@
  */
 package org.apache.asterix.external.operators;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
 
@@ -91,6 +93,8 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
 
     private final long traceCategory;
 
+    private long recordCounter;
+
     public FeedMetaStoreNodePushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescProvider,
             int partition, int nPartitions, IOperatorDescriptor coreOperator, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor)
@@ -109,6 +113,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         this.opDesc = feedMetaOperatorDescriptor;
         tracer = ctx.getJobletContext().getServiceContext().getTracer();
         traceCategory = tracer.getRegistry().get("Process-Frame");
+        this.recordCounter = 0;
     }
 
     @Override
@@ -147,6 +152,9 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         long tid = tracer.durationB("Ingestion-Store", traceCategory, null);
         try {
             FeedUtils.processFeedMessage(buffer, message, fta);
+            fta.reset(buffer);
+            System.out.println(partition + " Received " + fta.getTupleCount());
+            recordCounter += fta.getTupleCount();
             writer.nextFrame(buffer);
         } catch (Exception e) {
             LOGGER.log(Level.WARN, "Failure Processing a frame at store side", e);
@@ -163,6 +171,16 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
 
     @Override
     public void close() throws HyracksDataException {
+        System.out.println("Storage Received " + recordCounter);
+        try {
+            String resultPath = System.getProperty("user.home") + "/partition_" + partition + ".txt";
+//            System.out.println(resultPath);
+            FileWriter fw = new FileWriter(resultPath);
+            fw.write(recordCounter + "\n");
+            fw.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         writer.close();
     }
 
