@@ -26,13 +26,24 @@ import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.asterix.external.util.Datatypes;
 
+import java.io.FileWriter;
+import java.time.Instant;
+
 public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
+    int processedRecords = 0;
+    Instant evalutaionEtime;
+    FileWriter fw;
 
     private JUnorderedList list = null;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
+        processedRecords = 0;
+        evalutaionEtime = null;
+        fw = new FileWriter(System.getProperty("user.home") + "/worker_" + Thread.currentThread().getId() + ".txt");
+        //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
+        fw.flush();
     }
 
     @Override
@@ -41,6 +52,10 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 
     @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
+        if (evalutaionEtime == null) {
+            System.out.println("Function time refreshed for " + Thread.currentThread().getId());
+            evalutaionEtime = Instant.now().plusSeconds(60);
+        }
         list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
@@ -55,6 +70,18 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         }
         inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
         functionHelper.setResult(inputRecord);
+        long varStart = 0;
+
+        if (Instant.now().compareTo(evalutaionEtime) < 0) {
+            //            while (varStart < 520000000) { // this offers 20 tps
+            while (varStart < 8000000) {
+                //            while (varStart < 80000000) {
+                varStart++;
+            }
+            processedRecords++;
+        }
+        fw.write(String.valueOf(processedRecords) + "\n");
+        fw.flush();
     }
 
 }

@@ -391,12 +391,7 @@ public class ExternalLibraryUtils {
      */
     protected static File getLibraryInstallDir() {
         // Check managix directory first. If not exists, check app home.
-        File installDir = new File(System.getProperty("user.dir"), "library");
-        if (!installDir.exists()) {
-            installDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
-                    + File.separator + "lib" + File.separator + "udfs");
-        }
-        return installDir;
+        return new File(System.getProperty("user.home") + File.separator + "lib" + File.separator + "udfs");
     }
 
     /**
@@ -404,12 +399,8 @@ public class ExternalLibraryUtils {
      */
     protected static File getLibraryUninstallDir() {
         // Check managix directory first. If not exists, check app home.
-        File uninstallDir = new File(System.getProperty("user.dir"), "uninstall");
-        if (!uninstallDir.exists()) {
-            uninstallDir = new File(System.getProperty("app.home", System.getProperty("user.home"))
+        return new File(System.getProperty("user.home")
                     + File.separator + "lib" + File.separator + "udfs" + File.separator + "uninstall");
-        }
-        return uninstallDir;
     }
 
 }

@@ -121,6 +121,7 @@ public class TwitterFirehoseInputStream extends AsterixInputStream {
 
         @Override
         public void run() {
+            Thread.currentThread().setName("DataProvider Thread");
             boolean moreData = true;
             long startBatch;
             long endBatch;
