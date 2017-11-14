@@ -42,6 +42,7 @@ public class ExternalScalarFunctionEvaluatorFactory implements IScalarEvaluatorF
 
     @Override
     public IScalarEvaluator createScalarEvaluator(IHyracksTaskContext ctx) throws HyracksDataException {
+        System.out.println("External function in " + Thread.currentThread().getName() + " is initialized ");
         return (ExternalScalarFunction) ExternalFunctionProvider.getExternalFunctionEvaluator(finfo, args, ctx,
                 appCtx == null
                         ? (IApplicationContext) ctx.getJobletContext().getServiceContext().getApplicationContext()

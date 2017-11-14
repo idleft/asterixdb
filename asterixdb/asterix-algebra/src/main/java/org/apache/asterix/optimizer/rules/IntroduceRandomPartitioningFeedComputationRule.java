@@ -86,7 +86,8 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
         // set computation locations
         DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
         String[] nodes = computationNode.getNodes().toArray(new String[0]);
-        assignPhyOp.setLocationConstraint(nodes);
+        assignPhyOp.setCardinalityConstraint(nodes.length);
+//        assignPhyOp.setLocationConstraint(nodes);
 
         return true;
     }

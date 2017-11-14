@@ -23,6 +23,7 @@ import java.util.List;
 import org.apache.commons.lang3.mutable.Mutable;
 
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
+import org.apache.hyracks.algebricks.common.constraints.AlgebricksCountPartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.IHyracksJobBuilder;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalExpression;
@@ -44,7 +45,7 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 public class AssignPOperator extends AbstractPhysicalOperator {
 
     private boolean flushFramesRapidly;
-    private String[] locations;
+    private int cardinalityConstraint = 0;
 
     @Override
     public PhysicalOperatorTag getOperatorTag() {
@@ -93,10 +94,10 @@ public class AssignPOperator extends AbstractPhysicalOperator {
 
         // contribute one Asterix framewriter
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(context.getTypeEnvironment(op), opSchema, context);
-        if (locations != null && locations.length > 0) {
-            AlgebricksAbsolutePartitionConstraint locationConstraint = new AlgebricksAbsolutePartitionConstraint(
-                    locations);
-            builder.contributeMicroOperator(assign, runtime, recDesc, locationConstraint);
+            if (cardinalityConstraint > 0) {
+                AlgebricksCountPartitionConstraint countConstraint = new AlgebricksCountPartitionConstraint(
+                        cardinalityConstraint);
+                builder.contributeMicroOperator(assign, runtime, recDesc, countConstraint);
         } else {
             builder.contributeMicroOperator(assign, runtime, recDesc);
         }
@@ -115,8 +116,8 @@ public class AssignPOperator extends AbstractPhysicalOperator {
         this.flushFramesRapidly = flushFramesRapidly;
     }
 
-    public void setLocationConstraint(String[] locations) {
-        this.locations = locations;
+    public void setCardinalityConstraint(int cardinality) {
+        this.cardinalityConstraint = cardinality;
     }
 
     @Override

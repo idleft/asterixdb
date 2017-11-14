@@ -446,7 +446,8 @@ public class JobExecutor {
             Object location = solver.getValue(pLocationExpr);
             if (location == null) {
                 // pick any
-                nodeId = liveNodes.toArray(new String[liveNodes.size()])[random.nextInt(1) % liveNodes.size()];
+                nodeId = liveNodes.toArray(new String[liveNodes.size()])[random.nextInt(liveNodes.size())];
+                System.out.println("Assign node " + nodeId + " to operator " + tid);
             } else if (location instanceof String) {
                 nodeId = (String) location;
             } else if (location instanceof String[]) {

@@ -284,7 +284,7 @@ public class Task implements IHyracksTaskContext, ICounterContext, Runnable {
                     .schedule(new NotifyTaskFailureWork(ncs, this, exceptions, joblet.getJobId(), taskAttemptId));
             return;
         }
-        ct.setName(displayName + ":" + taskAttemptId + ":" + 0);
+//        ct.setName(displayName + ":" + taskAttemptId + ":" + 0);
         try {
             Exception operatorException = null;
             try {
