@@ -45,15 +45,15 @@ create type Tweet as open {
 };
 
 drop nodegroup group_test if exists;
-create  nodegroup group_test  on
-    asterix_nc1;
+create  nodegroup group_test  on asterix_nc1;
 
 create dataset SyntheticTweets(Tweet) primary key id on group_test;
 
 create feed  SyntheticTweetFeed using stream
-(("duration"="3"),
+(("duration"="10"),
 ("stream-source"="org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory"),
-("tps"="10"),
+("tps"="2"),
+("ingestion-location"="asterix_nc1"),
 ("type-name"="Tweet"),
 ("dataverse-dataset"="feeds:SyntheticTweets"),
 ("format"="adm"),
