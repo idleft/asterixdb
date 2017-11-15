@@ -19,8 +19,11 @@
 package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
@@ -31,6 +34,8 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
  * others.
  **/
 public class DistributeFeedFrameWriter implements IFrameWriter {
+
+    private static Logger LOGGER = Logger.getLogger(DistributeFeedFrameWriter.class.getName());
 
     /** A unique identifier for the feed to which the incoming tuples belong. **/
     private final EntityId feedId;
@@ -47,18 +52,37 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
     /** The value of the partition 'i' if this is the i'th instance of the associated operator **/
     private final int partition;
 
-    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, int partition) {
+    private final FeedAdapter feedAdapter;
+
+    private final int initConnNum;
+
+    private int currentConnNum;
+
+    private final Object mutex = new Object();
+
+    public DistributeFeedFrameWriter(EntityId feedId, IFrameWriter writer, int partition, FeedAdapter adapter,
+            int initConnNum) {
         this.feedId = feedId;
         this.frameDistributor = new FrameDistributor();
         this.partition = partition;
         this.writer = writer;
+        this.feedAdapter = adapter;
+        this.initConnNum = initConnNum;
+        currentConnNum = 0;
     }
 
     public void subscribe(FeedFrameCollector collector) throws HyracksDataException {
+        currentConnNum++;
         frameDistributor.registerFrameCollector(collector);
+        if (currentConnNum >= initConnNum) {
+            synchronized (mutex) {
+                mutex.notifyAll();
+            }
+        }
     }
 
     public void unsubscribeFeed(EntityId collectorId) throws HyracksDataException {
+        currentConnNum--;
         frameDistributor.deregisterFrameCollector(collectorId);
     }
 
@@ -81,9 +105,47 @@ public class DistributeFeedFrameWriter implements IFrameWriter {
         frameDistributor.nextFrame(frame);
     }
 
+    private void startAdapter() throws HyracksDataException {
+        // Start by getting the partition number from the manager
+        LOGGER.info("Starting ingestion for partition:" + partition);
+        try {
+            doRun();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw HyracksDataException.create(e);
+        } catch (Exception e) {
+            LOGGER.log(Level.WARNING, "Unhandled Exception", e);
+            throw HyracksDataException.create(e);
+        }
+    }
+
+    private void doRun() throws HyracksDataException, InterruptedException {
+        while (true) {
+            try {
+                // Start the adapter
+                feedAdapter.start(partition, writer);
+                // Adapter has completed execution
+                return;
+            } catch (InterruptedException e) {
+                throw e;
+            } catch (Exception e) {
+                LOGGER.log(Level.WARNING, "Exception during feed ingestion ", e);
+                throw HyracksDataException.create(e);
+            }
+        }
+    }
+
     @Override
     public void open() throws HyracksDataException {
         writer.open();
+        synchronized (mutex) {
+            try {
+                mutex.wait();
+                startAdapter();
+            } catch (InterruptedException e) {
+                new HyracksDataException("Interrupted adapter execution");
+            }
+        }
     }
 
     @Override

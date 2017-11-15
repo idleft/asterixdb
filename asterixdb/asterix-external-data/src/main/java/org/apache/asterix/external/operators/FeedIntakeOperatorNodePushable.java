@@ -52,15 +52,17 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private final int partition;
     private boolean poisoned = false;
     private DistributeFeedFrameWriter distributeFeedFrameWriter;
+    private final int initConnNum;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor) throws HyracksDataException {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, int initConnNum) throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.opDesc = feedIntakeOperatorDescriptor;
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(opDesc.getActivityId(), 0);
         this.partition = partition;
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
+        this.initConnNum = initConnNum;
     }
 
     @Override
@@ -68,61 +70,19 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         String before = Thread.currentThread().getName();
         Thread.currentThread().setName("Intake Thread");
         try {
-            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition);
-            distributeFeedFrameWriter.open();
-//            writer.open();
+            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition, adapter, initConnNum);
             synchronized (this) {
                 if (poisoned) {
                     return;
                 }
             }
-            /*
-             * Set null feed message. Feed pipeline carries with it a message with each frame
-             * Initially, the message is set to a null message that can be changed by feed adapters.
-             * One use case is adapters which consume data sources that allow restartability. Such adapters
-             * can propagate progress information through the ingestion pipeline to storage nodes
-             */
-            IFrame message = new VSizeFrame(ctx);
-            TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
-            message.getBuffer().put(MessagingFrameTupleAppender.NULL_FEED_MESSAGE);
-            message.getBuffer().flip();
-            run();
+            distributeFeedFrameWriter.open();
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failure during data ingestion", e);
             throw e;
         } finally {
             writer.close();
             Thread.currentThread().setName(before);
-        }
-    }
-
-    private void run() throws HyracksDataException {
-        // Start by getting the partition number from the manager
-        LOGGER.info("Starting ingestion for partition:" + ctx.getTaskAttemptId().getTaskId().getPartition());
-        try {
-            doRun();
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw HyracksDataException.create(e);
-        } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Unhandled Exception", e);
-            throw HyracksDataException.create(e);
-        }
-    }
-
-    private void doRun() throws HyracksDataException, InterruptedException {
-        while (true) {
-            try {
-                // Start the adapter
-                adapter.start(ctx.getTaskAttemptId().getTaskId().getPartition(), writer);
-                // Adapter has completed execution
-                return;
-            } catch (InterruptedException e) {
-                throw e;
-            } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Exception during feed ingestion ", e);
-                throw HyracksDataException.create(e);
-            }
         }
     }
 

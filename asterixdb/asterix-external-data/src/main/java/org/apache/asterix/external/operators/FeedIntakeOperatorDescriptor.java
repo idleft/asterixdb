@@ -66,8 +66,10 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     /** The configuration parameters associated with the adapter. **/
     private Map<String, String> adaptorConfiguration;
 
+    private final int initConnNum;
+
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
-            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
+            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc, int initConnNum) {
         super(spec, 0, 1);
         this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
                 primaryFeed.getFeedName());
@@ -75,20 +77,22 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.initConnNum = initConnNum;
     }
 
-    public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, String adapterLibraryName,
+    public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed feed, String adapterLibraryName,
             String adapterFactoryClassName, ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor,
-            RecordDescriptor rDesc) {
+            RecordDescriptor rDesc, int initConnNum) {
         super(spec, 0, 0);
-        this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, primaryFeed.getDataverseName(),
-                primaryFeed.getFeedName());
+        this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, feed.getDataverseName(),
+                feed.getFeedName());
         this.adaptorFactoryClassName = adapterFactoryClassName;
         this.adaptorLibraryName = adapterLibraryName;
-        this.adaptorConfiguration = primaryFeed.getAdapterConfiguration();
+        this.adaptorConfiguration = feed.getAdapterConfiguration();
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.initConnNum = initConnNum;
     }
 
     @Override
@@ -97,7 +101,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         if (adaptorFactory == null) {
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
-        return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this);
+        return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this, initConnNum);
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {
