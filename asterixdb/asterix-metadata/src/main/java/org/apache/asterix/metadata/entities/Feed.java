@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.api.IFeed;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
 
@@ -43,7 +44,7 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     private Map<String, String> adapterConfiguration;
 
     public Feed(String dataverseName, String feedName,String adapterName, Map<String, String> configuration) {
-        this.feedId = new EntityId(EXTENSION_NAME, dataverseName, feedName);
+        this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName, feedName);
         this.displayName = "(" + feedId + ")";
         this.adapterName = adapterName;
         this.adapterConfiguration = configuration;

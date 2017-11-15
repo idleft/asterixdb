@@ -20,9 +20,9 @@ package org.apache.asterix.external.operators;
 
 import java.util.Map;
 
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
@@ -55,11 +55,7 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
      **/
     private final IOperatorDescriptor coreOperator;
 
-    /**
-     * A unique identifier for the feed instance. A feed instance represents the
-     * flow of data from a feed to a dataset.
-     **/
-    private final FeedConnectionId feedConnectionId;
+    private final EntityId collectorId;
 
     /**
      * The policy associated with the feed instance.
@@ -72,17 +68,17 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
      **/
     private final FeedRuntimeType runtimeType;
 
-    public FeedMetaOperatorDescriptor(final JobSpecification spec, final FeedConnectionId feedConnectionId,
+    public FeedMetaOperatorDescriptor(final JobSpecification spec, final EntityId collectorId,
             final IOperatorDescriptor coreOperatorDescriptor, final Map<String, String> feedPolicyProperties,
             final FeedRuntimeType runtimeType) {
         super(spec, coreOperatorDescriptor.getInputArity(), coreOperatorDescriptor.getOutputArity());
-        this.feedConnectionId = feedConnectionId;
         this.feedPolicyProperties = feedPolicyProperties;
         if (coreOperatorDescriptor.getOutputRecordDescriptors().length == 1) {
             outRecDescs[0] = coreOperatorDescriptor.getOutputRecordDescriptors()[0];
         }
         this.coreOperator = coreOperatorDescriptor;
         this.runtimeType = runtimeType;
+        this.collectorId = collectorId;
     }
 
     @Override
@@ -93,11 +89,11 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
         switch (runtimeType) {
             case COMPUTE:
                 nodePushable = new FeedMetaComputeNodePushable(ctx, recordDescProvider, partition, nPartitions,
-                        coreOperator, feedConnectionId, feedPolicyProperties, this);
+                        coreOperator, collectorId, feedPolicyProperties, this);
                 break;
             case STORE:
                 nodePushable = new FeedMetaStoreNodePushable(ctx, recordDescProvider, partition, nPartitions,
-                        coreOperator, feedConnectionId, feedPolicyProperties, this);
+                        coreOperator, collectorId, feedPolicyProperties, this);
                 break;
             default:
                 throw new RuntimeDataException(ErrorCode.OPERATORS_FEED_META_OPERATOR_DESCRIPTOR_INVALID_RUNTIME,

@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
@@ -188,10 +187,10 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
                 throw new AlgebricksException("Feed not configured with a policy");
             }
             feedPolicy.getProperties().put(BuiltinFeedPolicies.CONFIG_FEED_POLICY_KEY, feedPolicy.getPolicyName());
-            FeedConnectionId feedConnectionId =
-                    new FeedConnectionId(getId().getDataverseName(), getId().getDatasourceName(), getTargetDataset());
-            FeedCollectOperatorDescriptor feedCollector = new FeedCollectOperatorDescriptor(jobSpec, feedConnectionId,
-                    feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation());
+            EntityId feedCollectorEntityId = new EntityId(Feed.EXTENSION_NAME, getId().getDataverseName(),
+                    feed.getFeedName() + ":" + targetDataset);
+            FeedCollectOperatorDescriptor feedCollector = new FeedCollectOperatorDescriptor(jobSpec,
+                    feedCollectorEntityId, feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation());
 
             return new Pair<>(feedCollector, new AlgebricksAbsolutePartitionConstraint(getLocations()));
 

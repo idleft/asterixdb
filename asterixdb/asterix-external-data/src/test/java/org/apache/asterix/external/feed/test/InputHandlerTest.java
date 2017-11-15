@@ -33,9 +33,8 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.memory.ConcurrentFramePool;
 import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.util.FeedUtils;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.WildcardFileFilter;
@@ -70,10 +69,10 @@ public class InputHandlerTest {
     private FeedRuntimeInputHandler createInputHandler(IHyracksTaskContext ctx, IFrameWriter writer,
             FeedPolicyAccessor fpa, ConcurrentFramePool framePool) throws HyracksDataException {
         FrameTupleAccessor fta = Mockito.mock(FrameTupleAccessor.class);
-        EntityId feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, DATAVERSE, FEED);
-        FeedConnectionId connectionId = new FeedConnectionId(feedId, DATASET);
+        EntityId feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, DATAVERSE, FEED);
+        EntityId collectorId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, DATAVERSE, FEED + ":" + DATASET);
         ActiveRuntimeId runtimeId = new ActiveRuntimeId(feedId, FeedRuntimeType.COLLECT.toString(), 0);
-        return new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, writer, fpa, fta, framePool);
+        return new FeedRuntimeInputHandler(ctx, collectorId, runtimeId.getPartition(), writer, fpa, fta, framePool);
     }
 
     /*

@@ -53,6 +53,7 @@ import org.apache.asterix.api.http.server.ApiServlet;
 import org.apache.asterix.api.http.server.ResultUtil;
 import org.apache.asterix.app.active.ActiveEntityEventsListener;
 import org.apache.asterix.app.active.ActiveNotificationHandler;
+import org.apache.asterix.app.active.FeedConnEventsListener;
 import org.apache.asterix.app.active.FeedEventsListener;
 import org.apache.asterix.app.result.ResultHandle;
 import org.apache.asterix.app.result.ResultReader;
@@ -75,9 +76,9 @@ import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.common.utils.JobUtils.ProgressState;
 import org.apache.asterix.compiler.provider.ILangCompilationProvider;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.indexing.ExternalFile;
 import org.apache.asterix.external.indexing.IndexingConstants;
+import org.apache.asterix.external.operators.FeedCollectOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.formats.nontagged.TypeTraitProvider;
@@ -1456,7 +1457,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                     if (builder == null) {
                         builder = new StringBuilder();
                     }
-                    builder.append(new FeedConnectionId(listener.getEntityId(), datasetName) + "\n");
+                    builder.append(listener.getEntityId() + "\n");
                 }
             }
             if (builder != null) {
@@ -2111,14 +2112,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             if (feedConnections.isEmpty()) {
                 throw new CompilationException(ErrorCode.FEED_START_FEED_WITHOUT_CONNECTION, feedName);
             }
-            for (FeedConnection feedConnection : feedConnections) {
-                // what if the dataset is in a different dataverse
-                String fqName = feedConnection.getDataverseName() + "." + feedConnection.getDatasetName();
-                lockManager.acquireDatasetReadLock(metadataProvider.getLocks(), fqName);
-            }
             ActiveNotificationHandler activeEventHandler =
                     (ActiveNotificationHandler) appCtx.getActiveNotificationHandler();
-            ActiveEntityEventsListener listener = (ActiveEntityEventsListener) activeEventHandler.getListener(entityId);
+            // handle intake job
+            FeedEventsListener listener = (FeedEventsListener) activeEventHandler.getListener(entityId);
             if (listener == null) {
                 // Prepare policy
                 List<Dataset> datasets = new ArrayList<>();
@@ -2134,6 +2131,23 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
             MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
             committed = true;
             listener.start(metadataProvider);
+
+            // handle conn job
+            for (FeedConnection feedConnection : feedConnections) {
+                // what if the dataset is in a different dataverse
+                String fqName = feedConnection.getDataverseName() + "." + feedConnection.getDatasetName();
+                Dataset ds = metadataProvider.findDataset(feedConnection.getDataverseName(),
+                        feedConnection.getDatasetName());
+                EntityId connEntityId = new EntityId(Feed.EXTENSION_NAME, dataverseName,
+                        feedName + ":" + feedConnection.getDatasetName());
+                lockManager.acquireDatasetReadLock(metadataProvider.getLocks(), fqName);
+                FeedConnEventsListener connEventListener = new FeedConnEventsListener(this,
+                        metadataProvider.getApplicationContext(), hcc, connEntityId, ds, listener.getLocations(),
+                        FeedCollectOperatorNodePushable.class.getSimpleName(), NoRetryPolicyFactory.INSTANCE, feed,
+                        feedConnection, listener.getIntakeLocations());
+                listener.addFeedConnEventListener(connEventListener);
+                connEventListener.start(metadataProvider);
+            }
         } catch (Exception e) {
             if (!committed) {
                 abort(e, e, mdTxnCtx);
@@ -2152,7 +2166,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         ActiveNotificationHandler activeEventHandler =
                 (ActiveNotificationHandler) appCtx.getActiveNotificationHandler();
         // Obtain runtime info from ActiveListener
-        ActiveEntityEventsListener listener = (ActiveEntityEventsListener) activeEventHandler.getListener(entityId);
+        FeedEventsListener listener = (FeedEventsListener) activeEventHandler.getListener(entityId);
         if (listener == null) {
             throw new AlgebricksException("Feed " + feedName + " is not started.");
         }
@@ -2160,6 +2174,10 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 entityId.getEntityName());
         try {
             listener.stop(metadataProvider);
+            // stop all collectors as well
+            for (FeedConnEventsListener feedConnEventsListener : listener.getFeedConnEventsListeners()) {
+                feedConnEventsListener.stop(metadataProvider);
+            }
         } finally {
             metadataProvider.getLocks().unlock();
         }
@@ -2174,6 +2192,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         String policyName = cfs.getPolicy();
         MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        // TODO: xikui: for now we don't allow dynamic connect/disconnect
         // TODO: Check whether we are connecting a change feed to a non-meta dataset
         // Check whether feed is alive
         ActiveNotificationHandler activeEventHandler =
@@ -2229,11 +2248,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
         metadataProvider.setMetadataTxnContext(mdTxnCtx);
         MetadataLockUtil.disconnectFeedBegin(lockManager, metadataProvider.getLocks(), dataverseName,
                 dataverseName + "." + datasetName, dataverseName + "." + cfs.getFeedName());
+        // TODO: xikui: for now we don't allow dynamic connect/disconnect
         try {
             ActiveNotificationHandler activeEventHandler =
                     (ActiveNotificationHandler) appCtx.getActiveNotificationHandler();
             // Check whether feed is alive
-            ActiveEntityEventsListener listener = (ActiveEntityEventsListener) activeEventHandler
+            FeedEventsListener listener = (FeedEventsListener) activeEventHandler
                     .getListener(new EntityId(Feed.EXTENSION_NAME, dataverseName, feedName));
             if (listener != null && listener.isActive()) {
                 throw new CompilationException(ErrorCode.FEED_CHANGE_FEED_CONNECTIVITY_ON_ALIVE_FEED, feedName);

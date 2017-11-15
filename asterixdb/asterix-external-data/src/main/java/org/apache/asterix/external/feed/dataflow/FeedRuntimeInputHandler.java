@@ -24,10 +24,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.memory.ConcurrentFramePool;
 import org.apache.asterix.common.memory.FrameAction;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.util.FeedUtils.Mode;
 import org.apache.hyracks.api.comm.IFrameWriter;
@@ -72,13 +71,13 @@ public class FeedRuntimeInputHandler extends AbstractUnaryInputUnaryOutputOperat
     private int numProcessedInMemory = 0;
     private int numStalled = 0;
 
-    public FeedRuntimeInputHandler(IHyracksTaskContext ctx, FeedConnectionId connectionId, ActiveRuntimeId runtimeId,
+    public FeedRuntimeInputHandler(IHyracksTaskContext ctx, EntityId collectorId, int partition,
             IFrameWriter writer, FeedPolicyAccessor fpa, FrameTupleAccessor fta, ConcurrentFramePool framePool)
             throws HyracksDataException {
         this.writer = writer;
         this.spiller = fpa.spillToDiskOnCongestion() ?
                 new FrameSpiller(ctx,
-                        connectionId.getFeedId() + "_" + connectionId.getDatasetName() + "_" + runtimeId.getPartition(),
+                        collectorId.getEntityName().replace(":", "_") + "_" + partition,
                         fpa.getMaxSpillOnDisk()) :
                 null;
         this.exceptionHandler = new FeedExceptionHandler(ctx, fta);

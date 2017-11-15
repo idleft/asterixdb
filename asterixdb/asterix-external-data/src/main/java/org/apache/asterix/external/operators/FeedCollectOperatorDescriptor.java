@@ -20,7 +20,7 @@ package org.apache.asterix.external.operators;
 
 import java.util.Map;
 
-import org.apache.asterix.external.feed.management.FeedConnectionId;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.IAType;
@@ -44,34 +44,30 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     /** The type associated with the ADM data output from (the feed adapter OR the compute operator) */
     private final IAType outputType;
 
-    /** unique identifier for a feed instance. */
-    private final FeedConnectionId connectionId;
-
     /** Map representation of policy parameters */
     private final Map<String, String> feedPolicyProperties;
 
     /** The subscription location at which the recipient feed receives tuples from the source feed {SOURCE_FEED_INTAKE_STAGE , SOURCE_FEED_COMPUTE_STAGE} **/
     private final FeedRuntimeType subscriptionLocation;
 
-    public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId, ARecordType atype,
+    private final EntityId feedCollectorEntityId;
+
+    public FeedCollectOperatorDescriptor(JobSpecification spec, EntityId feedCollectorEntityId,
+            ARecordType atype,
             RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation) {
-        super(spec, 1, 1);
+        super(spec, 0, 1);
         this.outRecDescs[0] = rDesc;
         this.outputType = atype;
-        this.connectionId = feedConnectionId;
         this.feedPolicyProperties = feedPolicyProperties;
         this.subscriptionLocation = subscriptionLocation;
+        this.feedCollectorEntityId = feedCollectorEntityId;
     }
 
     @Override
     public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
             IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
             throws HyracksDataException {
-        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition);
-    }
-
-    public FeedConnectionId getFeedConnectionId() {
-        return connectionId;
+        return new FeedCollectOperatorNodePushable(ctx, feedCollectorEntityId, feedPolicyProperties, partition);
     }
 
     public Map<String, String> getFeedPolicyProperties() {

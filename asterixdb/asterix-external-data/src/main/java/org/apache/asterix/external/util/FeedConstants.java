@@ -29,6 +29,7 @@ public class FeedConstants {
     public final static String FAILED_TUPLE_DATASET = "failed_tuple";
     public final static String FAILED_TUPLE_DATASET_TYPE = "FailedTupleType";
     public final static String FAILED_TUPLE_DATASET_KEY = "id";
+    public final static String FEED_EXTENSION_NAME = "Feed";
 
     public static final class StatisticsConstants {
         public static final String INTAKE_TUPLEID = "intake-tupleid";

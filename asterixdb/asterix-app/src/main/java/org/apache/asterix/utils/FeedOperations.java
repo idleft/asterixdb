@@ -46,7 +46,6 @@ import org.apache.asterix.common.transactions.TxnId;
 import org.apache.asterix.common.utils.StoragePathUtil;
 import org.apache.asterix.compiler.provider.SqlppCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
@@ -230,7 +229,7 @@ public class FeedOperations {
         return query;
     }
 
-    private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
+    public static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
             throws AlgebricksException, RemoteException, ACIDException {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
@@ -283,12 +282,12 @@ public class FeedOperations {
         FeedMetaOperatorDescriptor metaOp;
 
         for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
+            FeedIntakeOperatorDescriptor collectionOp = (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap()
+                    .get(new OperatorDescriptorId(0));
             FeedConnection curFeedConnection = feedConnections.get(iter1);
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
 
             FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil
                     .validateIfPolicyExists(curFeedConnection.getDataverseName(), curFeedConnection.getPolicyName(),
@@ -300,7 +299,7 @@ public class FeedOperations {
                 OperatorDescriptorId opId = null;
                 if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
                         && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
+                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, collectionOp.getEntityId(), opDesc,
                             feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
                     opId = metaOp.getOperatorId();
                     opDesc.setOperatorId(opId);
@@ -314,7 +313,7 @@ public class FeedOperations {
                                     subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
                             // anything on the network interface needs to be message compatible
                             if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
-                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
+                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, collectionOp.getEntityId(), opDesc,
                                         feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
                                 opId = metaOp.getOperatorId();
                                 opDesc.setOperatorId(opId);
@@ -394,9 +393,7 @@ public class FeedOperations {
             for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
                 IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(entry.getKey());
                 // why do we need to sort?
-                Collections.sort(entry.getValue(), (LocationConstraint o1, LocationConstraint o2) -> {
-                    return o1.partition - o2.partition;
-                });
+                Collections.sort(entry.getValue(), (o1, o2) -> o1.partition - o2.partition);
                 String[] locations = new String[entry.getValue().size()];
                 for (int j = 0; j < locations.length; ++j) {
                     locations[j] = entry.getValue().get(j).location;
@@ -437,33 +434,30 @@ public class FeedOperations {
         return translator;
     }
 
-    public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
+    public static Pair<JobSpecification, String[]> buildStartFeedJob(
             MetadataProvider metadataProvider, Feed feed, List<FeedConnection> feedConnections,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
         Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
-        List<JobSpecification> jobsList = new ArrayList<>();
-        // TODO: Figure out a better way to handle insert/upsert per conn instead of per feed
-        Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getAdapterConfiguration());
+        // TODO: Restore the insert and upsert feed
+//        Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getAdapterConfiguration());
         // Construct the ingestion Job
-        JobSpecification intakeJob = intakeInfo.getLeft();
-        IAdapterFactory ingestionAdaptorFactory = intakeInfo.getRight();
-        String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
+        return Pair.of(intakeInfo.getLeft(), intakeInfo.getRight().getPartitionConstraint().getLocations());
         // Add metadata configs
-        metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, Boolean.TRUE.toString());
-        metadataProvider.getConfig()
-                .put(FeedActivityDetails.COLLECT_LOCATIONS, StringUtils.join(ingestionLocations, ','));
-        // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
-        IStatementExecutor translator =
-                getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
-        // Add connection job
-        for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, translator, hcc,
-                    insertFeed);
-            jobsList.add(connectionJob);
-        }
-        return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
-                ingestionLocations), intakeInfo.getRight().getPartitionConstraint());
+//        metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, Boolean.TRUE.toString());
+//        metadataProvider.getConfig()
+//                .put(FeedActivityDetails.COLLECT_LOCATIONS, StringUtils.join(ingestionLocations, ','));
+//        // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
+//        IStatementExecutor translator =
+//                getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
+//        // Add connection job
+//        for (FeedConnection feedConnection : feedConnections) {
+//            JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, translator, hcc,
+//                    insertFeed);
+//            jobsList.add(connectionJob);
+//        }
+//        return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+//                ingestionLocations), intakeInfo.getRight().getPartitionConstraint());
     }
 
     public static void SendStopMessageToNode(ICcApplicationContext appCtx, EntityId feedId, String intakeNodeLocation,

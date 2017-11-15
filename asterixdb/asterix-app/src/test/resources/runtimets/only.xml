@@ -17,7 +17,12 @@
  ! specific language governing permissions and limitations
  ! under the License.
  !-->
-<test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries">
+<test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries" QueryFileExtension="aql">
   <test-group name="failed">
+    <!--<test-case FilePath="feeds">-->
+      <!--<compilation-unit name="start-feed">-->
+        <!--<output-dir compare="Text">start-feed</output-dir>-->
+      <!--</compilation-unit>-->
+    <!--</test-case>-->
   </test-group>
 </test-suite>

@@ -26,6 +26,8 @@ import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
+import org.apache.asterix.external.feed.dataflow.DistributeFeedFrameWriter;
+import org.apache.asterix.external.feed.dataflow.FeedFrameCollector;
 import org.apache.hyracks.api.comm.IFrame;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -47,7 +49,9 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     public static final int DEFAULT_ABORT_TIMEOUT = 10000;
     private final FeedIntakeOperatorDescriptor opDesc;
     private final FeedAdapter adapter;
+    private final int partition;
     private boolean poisoned = false;
+    private DistributeFeedFrameWriter distributeFeedFrameWriter;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
@@ -55,6 +59,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.opDesc = feedIntakeOperatorDescriptor;
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(opDesc.getActivityId(), 0);
+        this.partition = partition;
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
     }
 
@@ -63,7 +68,9 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         String before = Thread.currentThread().getName();
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer.open();
+            distributeFeedFrameWriter = new DistributeFeedFrameWriter(this.runtimeId.getEntityId(), writer, partition);
+            distributeFeedFrameWriter.open();
+//            writer.open();
             synchronized (this) {
                 if (poisoned) {
                     return;
@@ -148,5 +155,13 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         } else {
             return "\"Runtime stats is not available.\"";
         }
+    }
+
+    public synchronized void subscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
+        distributeFeedFrameWriter.subscribe(frameCollector);
+    }
+
+    public synchronized void unsubscribe(FeedFrameCollector frameCollector) throws HyracksDataException {
+        distributeFeedFrameWriter.unsubscribeFeed(frameCollector.getCollectorId());
     }
 }

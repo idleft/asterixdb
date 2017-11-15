@@ -72,7 +72,6 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
     protected final List<IActiveEntityEventSubscriber> subscribers = new ArrayList<>();
     protected final IStatementExecutor statementExecutor;
     protected final ICcApplicationContext appCtx;
-    protected final MetadataProvider metadataProvider;
     protected final IHyracksClientConnection hcc;
     protected final EntityId entityId;
     private final List<Dataset> datasets;
@@ -105,7 +104,6 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
         this.statementExecutor = statementExecutor;
         this.appCtx = appCtx;
         this.clusterStateManager = appCtx.getClusterStateManager();
-        this.metadataProvider = new MetadataProvider(appCtx, null);
         this.hcc = hcc;
         this.entityId = entityId;
         this.datasets = datasets;
@@ -119,8 +117,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
         this.locations = locations;
         this.numRegistered = 0;
         this.numDeRegistered = 0;
-        this.handler =
-                (ActiveNotificationHandler) metadataProvider.getApplicationContext().getActiveNotificationHandler();
+        this.handler = (ActiveNotificationHandler) appCtx.getActiveNotificationHandler();
         handler.registerListener(this);
     }
 
@@ -287,8 +284,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
                 isFetchingStats = true;
             }
         }
-        ICCMessageBroker messageBroker =
-                (ICCMessageBroker) metadataProvider.getApplicationContext().getServiceContext().getMessageBroker();
+        ICCMessageBroker messageBroker = (ICCMessageBroker) appCtx.getServiceContext().getMessageBroker();
         long reqId = messageBroker.newRequestId();
         List<INcAddressedMessage> requests = new ArrayList<>();
         List<String> ncs = Arrays.asList(locations.getLocations());
@@ -526,6 +522,10 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
 
     public void setLocations(AlgebricksAbsolutePartitionConstraint locations) {
         this.locations = locations;
+    }
+
+    public void setLocations(String[] locations) {
+        this.locations = new AlgebricksAbsolutePartitionConstraint(locations);
     }
 
     @Override

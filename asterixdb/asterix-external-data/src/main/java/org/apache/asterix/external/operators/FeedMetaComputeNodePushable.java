@@ -24,14 +24,12 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveManager;
-import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.util.FeedUtils;
-import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IActivity;
@@ -59,11 +57,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
      **/
     private FeedPolicyAccessor policyAccessor;
 
-    /**
-     * A unique identifier for the feed instance. A feed instance represents
-     * the flow of data from a feed to a dataset.
-     **/
-    private FeedConnectionId connectionId;
+    private EntityId collectorId;
 
     /**
      * Denotes the i'th operator instance in a setting where K operator
@@ -77,8 +71,6 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     private FrameTupleAccessor fta;
 
     private final IHyracksTaskContext ctx;
-
-    private final FeedRuntimeType runtimeType = FeedRuntimeType.COMPUTE;
 
     private final VSizeFrame message;
 
@@ -94,7 +86,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
      * coreOperator is the first operator
      */
     public FeedMetaComputeNodePushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescProvider,
-            int partition, int nPartitions, IOperatorDescriptor coreOperator, FeedConnectionId feedConnectionId,
+            int partition, int nPartitions, IOperatorDescriptor coreOperator, EntityId collectorId,
             Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor)
             throws HyracksDataException {
         this.ctx = ctx;
@@ -102,7 +94,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
                 .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
         this.policyAccessor = new FeedPolicyAccessor(feedPolicyProperties);
         this.partition = partition;
-        this.connectionId = feedConnectionId;
+        this.collectorId = collectorId;
         this.feedManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
         this.message = new VSizeFrame(ctx);
@@ -113,9 +105,8 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     @Override
     public void open() throws HyracksDataException {
-        ActiveRuntimeId runtimeId = new ActiveRuntimeId(connectionId.getFeedId(), runtimeType.toString(), partition);
         try {
-            initializeNewFeedRuntime(runtimeId);
+            initializeNewFeedRuntime();
             opened = true;
             writer.open();
         } catch (Exception e) {
@@ -124,12 +115,12 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         }
     }
 
-    private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws Exception {
+    private void initializeNewFeedRuntime() throws Exception {
         fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
         FeedPolicyAccessor fpa = policyAccessor;
         coreOperator.setOutputFrameWriter(0, writer, recordDesc);
         if (fpa.flowControlEnabled()) {
-            writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, coreOperator, fpa, fta,
+            writer = new FeedRuntimeInputHandler(ctx, collectorId, partition, coreOperator, fpa, fta,
                     feedManager.getFramePool());
         } else {
             writer = new SyncFeedRuntimeInputHandler(ctx, coreOperator, fta);

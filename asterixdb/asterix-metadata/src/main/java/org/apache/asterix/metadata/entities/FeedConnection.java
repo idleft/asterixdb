@@ -21,6 +21,7 @@ package org.apache.asterix.metadata.entities;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.functions.FunctionSignature;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
@@ -52,7 +53,7 @@ public class FeedConnection implements IMetadataEntity<FeedConnection> {
         this.connectionId = feedName + ":" + datasetName;
         this.policyName = policyName;
         this.outputType = outputType;
-        this.feedId = new EntityId(FeedUtils.FEED_EXTENSION_NAME, dataverseName, feedName);
+        this.feedId = new EntityId(FeedConstants.FEED_EXTENSION_NAME, dataverseName, feedName);
     }
 
     public List<FunctionSignature> getAppliedFunctions() {
