@@ -42,7 +42,8 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
         processedRecords = 0;
         evalutaionEtime = null;
-        fw = new FileWriter(System.getProperty("user.home") + "/worker_" + Thread.currentThread().getId() + ".txt");
+        fw = new FileWriter(System.getProperty("user.home") + "/worker_"
+                + this.hashCode() + ".txt");
         //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
         fw.flush();
     }
@@ -54,7 +55,7 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
         if (evalutaionEtime == null) {
-            System.out.println("Function time refreshed for " + Thread.currentThread().getId());
+            System.out.println("Function time refreshed for " + this.hashCode());
             evalutaionEtime = Instant.now().plusSeconds(60);
         }
         list.clear();

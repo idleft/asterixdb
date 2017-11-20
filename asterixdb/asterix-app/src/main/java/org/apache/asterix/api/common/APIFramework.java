@@ -496,7 +496,8 @@ public class APIFramework {
 
         // Handle nodes with one more partition.
         Set<String> selectedNodesWithOneMorePartition = new HashSet<>();
-        Collections.shuffle(computationNodes);
+//        Collections.shuffle(computationNodes);
+        Collections.sort(computationNodes);
         for (int iter1 = 0; iter1 < numNodesWithOneMorePartition; iter1++) {
             selectedNodesWithOneMorePartition.add(computationNodes.get(iter1));
         }
