@@ -23,8 +23,8 @@ set `wait-for-completion-feed` `true`;
 
 connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#addHashTagsInPlace;
 
-SET `compiler.parallelism` "2";
-SET `compiler.computation.location` "asterix_nc2";
+// SET `compiler.parallelism` "5";
+// SET `compiler.computation.location` "asterix_nc2";
 
 
 start feed SyntheticTweetFeed;
