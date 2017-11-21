@@ -19,12 +19,14 @@
 package org.apache.asterix.optimizer.rules;
 
 import org.apache.asterix.metadata.declared.DataSource;
+import org.apache.asterix.metadata.declared.DatasetDataSource;
 import org.apache.asterix.metadata.declared.FeedDataSource;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
+import org.apache.hyracks.algebricks.common.exceptions.NotImplementedException;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
 import org.apache.hyracks.algebricks.core.algebra.base.LogicalOperatorTag;
@@ -33,6 +35,8 @@ import org.apache.hyracks.algebricks.core.algebra.operators.logical.AbstractLogi
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.AssignOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.DataSourceScanOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExchangeOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.logical.InsertDeleteUpsertOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.logical.ProjectOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AssignPOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
@@ -47,12 +51,32 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
     @Override
     public boolean rewritePre(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
             throws AlgebricksException {
-        ILogicalOperator op = opRef.getValue();
-        if (!op.getOperatorTag().equals(LogicalOperatorTag.ASSIGN)) {
+        ILogicalOperator op4 = opRef.getValue();
+        if (!op4.getOperatorTag().equals(LogicalOperatorTag.INSERT_DELETE_UPSERT)) {
             return false;
         }
 
-        ILogicalOperator opChild = op.getInputs().get(0).getValue();
+        ILogicalOperator op0 = op4.getInputs().get(0).getValue();
+        if (!op0.getOperatorTag().equals(LogicalOperatorTag.EXCHANGE)) {
+            return false;
+        }
+
+        ILogicalOperator op1 = op0.getInputs().get(0).getValue();
+        if (!op1.getOperatorTag().equals(LogicalOperatorTag.ASSIGN)) {
+            return false;
+        }
+
+        ILogicalOperator op2 = op1.getInputs().get(0).getValue();
+        if (!op2.getOperatorTag().equals(LogicalOperatorTag.PROJECT)) {
+            return false;
+        }
+
+        ILogicalOperator op3 = op2.getInputs().get(0).getValue();
+        if (!op3.getOperatorTag().equals(LogicalOperatorTag.ASSIGN)) {
+            return false;
+        }
+
+        ILogicalOperator opChild = op3.getInputs().get(0).getValue();
         if (!opChild.getOperatorTag().equals(LogicalOperatorTag.DATASOURCESCAN)) {
             return false;
         }
@@ -69,25 +93,38 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             return false;
         }
 
-        ExchangeOperator exchangeOp = new ExchangeOperator();
-        INodeDomain domain = feedDataSource.getComputationNodeDomain();
-
-        exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
-        op.getInputs().get(0).setValue(exchangeOp);
-        exchangeOp.getInputs().add(new MutableObject<ILogicalOperator>(scanOp));
-        ExecutionMode em = ((AbstractLogicalOperator) scanOp).getExecutionMode();
-        exchangeOp.setExecutionMode(em);
-        exchangeOp.computeDeliveredPhysicalProperties(context);
-        context.computeAndSetTypeEnvironmentForOperator(exchangeOp);
-
-        AssignOperator assignOp = (AssignOperator) opRef.getValue();
-        AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
-
-        // set computation locations
-        DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
-        String[] nodes = computationNode.getNodes().toArray(new String[0]);
-        assignPhyOp.setLocationConstraint(nodes);
-
+        if ((((InsertDeleteUpsertOperator) op4).getDataSource()).getDomain()
+                .sameAs(feedDataSource.getComputationNodeDomain())) {
+            // if dataset partition is the same as compute partition, push hash partition down
+            op4.getInputs().get(0).setValue(op2);
+            op3.getInputs().get(0).setValue(op0);
+            op1.getInputs().get(0).setValue(opChild);
+            // replace variable
+            ((AssignOperator) op1).recomputeSchema();
+            ((AssignOperator) op1).getExpressions().get(0).getValue().substituteVar(op2.getSchema().get(0),
+                    scanOp.getSchema().get(0));
+            // update project operator to carry primary key
+            ((ProjectOperator)op2).getVariables().add(((AssignOperator) op1).getVariables().get(0));
+        } else {
+            // if not, add random partition for load balance
+            throw new NotImplementedException();
+//            ExchangeOperator exchangeOp = new ExchangeOperator();
+//            INodeDomain domain = feedDataSource.getComputationNodeDomain();
+//
+//            exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
+//            op3.getInputs().get(0).setValue(exchangeOp);
+//            exchangeOp.getInputs().add(new MutableObject<>(scanOp));
+//            exchangeOp.setExecutionMode(scanOp.getExecutionMode());
+//            exchangeOp.computeDeliveredPhysicalProperties(context);
+//            context.computeAndSetTypeEnvironmentForOperator(exchangeOp);
+//
+//            // set computation locations
+//            AssignOperator assignOp = (AssignOperator) op3;
+//            AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
+//            DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
+//            String[] nodes = computationNode.getNodes().toArray(new String[0]);
+//            assignPhyOp.setLocationConstraint(nodes);
+        }
         return true;
     }
 
