@@ -434,7 +434,8 @@ public class APIFramework {
                     && storageLocations.getLocations().length <= totalNumCores) {
                 return storageLocations;
             }
-            return getComputationLocations(ncMap, parallelismHint, computationLocationHint);
+            return getComputationLocations(ncMap, parallelismHint <= 0 ? totalNumCores : parallelismHint,
+                    computationLocationHint);
         } catch (HyracksException e) {
             throw new AlgebricksException(e);
         }
