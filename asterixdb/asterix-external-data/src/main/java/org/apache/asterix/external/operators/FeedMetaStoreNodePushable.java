@@ -173,7 +173,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
     public void close() throws HyracksDataException {
         System.out.println("Storage Received " + recordCounter);
         try {
-            String resultPath = System.getProperty("user.home") + "/partition_" + partition + ".txt";
+            String resultPath = "/lv_scratch/scratch/xikuiw/logs/partition_" + partition + ".txt";
 //            System.out.println(resultPath);
             FileWriter fw = new FileWriter(resultPath);
             fw.write(recordCounter + "\n");

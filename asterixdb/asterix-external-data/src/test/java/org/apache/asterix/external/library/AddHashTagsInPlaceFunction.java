@@ -41,7 +41,7 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
         processedRecords = 0;
         evalutaionEtime = null;
-        fw = new FileWriter(System.getProperty("user.home") + "/worker_"
+        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
                 + this.hashCode() + ".txt");
         //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
         fw.flush();
