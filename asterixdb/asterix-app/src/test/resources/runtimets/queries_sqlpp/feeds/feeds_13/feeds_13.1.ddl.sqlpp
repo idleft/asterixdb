@@ -44,13 +44,10 @@ create type Tweet as open {
  country: string
 };
 
-drop nodegroup group_test if exists;
-create  nodegroup group_test  on asterix_nc1;
-
-create dataset SyntheticTweets(Tweet) primary key id on group_test;
+create dataset SyntheticTweets(Tweet) primary key id;
 
 create feed  SyntheticTweetFeed using stream
-(("duration"="10"),
+(("duration"="3"),
 ("stream-source"="org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory"),
 ("tps"="2"),
 ("ingestion-location"="asterix_nc1"),
