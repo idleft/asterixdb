@@ -47,7 +47,7 @@ create type Tweet as open {
 create dataset SyntheticTweets(Tweet) primary key id;
 
 create feed  SyntheticTweetFeed using stream
-(("duration"="3"),
+(("duration"="10"),
 ("stream-source"="org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory"),
 ("tps"="2"),
 ("ingestion-location"="asterix_nc1"),
