@@ -108,7 +108,7 @@ public class RebalanceUtil {
                 return;
             }
 
-            Set<String> sourceNodes = new HashSet<>(metadataProvider.findNodes(sourceDataset.getNodeGroupName()));
+            Set<String> sourceNodes = metadataProvider.findNodes(sourceDataset.getNodeGroupName());
 
             // The the source nodes are identical to the target nodes.
             if (sourceNodes.equals(targetNcNames)) {

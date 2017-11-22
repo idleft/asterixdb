@@ -126,7 +126,7 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             AssignOperator assignOp = (AssignOperator) op3;
             AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
             DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
-            String[] nodes = computationNode.getNodes().toArray(new String[0]);
+            String[] nodes = computationNode.getNodes();
             assignPhyOp.setLocationConstraint(nodes);
         }
         return true;
