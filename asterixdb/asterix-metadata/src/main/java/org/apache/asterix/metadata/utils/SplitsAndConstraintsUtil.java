@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.cluster.IClusterStateManager;
@@ -62,7 +63,7 @@ public class SplitsAndConstraintsUtil {
             if (nodeGroup == null) {
                 throw new AlgebricksException("Couldn't find node group " + dataset.getNodeGroupName());
             }
-            List<String> nodeList = nodeGroup.getNodeNames();
+            Set<String> nodeList = nodeGroup.getNodeNames();
             return getIndexSplits(csm, dataset, indexName, nodeList);
         } catch (MetadataException me) {
             throw new AlgebricksException(me);
@@ -70,7 +71,7 @@ public class SplitsAndConstraintsUtil {
     }
 
     public static FileSplit[] getIndexSplits(IClusterStateManager clusterStateManager, Dataset dataset,
-            String indexName, List<String> nodes) {
+            String indexName, Set<String> nodes) {
         final String relPath = StoragePathUtil.prepareDataverseIndexName(dataset.getDataverseName(),
                 dataset.getDatasetName(), indexName, dataset.getRebalanceCount());
         final List<ClusterPartition> datasetPartitions = getDatasetPartitions(clusterStateManager, dataset, nodes);
