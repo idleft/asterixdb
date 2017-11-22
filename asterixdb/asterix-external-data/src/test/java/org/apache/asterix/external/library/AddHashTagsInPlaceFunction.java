@@ -43,13 +43,19 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         processedRecords = 0;
         evalutaionEtime = null;
         fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
+//                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
                 + this.hashCode() + ".txt");
         //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
-        fw.flush();
     }
 
     @Override
     public void deinitialize() {
+        try {
+            fw.write(String.valueOf(processedRecords) + "\n");
+            fw.flush();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -76,14 +82,12 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 
         if (Instant.now().compareTo(evalutaionEtime) < 0) {
             //            while (varStart < 520000000) { // this offers 20 tps
-            while (varStart < 8000000) {
+            while (varStart < 400000) {
                 //            while (varStart < 80000000) {
                 varStart++;
             }
             processedRecords++;
         }
-        fw.write(String.valueOf(processedRecords) + "\n");
-        fw.flush();
     }
 
 }

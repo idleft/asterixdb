@@ -86,4 +86,10 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
         }
     }
 
+    @Override
+    public void close() {
+        System.out.println("Function is closed " + externalFunction.getClass().getSimpleName());
+        externalFunction.deinitialize();
+    }
+
 }
