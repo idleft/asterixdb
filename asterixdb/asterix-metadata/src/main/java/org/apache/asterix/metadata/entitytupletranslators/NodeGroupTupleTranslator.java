@@ -22,9 +22,9 @@ package org.apache.asterix.metadata.entitytupletranslators;
 import java.io.ByteArrayInputStream;
 import java.io.DataInput;
 import java.io.DataInputStream;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.common.exceptions.MetadataException;
@@ -77,7 +77,7 @@ public class NodeGroupTupleTranslator extends AbstractTupleTranslator<NodeGroup>
                         .getStringValue();
         IACursor cursor = ((AUnorderedList) nodeGroupRecord
                 .getValueByPos(MetadataRecordTypes.NODEGROUP_ARECORD_NODENAMES_FIELD_INDEX)).getCursor();
-        List<String> nodeNames = new ArrayList<>();
+        Set<String> nodeNames = new HashSet<>();
         while (cursor.next()) {
             nodeNames.add(((AString) cursor.get()).getStringValue());
         }
@@ -104,7 +104,7 @@ public class NodeGroupTupleTranslator extends AbstractTupleTranslator<NodeGroup>
         // write field 1
         listBuilder.reset((AUnorderedListType) MetadataRecordTypes.NODEGROUP_RECORDTYPE
                 .getFieldTypes()[MetadataRecordTypes.NODEGROUP_ARECORD_NODENAMES_FIELD_INDEX]);
-        List<String> nodeNames = instance.getNodeNames();
+        Set<String> nodeNames = instance.getNodeNames();
         for (String nodeName : nodeNames) {
             itemValue.reset();
             aString.setValue(nodeName);

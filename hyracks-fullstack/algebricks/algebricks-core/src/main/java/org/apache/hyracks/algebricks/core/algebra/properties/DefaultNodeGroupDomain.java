@@ -18,9 +18,10 @@
  */
 package org.apache.hyracks.algebricks.core.algebra.properties;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.List;
 
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
@@ -29,9 +30,9 @@ import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConst
 
 public class DefaultNodeGroupDomain implements INodeDomain {
 
-    private List<String> nodes = new ArrayList<>();
+    private Set<String> nodes = new HashSet<>();
 
-    public DefaultNodeGroupDomain(List<String> nodes) {
+    public DefaultNodeGroupDomain(Set<String> nodes) {
         this.nodes.addAll(nodes);
     }
 
@@ -57,8 +58,6 @@ public class DefaultNodeGroupDomain implements INodeDomain {
             return false;
         }
         DefaultNodeGroupDomain nodeDomain = (DefaultNodeGroupDomain) domain;
-        Collections.sort(nodes);
-        Collections.sort(nodeDomain.nodes);
         return nodes.equals(nodeDomain.nodes);
     }
 
@@ -72,7 +71,7 @@ public class DefaultNodeGroupDomain implements INodeDomain {
         return nodes.size();
     }
 
-    public List<String> getNodes() {
-        return nodes;
+    public String[] getNodes() {
+        return nodes.toArray(new String[0]);
     }
 }

@@ -22,7 +22,9 @@ import java.io.File;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -242,8 +244,8 @@ public class MetadataBootstrap {
         }
     }
 
-    private static void insertInitialGroups(MetadataTransactionContext mdTxnCtx) throws MetadataException {
-        List<String> metadataGroupNodeNames = new ArrayList<>();
+    private static void insertInitialGroups(MetadataTransactionContext mdTxnCtx) throws MetadataException{
+        Set<String> metadataGroupNodeNames = new HashSet<>();
         metadataGroupNodeNames.add(metadataNodeName);
         NodeGroup groupRecord = new NodeGroup(MetadataConstants.METADATA_NODEGROUP_NAME, metadataGroupNodeNames);
         MetadataManager.INSTANCE.addNodegroup(mdTxnCtx, groupRecord);

@@ -21,6 +21,7 @@ package org.apache.asterix.metadata.utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.cluster.IClusterStateManager;
@@ -59,20 +60,16 @@ public class SplitsAndConstraintsUtil {
 
     public static FileSplit[] getIndexSplits(IClusterStateManager clusterStateManager, Dataset dataset,
             String indexName, MetadataTransactionContext mdTxnCtx) throws AlgebricksException {
-        try {
-            NodeGroup nodeGroup = MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, dataset.getNodeGroupName());
-            if (nodeGroup == null) {
-                throw new AlgebricksException("Couldn't find node group " + dataset.getNodeGroupName());
-            }
-            List<String> nodeList = nodeGroup.getNodeNames();
-            return getIndexSplits(clusterStateManager, dataset, indexName, nodeList);
-        } catch (MetadataException me) {
-            throw new AlgebricksException(me);
+        NodeGroup nodeGroup = MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, dataset.getNodeGroupName());
+        if (nodeGroup == null) {
+            throw new AlgebricksException("Couldn't find node group " + dataset.getNodeGroupName());
         }
+        Set<String> nodeList = nodeGroup.getNodeNames();
+        return getIndexSplits(clusterStateManager, dataset, indexName, nodeList);
     }
 
     public static FileSplit[] getIndexSplits(IClusterStateManager clusterStateManager, Dataset dataset,
-            String indexName, List<String> nodes) {
+            String indexName, Set<String> nodes) {
         File relPathFile = new File(StoragePathUtil.prepareDataverseIndexName(dataset.getDataverseName(),
                 dataset.getDatasetName(), indexName, dataset.getRebalanceCount()));
         String storageDirName = ClusterProperties.INSTANCE.getStorageDirectoryName();

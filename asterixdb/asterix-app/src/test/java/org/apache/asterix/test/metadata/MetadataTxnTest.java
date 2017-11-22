@@ -19,7 +19,8 @@
 package org.apache.asterix.test.metadata;
 
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -66,7 +67,7 @@ public class MetadataTxnTest {
         metadataProvider.setMetadataTxnContext(mdTxn);
         final String nodeGroupName = "ng";
         try {
-            final List<String> ngNodes = Arrays.asList("asterix_nc1");
+            final Set<String> ngNodes = Collections.singleton("asterix_nc1");
             MetadataManager.INSTANCE.addNodegroup(mdTxn, new NodeGroup(nodeGroupName, ngNodes));
             MetadataManager.INSTANCE.abortTransaction(mdTxn);
         } finally {
