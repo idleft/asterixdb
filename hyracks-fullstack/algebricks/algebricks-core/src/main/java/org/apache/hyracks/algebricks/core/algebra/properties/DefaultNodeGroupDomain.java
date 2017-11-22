@@ -19,6 +19,8 @@
 package org.apache.hyracks.algebricks.core.algebra.properties;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
@@ -55,6 +57,8 @@ public class DefaultNodeGroupDomain implements INodeDomain {
             return false;
         }
         DefaultNodeGroupDomain nodeDomain = (DefaultNodeGroupDomain) domain;
+        Collections.sort(nodes);
+        Collections.sort(nodeDomain.nodes);
         return nodes.equals(nodeDomain.nodes);
     }
 

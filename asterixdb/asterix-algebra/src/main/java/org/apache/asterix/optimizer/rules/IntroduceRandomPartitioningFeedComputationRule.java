@@ -23,6 +23,7 @@ import org.apache.asterix.metadata.declared.DatasetDataSource;
 import org.apache.asterix.metadata.declared.FeedDataSource;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
@@ -93,8 +94,11 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             return false;
         }
 
-        if ((((InsertDeleteUpsertOperator) op4).getDataSource()).getDomain()
-                .sameAs(feedDataSource.getComputationNodeDomain())) {
+        INodeDomain diskDomain = (((InsertDeleteUpsertOperator) op4).getDataSource()).getDomain();
+        INodeDomain runtimeDomain = feedDataSource.getComputationNodeDomain();
+
+        //        if (diskDomain.sameAs(runtimeDomain)) {
+        if (false) {
             // if dataset partition is the same as compute partition, push hash partition down
             op4.getInputs().get(0).setValue(op2);
             op3.getInputs().get(0).setValue(op0);
@@ -107,23 +111,23 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             ((ProjectOperator)op2).getVariables().add(((AssignOperator) op1).getVariables().get(0));
         } else {
             // if not, add random partition for load balance
-            throw new NotImplementedException();
-//            ExchangeOperator exchangeOp = new ExchangeOperator();
-//            INodeDomain domain = feedDataSource.getComputationNodeDomain();
-//
-//            exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
-//            op3.getInputs().get(0).setValue(exchangeOp);
-//            exchangeOp.getInputs().add(new MutableObject<>(scanOp));
-//            exchangeOp.setExecutionMode(scanOp.getExecutionMode());
-//            exchangeOp.computeDeliveredPhysicalProperties(context);
-//            context.computeAndSetTypeEnvironmentForOperator(exchangeOp);
-//
-//            // set computation locations
-//            AssignOperator assignOp = (AssignOperator) op3;
-//            AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
-//            DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
-//            String[] nodes = computationNode.getNodes().toArray(new String[0]);
-//            assignPhyOp.setLocationConstraint(nodes);
+            //            throw new AlgebricksException("Disk: " + diskDomain + "  Runtime: " + runtimeDomain);
+            ExchangeOperator exchangeOp = new ExchangeOperator();
+            INodeDomain domain = feedDataSource.getComputationNodeDomain();
+
+            exchangeOp.setPhysicalOperator(new RandomPartitionExchangePOperator(domain));
+            op3.getInputs().get(0).setValue(exchangeOp);
+            exchangeOp.getInputs().add(new MutableObject<>(scanOp));
+            exchangeOp.setExecutionMode(scanOp.getExecutionMode());
+            exchangeOp.computeDeliveredPhysicalProperties(context);
+            context.computeAndSetTypeEnvironmentForOperator(exchangeOp);
+
+            // set computation locations
+            AssignOperator assignOp = (AssignOperator) op3;
+            AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
+            DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
+            String[] nodes = computationNode.getNodes().toArray(new String[0]);
+            assignPhyOp.setLocationConstraint(nodes);
         }
         return true;
     }

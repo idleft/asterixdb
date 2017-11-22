@@ -27,7 +27,7 @@
   shell: cp "{{ playbook_dir }}/../conf/cc.conf" "{{ ccconf }}"
 
 - name: Populate NCs to the cluster configuration file
-  shell: printf "\n[nc/{{ node.0 + 1 }}]\naddress={{ node.1 }}\n" >> "{{ ccconf }}"
+  shell: printf "\n[nc/nc{{ node.0 + 1 }}]\naddress={{ node.1 }}\n" >> "{{ ccconf }}"
   with_indexed_items: "{{ groups['ncs'] }}"
   loop_control:
       loop_var: node
