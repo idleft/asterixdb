@@ -81,7 +81,7 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 
         if (Instant.now().compareTo(evalutaionEtime) < 0) {
             //            while (varStart < 520000000) { // this offers 20 tps
-            while (varStart < 400000) {
+            while (varStart < 8000000) {
                 //            while (varStart < 80000000) {
                 varStart++;
             }
