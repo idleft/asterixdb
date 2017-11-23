@@ -18,7 +18,7 @@
  */
 package org.apache.asterix.metadata.declared;
 
-import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -104,7 +104,7 @@ public class MetadataManagerUtil {
     public static INodeDomain findNodeDomain(IClusterStateManager clusterStateManager,
             MetadataTransactionContext mdTxnCtx, String nodeGroupName) throws AlgebricksException {
         NodeGroup nodeGroup = MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, nodeGroupName);
-        Set<String> partitions = new HashSet<>();
+        List<String> partitions = new ArrayList<>();
         for (String location : nodeGroup.getNodeNames()) {
             int numPartitions = clusterStateManager.getNodePartitionsCount(location);
             for (int i = 0; i < numPartitions; i++) {
