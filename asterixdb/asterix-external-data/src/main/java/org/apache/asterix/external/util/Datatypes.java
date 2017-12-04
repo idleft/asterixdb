@@ -165,5 +165,6 @@ public class Datatypes {
         public static final String USER_NAME = "user_name";
         public static final String LOCATION = "location";
         public static final String TOPICS = "topics";
+        public static final String VAR_COUNTER = "val_counter";
     }
 }
