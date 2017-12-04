@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.library;
 
+import org.apache.asterix.external.library.java.JObjects;
 import org.apache.asterix.external.library.java.base.builtin.JBuiltinType;
 import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.external.library.java.base.builtin.JString;
@@ -36,10 +37,12 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     FileWriter fw;
 
     private JUnorderedList list = null;
+    private JObjects.JLong varCounter = null;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
         list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
+        varCounter = new JObjects.JLong(0l);
         processedRecords = 0;
         evalutaionEtime = null;
         fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
@@ -77,7 +80,6 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
             }
         }
         inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
-        functionHelper.setResult(inputRecord);
         long varStart = 0;
 
         if (Instant.now().compareTo(evalutaionEtime) < 0) {
@@ -88,6 +90,9 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
             }
             processedRecords++;
         }
+        varCounter.setValue(varStart);
+        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
+        functionHelper.setResult(inputRecord);
     }
 
 }

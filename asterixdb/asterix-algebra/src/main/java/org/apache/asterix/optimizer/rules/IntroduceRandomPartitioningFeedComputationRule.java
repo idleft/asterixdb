@@ -99,16 +99,16 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
 
         //        if (diskDomain.sameAs(runtimeDomain)) {
         if (false) {
-            //                         if dataset partition is the same as compute partition, push hash partition down
-            //            op4.getInputs().get(0).setValue(op2);
-            //            op3.getInputs().get(0).setValue(op0);
-            //            op1.getInputs().get(0).setValue(opChild);
-            //            // replace variable
-            //            ((AssignOperator) op1).recomputeSchema();
-            //            ((AssignOperator) op1).getExpressions().get(0).getValue().substituteVar(op2.getSchema().get(0),
-            //                    scanOp.getSchema().get(0));
-            //            // update project operator to carry primary key
-            //            ((ProjectOperator)op2).getVariables().add(((AssignOperator) op1).getVariables().get(0));
+            //                                     if dataset partition is the same as compute partition, push hash partition down
+            op4.getInputs().get(0).setValue(op2);
+            op3.getInputs().get(0).setValue(op0);
+            op1.getInputs().get(0).setValue(opChild);
+            // replace variable
+            ((AssignOperator) op1).recomputeSchema();
+            ((AssignOperator) op1).getExpressions().get(0).getValue().substituteVar(op2.getSchema().get(0),
+                    scanOp.getSchema().get(0));
+            // update project operator to carry primary key
+            ((ProjectOperator) op2).getVariables().add(((AssignOperator) op1).getVariables().get(0));
         } else {
             //             if not, add random partition for load balance
             //            throw new AlgebricksException("Disk: " + diskDomain + "  Runtime: " + runtimeDomain);
