@@ -20,7 +20,6 @@ package org.apache.asterix.metadata.utils;
 
 import java.io.DataOutput;
 import java.rmi.RemoteException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -543,7 +542,7 @@ public class DatasetUtil {
             nodeGroup = nodeGroup + "_" + UUID.randomUUID().toString();
             appCtx.getMetadataLockManager().acquireNodeGroupWriteLock(metadataProvider.getLocks(), nodeGroup);
         }
-        MetadataManager.INSTANCE.addNodegroup(mdTxnCtx, new NodeGroup(nodeGroup, new ArrayList<>(ncNames)));
+        MetadataManager.INSTANCE.addNodegroup(mdTxnCtx, new NodeGroup(nodeGroup, ncNames));
         return nodeGroup;
     }
 }

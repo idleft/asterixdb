@@ -20,6 +20,7 @@ package org.apache.asterix.metadata.declared;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
@@ -113,7 +114,7 @@ public class MetadataManagerUtil {
         return new DefaultNodeGroupDomain(partitions);
     }
 
-    public static List<String> findNodes(MetadataTransactionContext mdTxnCtx, String nodeGroupName)
+    public static Set<String> findNodes(MetadataTransactionContext mdTxnCtx, String nodeGroupName)
             throws AlgebricksException {
         return MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, nodeGroupName).getNodeNames();
     }

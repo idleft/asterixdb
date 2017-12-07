@@ -33,16 +33,19 @@ public class DefaultNodeGroupDomain implements INodeDomain {
 
     public DefaultNodeGroupDomain(List<String> nodes) {
         this.nodes.addAll(nodes);
+        Collections.sort(nodes);
     }
 
     public DefaultNodeGroupDomain(DefaultNodeGroupDomain domain) {
         this.nodes.addAll(domain.nodes);
+        Collections.sort(nodes);
     }
 
     public DefaultNodeGroupDomain(AlgebricksPartitionConstraint clusterLocations) {
         if (clusterLocations.getPartitionConstraintType() == PartitionConstraintType.ABSOLUTE) {
             AlgebricksAbsolutePartitionConstraint absPc = (AlgebricksAbsolutePartitionConstraint) clusterLocations;
             nodes.addAll(Arrays.asList(absPc.getLocations()));
+            Collections.sort(nodes);
         } else {
             throw new IllegalStateException("A node domain can only take absolute location constraints.");
         }
