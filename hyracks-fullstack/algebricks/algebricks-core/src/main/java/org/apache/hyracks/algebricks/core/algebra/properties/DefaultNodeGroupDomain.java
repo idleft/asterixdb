@@ -36,11 +36,6 @@ public class DefaultNodeGroupDomain implements INodeDomain {
         Collections.sort(nodes);
     }
 
-    public DefaultNodeGroupDomain(DefaultNodeGroupDomain domain) {
-        this.nodes.addAll(domain.nodes);
-        Collections.sort(nodes);
-    }
-
     public DefaultNodeGroupDomain(AlgebricksPartitionConstraint clusterLocations) {
         if (clusterLocations.getPartitionConstraintType() == PartitionConstraintType.ABSOLUTE) {
             AlgebricksAbsolutePartitionConstraint absPc = (AlgebricksAbsolutePartitionConstraint) clusterLocations;
@@ -53,11 +48,7 @@ public class DefaultNodeGroupDomain implements INodeDomain {
 
     @Override
     public boolean sameAs(INodeDomain domain) {
-        if (!(domain instanceof DefaultNodeGroupDomain)) {
-            return false;
-        }
-        DefaultNodeGroupDomain nodeDomain = (DefaultNodeGroupDomain) domain;
-        return nodes.equals(nodeDomain.nodes);
+        return domain instanceof DefaultNodeGroupDomain ? false : nodes.equals(((DefaultNodeGroupDomain) domain).nodes);
     }
 
     @Override
@@ -68,5 +59,9 @@ public class DefaultNodeGroupDomain implements INodeDomain {
     @Override
     public Integer cardinality() {
         return nodes.size();
+    }
+
+    public String[] getNodes() {
+        return nodes.toArray(new String[0]);
     }
 }
