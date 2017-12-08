@@ -48,7 +48,10 @@ public class DefaultNodeGroupDomain implements INodeDomain {
 
     @Override
     public boolean sameAs(INodeDomain domain) {
-        return domain instanceof DefaultNodeGroupDomain ? false : nodes.equals(((DefaultNodeGroupDomain) domain).nodes);
+        if (!(domain instanceof DefaultNodeGroupDomain)) {
+            return false;
+        }
+        return nodes.equals(((DefaultNodeGroupDomain) domain).nodes);
     }
 
     @Override
