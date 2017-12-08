@@ -25,7 +25,6 @@ import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.feed.api.IFeed;
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
-import org.apache.asterix.object.base.AdmObjectNode;
 
 /**
  * Feed POJO
