@@ -52,14 +52,6 @@ create type ProcessedTweet if not exists as open {
 
 create dataset SyntheticTweets(Tweet) primary key id;
 
-
-create feed TweetFeed with {
-  "adapter-name" : "socket_adapter",
-  "sockets" : "127.0.0.1:10001",
-  "address-type" : "IP",
-  "type-name" : "typeTweet",
-  "format" : "adm"
-};
 create feed  SyntheticTweetFeed with {
   "adapter-name" : "stream",
   "duration" : "1",
