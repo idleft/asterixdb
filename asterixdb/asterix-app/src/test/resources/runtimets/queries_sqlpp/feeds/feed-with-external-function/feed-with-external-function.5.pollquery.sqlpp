@@ -21,7 +21,7 @@
  * Expected Res : Success
  * Date         : 4th Oct 2017
  */
-// polltimeoutsecs=5
+// polltimeoutsecs=9999
 use externallibtest;
 
 select value t from TweetsFeedIngest t
