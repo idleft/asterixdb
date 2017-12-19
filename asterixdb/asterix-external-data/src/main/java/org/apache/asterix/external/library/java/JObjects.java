@@ -23,7 +23,9 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -1008,18 +1010,34 @@ public class JObjects {
         private ARecordType recordType;
         private IJObject[] fields;
         private Map<String, IJObject> openFields;
+        private List<String> closeFieldNames;
+        private Map<String, Integer> closeFieldNameHashMap;
         private final AStringSerializerDeserializer aStringSerDer = AStringSerializerDeserializer.INSTANCE;
 
         public JRecord(ARecordType recordType, IJObject[] fields) {
             this.recordType = recordType;
             this.fields = fields;
-            this.openFields = new LinkedHashMap<String, IJObject>();
+            this.openFields = new LinkedHashMap<>();
+            this.closeFieldNames = Arrays.asList(recordType.getFieldNames());
+            this.closeFieldNameHashMap = new HashMap<>();
+            int idx = 0;
+            for (String fieldName : recordType.getFieldNames()) {
+                closeFieldNameHashMap.put(fieldName, idx);
+                idx++;
+            }
         }
 
         public JRecord(ARecordType recordType, IJObject[] fields, LinkedHashMap<String, IJObject> openFields) {
             this.recordType = recordType;
             this.fields = fields;
             this.openFields = openFields;
+            this.closeFieldNames = Arrays.asList(recordType.getFieldNames());
+            this.closeFieldNameHashMap = new HashMap<>();
+            int idx = 0;
+            for (String fieldName : recordType.getFieldNames()) {
+                closeFieldNameHashMap.put(fieldName, idx);
+                idx++;
+            }
         }
 
         public void addField(String fieldName, IJObject fieldValue) throws HyracksDataException {
@@ -1035,17 +1053,22 @@ public class JObjects {
 
         public IJObject getValueByName(String fieldName) throws HyracksDataException {
             // check closed part
-            int fieldPos = getFieldPosByName(fieldName);
-            if (fieldPos >= 0) {
-                return fields[fieldPos];
-            } else {
-                // check open part
-                IJObject fieldValue = openFields.get(fieldName);
-                if (fieldValue == null) {
-                    throw new RuntimeDataException(ErrorCode.LIBRARY_JAVA_JOBJECTS_UNKNOWN_FIELD, fieldName);
-                }
-                return fieldValue;
-            }
+//            int fieldPos = getFieldPosByName(fieldName);
+            int fieldPos = closeFieldNames.indexOf(fieldName);
+            //                        if (fieldPos >= 0) {
+            return fields[fieldPos];
+            //            } else {
+            //                // check open part
+            //                IJObject fieldValue = openFields.get(fieldName);
+            //                if (fieldValue == null) {
+            //                    throw new RuntimeDataException(ErrorCode.LIBRARY_JAVA_JOBJECTS_UNKNOWN_FIELD, fieldName);
+            //                }
+            //                return fieldValue;
+            //            }
+        }
+
+        public IJObject getValueByName(int fieldIdx) throws HyracksDataException {
+            return fields[fieldIdx];
         }
 
         public void setValueAtPos(int pos, IJObject jObject) {
@@ -1071,15 +1094,24 @@ public class JObjects {
         }
 
         private int getFieldPosByName(String fieldName) {
-            int index = 0;
+//            return closeFieldNames.indexOf(fieldName);
+            //            return 1;
+            //            return closeFieldNameHashMap.getOrDefault(fieldName, -1);
             String[] fieldNames = recordType.getFieldNames();
-            for (String name : fieldNames) {
-                if (name.equals(fieldName)) {
-                    return index;
+            for (int iter1 = 0; iter1 < fieldNames.length; iter1++) {
+                if (fieldName.equals(fieldName)) {
+                    return iter1;
                 }
-                index++;
             }
             return -1;
+//            String[] fieldNames = recordType.getFieldNames();
+//            for (String name : fieldNames) {
+//                if (name.equals(fieldName)) {
+//                    return index;
+//                }
+//                index++;
+//            }
+//            return -1;
         }
 
         public ARecordType getRecordType() {

@@ -22,7 +22,7 @@
  * Date         : 4th Oct 2017
  */
 
-SET `compiler.parallelism` "7";
+//SET `compiler.parallelism` "7";
 
 use externallibtest;
 

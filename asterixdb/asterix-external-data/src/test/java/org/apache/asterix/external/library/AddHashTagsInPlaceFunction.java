@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.library;
 
+import org.apache.asterix.external.api.IJObject;
 import org.apache.asterix.external.library.java.JObjects;
 import org.apache.asterix.external.library.java.JObjects.JRecord;
 import org.apache.asterix.external.library.java.JObjects.JString;
@@ -66,19 +67,27 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
             System.out.println("Function time refreshed for " + this.hashCode());
             evalutaionEtime = Instant.now().plusSeconds(60);
         }
-        list.clear();
+//        list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
-
-        String[] tokens = text.getValue().split(" ");
-        for (String tk : tokens) {
-            if (tk.startsWith("#")) {
-                JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
-                newField.setValue(tk);
-                list.add(newField);
+        int idx = 0;
+        String[] fieldNames = inputRecord.getRecordType().getFieldNames();
+        for (int iter1 = 0; iter1 < fieldNames.length; iter1++) {
+            if (fieldNames[iter1].equals("latitude")) {
+                idx = iter1;
+                break;
             }
         }
-        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
+        IJObject text = inputRecord.getValueByName(idx); // problem
+
+//        String[] tokens = text.getValue().split(" ");
+//        for (String tk : tokens) {
+//            if (tk.startsWith("#")) {
+//                JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
+//                newField.setValue(tk);
+//                list.add(newField);
+//            }
+//        }
+//        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
         long varStart = 0;
 
         if (Instant.now().compareTo(evalutaionEtime) < 0) {
@@ -89,8 +98,8 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
             }
             processedRecords++;
         }
-        varCounter.setValue(varStart);
-        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
+//        varCounter.setValue(varStart);
+//        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
         functionHelper.setResult(inputRecord);
     }
 

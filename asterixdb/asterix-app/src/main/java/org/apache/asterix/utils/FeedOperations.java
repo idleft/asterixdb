@@ -33,6 +33,7 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.ActiveManagerMessage;
 import org.apache.asterix.active.message.ActiveManagerMessage.Kind;
+import org.apache.asterix.algebra.operators.CommitOperator;
 import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.app.translator.QueryTranslator;
 import org.apache.asterix.common.cluster.IClusterStateManager;
@@ -118,6 +119,7 @@ import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
@@ -143,8 +145,8 @@ public class FeedOperations {
         IAdapterFactory adapterFactory;
         IOperatorDescriptor feedIngestor;
         AlgebricksPartitionConstraint ingesterPc;
-        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t =
-                metadataProvider.buildFeedIntakeRuntime(spec, feed, policyAccessor);
+        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t = metadataProvider
+                .buildFeedIntakeRuntime(spec, feed, policyAccessor);
         feedIngestor = t.first;
         ingesterPc = t.second;
         adapterFactory = t.third;
@@ -166,12 +168,12 @@ public class FeedOperations {
         for (String node : allCluster.getLocations()) {
             nodes.add(node);
         }
-        AlgebricksAbsolutePartitionConstraint locations =
-                new AlgebricksAbsolutePartitionConstraint(nodes.toArray(new String[nodes.size()]));
-        FileSplit[] feedLogFileSplits =
-                FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(), locations);
-        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC =
-                StoragePathUtil.splitProviderAndPartitionConstraints(feedLogFileSplits);
+        AlgebricksAbsolutePartitionConstraint locations = new AlgebricksAbsolutePartitionConstraint(
+                nodes.toArray(new String[nodes.size()]));
+        FileSplit[] feedLogFileSplits = FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(),
+                locations);
+        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC = StoragePathUtil
+                .splitProviderAndPartitionConstraints(feedLogFileSplits);
         FileRemoveOperatorDescriptor frod = new FileRemoveOperatorDescriptor(spec, spC.first, true);
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, frod, spC.second);
         spec.addRoot(frod);
@@ -198,10 +200,9 @@ public class FeedOperations {
         VariableExpr fromTermLeftExpr = new VariableExpr(fromVarId);
         // TODO: remove target feedid from args list (xikui)
         // TODO: Get rid of this INTAKE
-        List<Expression> exprList =
-                addArgs(feedConnection.getDataverseName(), feedConnection.getFeedId().getEntityName(),
-                        feedConnection.getFeedId().getEntityName(), FeedRuntimeType.INTAKE.toString(),
-                        feedConnection.getDatasetName(), feedConnection.getOutputType());
+        List<Expression> exprList = addArgs(feedConnection.getDataverseName(),
+                feedConnection.getFeedId().getEntityName(), feedConnection.getFeedId().getEntityName(),
+                FeedRuntimeType.INTAKE.toString(), feedConnection.getDatasetName(), feedConnection.getOutputType());
         CallExpr datasrouceCallFunction = new CallExpr(FeedConstants.FEED_COLLECT_FUN_SIGNATURE, exprList);
         FromTerm fromterm = new FromTerm(datasrouceCallFunction, fromTermLeftExpr, null, null);
         FromClause fromClause = new FromClause(Arrays.asList(fromterm));
@@ -280,67 +281,40 @@ public class FeedOperations {
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
         List<JobId> jobIds = new ArrayList<>();
-        FeedMetaOperatorDescriptor metaOp;
 
         for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
-            FeedConnection curFeedConnection = feedConnections.get(iter1);
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
-
-            FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil
-                    .validateIfPolicyExists(curFeedConnection.getDataverseName(), curFeedConnection.getPolicyName(),
-                            metadataProvider.getMetadataTxnContext());
+            IOperatorDescriptor subRoot = null;
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
                 OperatorDescriptorId opId = null;
-//                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
-//                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-//                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-//                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
-//                    opId = metaOp.getOperatorId();
-//                    opDesc.setOperatorId(opId);
-//                } else {
-//                    if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-//                        AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
-//                        IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
-//                        // Tweak AssignOp to work with messages
-//                        if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-//                            IConnectorDescriptor connectorDesc =
-//                                    subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
-//                            // anything on the network interface needs to be message compatible
-//                            if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
-//                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-//                                        feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
-//                                opId = metaOp.getOperatorId();
-//                                opDesc.setOperatorId(opId);
-//                            }
-//                        }
-//                    }
-//                    if (opId == null) {
-//                    }
-//                }
+                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                        || (opDesc instanceof AlgebricksMetaOperatorDescriptor
+                                && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
+                                        .getRuntimeFactories().length < 3)) {
+                    continue;
+                }
                 opId = jobSpec.createOperatorDescriptorId(opDesc);
+
                 operatorIdMapping.put(oldId, opId);
             }
 
             // copy connectors
             connectorIdMapping.clear();
             subJob.getConnectorMap().forEach((key, connDesc) -> {
-                ConnectorDescriptorId newConnId;
-//                if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
-//                    MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-//                    connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
-//                            m2nConn.getTuplePartitionComputerFactory());
-//                    newConnId = connDesc.getConnectorId();
-//                } else {
+                if (!(connDesc instanceof MToNPartitioningConnectorDescriptor
+                        && ((MToNPartitioningConnectorDescriptor) connDesc)
+                                .getTuplePartitionComputerFactory() instanceof FieldHashPartitionComputerFactory)
+                        && (operatorIdMapping.containsValue(subJob.getConnectorOperatorMap()
+                                .get(connDesc.getConnectorId()).getKey().getKey().getOperatorId()))) {
+                    ConnectorDescriptorId newConnId;
                     newConnId = jobSpec.createConnectorDescriptor(connDesc);
-//                }
-                connectorIdMapping.put(key, newConnId);
+                    connectorIdMapping.put(key, newConnId);
+                }
             });
 
             // make connections between operators
@@ -352,11 +326,20 @@ public class FeedOperations {
                 Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
                 IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
                 IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
+                if (!operatorIdMapping.containsValue(leftOpDesc.getOperatorId())) {
+                    continue;
+                }
                 if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
                     jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
                             leftOp.getRight());
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
+                } else if (rightOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                    subRoot = new NullSinkOperatorDescriptor(jobSpec);
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), leftOpDesc, leftOp.getRight(), subRoot,
+                            0);
+                } else if (!(leftOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor)) {
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
                 }
-                jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
             }
 
             // prepare for setting partition constraints
@@ -370,10 +353,16 @@ public class FeedOperations {
                 switch (lexpr.getTag()) {
                     case PARTITION_COUNT:
                         opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
+                        if (!operatorIdMapping.containsKey(opId)) {
+                            continue;
+                        }
                         operatorCounts.put(operatorIdMapping.get(opId), (int) ((ConstantExpression) cexpr).getValue());
                         break;
                     case PARTITION_LOCATION:
                         opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
+                        if (!operatorIdMapping.containsKey(opId)) {
+                            continue;
+                        }
                         IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(operatorIdMapping.get(opId));
                         List<LocationConstraint> locations = operatorLocations.get(opDesc.getOperatorId());
                         if (locations == null) {
@@ -407,14 +396,10 @@ public class FeedOperations {
             // set count constraints
             operatorCounts.forEach((key, value) -> {
                 IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(key);
-                if (!operatorLocations.keySet().contains(key)) {
-                    PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, opDesc, value);
-                }
+                PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, opDesc, value);
             });
             // roots
-            for (OperatorDescriptorId root : subJob.getRoots()) {
-                jobSpec.addRoot(jobSpec.getOperatorMap().get(operatorIdMapping.get(root)));
-            }
+            jobSpec.addRoot(subRoot);
             jobIds.add(((JobEventListenerFactory) subJob.getJobletEventListenerFactory()).getJobId());
         }
 
@@ -431,9 +416,8 @@ public class FeedOperations {
             SessionOutput sessionOutput) {
         List<Statement> stmts = new ArrayList<>();
         DefaultStatementExecutorFactory qtFactory = new DefaultStatementExecutorFactory();
-        IStatementExecutor translator = qtFactory
-                .create(metadataProvider.getApplicationContext(), stmts, sessionOutput, new SqlppCompilationProvider(),
-                        new StorageComponentProvider());
+        IStatementExecutor translator = qtFactory.create(metadataProvider.getApplicationContext(), stmts, sessionOutput,
+                new SqlppCompilationProvider(), new StorageComponentProvider());
         return translator;
     }
 
@@ -451,11 +435,11 @@ public class FeedOperations {
         String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
         // Add metadata configs
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, Boolean.TRUE.toString());
-        metadataProvider.getConfig()
-                .put(FeedActivityDetails.COLLECT_LOCATIONS, StringUtils.join(ingestionLocations, ','));
+        metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
+                StringUtils.join(ingestionLocations, ','));
         // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
-        IStatementExecutor translator =
-                getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
+        IStatementExecutor translator = getSQLPPTranslator(metadataProvider,
+                ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
         for (FeedConnection feedConnection : feedConnections) {
             JobSpecification connectionJob = getConnectionJob(metadataProvider, feedConnection, translator, hcc,
