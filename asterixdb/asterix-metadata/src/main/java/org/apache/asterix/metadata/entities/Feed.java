@@ -90,7 +90,7 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
 
     @Override
     public Feed dropFromCache(MetadataCache cache) {
-        return cache.dropFeed(this);
+        return cache.dropFeedIfExists(this);
     }
 
     @Override
