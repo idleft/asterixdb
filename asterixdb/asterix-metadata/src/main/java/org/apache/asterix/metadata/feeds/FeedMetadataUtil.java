@@ -101,7 +101,7 @@ public class FeedMetadataUtil {
     public static void validateFeed(Feed feed, MetadataTransactionContext mdTxnCtx, ICcApplicationContext appCtx)
             throws AlgebricksException {
         try {
-            Map<String, String> configuration = feed.getFeedConfiguration();
+            Map<String, String> configuration = feed.getConfiguration();
             ARecordType adapterOutputType = getOutputType(feed, configuration.get(ExternalDataConstants.KEY_TYPE_NAME));
             ARecordType metaType = getOutputType(feed, configuration.get(ExternalDataConstants.KEY_META_TYPE_NAME));
             ExternalDataUtils.prepareFeed(configuration, feed.getDataverseName(), feed.getFeedName());
@@ -178,7 +178,7 @@ public class FeedMetadataUtil {
         Triple<IAdapterFactory, RecordDescriptor, IDataSourceAdapter.AdapterType> feedProps = null;
         IDataSourceAdapter.AdapterType adapterType = null;
         try {
-            Map<String, String> configuration = feed.getFeedConfiguration();
+            Map<String, String> configuration = feed.getConfiguration();
             adapterName = configuration.get(ExternalDataConstants.KEY_ADAPTER_NAME);
             configuration.putAll(policyAccessor.getFeedPolicy());
             adapterOutputType = getOutputType(feed, configuration.get(ExternalDataConstants.KEY_TYPE_NAME));

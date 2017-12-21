@@ -404,7 +404,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
         factoryOutput = FeedMetadataUtil.getFeedFactoryAndOutput(feed, policyAccessor, mdTxnCtx,
                 getApplicationContext());
         ARecordType recordType = FeedMetadataUtil.getOutputType(feed,
-                feed.getFeedConfiguration().get(ExternalDataConstants.KEY_TYPE_NAME));
+                feed.getConfiguration().get(ExternalDataConstants.KEY_TYPE_NAME));
         IAdapterFactory adapterFactory = factoryOutput.first;
         FeedIntakeOperatorDescriptor feedIngestor = null;
         switch (factoryOutput.third) {
@@ -413,7 +413,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
                         policyAccessor, factoryOutput.second);
                 break;
             case EXTERNAL:
-                String libraryName = feed.getFeedConfiguration().get(ExternalDataConstants.KEY_ADAPTER_NAME).trim()
+                String libraryName = feed.getConfiguration().get(ExternalDataConstants.KEY_ADAPTER_NAME).trim()
                         .split(FeedConstants.NamingConstants.LIBRARY_NAME_SEPARATOR)[0];
                 feedIngestor = new FeedIntakeOperatorDescriptor(jobSpec, feed, libraryName,
                         adapterFactory.getClass().getName(), recordType, policyAccessor, factoryOutput.second);

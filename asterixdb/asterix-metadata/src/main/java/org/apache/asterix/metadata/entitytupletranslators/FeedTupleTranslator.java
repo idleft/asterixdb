@@ -157,7 +157,7 @@ public class FeedTupleTranslator extends AbstractTupleTranslator<Feed> {
 
         listBuilder.reset((AUnorderedListType) MetadataRecordTypes.FEED_RECORDTYPE
                 .getFieldTypes()[MetadataRecordTypes.FEED_ARECORD_ADAPTOR_CONFIG_INDEX]);
-        for (Map.Entry<String, String> property : feed.getFeedConfiguration().entrySet()) {
+        for (Map.Entry<String, String> property : feed.getConfiguration().entrySet()) {
             String name = property.getKey();
             String value = property.getValue();
             listEleBuffer.reset();

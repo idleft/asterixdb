@@ -94,7 +94,7 @@ public class Feed implements IMetadataEntity<Feed>, IFeed {
     }
 
     @Override
-    public Map<String, String> getFeedConfiguration() {
+    public Map<String, String> getConfiguration() {
         return feedConfiguration;
     }
 }

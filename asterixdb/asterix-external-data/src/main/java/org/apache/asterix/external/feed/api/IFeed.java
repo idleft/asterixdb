@@ -30,6 +30,6 @@ public interface IFeed extends Serializable {
 
     public EntityId getFeedId();
 
-    public Map<String, String> getFeedConfiguration();
+    public Map<String, String> getConfiguration();
 
 }

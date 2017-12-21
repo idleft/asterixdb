@@ -25,6 +25,7 @@ import org.apache.asterix.lang.common.struct.Identifier;
 import org.apache.asterix.lang.common.util.ExpressionUtils;
 import org.apache.asterix.lang.common.util.MergePolicyUtils;
 import org.apache.asterix.lang.common.visitor.base.ILangVisitor;
+import org.apache.asterix.object.base.AdmObjectNode;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Pair;
 
@@ -38,13 +39,13 @@ public class CreateFeedStatement implements Statement {
 
     private final Pair<Identifier, Identifier> qName;
     private final boolean ifNotExists;
-    private final Map<String, String> feedConfigurations;
+    private final AdmObjectNode withObjectNode;
 
     public CreateFeedStatement(Pair<Identifier, Identifier> qName, RecordConstructor withRecord, boolean ifNotExists)
             throws AlgebricksException {
         this.qName = qName;
         this.ifNotExists = ifNotExists;
-        this.feedConfigurations = MergePolicyUtils.toProperties(ExpressionUtils.toNode(withRecord));
+        this.withObjectNode = withRecord == null ? null : ExpressionUtils.toNode(withRecord);
     }
 
     public Identifier getDataverseName() {
@@ -74,7 +75,11 @@ public class CreateFeedStatement implements Statement {
         return Category.DDL;
     }
 
-    public Map<String, String> getFeedConfigurations() {
-        return feedConfigurations;
+    public Map<String, String> getConfiguration() throws CompilationException{
+        return MergePolicyUtils.toProperties(withObjectNode);
+    }
+
+    public AdmObjectNode getWithObjectNode() {
+        return withObjectNode;
     }
 }
