@@ -75,7 +75,7 @@ public class CreateFeedStatement implements Statement {
         return Category.DDL;
     }
 
-    public Map<String, String> getConfiguration() throws CompilationException{
+    public Map<String, String> getConfiguration() throws CompilationException {
         return MergePolicyUtils.toProperties(withObjectNode);
     }
 
