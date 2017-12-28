@@ -286,44 +286,42 @@ public class FeedOperations {
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
 
-            FeedPolicyEntity feedPolicyEntity =
-                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
-                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
+            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(),
+                    curFeedConnection.getDatasetName());FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil
+                    .validateIfPolicyExists(curFeedConnection.getDataverseName(), curFeedConnection.getPolicyName(),
+                            metadataProvider.getMetadataTxnContext());
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
                 OperatorDescriptorId opId = null;
 //                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
-//                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-//                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-//                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
-//                    opId = metaOp.getOperatorId();
-//                    opDesc.setOperatorId(opId);
-//                } else {
-//                    if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-//                        AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
-//                        IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
-//                        // Tweak AssignOp to work with messages
-//                        if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-//                            IConnectorDescriptor connectorDesc =
-//                                    subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
-//                            // anything on the network interface needs to be message compatible
-//                            if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
-//                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-//                                        feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
-//                                opId = metaOp.getOperatorId();
-//                                opDesc.setOperatorId(opId);
-//                            }
-//                        }
-//                    }
-//                    if (opId == null) {
-//                    }
-//                }
-                opId = jobSpec.createOperatorDescriptorId(opDesc);
+//                        || (opDesc instanceof AlgebricksMetaOperatorDescriptor
+//                                && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
+//                                        .getRuntimeFactories().length < 3)) {
+//                    continue;
+//                } else
+                if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
+                    AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
+                    IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
+                    // Tweak AssignOp to work with messages
+                    if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
+                        IConnectorDescriptor connectorDesc = subJob.getOperatorInputMap().get(opDesc.getOperatorId())
+                                .get(0);
+                        // anything on the network interface needs to be message compatible
+                        if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
+                            metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
+                                    feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
+                            opId = metaOp.getOperatorId();
+                            opDesc.setOperatorId(opId);
+                        }
+                    }
+                }
+                if (opId == null) {
+                    opId = jobSpec.createOperatorDescriptorId(opDesc);
+                }
+
                 operatorIdMapping.put(oldId, opId);
             }
 

@@ -71,6 +71,11 @@ public class TestNCServiceContext implements INCServiceContext {
         };
     }
 
+    public TestNCServiceContext(IIOManager ioManager, String nodeId, Object appCtx) {
+        this(ioManager, nodeId);
+        this.appCtx = appCtx;
+    }
+
     @Override
     public String getNodeId() {
         return nodeId;
@@ -151,5 +156,9 @@ public class TestNCServiceContext implements INCServiceContext {
     @Override
     public Object getApplicationContext() {
         return appCtx;
+    }
+
+    public void setApplicationContext(Object appCtx) {
+        this.appCtx = appCtx;
     }
 }

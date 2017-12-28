@@ -54,7 +54,7 @@ public class CCConfig extends ControllerConfig {
         CONSOLE_LISTEN_ADDRESS(STRING, ADDRESS),
         CONSOLE_LISTEN_PORT(INTEGER, 16001),
         HEARTBEAT_PERIOD(LONG, 10000L), // TODO (mblow): add time unit
-        HEARTBEAT_MAX_MISSES(INTEGER, 5),
+        HEARTBEAT_MAX_MISSES(INTEGER, 999),
         PROFILE_DUMP_PERIOD(INTEGER, 0),
         JOB_HISTORY_SIZE(INTEGER, 10),
         RESULT_TTL(LONG, 86400000L), // TODO(mblow): add time unit

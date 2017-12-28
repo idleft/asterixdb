@@ -61,6 +61,19 @@ public class TestUtils {
         }
     }
 
+    public static IHyracksTaskContext create(int frameSize, Object appCtx) {
+        try {
+            IOManager ioManager = createIoManager();
+            INCServiceContext serviceCtx = new TestNCServiceContext(ioManager, null, appCtx);
+            TestJobletContext jobletCtx = new TestJobletContext(frameSize, serviceCtx, new JobId(0));
+            TaskAttemptId tid = new TaskAttemptId(new TaskId(new ActivityId(new OperatorDescriptorId(0), 0), 0), 0);
+            IHyracksTaskContext taskCtx = new TestTaskContext(jobletCtx, tid);
+            return taskCtx;
+        } catch (HyracksException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static IOManager createIoManager() throws HyracksException {
         List<IODeviceHandle> devices = new ArrayList<>();
         devices.add(new IODeviceHandle(new File(System.getProperty("java.io.tmpdir")), "."));
