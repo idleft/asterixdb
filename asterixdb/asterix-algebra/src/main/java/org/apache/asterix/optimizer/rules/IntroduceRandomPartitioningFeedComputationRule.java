@@ -46,6 +46,9 @@ import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebraicRewriteRule {
 
@@ -125,9 +128,8 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             // set computation locations
             AssignOperator assignOp = (AssignOperator) op3;
             AssignPOperator assignPhyOp = (AssignPOperator) assignOp.getPhysicalOperator();
-            DefaultNodeGroupDomain computationNode = (DefaultNodeGroupDomain) domain;
-            String[] nodes = computationNode.getNodes();
-            assignPhyOp.setLocationConstraint(nodes);
+            assignPhyOp.setLocationConstraint(Arrays.asList(((DefaultNodeGroupDomain) domain).getNodes()[0]).stream()
+                    .distinct().toArray(String[]::new));
         }
         return true;
     }

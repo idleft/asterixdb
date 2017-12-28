@@ -44,8 +44,8 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         varCounter = new JObjects.JLong(0l);
         processedRecords = 0;
         evalutaionEtime = null;
-        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
-//                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
+//        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
+                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
                 + this.hashCode() + ".txt");
         //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
     }
@@ -66,31 +66,31 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
             System.out.println("Function time refreshed for " + this.hashCode());
             evalutaionEtime = Instant.now().plusSeconds(60);
         }
-        list.clear();
+//        list.clear();
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
-
-        String[] tokens = text.getValue().split(" ");
-        for (String tk : tokens) {
-            if (tk.startsWith("#")) {
-                JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
-                newField.setValue(tk);
-                list.add(newField);
-            }
-        }
-        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
-        long varStart = 0;
-
-        if (Instant.now().compareTo(evalutaionEtime) < 0) {
-            //            while (varStart < 520000000) { // this offers 20 tps
-            while (varStart < 8000000) {
-                //            while (varStart < 80000000) {
-                varStart++;
-            }
-            processedRecords++;
-        }
-        varCounter.setValue(varStart);
-        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
+//        JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
+//
+//        String[] tokens = text.getValue().split(" ");
+//        for (String tk : tokens) {
+//            if (tk.startsWith("#")) {
+//                JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
+//                newField.setValue(tk);
+//                list.add(newField);
+//            }
+//        }
+//        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
+//        long varStart = 0;
+//
+//        if (Instant.now().compareTo(evalutaionEtime) < 0) {
+//            //            while (varStart < 520000000) { // this offers 20 tps
+//            while (varStart < 8000000) {
+//                //            while (varStart < 80000000) {
+//                varStart++;
+//            }
+//            processedRecords++;
+//        }
+//        varCounter.setValue(varStart);
+//        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
         functionHelper.setResult(inputRecord);
     }
 
