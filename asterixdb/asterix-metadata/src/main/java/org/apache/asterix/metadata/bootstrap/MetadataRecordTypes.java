@@ -100,6 +100,7 @@ public final class MetadataRecordTypes {
     public static final String FIELD_NAME_VALUE = "Value";
     public static final String FIELD_NAME_WORKING_MEMORY_SIZE = "WorkingMemorySize";
     public static final String FIELD_NAME_APPLIED_FUNCTIONS = "AppliedFunctions";
+    public static final String FIELD_NAME_WHERE_CLAUSE = "WhereClause";
 
     //---------------------------------- Record Types Creation ----------------------------------//
     //--------------------------------------- Properties ----------------------------------------//
@@ -382,17 +383,19 @@ public final class MetadataRecordTypes {
     public static final int FEED_CONN_DATASET_NAME_FIELD_INDEX = 2;
     public static final int FEED_CONN_OUTPUT_TYPE_INDEX = 3;
     public static final int FEED_CONN_APPLIED_FUNCTIONS_FIELD_INDEX = 4;
-    public static final int FEED_CONN_POLICY_FIELD_INDEX = 5;
+    public static final int FEED_CONN_WHERE_CLAUSE_BODY_INDEX = 5;
+    public static final int FEED_CONN_POLICY_FIELD_INDEX = 6;
 
     public static final ARecordType FEED_CONNECTION_RECORDTYPE = createRecordType(
             // RecordTypeName
             RECORD_NAME_FEED_CONNECTION,
             // FieldNames
             new String[] { FIELD_NAME_DATAVERSE_NAME, FIELD_NAME_FEED_NAME, FIELD_NAME_DATASET_NAME,
-                    FIELD_NAME_RETURN_TYPE, FIELD_NAME_APPLIED_FUNCTIONS, FIELD_NAME_POLICY_NAME },
+                    FIELD_NAME_RETURN_TYPE, FIELD_NAME_APPLIED_FUNCTIONS, FIELD_NAME_WHERE_CLAUSE,
+                    FIELD_NAME_POLICY_NAME },
             // FieldTypes
             new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
-                    new AUnorderedListType(BuiltinType.ASTRING, null), BuiltinType.ASTRING },
+                    new AUnorderedListType(BuiltinType.ASTRING, null), BuiltinType.ASTRING, BuiltinType.ASTRING},
             //IsOpen?
             true);
 

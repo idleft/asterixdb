@@ -83,6 +83,8 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
                         .getStringValue();
         String outputType = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_OUTPUT_TYPE_INDEX))
                 .getStringValue();
+        String whereClauseBody = ((AString) feedConnRecord
+                .getValueByPos(MetadataRecordTypes.FEED_CONN_WHERE_CLAUSE_BODY_INDEX)).getStringValue();
         String policyName = ((AString) feedConnRecord.getValueByPos(MetadataRecordTypes.FEED_CONN_POLICY_FIELD_INDEX))
                 .getStringValue();
         ArrayList<FunctionSignature> appliedFunctions = null;
@@ -101,7 +103,8 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
             }
         }
 
-        return new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName, outputType);
+        return new FeedConnection(dataverseName, feedName, datasetName, appliedFunctions, policyName, whereClauseBody,
+                outputType);
     }
 
     @Override
@@ -152,6 +155,12 @@ public class FeedConnectionTupleTranslator extends AbstractTupleTranslator<FeedC
         // field: appliedFunctions
         fieldValue.reset();
         writeAppliedFunctionsField(recordBuilder, me, fieldValue);
+
+        // field: whereClauseBody
+        fieldValue.reset();
+        aString.setValue(me.getWhereClauseBody());
+        stringSerde.serialize(aString, fieldValue.getDataOutput());
+        recordBuilder.addField(MetadataRecordTypes.FEED_CONN_WHERE_CLAUSE_BODY_INDEX, fieldValue);
 
         // field: policyName
         fieldValue.reset();
