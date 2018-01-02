@@ -20,8 +20,10 @@ package org.apache.asterix.common.dataflow;
 
 import org.apache.asterix.common.api.IApplicationContext;
 import org.apache.asterix.common.api.IMetadataLockManager;
+import org.apache.asterix.common.api.INodeJobTracker;
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.cluster.IGlobalRecoveryManager;
+import org.apache.asterix.common.config.ExtensionProperties;
 import org.apache.asterix.common.context.IStorageComponentProvider;
 import org.apache.asterix.common.metadata.IMetadataBootstrap;
 import org.apache.asterix.common.replication.IFaultToleranceStrategy;
@@ -102,4 +104,21 @@ public interface ICcApplicationContext extends IApplicationContext {
      * @return the cluster state manager
      */
     IClusterStateManager getClusterStateManager();
+
+    /**
+     * Set the extension manager
+     *
+     * @param extensionManager
+     */
+    void setExtensionManager(Object extensionManager);
+
+    /**
+     * @return the extension properties
+     */
+    ExtensionProperties getExtensionProperties();
+
+    /**
+     * @return the node job tracker
+     */
+    INodeJobTracker getNodeJobTracker();
 }

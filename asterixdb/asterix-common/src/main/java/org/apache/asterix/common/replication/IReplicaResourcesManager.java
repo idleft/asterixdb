@@ -18,13 +18,19 @@
  */
 package org.apache.asterix.common.replication;
 
+import java.util.List;
 import java.util.Set;
+
+import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public interface IReplicaResourcesManager {
 
     /**
      * @param partitions
      * @return the minimum LSN of all indexes that belong to {@code partitions}.
+     * @throws HyracksDataException
      */
-    public long getPartitionsMinLSN(Set<Integer> partitions);
+    long getPartitionsMinLSN(Set<Integer> partitions) throws HyracksDataException;
+
+    List<String> getPartitionIndexesFiles(int partition, boolean relativePath) throws HyracksDataException;
 }

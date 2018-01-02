@@ -22,8 +22,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
@@ -46,10 +44,13 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.common.utils.TaskUtil;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
 import org.apache.hyracks.util.trace.ITracer;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
 
-    private static final Logger LOGGER = Logger.getLogger(FeedMetaStoreNodePushable.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     /** Runtime node pushable corresponding to the core feed operator **/
     private AbstractUnaryInputUnaryOutputOperatorNodePushable insertOperator;
@@ -123,7 +124,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
             initializeNewFeedRuntime(runtimeId);
             insertOperator.open();
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failed to open feed store operator", e);
+            LOGGER.log(Level.WARN, "Failed to open feed store operator", e);
             throw new HyracksDataException(e);
         }
     }
@@ -156,7 +157,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
             recordCounter += fta.getTupleCount();
             writer.nextFrame(buffer);
         } catch (Exception e) {
-            LOGGER.log(Level.WARNING, "Failure Processing a frame at store side", e);
+            LOGGER.log(Level.WARN, "Failure Processing a frame at store side", e);
             throw HyracksDataException.create(e);
         } finally {
             tracer.durationE(tid, traceCategory, null);

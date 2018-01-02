@@ -18,8 +18,6 @@
  */
 package org.apache.asterix.test.storage;
 
-import static org.apache.hyracks.storage.am.common.dataflow.IndexDropOperatorDescriptor.DropOption;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,6 +53,7 @@ import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.dataflow.std.file.ConstantFileSplitProvider;
 import org.apache.hyracks.storage.am.common.api.IIndexDataflowHelper;
 import org.apache.hyracks.storage.am.common.dataflow.IndexDataflowHelperFactory;
+import org.apache.hyracks.storage.am.common.dataflow.IndexDropOperatorDescriptor.DropOption;
 import org.apache.hyracks.storage.am.common.dataflow.IndexDropOperatorNodePushable;
 import org.apache.hyracks.storage.am.lsm.common.impls.NoMergePolicyFactory;
 import org.junit.After;
@@ -90,6 +89,12 @@ public class IndexDropOperatorNodePushableTest {
         TestHelper.deleteExistingInstanceFiles();
     }
 
+    /**
+     * Tests dropping a dataset using different
+     * drop options
+     *
+     * @throws Exception
+     */
     @Test
     public void dropOptionsTest() throws Exception {
         TestNodeController nc = new TestNodeController(null, false);
@@ -101,20 +106,61 @@ public class IndexDropOperatorNodePushableTest {
             Dataset dataset = new Dataset(DATAVERSE_NAME, DATASET_NAME, DATAVERSE_NAME, DATA_TYPE_NAME, NODE_GROUP_NAME,
                     NoMergePolicyFactory.NAME, null,
                     new InternalDatasetDetails(null, InternalDatasetDetails.PartitioningStrategy.HASH, partitioningKeys,
-                            null, null, null, false, null, false), null, DatasetConfig.DatasetType.INTERNAL, DATASET_ID,
-                    0);
+                            null, null, null, false, null),
+                    null, DatasetConfig.DatasetType.INTERNAL, DATASET_ID, 0);
             // create dataset
-            TestNodeController.PrimaryIndexInfo indexInfo =
-                    nc.createPrimaryIndex(dataset, KEY_TYPES, RECORD_TYPE, META_TYPE, null, storageManager, KEY_INDEXES,
-                            KEY_INDICATORS_LIST);
-            IndexDataflowHelperFactory helperFactory =
-                    new IndexDataflowHelperFactory(nc.getStorageManager(), indexInfo.getFileSplitProvider());
-            IHyracksTaskContext ctx = nc.createTestContext(true);
+            TestNodeController.PrimaryIndexInfo indexInfo = nc.createPrimaryIndex(dataset, KEY_TYPES, RECORD_TYPE,
+                    META_TYPE, null, storageManager, KEY_INDEXES, KEY_INDICATORS_LIST, 0);
+            IndexDataflowHelperFactory helperFactory = new IndexDataflowHelperFactory(nc.getStorageManager(),
+                    indexInfo.getFileSplitProvider());
+            JobId jobId = nc.newJobId();
+            IHyracksTaskContext ctx = nc.createTestContext(jobId, 0, true);
             IIndexDataflowHelper dataflowHelper = helperFactory.create(ctx.getJobletContext().getServiceContext(), 0);
             dropInUse(ctx, helperFactory, dataflowHelper);
             dropInUseWithWait(ctx, helperFactory, dataflowHelper);
             dropNonExisting(ctx, helperFactory);
             dropNonExistingWithIfExists(ctx, helperFactory);
+        } finally {
+            nc.deInit();
+        }
+    }
+
+    /**
+     * Tests dropping an index whose dataset has no active
+     * operations
+     *
+     * @throws Exception
+     */
+    @Test
+    public void dropIndexInUseTest() throws Exception {
+        TestNodeController nc = new TestNodeController(null, false);
+        try {
+            nc.init();
+            String datasetName = "ds";
+            String indexName = "fooIdx";
+            // create dataset and index
+            final TestCaseContext.OutputFormat format = TestCaseContext.OutputFormat.CLEAN_JSON;
+            testExecutor.executeSqlppUpdateOrDdl("CREATE TYPE KeyType AS { id: int, foo: int };", format);
+            testExecutor.executeSqlppUpdateOrDdl("CREATE DATASET " + datasetName + "(KeyType) PRIMARY KEY id;", format);
+            testExecutor.executeSqlppUpdateOrDdl("CREATE INDEX " + indexName + " on " + datasetName + "(foo)", format);
+            final MetadataTransactionContext mdTxn = MetadataManager.INSTANCE.beginTransaction();
+            ICcApplicationContext appCtx = (ICcApplicationContext) ExecutionTestUtil.integrationUtil
+                    .getClusterControllerService().getApplicationContext();
+            MetadataProvider metadataProver = new MetadataProvider(appCtx, null);
+            metadataProver.setMetadataTxnContext(mdTxn);
+            final String defaultDv = MetadataBuiltinEntities.DEFAULT_DATAVERSE.getDataverseName();
+            final Dataset dataset = MetadataManager.INSTANCE.getDataset(mdTxn, defaultDv, datasetName);
+            MetadataManager.INSTANCE.commitTransaction(mdTxn);
+            FileSplit[] splits = SplitsAndConstraintsUtil.getIndexSplits(appCtx.getClusterStateManager(), dataset,
+                    indexName, Arrays.asList("asterix_nc1"));
+            final ConstantFileSplitProvider constantFileSplitProvider = new ConstantFileSplitProvider(
+                    Arrays.copyOfRange(splits, 0, 1));
+            IndexDataflowHelperFactory helperFactory = new IndexDataflowHelperFactory(nc.getStorageManager(),
+                    constantFileSplitProvider);
+            JobId jobId = nc.newJobId();
+            IHyracksTaskContext ctx = nc.createTestContext(jobId, 0, true);
+            IIndexDataflowHelper dataflowHelper = helperFactory.create(ctx.getJobletContext().getServiceContext(), 0);
+            dropInUse(ctx, helperFactory, dataflowHelper);
         } finally {
             nc.deInit();
         }
@@ -126,8 +172,8 @@ public class IndexDropOperatorNodePushableTest {
         // open the index to make it in-use
         dataflowHelper.open();
         // try to drop in-use index (should fail)
-        IndexDropOperatorNodePushable dropInUseOp =
-                new IndexDropOperatorNodePushable(helperFactory, EnumSet.noneOf(DropOption.class), ctx, 0);
+        IndexDropOperatorNodePushable dropInUseOp = new IndexDropOperatorNodePushable(helperFactory,
+                EnumSet.noneOf(DropOption.class), ctx, 0);
         try {
             dropInUseOp.initialize();
         } catch (HyracksDataException e) {
@@ -166,8 +212,8 @@ public class IndexDropOperatorNodePushableTest {
     private void dropNonExisting(IHyracksTaskContext ctx, IndexDataflowHelperFactory helperFactory) throws Exception {
         dropFailed.set(false);
         // Dropping non-existing index
-        IndexDropOperatorNodePushable dropNonExistingOp =
-                new IndexDropOperatorNodePushable(helperFactory, EnumSet.noneOf(DropOption.class), ctx, 0);
+        IndexDropOperatorNodePushable dropNonExistingOp = new IndexDropOperatorNodePushable(helperFactory,
+                EnumSet.noneOf(DropOption.class), ctx, 0);
         try {
             dropNonExistingOp.initialize();
         } catch (HyracksDataException e) {
@@ -182,8 +228,8 @@ public class IndexDropOperatorNodePushableTest {
             throws Exception {
         // Dropping non-existing index with if exists option should be successful
         dropFailed.set(false);
-        IndexDropOperatorNodePushable dropNonExistingWithIfExistsOp =
-                new IndexDropOperatorNodePushable(helperFactory, EnumSet.of(DropOption.IF_EXISTS), ctx, 0);
+        IndexDropOperatorNodePushable dropNonExistingWithIfExistsOp = new IndexDropOperatorNodePushable(helperFactory,
+                EnumSet.of(DropOption.IF_EXISTS), ctx, 0);
         try {
             dropNonExistingWithIfExistsOp.initialize();
         } catch (HyracksDataException e) {

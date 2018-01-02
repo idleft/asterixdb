@@ -20,54 +20,37 @@ package org.apache.asterix.replication.storage;
 
 import java.io.DataInput;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-
-import org.apache.asterix.common.utils.StoragePathUtil;
+import java.nio.file.Paths;
 
 public class LSMIndexFileProperties {
 
-    private String fileName;
     private long fileSize;
     private String nodeId;
-    private String dataverse;
-    private String idxName;
     private boolean lsmComponentFile;
     private String filePath;
     private boolean requiresAck = false;
-    private long LSNByteOffset;
-    private int partition;
 
     public LSMIndexFileProperties() {
     }
 
     public LSMIndexFileProperties(String filePath, long fileSize, String nodeId, boolean lsmComponentFile,
-            long LSNByteOffset, boolean requiresAck) {
-        initialize(filePath, fileSize, nodeId, lsmComponentFile, LSNByteOffset, requiresAck);
+            boolean requiresAck) {
+        initialize(filePath, fileSize, nodeId, lsmComponentFile, requiresAck);
     }
 
     public LSMIndexFileProperties(LSMComponentProperties lsmComponentProperties) {
-        initialize(lsmComponentProperties.getComponentId(), -1, lsmComponentProperties.getNodeId(), false, -1L, false);
+        initialize(lsmComponentProperties.getComponentId(), -1, lsmComponentProperties.getNodeId(), false, false);
     }
 
-    public void initialize(String filePath, long fileSize, String nodeId, boolean lsmComponentFile, long LSNByteOffset,
+    public void initialize(String filePath, long fileSize, String nodeId, boolean lsmComponentFile,
             boolean requiresAck) {
         this.filePath = filePath;
         this.fileSize = fileSize;
         this.nodeId = nodeId;
         this.lsmComponentFile = lsmComponentFile;
-        this.LSNByteOffset = LSNByteOffset;
         this.requiresAck = requiresAck;
-    }
-
-    public void splitFileName() {
-        String[] tokens = filePath.split(File.separator);
-        int arraySize = tokens.length;
-        this.fileName = tokens[arraySize - 1];
-        this.idxName = tokens[arraySize - 2];
-        this.dataverse = tokens[arraySize - 3];
-        this.partition = StoragePathUtil.getPartitionNumFromName(tokens[arraySize - 4]);
     }
 
     public void serialize(OutputStream out) throws IOException {
@@ -76,7 +59,6 @@ public class LSMIndexFileProperties {
         dos.writeUTF(filePath);
         dos.writeLong(fileSize);
         dos.writeBoolean(lsmComponentFile);
-        dos.writeLong(LSNByteOffset);
         dos.writeBoolean(requiresAck);
     }
 
@@ -85,10 +67,9 @@ public class LSMIndexFileProperties {
         String filePath = input.readUTF();
         long fileSize = input.readLong();
         boolean lsmComponentFile = input.readBoolean();
-        long LSNByteOffset = input.readLong();
         boolean requiresAck = input.readBoolean();
-        LSMIndexFileProperties fileProp = new LSMIndexFileProperties(filePath, fileSize, nodeId, lsmComponentFile,
-                LSNByteOffset, requiresAck);
+        LSMIndexFileProperties fileProp =
+                new LSMIndexFileProperties(filePath, fileSize, nodeId, lsmComponentFile, requiresAck);
         return fileProp;
     }
 
@@ -100,24 +81,8 @@ public class LSMIndexFileProperties {
         return fileSize;
     }
 
-    public String getFileName() {
-        return fileName;
-    }
-
     public String getNodeId() {
         return nodeId;
-    }
-
-    public String getDataverse() {
-        return dataverse;
-    }
-
-    public void setDataverse(String dataverse) {
-        this.dataverse = dataverse;
-    }
-
-    public String getIdxName() {
-        return idxName;
     }
 
     public boolean isLSMComponentFile() {
@@ -128,25 +93,17 @@ public class LSMIndexFileProperties {
         return requiresAck;
     }
 
+    public String getFileName() {
+        return Paths.get(filePath).toFile().getName();
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("File Name: " + fileName + "  ");
+        sb.append("File Path: " + filePath + "  ");
         sb.append("File Size: " + fileSize + "  ");
         sb.append("Node ID: " + nodeId + "  ");
-        sb.append("Partition: " + partition + "  ");
-        sb.append("IDX Name: " + idxName + "  ");
         sb.append("isLSMComponentFile : " + lsmComponentFile + "  ");
-        sb.append("Dataverse: " + dataverse);
-        sb.append("LSN Byte Offset: " + LSNByteOffset);
         return sb.toString();
-    }
-
-    public long getLSNByteOffset() {
-        return LSNByteOffset;
-    }
-
-    public int getPartition() {
-        return partition;
     }
 }

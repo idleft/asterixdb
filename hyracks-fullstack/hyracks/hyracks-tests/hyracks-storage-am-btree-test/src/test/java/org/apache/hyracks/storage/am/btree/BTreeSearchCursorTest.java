@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
 import java.util.TreeSet;
-import java.util.logging.Level;
 
 import org.apache.hyracks.api.dataflow.value.IBinaryComparator;
 import org.apache.hyracks.api.dataflow.value.IBinaryComparatorFactory;
@@ -56,6 +55,7 @@ import org.apache.hyracks.storage.am.common.api.ITreeIndexFrameFactory;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexMetadataFrameFactory;
 import org.apache.hyracks.storage.am.common.frames.LIFOMetaDataFrameFactory;
 import org.apache.hyracks.storage.am.common.freepage.LinkedMetaDataPageManager;
+import org.apache.hyracks.storage.am.common.impls.IndexAccessParameters;
 import org.apache.hyracks.storage.common.MultiComparator;
 import org.apache.hyracks.storage.common.buffercache.IBufferCache;
 import org.junit.Assert;
@@ -80,7 +80,7 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
 
     @Test
     public void uniqueIndexTest() throws Exception {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("TESTING RANGE SEARCH CURSOR ON UNIQUE INDEX");
         }
 
@@ -107,8 +107,9 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
         ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(fieldCount);
         ArrayTupleReference tuple = new ArrayTupleReference();
 
-        ITreeIndexAccessor indexAccessor =
-                btree.createAccessor(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        IndexAccessParameters actx =
+                new IndexAccessParameters(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        ITreeIndexAccessor indexAccessor = btree.createAccessor(actx);
 
         // generate keys
         int numKeys = 50;
@@ -155,7 +156,7 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
 
     @Test
     public void nonUniqueIndexTest() throws Exception {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("TESTING RANGE SEARCH CURSOR ON NONUNIQUE INDEX");
         }
 
@@ -183,8 +184,9 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
         ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(fieldCount);
         ArrayTupleReference tuple = new ArrayTupleReference();
 
-        ITreeIndexAccessor indexAccessor =
-                btree.createAccessor(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        IndexAccessParameters actx =
+                new IndexAccessParameters(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        ITreeIndexAccessor indexAccessor = btree.createAccessor(actx);
 
         // generate keys
         int numKeys = 50;
@@ -228,7 +230,7 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
 
     @Test
     public void nonUniqueFieldPrefixIndexTest() throws Exception {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("TESTING RANGE SEARCH CURSOR ON NONUNIQUE FIELD-PREFIX COMPRESSED INDEX");
         }
 
@@ -256,8 +258,9 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
         ArrayTupleBuilder tupleBuilder = new ArrayTupleBuilder(fieldCount);
         ArrayTupleReference tuple = new ArrayTupleReference();
 
-        ITreeIndexAccessor indexAccessor =
-                btree.createAccessor(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        IndexAccessParameters actx =
+                new IndexAccessParameters(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+        ITreeIndexAccessor indexAccessor = btree.createAccessor(actx);
 
         // generate keys
         int numKeys = 50;
@@ -357,8 +360,9 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
 
                 ITreeIndexCursor rangeCursor = new BTreeRangeSearchCursor(leafFrame, false);
                 RangePredicate rangePred = createRangePredicate(lowKey, highKey, lowKeyInclusive, highKeyInclusive);
-                ITreeIndexAccessor indexAccessor =
-                        btree.createAccessor(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+                IndexAccessParameters actx =
+                        new IndexAccessParameters(TestOperationCallback.INSTANCE, TestOperationCallback.INSTANCE);
+                ITreeIndexAccessor indexAccessor = btree.createAccessor(actx);
                 indexAccessor.search(rangeCursor, rangePred);
 
                 try {
@@ -395,14 +399,14 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
                             u = ')';
                         }
 
-                        if (LOGGER.isLoggable(Level.INFO)) {
+                        if (LOGGER.isInfoEnabled()) {
                             LOGGER.info("RANGE: " + l + " " + lowKey + " , " + highKey + " " + u);
                         }
                         StringBuilder strBuilder = new StringBuilder();
                         for (Integer r : expectedResults) {
                             strBuilder.append(r + " ");
                         }
-                        if (LOGGER.isLoggable(Level.INFO)) {
+                        if (LOGGER.isInfoEnabled()) {
                             LOGGER.info(strBuilder.toString());
                         }
                     }
@@ -411,7 +415,7 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
                 if (results.size() == expectedResults.size()) {
                     for (int k = 0; k < results.size(); k++) {
                         if (!results.get(k).equals(expectedResults.get(k))) {
-                            if (LOGGER.isLoggable(Level.INFO)) {
+                            if (LOGGER.isInfoEnabled()) {
                                 LOGGER.info("DIFFERENT RESULTS AT: i=" + i + " j=" + j + " k=" + k);
                                 LOGGER.info(results.get(k) + " " + expectedResults.get(k));
                             }
@@ -419,7 +423,7 @@ public class BTreeSearchCursorTest extends AbstractBTreeTest {
                         }
                     }
                 } else {
-                    if (LOGGER.isLoggable(Level.INFO)) {
+                    if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("UNEQUAL NUMBER OF RESULTS AT: i=" + i + " j=" + j);
                         LOGGER.info("RESULTS: " + results.size());
                         LOGGER.info("EXPECTED RESULTS: " + expectedResults.size());

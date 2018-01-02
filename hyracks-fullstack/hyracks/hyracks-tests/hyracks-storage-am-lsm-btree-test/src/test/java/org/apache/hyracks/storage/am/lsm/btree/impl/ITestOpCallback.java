@@ -18,8 +18,8 @@
  */
 package org.apache.hyracks.storage.am.lsm.btree.impl;
 
-import java.util.concurrent.Semaphore;
+public interface ITestOpCallback<T> {
+    void before(T t);
 
-public interface ITestOpCallback {
-    void callback(Semaphore smeaphore);
+    void after();
 }

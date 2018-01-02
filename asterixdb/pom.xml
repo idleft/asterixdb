@@ -46,11 +46,15 @@
     <file.encoding>UTF-8</file.encoding>
     <jvm.extraargs />
     <jdk.version>1.8</jdk.version>
+    <javac.xlint.value>all</javac.xlint.value>
     <runSlowAQLTests>false</runSlowAQLTests>
     <appendedResourcesDirectory>${basedir}/src/main/appended-resources</appendedResourcesDirectory>
     <sonar.jacoco.reportPath>${env.PWD}/target/jacoco-merged.exec</sonar.jacoco.reportPath>
     <debug.suspend.flag>n</debug.suspend.flag>
+    <skipTests>false</skipTests>
+    <maven.test.skip>false</maven.test.skip>
     <skip.surefire.tests>${skipTests}</skip.surefire.tests>
+    <skip.testResources>${maven.test.skip}</skip.testResources>
 
     <!-- Definition of tests in various categories which may be excluded -->
     <repeated.tests>**/RepeatedTest.java</repeated.tests>
@@ -90,6 +94,7 @@
             -enableassertions -Xmx${test.heap.size}m
             -Dfile.encoding=UTF-8
             -Djava.util.logging.config.file=${user.home}/logging.properties
+            -Dlog4j.configurationFile=${basedir}/../asterix-app/src/test/resources/log4j2-test.xml
             -DrunSlowAQLTests=${runSlowAQLTests}
             -Xdebug
             -Xrunjdwp:transport=dt_socket,server=y,address=8000,suspend=${debug.suspend.flag}
@@ -146,10 +151,10 @@
           <excludes combine.children="append">
             <exclude>src/main/licenses/**</exclude>
             <exclude>**/*.iml</exclude>
+            <exclude>**/*.json</exclude>
             <exclude>**/*.adm</exclude>
-            <exclude>asterix-experiments/**</exclude> <!-- in case -DskipExperiments -->
+            <exclude>**/*.template</exclude>
             <exclude>asterix-installer/**</exclude> <!-- in case -DskipInstaller -->
-            <exclude>asterix-yarn/**</exclude> <!-- in case -DskipYarn -->
           </excludes>
         </configuration>
       </plugin>
@@ -159,7 +164,7 @@
         <configuration>
           <source>${jdk.version}</source>
           <target>${jdk.version}</target>
-          <compilerArgument>-Xlint:all</compilerArgument>
+          <compilerArgument>-Xlint:${javac.xlint.value}</compilerArgument>
         </configuration>
       </plugin>
       <plugin>
@@ -241,6 +246,21 @@
             <goals>
               <goal>analyze-only</goal>
             </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>default-testResources</id>
+            <goals>
+              <goal>testResources</goal>
+            </goals>
+            <configuration>
+              <skip>${skip.testResources}</skip>
+            </configuration>
           </execution>
         </executions>
       </plugin>
@@ -402,6 +422,9 @@
           <groupId>org.apache.hyracks</groupId>
           <artifactId>license-automation-plugin</artifactId>
           <version>${hyracks.version}</version>
+          <configuration>
+            <argLine>-Xmx2048m</argLine>
+          </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -462,6 +485,11 @@
           <groupId>pl.project13.maven</groupId>
           <artifactId>git-commit-id-plugin</artifactId>
           <version>2.2.3</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>javacc-maven-plugin</artifactId>
+          <version>2.6</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -658,39 +686,6 @@
         </plugins>
       </build>
     </profile>
-    <profile>
-      <id>include-managix</id>
-      <activation>
-        <property>
-          <name>!skipManagix</name>
-        </property>
-      </activation>
-      <modules>
-        <module>asterix-installer</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>include-yarn</id>
-      <activation>
-        <property>
-          <name>!skipYarn</name>
-        </property>
-      </activation>
-      <modules>
-        <module>asterix-yarn</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>include-experiments</id>
-      <activation>
-        <property>
-          <name>!skipExperiments</name>
-        </property>
-      </activation>
-      <modules>
-        <module>asterix-experiments</module>
-      </modules>
-    </profile>
   </profiles>
 
   <modules>
@@ -711,7 +706,6 @@
     <module>asterix-test-framework</module>
     <module>asterix-maven-plugins</module>
     <module>asterix-server</module>
-    <module>asterix-events</module>
     <module>asterix-doc</module>
     <module>asterix-fuzzyjoin</module>
     <module>asterix-replication</module>
@@ -725,19 +719,31 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
+        <groupId>org.apache.hyracks</groupId>
+        <artifactId>apache-hyracks</artifactId>
+        <version>${hyracks.version}</version>
+        <type>pom</type>
+        <scope>import</scope>
+      </dependency>
+      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-simple</artifactId>
         <version>1.7.5</version>
       </dependency>
       <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.12</version>
-      </dependency>
-      <dependency>
         <groupId>org.apache.maven</groupId>
         <artifactId>maven-plugin-api</artifactId>
         <version>3.3.9</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-model</artifactId>
+        <version>3.3.9</version>
+      </dependency>
+      <dependency>
+        <groupId>org.apache.maven</groupId>
+        <artifactId>maven-project</artifactId>
+        <version>2.2.1</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
@@ -815,14 +821,19 @@
         </exclusions>
       </dependency>
       <dependency>
+        <groupId>org.apache.commons</groupId>
+        <artifactId>commons-compress</artifactId>
+        <version>1.15</version>
+      </dependency>
+      <dependency>
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging-api</artifactId>
-        <version>1.0.4</version>
+        <version>1.1</version>
       </dependency>
       <dependency>
         <groupId>commons-logging</groupId>
         <artifactId>commons-logging</artifactId>
-        <version>1.1.1</version>
+        <version>1.2</version>
       </dependency>
       <dependency>
         <groupId>org.apache.hive.shims</groupId>
@@ -1023,66 +1034,6 @@
         <artifactId>hyracks-storage-am-lsm-btree-test</artifactId>
         <version>${hyracks.version}</version>
         <type>test-jar</type>
-      </dependency>
-      <dependency>
-        <groupId>commons-io</groupId>
-        <artifactId>commons-io</artifactId>
-        <version>2.5</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>2.5</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.5</version>
-      </dependency>
-      <dependency>
-        <groupId>xerces</groupId>
-        <artifactId>xercesImpl</artifactId>
-        <version>2.11.0</version>
-      </dependency>
-      <dependency>
-        <groupId>args4j</groupId>
-        <artifactId>args4j</artifactId>
-        <version>2.33</version>
-      </dependency>
-      <dependency>
-        <groupId>io.netty</groupId>
-        <artifactId>netty-all</artifactId>
-        <version>4.1.6.Final</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpclient</artifactId>
-        <version>4.5.2</version>
-      </dependency>
-      <dependency>
-        <groupId>org.apache.httpcomponents</groupId>
-        <artifactId>httpcore</artifactId>
-        <version>4.4.5</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>2.8.4</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>2.8.4</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>2.8.4</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.guava</groupId>
-        <artifactId>guava</artifactId>
-        <version>18.0</version>
       </dependency>
       <dependency>
         <groupId>com.rometools</groupId>

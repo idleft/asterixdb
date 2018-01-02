@@ -25,58 +25,61 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.asterix.common.api.IDatasetLifecycleManager;
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.common.cluster.ClusterPartition;
-import org.apache.asterix.common.config.ClusterProperties;
 import org.apache.asterix.common.config.ReplicationProperties;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.replication.IRemoteRecoveryManager;
 import org.apache.asterix.common.replication.IReplicationManager;
+import org.apache.asterix.common.replication.IReplicationStrategy;
+import org.apache.asterix.common.replication.Replica;
 import org.apache.asterix.common.transactions.ILogManager;
 import org.apache.asterix.common.transactions.IRecoveryManager;
 import org.apache.asterix.replication.storage.ReplicaResourcesManager;
 import org.apache.asterix.transaction.management.resource.PersistentLocalResourceRepository;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class RemoteRecoveryManager implements IRemoteRecoveryManager {
 
     private final IReplicationManager replicationManager;
-    private static final Logger LOGGER = Logger.getLogger(RemoteRecoveryManager.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
     private final INcApplicationContext runtimeContext;
     private final ReplicationProperties replicationProperties;
     private Map<String, Set<String>> failbackRecoveryReplicas;
+    private IReplicationStrategy replicationStrategy;
 
     public RemoteRecoveryManager(IReplicationManager replicationManager, INcApplicationContext runtimeContext,
             ReplicationProperties replicationProperties) {
         this.replicationManager = replicationManager;
         this.runtimeContext = runtimeContext;
         this.replicationProperties = replicationProperties;
+        this.replicationStrategy = replicationManager.getReplicationStrategy();
     }
 
     private Map<String, Set<String>> constructRemoteRecoveryPlan() {
         //1. identify which replicas reside in this node
         String localNodeId = runtimeContext.getTransactionSubsystem().getId();
 
-        Set<String> nodes = replicationProperties.getNodeReplicasIds(localNodeId);
+        Set<Replica> replicas = replicationStrategy.getRemoteReplicasAndSelf(localNodeId);
         Map<String, Set<String>> recoveryCandidates = new HashMap<>();
         Map<String, Integer> candidatesScore = new HashMap<>();
 
         //2. identify which nodes has backup per lost node data
-        for (String node : nodes) {
-            Set<String> locations = replicationProperties.getNodeReplicasIds(node);
+        for (Replica node : replicas) {
+            Set<Replica> locations = replicationStrategy.getRemoteReplicasAndSelf(node.getId());
 
             //since the local node just started, remove it from candidates
-            locations.remove(localNodeId);
+            locations.remove(new Replica(localNodeId, "", -1));
 
             //remove any dead replicas
             Set<String> deadReplicas = replicationManager.getDeadReplicasIds();
             for (String deadReplica : deadReplicas) {
-                locations.remove(deadReplica);
+                locations.remove(new Replica(deadReplica, "", -1));
             }
 
             //no active replicas to recover from
@@ -84,14 +87,15 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
                 throw new IllegalStateException("Could not find any ACTIVE replica to recover " + node + " data.");
             }
 
-            for (String location : locations) {
+            for (Replica locationRep : locations) {
+                String location = locationRep.getId();
                 if (candidatesScore.containsKey(location)) {
                     candidatesScore.put(location, candidatesScore.get(location) + 1);
                 } else {
                     candidatesScore.put(location, 1);
                 }
             }
-            recoveryCandidates.put(node, locations);
+            recoveryCandidates.put(node.getId(), locations.stream().map(Replica::getId).collect(Collectors.toSet()));
         }
 
         Map<String, Set<String>> recoveryList = new HashMap<>();
@@ -155,8 +159,8 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
         replayReplicaPartitionLogs(partitionsToTakeover, false);
 
         //mark these partitions as active in this node
-        PersistentLocalResourceRepository resourceRepository =
-                (PersistentLocalResourceRepository) runtimeContext.getLocalResourceRepository();
+        PersistentLocalResourceRepository resourceRepository = (PersistentLocalResourceRepository) runtimeContext
+                .getLocalResourceRepository();
         for (Integer patitionId : partitions) {
             resourceRepository.addActivePartition(patitionId);
         }
@@ -165,8 +169,8 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
     @Override
     public void startFailbackProcess() {
         int maxRecoveryAttempts = replicationProperties.getMaxRemoteRecoveryAttempts();
-        PersistentLocalResourceRepository resourceRepository =
-                (PersistentLocalResourceRepository) runtimeContext.getLocalResourceRepository();
+        PersistentLocalResourceRepository resourceRepository = (PersistentLocalResourceRepository) runtimeContext
+                .getLocalResourceRepository();
         IDatasetLifecycleManager datasetLifeCycleManager = runtimeContext.getDatasetLifecycleManager();
         Map<String, ClusterPartition[]> nodePartitions = runtimeContext.getMetadataProperties().getNodePartitions();
 
@@ -191,8 +195,7 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
                 datasetLifeCycleManager.closeAllDatasets();
 
                 //3. remove any existing storage data and initialize storage metadata
-                resourceRepository.deleteStorageData(true);
-                resourceRepository.initializeNewUniverse(ClusterProperties.INSTANCE.getStorageDirectoryName());
+                resourceRepository.deleteStorageData();
 
                 //4. select remote replicas to recover from per lost replica data
                 failbackRecoveryReplicas = constructRemoteRecoveryPlan();
@@ -212,9 +215,7 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
                 }
                 break;
             } catch (IOException e) {
-                if (LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.log(Level.WARNING, "Failed during remote recovery. Attempting again...", e);
-                }
+                LOGGER.warn("Failed during remote recovery. Attempting again...", e);
                 maxRecoveryAttempts--;
             }
         }
@@ -223,8 +224,8 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
     @Override
     public void completeFailbackProcess() throws IOException, InterruptedException {
         ILogManager logManager = runtimeContext.getTransactionSubsystem().getLogManager();
-        ReplicaResourcesManager replicaResourcesManager =
-                (ReplicaResourcesManager) runtimeContext.getReplicaResourcesManager();
+        ReplicaResourcesManager replicaResourcesManager = (ReplicaResourcesManager) runtimeContext
+                .getReplicaResourcesManager();
         Map<String, ClusterPartition[]> nodePartitions = runtimeContext.getMetadataProperties().getNodePartitions();
 
         /*
@@ -255,9 +256,7 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
              * in case of failure during failback completion process we need to construct a new plan
              * and get all the files from the start since the remote replicas will change in the new plan.
              */
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.log(Level.WARNING, "Failed during completing failback. Restarting failback process...", e);
-            }
+            LOGGER.warn("Failed during completing failback. Restarting failback process...", e);
             startFailbackProcess();
         }
 
@@ -278,8 +277,8 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
     @Override
     public void doRemoteRecoveryPlan(Map<String, Set<Integer>> recoveryPlan) throws HyracksDataException {
         int maxRecoveryAttempts = replicationProperties.getMaxRemoteRecoveryAttempts();
-        PersistentLocalResourceRepository resourceRepository =
-                (PersistentLocalResourceRepository) runtimeContext.getLocalResourceRepository();
+        PersistentLocalResourceRepository resourceRepository = (PersistentLocalResourceRepository) runtimeContext
+                .getLocalResourceRepository();
         IDatasetLifecycleManager datasetLifeCycleManager = runtimeContext.getDatasetLifecycleManager();
         ILogManager logManager = runtimeContext.getTransactionSubsystem().getLogManager();
         while (true) {
@@ -295,8 +294,7 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
                 datasetLifeCycleManager.closeAllDatasets();
 
                 //2. remove any existing storage data and initialize storage metadata
-                resourceRepository.deleteStorageData(true);
-                resourceRepository.initializeNewUniverse(ClusterProperties.INSTANCE.getStorageDirectoryName());
+                resourceRepository.deleteStorageData();
 
                 /*** Start Recovery Per Lost Replica ***/
                 for (Entry<String, Set<Integer>> remoteReplica : recoveryPlan.entrySet()) {
@@ -314,9 +312,7 @@ public class RemoteRecoveryManager implements IRemoteRecoveryManager {
                 logManager.renewLogFilesAndStartFromLSN(maxRemoteLSN);
                 break;
             } catch (IOException e) {
-                if (LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.log(Level.WARNING, "Failed during remote recovery. Attempting again...", e);
-                }
+                LOGGER.warn("Failed during remote recovery. Attempting again...", e);
                 maxRecoveryAttempts--;
             }
         }

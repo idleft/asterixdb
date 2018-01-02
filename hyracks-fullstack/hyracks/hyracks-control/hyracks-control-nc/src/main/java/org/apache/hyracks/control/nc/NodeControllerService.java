@@ -29,6 +29,7 @@ import java.lang.management.RuntimeMXBean;
 import java.lang.management.ThreadMXBean;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -53,7 +52,9 @@ import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.api.io.IODeviceHandle;
 import org.apache.hyracks.api.job.ActivityClusterGraph;
+import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.JobParameterByteStore;
 import org.apache.hyracks.api.lifecycle.ILifeCycleComponentManager;
 import org.apache.hyracks.api.lifecycle.LifeCycleComponentManager;
 import org.apache.hyracks.api.service.IControllerService;
@@ -92,10 +93,13 @@ import org.apache.hyracks.util.ExitUtil;
 import org.apache.hyracks.util.PidHelper;
 import org.apache.hyracks.util.trace.ITracer;
 import org.apache.hyracks.util.trace.Tracer;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.kohsuke.args4j.CmdLineException;
 
 public class NodeControllerService implements IControllerService {
-    private static final Logger LOGGER = Logger.getLogger(NodeControllerService.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final double MEMORY_FUDGE_FACTOR = 0.8;
     private static final long ONE_SECOND_NANOS = TimeUnit.SECONDS.toNanos(1);
@@ -128,7 +132,9 @@ public class NodeControllerService implements IControllerService {
 
     private final Map<JobId, Joblet> jobletMap;
 
-    private final Map<JobId, ActivityClusterGraph> preDistributedJobs;
+    private final Map<Long, ActivityClusterGraph> deployedJobSpecActivityClusterGraphMap;
+
+    private final Map<JobId, JobParameterByteStore> jobParameterByteStoreMap = new HashMap<>();
 
     private ExecutorService executor;
 
@@ -191,7 +197,7 @@ public class NodeControllerService implements IControllerService {
             throw new HyracksException("id not set");
         }
         lccm = new LifeCycleComponentManager();
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Setting uncaught exception handler " + getLifeCycleComponentManager());
         }
         // Set shutdown hook before so it doesn't have the same uncaught exception handler
@@ -202,7 +208,7 @@ public class NodeControllerService implements IControllerService {
 
         workQueue = new WorkQueue(id, Thread.NORM_PRIORITY); // Reserves MAX_PRIORITY of the heartbeat thread.
         jobletMap = new Hashtable<>();
-        preDistributedJobs = new Hashtable<>();
+        deployedJobSpecActivityClusterGraphMap = new Hashtable<>();
         timer = new Timer(true);
         serverCtx = new ServerContext(ServerContext.ServerType.NODE_CONTROLLER,
                 new File(new File(NodeControllerService.class.getName()), id));
@@ -300,7 +306,7 @@ public class NodeControllerService implements IControllerService {
                         try {
                             registerNode();
                         } catch (Exception e) {
-                            LOGGER.log(Level.WARNING, "Failed Registering with cc", e);
+                            LOGGER.log(Level.WARN, "Failed Registering with cc", e);
                             throw new IPCException(e);
                         }
                     }
@@ -356,7 +362,7 @@ public class NodeControllerService implements IControllerService {
             }
         }
         if (registrationException != null) {
-            LOGGER.log(Level.WARNING, "Registering with Cluster Controller failed with exception",
+            LOGGER.log(Level.WARN, "Registering with Cluster Controller failed with exception",
                     registrationException);
             throw registrationException;
         }
@@ -385,7 +391,7 @@ public class NodeControllerService implements IControllerService {
             application.preStop();
             executor.shutdownNow();
             if (!executor.awaitTermination(10, TimeUnit.SECONDS)) {
-                LOGGER.log(Level.SEVERE, "Some jobs failed to exit, continuing with abnormal shutdown");
+                LOGGER.log(Level.ERROR, "Some jobs failed to exit, continuing with abnormal shutdown");
             }
             partitionManager.close();
             datasetPartitionManager.close();
@@ -404,9 +410,16 @@ public class NodeControllerService implements IControllerService {
                 heartbeatThread.interrupt();
                 heartbeatThread.join(1000); // give it 1s to stop gracefully
             }
+            try {
+                ccs.notifyShutdown(id);
+            } catch (Exception e) {
+                LOGGER.log(Level.WARN, "Exception notifying CC of shutdown", e);
+            }
+            ipc.stop();
+
             LOGGER.log(Level.INFO, "Stopped NodeControllerService");
         } else {
-            LOGGER.log(Level.SEVERE, "Duplicate shutdown call; original: " + Arrays.toString(shutdownCallStack),
+            LOGGER.log(Level.ERROR, "Duplicate shutdown call; original: " + Arrays.toString(shutdownCallStack),
                     new Exception("Duplicate shutdown call"));
         }
     }
@@ -423,28 +436,43 @@ public class NodeControllerService implements IControllerService {
         return jobletMap;
     }
 
-    public void storeActivityClusterGraph(JobId jobId, ActivityClusterGraph acg) throws HyracksException {
-        if (preDistributedJobs.get(jobId) != null) {
-            throw HyracksException.create(ErrorCode.DUPLICATE_DISTRIBUTED_JOB, jobId);
-        }
-        preDistributedJobs.put(jobId, acg);
+    public void removeJobParameterByteStore(JobId jobId) {
+        jobParameterByteStoreMap.remove(jobId);
     }
 
-    public void removeActivityClusterGraph(JobId jobId) throws HyracksException {
-        if (preDistributedJobs.get(jobId) == null) {
-            throw HyracksException.create(ErrorCode.ERROR_FINDING_DISTRIBUTED_JOB, jobId);
+    public JobParameterByteStore createOrGetJobParameterByteStore(JobId jobId) throws HyracksException {
+        JobParameterByteStore jpbs = jobParameterByteStoreMap.get(jobId);
+        if (jpbs == null) {
+            jpbs = new JobParameterByteStore();
+            jobParameterByteStoreMap.put(jobId, jpbs);
         }
-        preDistributedJobs.remove(jobId);
+        return jpbs;
     }
 
-    public void checkForDuplicateDistributedJob(JobId jobId) throws HyracksException {
-        if (preDistributedJobs.get(jobId) != null) {
-            throw HyracksException.create(ErrorCode.DUPLICATE_DISTRIBUTED_JOB, jobId);
+
+    public void storeActivityClusterGraph(DeployedJobSpecId deployedJobSpecId, ActivityClusterGraph acg)
+            throws HyracksException {
+        if (deployedJobSpecActivityClusterGraphMap.get(deployedJobSpecId.getId()) != null) {
+            throw HyracksException.create(ErrorCode.DUPLICATE_DEPLOYED_JOB, deployedJobSpecId);
+        }
+        deployedJobSpecActivityClusterGraphMap.put(deployedJobSpecId.getId(), acg);
+    }
+
+    public void removeActivityClusterGraph(DeployedJobSpecId deployedJobSpecId) throws HyracksException {
+        if (deployedJobSpecActivityClusterGraphMap.get(deployedJobSpecId.getId()) == null) {
+            throw HyracksException.create(ErrorCode.ERROR_FINDING_DEPLOYED_JOB, deployedJobSpecId);
+        }
+        deployedJobSpecActivityClusterGraphMap.remove(deployedJobSpecId.getId());
+    }
+
+    public void checkForDuplicateDeployedJobSpec(DeployedJobSpecId deployedJobSpecId) throws HyracksException {
+        if (deployedJobSpecActivityClusterGraphMap.get(deployedJobSpecId.getId()) != null) {
+            throw HyracksException.create(ErrorCode.DUPLICATE_DEPLOYED_JOB, deployedJobSpecId);
         }
     }
 
-    public ActivityClusterGraph getActivityClusterGraph(JobId jobId) throws HyracksException {
-        return preDistributedJobs.get(jobId);
+    public ActivityClusterGraph getActivityClusterGraph(DeployedJobSpecId deployedJobSpecId) throws HyracksException {
+        return deployedJobSpecActivityClusterGraphMap.get(deployedJobSpecId.getId());
     }
 
     public NetworkManager getNetworkManager() {
@@ -513,7 +541,7 @@ public class NodeControllerService implements IControllerService {
             if (delayNanos > 0) {
                 delayBlock.tryAcquire(delayNanos, TimeUnit.NANOSECONDS); //NOSONAR - ignore result of tryAcquire
             } else {
-                LOGGER.warning("After sending heartbeat, next one is already late by "
+                LOGGER.warn("After sending heartbeat, next one is already late by "
                         + TimeUnit.NANOSECONDS.toMillis(-delayNanos) + "ms; sending without delay");
             }
         }
@@ -564,15 +592,15 @@ public class NodeControllerService implements IControllerService {
 
             try {
                 cc.nodeHeartbeat(id, hbData);
-                LOGGER.log(Level.FINE, "Successfully sent heartbeat");
+                LOGGER.log(Level.DEBUG, "Successfully sent heartbeat");
                 return true;
             } catch (InterruptedException e) {
                 throw e;
             } catch (Exception e) {
-                if (LOGGER.isLoggable(Level.FINE)) {
-                    LOGGER.log(Level.FINE, "Exception sending heartbeat; will retry after 1s", e);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.log(Level.DEBUG, "Exception sending heartbeat; will retry after 1s", e);
                 } else {
-                    LOGGER.log(Level.SEVERE, "Exception sending heartbeat; will retry after 1s: " + e.toString());
+                    LOGGER.log(Level.ERROR, "Exception sending heartbeat; will retry after 1s: " + e.toString());
                 }
                 return false;
             }
@@ -597,7 +625,7 @@ public class NodeControllerService implements IControllerService {
                     cc.reportProfile(id, profiles);
                 }
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Exception reporting profile", e);
+                LOGGER.log(Level.WARN, "Exception reporting profile", e);
             }
         }
     }
@@ -617,7 +645,7 @@ public class NodeControllerService implements IControllerService {
             try {
                 tracer.instant("CurrentTime", traceCategory, Tracer.Scope.p, Tracer.dateTimeStamp());
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Exception tracing current time", e);
+                LOGGER.log(Level.WARN, "Exception tracing current time", e);
             }
         }
     }

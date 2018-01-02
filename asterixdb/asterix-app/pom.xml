@@ -121,6 +121,7 @@
                 </includes>
               </inputFiles>
               <outputDir>target/data</outputDir>
+              <skip>${skip.testResources}</skip>
             </configuration>
           </execution>
         </executions>
@@ -176,10 +177,13 @@
                 <exclude>src/test/resources/**/results/**</exclude>
                 <exclude>src/test/resources/fuzzyjoin/pub/fuzzy-join-aql*.dot</exclude>
                 <exclude>src/test/resources/fuzzyjoin/pub/fuzzy-join-aql*.json</exclude>
-                <exclude>data/**</exclude>
+                <exclude>**/data/**</exclude>
+                <exclude>src/test//resources/**/data/**</exclude>
                 <exclude>src/main/resources/queryui/**</exclude>
                 <exclude>src/main/resources/webui/**</exclude>
                 <exclude>src/test/resources/**/only*.xml</exclude>
+                <exclude>src/main/resources/sdk/**</exclude>
+                <exclude>src/main/resources/dashboard/**</exclude>
               </excludes>
             </configuration>
           </execution>
@@ -278,10 +282,6 @@
     </profile>
   </profiles>
   <dependencies>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-    </dependency>
     <dependency>
       <groupId>org.apache.hyracks</groupId>
       <artifactId>hyracks-control-cc</artifactId>
@@ -410,15 +410,6 @@
       <artifactId>hyracks-storage-am-lsm-btree</artifactId>
     </dependency>
     <dependency>
-      <groupId>org.apache.asterix</groupId>
-      <artifactId>asterix-events</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs</artifactId>
       <classifier>tests</classifier>
@@ -448,8 +439,6 @@
     <dependency>
       <groupId>org.apache.commons</groupId>
       <artifactId>commons-compress</artifactId>
-      <version>1.4.1</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hyracks</groupId>
@@ -576,6 +565,24 @@
       <artifactId>hyracks-storage-am-lsm-btree-test</artifactId>
       <type>test-jar</type>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hyracks</groupId>
+      <artifactId>hyracks-comm</artifactId>
+      <version>${hyracks.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-jul</artifactId>
+      <version>2.10.0</version>
     </dependency>
   </dependencies>
 </project>

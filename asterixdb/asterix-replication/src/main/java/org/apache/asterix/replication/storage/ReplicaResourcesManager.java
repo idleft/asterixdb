@@ -19,51 +19,49 @@
 package org.apache.asterix.replication.storage;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.apache.asterix.common.cluster.ClusterPartition;
-import org.apache.asterix.common.config.ClusterProperties;
 import org.apache.asterix.common.config.MetadataProperties;
+import org.apache.asterix.common.dataflow.DatasetLocalResource;
 import org.apache.asterix.common.replication.IReplicaResourcesManager;
+import org.apache.asterix.common.storage.DatasetResourceReference;
+import org.apache.asterix.common.storage.IIndexCheckpointManagerProvider;
+import org.apache.asterix.common.utils.StorageConstants;
 import org.apache.asterix.common.utils.StoragePathUtil;
-import org.apache.asterix.metadata.utils.SplitsAndConstraintsUtil;
 import org.apache.asterix.transaction.management.resource.PersistentLocalResourceRepository;
 import org.apache.commons.io.FileUtils;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.storage.common.ILocalResourceRepository;
 import org.apache.hyracks.storage.common.LocalResource;
 
 public class ReplicaResourcesManager implements IReplicaResourcesManager {
-    private static final Logger LOGGER = Logger.getLogger(ReplicaResourcesManager.class.getName());
-    public final static String LSM_COMPONENT_MASK_SUFFIX = "_mask";
-    private final static String REPLICA_INDEX_LSN_MAP_NAME = ".LSN_MAP";
-    public static final long REPLICA_INDEX_CREATION_LSN = -1;
+    public static final String LSM_COMPONENT_MASK_SUFFIX = "_mask";
     private final PersistentLocalResourceRepository localRepository;
     private final Map<String, ClusterPartition[]> nodePartitions;
+    private final IIndexCheckpointManagerProvider indexCheckpointManagerProvider;
 
-    public ReplicaResourcesManager(ILocalResourceRepository localRepository,
-            MetadataProperties metadataProperties) {
+    public ReplicaResourcesManager(ILocalResourceRepository localRepository, MetadataProperties metadataProperties,
+            IIndexCheckpointManagerProvider indexCheckpointManagerProvider) {
         this.localRepository = (PersistentLocalResourceRepository) localRepository;
+        this.indexCheckpointManagerProvider = indexCheckpointManagerProvider;
         nodePartitions = metadataProperties.getNodePartitions();
     }
 
-    public void deleteIndexFile(LSMIndexFileProperties afp) {
+    public void deleteIndexFile(LSMIndexFileProperties afp) throws HyracksDataException {
         String indexPath = getIndexPath(afp);
         if (indexPath != null) {
             if (afp.isLSMComponentFile()) {
@@ -78,26 +76,12 @@ public class ReplicaResourcesManager implements IReplicaResourcesManager {
         }
     }
 
-    public String getIndexPath(LSMIndexFileProperties fileProperties) {
-        fileProperties.splitFileName();
-        //get partition path in this node
-        String partitionPath = localRepository.getPartitionPath(fileProperties.getPartition());
-        //get index path
-        String indexPath = SplitsAndConstraintsUtil.getIndexPath(partitionPath, fileProperties.getPartition(),
-                fileProperties.getDataverse(), fileProperties.getIdxName());
-
-        Path path = Paths.get(indexPath);
-        if (!Files.exists(path)) {
-            File indexFolder = new File(indexPath);
-            indexFolder.mkdirs();
+    public String getIndexPath(LSMIndexFileProperties fileProperties) throws HyracksDataException {
+        final FileReference indexPath = localRepository.getIndexPath(Paths.get(fileProperties.getFilePath()));
+        if (!indexPath.getFile().exists()) {
+            indexPath.getFile().mkdirs();
         }
-        return indexPath;
-    }
-
-    public void initializeReplicaIndexLSNMap(String indexPath, long currentLSN) throws IOException {
-        HashMap<Long, Long> lsnMap = new HashMap<Long, Long>();
-        lsnMap.put(REPLICA_INDEX_CREATION_LSN, currentLSN);
-        updateReplicaIndexLSNMap(indexPath, lsnMap);
+        return indexPath.toString();
     }
 
     public void createRemoteLSMComponentMask(LSMComponentProperties lsmComponentProperties) throws IOException {
@@ -114,83 +98,60 @@ public class ReplicaResourcesManager implements IReplicaResourcesManager {
         String maskPath = lsmComponentProperties.getMaskPath(this);
         Path path = Paths.get(maskPath);
         Files.deleteIfExists(path);
-
-        //add component LSN to the index LSNs map
-        Map<Long, Long> lsnMap = getReplicaIndexLSNMap(lsmComponentProperties.getReplicaComponentPath(this));
-        lsnMap.put(lsmComponentProperties.getOriginalLSN(), lsmComponentProperties.getReplicaLSN());
-
-        //update map on disk
-        updateReplicaIndexLSNMap(lsmComponentProperties.getReplicaComponentPath(this), lsnMap);
     }
 
-    public Set<File> getReplicaIndexes(String replicaId) {
+    public Set<File> getReplicaIndexes(String replicaId) throws HyracksDataException {
         Set<File> remoteIndexesPaths = new HashSet<File>();
         ClusterPartition[] partitions = nodePartitions.get(replicaId);
         for (ClusterPartition partition : partitions) {
-            remoteIndexesPaths.addAll(getPartitionIndexes(partition.getPartitionId()));
+            remoteIndexesPaths.addAll(localRepository.getPartitionIndexes(partition.getPartitionId()));
         }
         return remoteIndexesPaths;
     }
 
     @Override
-    public long getPartitionsMinLSN(Set<Integer> partitions) {
+    public long getPartitionsMinLSN(Set<Integer> partitions) throws HyracksDataException {
         long minRemoteLSN = Long.MAX_VALUE;
         for (Integer partition : partitions) {
-            //for every index in replica
-            Set<File> remoteIndexes = getPartitionIndexes(partition);
-            for (File indexFolder : remoteIndexes) {
-                //read LSN map
-                try {
-                    //get max LSN per index
-                    long remoteIndexMaxLSN = getReplicaIndexMaxLSN(indexFolder);
-
-                    //get min of all maximums
-                    minRemoteLSN = Math.min(minRemoteLSN, remoteIndexMaxLSN);
-                } catch (IOException e) {
-                    LOGGER.log(Level.INFO,
-                            indexFolder.getAbsolutePath() + " Couldn't read LSN map for index " + indexFolder);
-                    continue;
-                }
+            final List<DatasetResourceReference> partitionResources = localRepository.getResources(resource -> {
+                DatasetLocalResource dsResource = (DatasetLocalResource) resource.getResource();
+                return dsResource.getPartition() == partition;
+            }).values().stream().map(DatasetResourceReference::of).collect(Collectors.toList());
+            for (DatasetResourceReference indexRef : partitionResources) {
+                long remoteIndexMaxLSN = indexCheckpointManagerProvider.get(indexRef).getLowWatermark();
+                minRemoteLSN = Math.min(minRemoteLSN, remoteIndexMaxLSN);
             }
         }
         return minRemoteLSN;
     }
 
-    public Map<Long, String> getLaggingReplicaIndexesId2PathMap(String replicaId, long targetLSN) throws IOException {
-        Map<Long, String> laggingReplicaIndexes = new HashMap<Long, String>();
-        try {
-            //for every index in replica
-            Set<File> remoteIndexes = getReplicaIndexes(replicaId);
-            for (File indexFolder : remoteIndexes) {
-                if (getReplicaIndexMaxLSN(indexFolder) < targetLSN) {
-                    File localResource = new File(
-                            indexFolder + File.separator + PersistentLocalResourceRepository.METADATA_FILE_NAME);
-                    LocalResource resource = PersistentLocalResourceRepository.readLocalResource(localResource);
-                    laggingReplicaIndexes.put(resource.getId(), indexFolder.getAbsolutePath());
+    public Map<Long, DatasetResourceReference> getLaggingReplicaIndexesId2PathMap(String replicaId, long targetLSN)
+            throws HyracksDataException {
+        Map<Long, DatasetResourceReference> laggingReplicaIndexes = new HashMap<>();
+        final List<Integer> replicaPartitions =
+                Arrays.stream(nodePartitions.get(replicaId)).map(ClusterPartition::getPartitionId)
+                        .collect(Collectors.toList());
+        for (int patition : replicaPartitions) {
+            final Map<Long, LocalResource> partitionResources = localRepository.getPartitionResources(patition);
+            final List<DatasetResourceReference> indexesRefs =
+                    partitionResources.values().stream().map(DatasetResourceReference::of).collect(Collectors.toList());
+            for (DatasetResourceReference ref : indexesRefs) {
+                if (indexCheckpointManagerProvider.get(ref).getLowWatermark() < targetLSN) {
+                    laggingReplicaIndexes.put(ref.getResourceId(), ref);
                 }
             }
-        } catch (HyracksDataException e) {
-            e.printStackTrace();
         }
-
         return laggingReplicaIndexes;
-    }
-
-    private long getReplicaIndexMaxLSN(File indexFolder) throws IOException {
-        long remoteIndexMaxLSN = 0;
-        //get max LSN per index
-        Map<Long, Long> lsnMap = getReplicaIndexLSNMap(indexFolder.getAbsolutePath());
-        if (lsnMap != null) {
-            for (Long lsn : lsnMap.values()) {
-                remoteIndexMaxLSN = Math.max(remoteIndexMaxLSN, lsn);
-            }
-        }
-        return remoteIndexMaxLSN;
     }
 
     public void cleanInvalidLSMComponents(String replicaId) {
         //for every index in replica
-        Set<File> remoteIndexes = getReplicaIndexes(replicaId);
+        Set<File> remoteIndexes = null;
+        try {
+            remoteIndexes = getReplicaIndexes(replicaId);
+        } catch (HyracksDataException e) {
+            throw new IllegalStateException(e);
+        }
         for (File remoteIndexFile : remoteIndexes) {
             //search for any mask
             File[] masks = remoteIndexFile.listFiles(LSM_COMPONENTS_MASKS_FILTER);
@@ -217,65 +178,14 @@ public class ReplicaResourcesManager implements IReplicaResourcesManager {
         }
     }
 
-    @SuppressWarnings({ "unchecked" })
-    public synchronized Map<Long, Long> getReplicaIndexLSNMap(String indexPath) throws IOException {
-        try (FileInputStream fis = new FileInputStream(indexPath + File.separator + REPLICA_INDEX_LSN_MAP_NAME);
-                ObjectInputStream oisFromFis = new ObjectInputStream(fis)) {
-            Map<Long, Long> lsnMap = null;
-            try {
-                lsnMap = (Map<Long, Long>) oisFromFis.readObject();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
-            }
-            return lsnMap;
-        }
-    }
-
-    public synchronized void updateReplicaIndexLSNMap(String indexPath, Map<Long, Long> lsnMap) throws IOException {
-        try (FileOutputStream fos = new FileOutputStream(indexPath + File.separator + REPLICA_INDEX_LSN_MAP_NAME);
-                ObjectOutputStream oosToFos = new ObjectOutputStream(fos)) {
-            oosToFos.writeObject(lsnMap);
-            oosToFos.flush();
-        }
-    }
-
-    /**
-     * @param partition
-     * @return Set of file references to each index in the partition
-     */
-    public Set<File> getPartitionIndexes(int partition) {
-        Set<File> partitionIndexes = new HashSet<File>();
-        String storageDirName = ClusterProperties.INSTANCE.getStorageDirectoryName();
-        String partitionStoragePath = localRepository.getPartitionPath(partition)
-                + StoragePathUtil.prepareStoragePartitionPath(storageDirName, partition);
-        File partitionRoot = new File(partitionStoragePath);
-        if (partitionRoot.exists() && partitionRoot.isDirectory()) {
-            File[] dataverseFileList = partitionRoot.listFiles();
-            if (dataverseFileList != null) {
-                for (File dataverseFile : dataverseFileList) {
-                    if (dataverseFile.isDirectory()) {
-                        File[] indexFileList = dataverseFile.listFiles();
-                        if (indexFileList != null) {
-                            for (File indexFile : indexFileList) {
-                                if (indexFile.isDirectory()) {
-                                    partitionIndexes.add(indexFile);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return partitionIndexes;
-    }
-
     /**
      * @param partition
      * @return Absolute paths to all partition files
      */
-    public List<String> getPartitionIndexesFiles(int partition, boolean relativePath) {
+    @Override
+    public List<String> getPartitionIndexesFiles(int partition, boolean relativePath) throws HyracksDataException {
         List<String> partitionFiles = new ArrayList<String>();
-        Set<File> partitionIndexes = getPartitionIndexes(partition);
+        Set<File> partitionIndexes = localRepository.getPartitionIndexes(partition);
         for (File indexDir : partitionIndexes) {
             if (indexDir.isDirectory()) {
                 File[] indexFiles = indexDir.listFiles(LSM_INDEX_FILES_FILTER);
@@ -284,8 +194,7 @@ public class ReplicaResourcesManager implements IReplicaResourcesManager {
                         if (!relativePath) {
                             partitionFiles.add(file.getAbsolutePath());
                         } else {
-                            partitionFiles.add(
-                                    StoragePathUtil.getIndexFileRelativePath(file.getAbsolutePath()));
+                            partitionFiles.add(StoragePathUtil.getIndexFileRelativePath(file.getAbsolutePath()));
                         }
                     }
                 }
@@ -311,7 +220,7 @@ public class ReplicaResourcesManager implements IReplicaResourcesManager {
     private static final FilenameFilter LSM_INDEX_FILES_FILTER = new FilenameFilter() {
         @Override
         public boolean accept(File dir, String name) {
-            return name.equalsIgnoreCase(PersistentLocalResourceRepository.METADATA_FILE_NAME) || !name.startsWith(".");
+            return name.equalsIgnoreCase(StorageConstants.METADATA_FILE_NAME) || !name.startsWith(".");
         }
     };
 }

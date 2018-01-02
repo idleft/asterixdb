@@ -20,10 +20,11 @@
 package org.apache.hyracks.api.exceptions;
 
 import java.io.Serializable;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.hyracks.api.util.ErrorMessageUtil;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * The main execution time exception type for runtime errors in a hyracks environment
@@ -31,17 +32,17 @@ import org.apache.hyracks.api.util.ErrorMessageUtil;
 public class HyracksDataException extends HyracksException {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = Logger.getLogger(HyracksDataException.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     public static HyracksDataException create(Throwable cause) {
         if (cause instanceof HyracksDataException || cause == null) {
             return (HyracksDataException) cause;
         } else if (cause instanceof Error) {
             // don't wrap errors, allow them to propagate
-            throw (Error)cause;
+            throw (Error) cause;
         } else if (cause instanceof InterruptedException && !Thread.currentThread().isInterrupted()) {
             // TODO(mblow): why not force interrupt on current thread?
-            LOGGER.log(Level.WARNING,
+            LOGGER.log(Level.WARN,
                     "Wrapping an InterruptedException in HyracksDataException and current thread is not interrupted",
                     cause);
         }
@@ -66,7 +67,7 @@ public class HyracksDataException extends HyracksException {
             throw (Error) th;
         } else if (th instanceof InterruptedException && !Thread.currentThread().isInterrupted()) {
             // TODO(mblow): why not force interrupt on current thread?
-            LOGGER.log(Level.WARNING, "Suppressing an InterruptedException in a HyracksDataException and current "
+            LOGGER.log(Level.WARN, "Suppressing an InterruptedException in a HyracksDataException and current "
                     + "thread is not interrupted", th);
         }
         root.addSuppressed(th);
@@ -76,6 +77,12 @@ public class HyracksDataException extends HyracksException {
     public HyracksDataException(String component, int errorCode, String message, Throwable cause, String nodeId,
             Serializable... params) {
         super(component, errorCode, message, cause, nodeId, params);
+    }
+
+    public HyracksDataException(String component, int errorCode, String message, Throwable cause, String nodeId,
+            StackTraceElement[] stackTrace, Serializable... params) {
+        super(component, errorCode, message, cause, nodeId, params);
+        setStackTrace(stackTrace);
     }
 
     /**
@@ -141,6 +148,6 @@ public class HyracksDataException extends HyracksException {
 
     public static HyracksDataException create(HyracksDataException e, String nodeId) {
         return new HyracksDataException(e.getComponent(), e.getErrorCode(), e.getMessage(), e.getCause(), nodeId,
-                e.getParams());
+                e.getStackTrace(), e.getParams());
     }
 }

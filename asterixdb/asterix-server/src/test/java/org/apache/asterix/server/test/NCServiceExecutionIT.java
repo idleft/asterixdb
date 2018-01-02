@@ -24,8 +24,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.asterix.test.common.TestExecutor;
 import org.apache.asterix.test.runtime.HDFSCluster;
@@ -36,6 +34,9 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hyracks.server.process.HyracksCCProcess;
 import org.apache.hyracks.server.process.HyracksNCServiceProcess;
 import org.apache.hyracks.server.process.HyracksVirtualCluster;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -54,50 +55,44 @@ public class NCServiceExecutionIT {
     // Important paths and files for this test.
 
     // The "target" subdirectory of asterix-server. All outputs go here.
-    private static final String TARGET_DIR = StringUtils
-            .join(new String[] { "target" }, File.separator);
+    public static final String TARGET_DIR = StringUtils.join(new String[] { "../asterix-server/target" },
+            File.separator);
 
     // Directory where the NCs create and store all data, as configured by
     // src/test/resources/NCServiceExecutionIT/cc.conf.
-    private static final String INSTANCE_DIR = StringUtils
-            .join(new String[] { TARGET_DIR, "tmp" }, File.separator);
+    public static final String INSTANCE_DIR = StringUtils.join(new String[] { TARGET_DIR, "tmp" }, File.separator);
 
     // The log directory, where all CC, NCService, and NC logs are written. CC and
     // NCService logs are configured on the HyracksVirtualCluster below. NC logs
     // are configured in src/test/resources/NCServiceExecutionIT/ncservice*.conf.
-    private static final String LOG_DIR = StringUtils
-            .join(new String[] { TARGET_DIR, "failsafe-reports" }, File.separator);
+    public static final String LOG_DIR = StringUtils.join(new String[] { TARGET_DIR, "failsafe-reports" },
+            File.separator);
 
     // Directory where *.conf files are located.
-    private static final String CONF_DIR = StringUtils
-            .join(new String[] { TARGET_DIR, "test-classes", "NCServiceExecutionIT" },
-                    File.separator);
+    public static final String CONF_DIR = StringUtils
+            .join(new String[] { TARGET_DIR, "test-classes", "NCServiceExecutionIT" }, File.separator);
 
     // The app.home specified for HyracksVirtualCluster. The NCService expects
     // to find the NC startup script in ${app.home}/bin.
-    private static final String APP_HOME = StringUtils
-            .join(new String[] { TARGET_DIR, "appassembler" }, File.separator);
+    public static final String APP_HOME = StringUtils.join(new String[] { TARGET_DIR, "appassembler" }, File.separator);
 
     // Path to the asterix-app directory. This is used as the current working
     // directory for the CC and NCService processes, which allows relative file
     // paths in "load" statements in test queries to find the right data. It is
     // also used for HDFSCluster.
-    private static final String ASTERIX_APP_DIR = StringUtils
-            .join(new String[] { "..", "asterix-app" },
-                    File.separator);
+    public static final String ASTERIX_APP_DIR = StringUtils.join(new String[] { "..", "asterix-app" }, File.separator);
 
     // Path to the actual AQL test files, which we borrow from asterix-app. This is
     // passed to TestExecutor.
     protected static final String TESTS_DIR = StringUtils
-            .join(new String[] { ASTERIX_APP_DIR, "src", "test", "resources", "runtimets" },
-                    File.separator);
+            .join(new String[] { ASTERIX_APP_DIR, "src", "test", "resources", "runtimets" }, File.separator);
 
     // Path that actual results are written to. We create and clean this directory
     // here, and also pass it to TestExecutor which writes the test output there.
-    private static final String ACTUAL_RESULTS_DIR = StringUtils
-            .join(new String[] { TARGET_DIR, "ittest" }, File.separator);
+    public static final String ACTUAL_RESULTS_DIR = StringUtils.join(new String[] { TARGET_DIR, "ittest" },
+            File.separator);
 
-    private static final Logger LOGGER = Logger.getLogger(NCServiceExecutionIT.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     enum KillCommand {
         CC,
@@ -138,18 +133,12 @@ public class NCServiceExecutionIT {
         HDFSCluster.getInstance().setup(ASTERIX_APP_DIR + File.separator);
 
         cluster = new HyracksVirtualCluster(new File(APP_HOME), new File(ASTERIX_APP_DIR));
-        nc1 = cluster.addNCService(
-                new File(CONF_DIR, "ncservice1.conf"),
-                new File(LOG_DIR, "ncservice1.log"));
+        nc1 = cluster.addNCService(new File(CONF_DIR, "ncservice1.conf"), new File(LOG_DIR, "ncservice1.log"));
 
-        nc2 = cluster.addNCService(
-                new File(CONF_DIR, "ncservice2.conf"),
-                new File(LOG_DIR, "ncservice2.log"));
+        nc2 = cluster.addNCService(new File(CONF_DIR, "ncservice2.conf"), new File(LOG_DIR, "ncservice2.log"));
 
         // Start CC
-        cc = cluster.start(
-                new File(CONF_DIR, "cc.conf"),
-                new File(LOG_DIR, "cc.log"));
+        cc = cluster.start(new File(CONF_DIR, "cc.conf"), new File(LOG_DIR, "cc.log"));
 
         testExecutor.waitForClusterActive(30, TimeUnit.SECONDS);
         clusterActive = true;
@@ -184,7 +173,7 @@ public class NCServiceExecutionIT {
             // let's kill something every 50 tests
             if (testArgs.size() % 50 == 0) {
                 final KillCommand killCommand = KillCommand.values()[random.nextInt(KillCommand.values().length)];
-                testArgs.add(new Object[] { killCommand, null, killCommand});
+                testArgs.add(new Object[] { killCommand, null, killCommand });
             }
         }
         return testArgs;
@@ -211,8 +200,7 @@ public class NCServiceExecutionIT {
     private static boolean skip(TestCaseContext tcCtx) {
         // For now we skip feeds tests, external-library, and api tests.
         for (TestGroup group : tcCtx.getTestGroups()) {
-            if (group.getName().startsWith("external-")
-                    || group.getName().equals("feeds")
+            if (group.getName().startsWith("external-") || group.getName().equals("feeds")
                     || group.getName().equals("api")) {
                 LOGGER.info("Skipping test: " + tcCtx.toString());
                 return true;
@@ -251,6 +239,7 @@ public class NCServiceExecutionIT {
                     nc1.stop(); // we can't kill due to ASTERIXDB-1941
                     testExecutor.waitForClusterState("UNUSABLE", 60, TimeUnit.SECONDS); // wait for missed heartbeats...
                     nc1.start(); // this restarts the NC service
+                    testExecutor.startNC("asterix_nc1");
                     break;
 
                 case NC2:
@@ -258,6 +247,7 @@ public class NCServiceExecutionIT {
                     nc2.stop(); // we can't kill due to ASTERIXDB-1941
                     testExecutor.waitForClusterState("UNUSABLE", 60, TimeUnit.SECONDS); // wait for missed heartbeats...
                     nc2.start(); // this restarts the NC service
+                    testExecutor.startNC("asterix_nc2");
                     break;
 
                 default:
@@ -267,7 +257,7 @@ public class NCServiceExecutionIT {
                 testExecutor.waitForClusterActive(30, TimeUnit.SECONDS);
             } catch (Exception e) {
                 // stop executing the rest of the tests since the cluster is not ACTIVE
-                LOGGER.log(Level.SEVERE, "Cannot continue since cluster is not ACTIVE", e);
+                LOGGER.log(Level.ERROR, "Cannot continue since cluster is not ACTIVE", e);
                 clusterActive = false;
                 Assert.fail("Cluster is not ACTIVE");
             }

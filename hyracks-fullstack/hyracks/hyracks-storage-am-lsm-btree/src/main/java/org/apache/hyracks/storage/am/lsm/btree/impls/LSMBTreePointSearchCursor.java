@@ -30,6 +30,7 @@ import org.apache.hyracks.storage.am.btree.impls.BTree.BTreeAccessor;
 import org.apache.hyracks.storage.am.btree.impls.BTreeRangeSearchCursor;
 import org.apache.hyracks.storage.am.btree.impls.RangePredicate;
 import org.apache.hyracks.storage.am.common.api.ITreeIndexCursor;
+import org.apache.hyracks.storage.am.common.impls.NoOpIndexAccessParameters;
 import org.apache.hyracks.storage.am.common.impls.NoOpOperationCallback;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMComponent;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMComponent.LSMComponentType;
@@ -162,7 +163,7 @@ public class LSMBTreePointSearchCursor implements ITreeIndexCursor {
         searchCallback = lsmInitialState.getSearchOperationCallback();
         predicate = (RangePredicate) lsmInitialState.getSearchPredicate();
         numBTrees = operationalComponents.size();
-        if (rangeCursors == null || rangeCursors.length != numBTrees) {
+        if (rangeCursors == null || rangeCursors.length < numBTrees) {
             // object creation: should be relatively low
             rangeCursors = new BTreeRangeSearchCursor[numBTrees];
             btreeAccessors = new BTreeAccessor[numBTrees];
@@ -199,8 +200,7 @@ public class LSMBTreePointSearchCursor implements ITreeIndexCursor {
                 bloomFilters[i] = ((LSMBTreeWithBloomFilterDiskComponent) component).getBloomFilter();
             }
             if (btreeAccessors[i] == null) {
-                btreeAccessors[i] =
-                        btree.createAccessor(NoOpOperationCallback.INSTANCE, NoOpOperationCallback.INSTANCE);
+                btreeAccessors[i] = btree.createAccessor(NoOpIndexAccessParameters.INSTANCE);
             } else {
                 // re-use
                 btreeAccessors[i].reset(btree, NoOpOperationCallback.INSTANCE, NoOpOperationCallback.INSTANCE);
@@ -270,7 +270,7 @@ public class LSMBTreePointSearchCursor implements ITreeIndexCursor {
 
     private void closeCursors() throws HyracksDataException {
         if (rangeCursors != null) {
-            for (int i = 0; i < rangeCursors.length; ++i) {
+            for (int i = 0; i < numBTrees; ++i) {
                 if (rangeCursors[i] != null) {
                     rangeCursors[i].close();
                 }

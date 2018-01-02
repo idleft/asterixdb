@@ -40,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -48,13 +49,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.config.ReplicationProperties;
-import org.apache.asterix.common.dataflow.LSMIndexUtil;
+import org.apache.asterix.common.replication.IPartitionReplica;
 import org.apache.asterix.common.replication.IReplicaResourcesManager;
 import org.apache.asterix.common.replication.IReplicationManager;
 import org.apache.asterix.common.replication.IReplicationStrategy;
@@ -62,12 +61,14 @@ import org.apache.asterix.common.replication.Replica;
 import org.apache.asterix.common.replication.Replica.ReplicaState;
 import org.apache.asterix.common.replication.ReplicaEvent;
 import org.apache.asterix.common.replication.ReplicationJob;
-import org.apache.asterix.common.storage.IndexFileProperties;
+import org.apache.asterix.common.replication.ReplicationStrategyFactory;
+import org.apache.asterix.common.storage.DatasetResourceReference;
+import org.apache.asterix.common.storage.IIndexCheckpointManagerProvider;
+import org.apache.asterix.common.storage.ResourceReference;
 import org.apache.asterix.common.transactions.IAppRuntimeContextProvider;
 import org.apache.asterix.common.transactions.ILogManager;
 import org.apache.asterix.common.transactions.ILogRecord;
 import org.apache.asterix.common.transactions.LogType;
-import org.apache.asterix.event.schema.cluster.Node;
 import org.apache.asterix.replication.functions.ReplicaFilesRequest;
 import org.apache.asterix.replication.functions.ReplicaIndexFlushRequest;
 import org.apache.asterix.replication.functions.ReplicationProtocol;
@@ -79,28 +80,35 @@ import org.apache.asterix.replication.storage.LSMIndexFileProperties;
 import org.apache.asterix.replication.storage.ReplicaResourcesManager;
 import org.apache.asterix.transaction.management.resource.PersistentLocalResourceRepository;
 import org.apache.hyracks.api.application.IClusterLifecycleListener.ClusterEventType;
+import org.apache.hyracks.api.application.INCServiceContext;
+import org.apache.hyracks.api.config.IApplicationConfig;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.replication.IReplicationJob;
 import org.apache.hyracks.api.replication.IReplicationJob.ReplicationExecutionType;
 import org.apache.hyracks.api.replication.IReplicationJob.ReplicationJobType;
 import org.apache.hyracks.api.replication.IReplicationJob.ReplicationOperation;
+import org.apache.hyracks.control.common.controllers.NCConfig;
+import org.apache.hyracks.control.nc.NodeControllerService;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMDiskComponent;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndexReplicationJob;
 import org.apache.hyracks.util.StorageUtil;
 import org.apache.hyracks.util.StorageUtil.StorageUnit;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 /**
  * This class is used to process replication jobs and maintain remote replicas states
  */
 public class ReplicationManager implements IReplicationManager {
 
-    private static final Logger LOGGER = Logger.getLogger(ReplicationManager.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
     private static final int INITIAL_REPLICATION_FACTOR = 1;
     private static final int MAX_JOB_COMMIT_ACK_WAIT = 10000;
     private final String nodeId;
     private ExecutorService replicationListenerThreads;
-    private final Map<Integer, Set<String>> jobCommitAcks;
-    private final Map<Integer, ILogRecord> replicationJobsPendingAcks;
+    private final Map<Long, Set<String>> txnCommitAcks;
+    private final Map<Long, ILogRecord> replicationTxnsPendingAcks;
     private ByteBuffer dataBuffer;
     private final LinkedBlockingQueue<IReplicationJob> replicationJobsQ;
     private final LinkedBlockingQueue<ReplicaEvent> replicaEventsQ;
@@ -134,36 +142,46 @@ public class ReplicationManager implements IReplicationManager {
     private Future<? extends Object> txnLogReplicatorTask;
     private SocketChannel[] logsRepSockets;
     private final ByteBuffer txnLogsBatchSizeBuffer = ByteBuffer.allocate(Integer.BYTES);
-    private final IReplicationStrategy replicationStrategy;
+    private IReplicationStrategy replicationStrategy;
     private final PersistentLocalResourceRepository localResourceRepo;
+    private NCConfig ncConfig;
+    private final IIndexCheckpointManagerProvider indexCheckpointManagerProvider;
 
     //TODO this class needs to be refactored by moving its private classes to separate files
     //and possibly using MessageBroker to send/receive remote replicas events.
     public ReplicationManager(String nodeId, ReplicationProperties replicationProperties,
             IReplicaResourcesManager remoteResoucesManager, ILogManager logManager,
-            IAppRuntimeContextProvider asterixAppRuntimeContextProvider) {
+            IAppRuntimeContextProvider asterixAppRuntimeContextProvider, INCServiceContext ncServiceContext) {
         this.nodeId = nodeId;
+        this.ncConfig = ((NodeControllerService) ncServiceContext.getControllerService()).getConfiguration();
         this.replicationProperties = replicationProperties;
-        replicationStrategy = replicationProperties.getReplicationStrategy();
+        try {
+            replicationStrategy = ReplicationStrategyFactory.create(replicationProperties.getReplicationStrategy(),
+                    replicationProperties, ncConfig.getConfigManager());
+        } catch (HyracksDataException e) {
+            LOGGER.log(Level.WARN, "Couldn't initialize replication strategy", e);
+        }
         this.replicaResourcesManager = (ReplicaResourcesManager) remoteResoucesManager;
         this.asterixAppRuntimeContextProvider = asterixAppRuntimeContextProvider;
         this.logManager = logManager;
         localResourceRepo =
                 (PersistentLocalResourceRepository) asterixAppRuntimeContextProvider.getLocalResourceRepository();
-        this.hostIPAddressFirstOctet = replicationProperties.getReplicaIPAddress(nodeId).substring(0, 3);
+        this.hostIPAddressFirstOctet = ncConfig.getPublicAddress().substring(0, 3);
+        this.indexCheckpointManagerProvider =
+                asterixAppRuntimeContextProvider.getAppContext().getIndexCheckpointManagerProvider();
         replicas = new HashMap<>();
         replicationJobsQ = new LinkedBlockingQueue<>();
         replicaEventsQ = new LinkedBlockingQueue<>();
         terminateJobsReplication = new AtomicBoolean(false);
         jobsReplicationSuspended = new AtomicBoolean(true);
         replicationSuspended = new AtomicBoolean(true);
-        jobCommitAcks = new ConcurrentHashMap<>();
-        replicationJobsPendingAcks = new ConcurrentHashMap<>();
+        txnCommitAcks = new ConcurrentHashMap<>();
+        replicationTxnsPendingAcks = new ConcurrentHashMap<>();
         shuttingDownReplicaIds = new HashSet<>();
         dataBuffer = ByteBuffer.allocate(INITIAL_BUFFER_SIZE);
         replicationMonitor = new ReplicasEventsMonitor();
         //add list of replicas from configurations (To be read from another source e.g. Zookeeper)
-        Set<Replica> replicaNodes = replicationProperties.getReplicationStrategy().getRemoteReplicas(nodeId);
+        Set<Replica> replicaNodes = replicationStrategy.getRemoteReplicas(nodeId);
 
         //Used as async listeners from replicas
         replicationListenerThreads = Executors.newCachedThreadPool();
@@ -175,11 +193,11 @@ public class ReplicationManager implements IReplicationManager {
         for (Replica replica : replicaNodes) {
             replicas.put(replica.getId(), replica);
             //for each remote replica, get the list of replication clients
-            Set<String> nodeReplicationClients = replicationProperties.getRemotePrimaryReplicasIds(replica.getId());
+            Set<Replica> nodeReplicationClients = replicationStrategy.getRemotePrimaryReplicas(replica.getId());
             //get the partitions of each client
             List<Integer> clientPartitions = new ArrayList<>();
-            for (String clientId : nodeReplicationClients) {
-                for (ClusterPartition clusterPartition : nodePartitions.get(clientId)) {
+            for (Replica client : nodeReplicationClients) {
+                for (ClusterPartition clusterPartition : nodePartitions.get(client.getId())) {
                     clientPartitions.add(clusterPartition.getPartitionId());
                 }
             }
@@ -228,7 +246,7 @@ public class ReplicationManager implements IReplicationManager {
             }
             Set<String> replicaIds = Collections.synchronizedSet(new HashSet<String>());
             replicaIds.add(nodeId);
-            jobCommitAcks.put(logRecord.getJobId(), replicaIds);
+            txnCommitAcks.put(logRecord.getTxnId(), replicaIds);
         }
 
         appendToLogBuffer(logRecord);
@@ -280,11 +298,10 @@ public class ReplicationManager implements IReplicationManager {
             //all of the job's files belong to a single storage partition.
             //get any of them to determine the partition from the file path.
             String jobFile = job.getJobFiles().iterator().next();
-            IndexFileProperties indexFileRef = localResourceRepo.getIndexFileRef(jobFile);
+            DatasetResourceReference indexFileRef = localResourceRepo.getLocalResourceReference(jobFile);
             if (!replicationStrategy.isMatch(indexFileRef.getDatasetId())) {
                 return;
             }
-
             int jobPartitionId = indexFileRef.getPartitionId();
 
             ByteBuffer responseBuffer = null;
@@ -308,8 +325,8 @@ public class ReplicationManager implements IReplicationManager {
                         //send LSMComponent properties
                         LSMComponentJob = (ILSMIndexReplicationJob) job;
                         LSMComponentProperties lsmCompProp = new LSMComponentProperties(LSMComponentJob, nodeId);
-                        requestBuffer =
-                                ReplicationProtocol.writeLSMComponentPropertiesRequest(lsmCompProp, requestBuffer);
+                        requestBuffer = ReplicationProtocol.writeLSMComponentPropertiesRequest(lsmCompProp, //NOSONAR
+                                requestBuffer);
                         sendRequest(replicasSockets, requestBuffer);
                     }
 
@@ -317,7 +334,7 @@ public class ReplicationManager implements IReplicationManager {
                         remainingFiles--;
                         Path path = Paths.get(filePath);
                         if (Files.notExists(path)) {
-                            LOGGER.log(Level.SEVERE, "File deleted before replication: " + filePath);
+                            LOGGER.log(Level.ERROR, "File deleted before replication: " + filePath);
                             continue;
                         }
 
@@ -327,25 +344,10 @@ public class ReplicationManager implements IReplicationManager {
                                 FileChannel fileChannel = fromFile.getChannel();) {
 
                             long fileSize = fileChannel.size();
-
-                            if (LSMComponentJob != null) {
-                                /**
-                                 * since this is LSM_COMPONENT REPLICATE job, the job will contain
-                                 * only the component being replicated.
-                                 */
-                                ILSMDiskComponent diskComponent = LSMComponentJob.getLSMIndexOperationContext()
-                                        .getComponentsToBeReplicated().get(0);
-                                long lsnOffset = LSMIndexUtil.getComponentFileLSNOffset(LSMComponentJob.getLSMIndex(),
-                                        diskComponent, filePath);
-                                asterixFileProperties.initialize(filePath, fileSize, nodeId, isLSMComponentFile,
-                                        lsnOffset, remainingFiles == 0);
-                            } else {
-                                asterixFileProperties.initialize(filePath, fileSize, nodeId, isLSMComponentFile, -1L,
-                                        remainingFiles == 0);
-                            }
+                            asterixFileProperties.initialize(filePath, fileSize, nodeId, isLSMComponentFile,
+                                    remainingFiles == 0);
                             requestBuffer = ReplicationProtocol.writeFileReplicationRequest(requestBuffer,
                                     asterixFileProperties, ReplicationRequestType.REPLICATE_FILE);
-
                             Iterator<Map.Entry<String, SocketChannel>> iterator = replicasSockets.entrySet().iterator();
                             while (iterator.hasNext()) {
                                 Map.Entry<String, SocketChannel> entry = iterator.next();
@@ -378,8 +380,7 @@ public class ReplicationManager implements IReplicationManager {
                 } else if (job.getOperation() == ReplicationOperation.DELETE) {
                     for (String filePath : job.getJobFiles()) {
                         remainingFiles--;
-                        asterixFileProperties.initialize(filePath, -1, nodeId, isLSMComponentFile, -1L,
-                                remainingFiles == 0);
+                        asterixFileProperties.initialize(filePath, -1, nodeId, isLSMComponentFile, remainingFiles == 0);
                         ReplicationProtocol.writeFileReplicationRequest(requestBuffer, asterixFileProperties,
                                 ReplicationRequestType.DELETE_FILE);
 
@@ -449,17 +450,17 @@ public class ReplicationManager implements IReplicationManager {
 
     @Override
     public boolean isReplicationEnabled() {
-        return replicationProperties.isParticipant(nodeId);
+        return replicationStrategy.isParticipant(nodeId);
     }
 
     @Override
     public synchronized void updateReplicaInfo(Replica replicaNode) {
-        Replica replica = replicas.get(replicaNode.getNode().getId());
+        Replica replica = replicas.get(replicaNode.getId());
         //should not update the info of an active replica
         if (replica.getState() == ReplicaState.ACTIVE) {
             return;
         }
-        replica.getNode().setClusterIp(replicaNode.getNode().getClusterIp());
+        replica.setClusterIp(replicaNode.getClusterIp());
     }
 
     /**
@@ -528,16 +529,14 @@ public class ReplicationManager implements IReplicationManager {
     }
 
     private void handleReplicationFailure(SocketChannel socketChannel, Throwable t) {
-        if (LOGGER.isLoggable(Level.WARNING)) {
-            LOGGER.log(Level.WARNING, "Could not complete replication request.", t);
+        if (LOGGER.isWarnEnabled()) {
+            LOGGER.log(Level.WARN, "Could not complete replication request.", t);
         }
         if (socketChannel.isOpen()) {
             try {
                 socketChannel.close();
             } catch (IOException e) {
-                if (LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.log(Level.WARNING, "Could not close socket.", e);
-                }
+                LOGGER.log(Level.WARN, "Could not close socket.", e);
             }
         }
         reportFailedReplica(getReplicaIdBySocket(socketChannel));
@@ -547,21 +546,14 @@ public class ReplicationManager implements IReplicationManager {
      * Stops TxnLogReplicator and closes the sockets used to replicate logs.
      */
     private void endTxnLogReplicationHandshake() {
-        if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info("Terminating TxnLogReplicator thread ...");
-        }
+        LOGGER.info("Terminating TxnLogReplicator thread ...");
         txnlogReplicator.terminate();
         try {
             txnLogReplicatorTask.get();
         } catch (ExecutionException | InterruptedException e) {
-            if (LOGGER.isLoggable(Level.SEVERE)) {
-                LOGGER.log(Level.SEVERE, "TxnLogReplicator thread terminated abnormally", e);
-            }
+            LOGGER.error("TxnLogReplicator thread terminated abnormally", e);
         }
-
-        if (LOGGER.isLoggable(Level.INFO)) {
-            LOGGER.info("TxnLogReplicator thread was terminated.");
-        }
+        LOGGER.info("TxnLogReplicator thread was terminated.");
 
         /*
          * End log replication handshake (by sending a dummy log with a single byte)
@@ -580,23 +572,21 @@ public class ReplicationManager implements IReplicationManager {
 
         //wait for any ACK to arrive before closing sockets.
         if (logsRepSockets != null) {
-            synchronized (jobCommitAcks) {
+            synchronized (txnCommitAcks) {
                 try {
                     long waitStartTime = System.currentTimeMillis();
-                    while (!jobCommitAcks.isEmpty()) {
-                        jobCommitAcks.wait(1000);
+                    while (!txnCommitAcks.isEmpty()) {
+                        txnCommitAcks.wait(1000);
                         long waitDuration = System.currentTimeMillis() - waitStartTime;
                         if (waitDuration > MAX_JOB_COMMIT_ACK_WAIT) {
-                            LOGGER.log(Level.SEVERE,
-                                    "Timeout before receving all job ACKs from replicas. Pending jobs ("
-                                            + jobCommitAcks.keySet().toString() + ")");
+                            LOGGER.log(Level.ERROR,
+                                    "Timeout before receving all job ACKs from replicas. Pending txns ("
+                                            + txnCommitAcks.keySet().toString() + ")");
                             break;
                         }
                     }
                 } catch (InterruptedException e) {
-                    if (LOGGER.isLoggable(Level.SEVERE)) {
-                        LOGGER.log(Level.SEVERE, "Interrupted while waiting for jobs ACK", e);
-                    }
+                    LOGGER.error("Interrupted while waiting for jobs ACK", e);
                     Thread.currentThread().interrupt();
                 }
             }
@@ -627,10 +617,8 @@ public class ReplicationManager implements IReplicationManager {
      * @throws IOException
      */
     private void sendShutdownNotifiction() throws IOException {
-        Node node = new Node();
-        node.setId(nodeId);
-        node.setClusterIp(NetworkingUtil.getHostAddress(hostIPAddressFirstOctet));
-        Replica replica = new Replica(node);
+        Replica replica = new Replica(nodeId, NetworkingUtil.getHostAddress(hostIPAddressFirstOctet),
+                ncConfig.getReplicationPublicPort());
         ReplicaEvent event = new ReplicaEvent(replica, ClusterEventType.NODE_SHUTTING_DOWN);
         ByteBuffer buffer = ReplicationProtocol.writeReplicaEventRequest(event);
         Map<String, SocketChannel> replicaSockets = getActiveRemoteReplicasSockets();
@@ -689,7 +677,7 @@ public class ReplicationManager implements IReplicationManager {
     @Override
     public void initializeReplicasState() {
         for (Replica replica : replicas.values()) {
-            checkReplicaState(replica.getNode().getId(), false, false);
+            checkReplicaState(replica.getId(), false, false);
         }
     }
 
@@ -707,7 +695,7 @@ public class ReplicationManager implements IReplicationManager {
         Replica replica = replicas.get(replicaId);
 
         ReplicaStateChecker connector = new ReplicaStateChecker(replica, replicationProperties.getReplicationTimeOut(),
-                this, replicationProperties, suspendReplication);
+                this, suspendReplication);
         Future<? extends Object> ft = asterixAppRuntimeContextProvider.getThreadExecutor().submit(connector);
 
         if (!async) {
@@ -747,9 +735,9 @@ public class ReplicationManager implements IReplicationManager {
 
             if (newState == ReplicaState.DEAD) {
                 //assume the dead replica ACK has been received for all pending jobs
-                synchronized (jobCommitAcks) {
-                    for (Integer jobId : jobCommitAcks.keySet()) {
-                        addAckToJob(jobId, replicaId);
+                synchronized (txnCommitAcks) {
+                    for (Long txnId : txnCommitAcks.keySet()) {
+                        addAckToJob(txnId, replicaId);
                     }
                 }
             }
@@ -766,8 +754,10 @@ public class ReplicationManager implements IReplicationManager {
             replicationFactor--;
         }
 
-        LOGGER.log(Level.WARNING, "Replica " + replicaId + " state changed to: " + newState.name()
-                + ". Replication factor changed to: " + replicationFactor);
+        if (LOGGER.isWarnEnabled()) {
+            LOGGER.warn("Replica " + replicaId + " state changed to: " + newState.name()
+                    + ". Replication factor changed to: " + replicationFactor);
+        }
 
         if (suspendReplication) {
             startReplicationThreads();
@@ -777,27 +767,27 @@ public class ReplicationManager implements IReplicationManager {
     /**
      * When an ACK for a JOB_COMMIT is received, it is added to the corresponding job.
      *
-     * @param jobId
+     * @param txnId
      * @param replicaId
      *            The remote replica id the ACK received from.
      */
-    private void addAckToJob(int jobId, String replicaId) {
-        synchronized (jobCommitAcks) {
+    private void addAckToJob(long txnId, String replicaId) {
+        synchronized (txnCommitAcks) {
             //add ACK to the job
-            if (jobCommitAcks.containsKey(jobId)) {
-                Set<String> replicaIds = jobCommitAcks.get(jobId);
+            if (txnCommitAcks.containsKey(txnId)) {
+                Set<String> replicaIds = txnCommitAcks.get(txnId);
                 replicaIds.add(replicaId);
             } else {
-                if (LOGGER.isLoggable(Level.WARNING)) {
-                    LOGGER.warning("Invalid job replication ACK received for jobId(" + jobId + ")");
+                if (LOGGER.isWarnEnabled()) {
+                    LOGGER.warn("Invalid job replication ACK received for txnId(" + txnId + ")");
                 }
                 return;
             }
 
             //if got ACKs from all remote replicas, notify pending jobs if any
 
-            if (jobCommitAcks.get(jobId).size() == replicationFactor && replicationJobsPendingAcks.containsKey(jobId)) {
-                ILogRecord pendingLog = replicationJobsPendingAcks.get(jobId);
+            if (txnCommitAcks.get(txnId).size() == replicationFactor && replicationTxnsPendingAcks.containsKey(txnId)) {
+                ILogRecord pendingLog = replicationTxnsPendingAcks.get(txnId);
                 synchronized (pendingLog) {
                     pendingLog.notifyAll();
                 }
@@ -807,23 +797,23 @@ public class ReplicationManager implements IReplicationManager {
 
     @Override
     public boolean hasBeenReplicated(ILogRecord logRecord) {
-        int jobId = logRecord.getJobId();
-        if (jobCommitAcks.containsKey(jobId)) {
-            synchronized (jobCommitAcks) {
+        long txnId = logRecord.getTxnId();
+        if (txnCommitAcks.containsKey(txnId)) {
+            synchronized (txnCommitAcks) {
                 //check if all ACKs have been received
-                if (jobCommitAcks.get(jobId).size() == replicationFactor) {
-                    jobCommitAcks.remove(jobId);
+                if (txnCommitAcks.get(txnId).size() == replicationFactor) {
+                    txnCommitAcks.remove(txnId);
 
                     //remove from pending jobs if exists
-                    replicationJobsPendingAcks.remove(jobId);
+                    replicationTxnsPendingAcks.remove(txnId);
 
                     //notify any threads waiting for all jobs to finish
-                    if (jobCommitAcks.size() == 0) {
-                        jobCommitAcks.notifyAll();
+                    if (txnCommitAcks.size() == 0) {
+                        txnCommitAcks.notifyAll();
                     }
                     return true;
                 } else {
-                    replicationJobsPendingAcks.putIfAbsent(jobId, logRecord);
+                    replicationTxnsPendingAcks.putIfAbsent(txnId, logRecord);
                     return false;
                 }
             }
@@ -840,8 +830,8 @@ public class ReplicationManager implements IReplicationManager {
                     SocketChannel sc = getReplicaSocket(replica.getId());
                     replicaNodesSockets.put(replica.getId(), sc);
                 } catch (IOException e) {
-                    if (LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.log(Level.WARNING, "Could not get replica socket", e);
+                    if (LOGGER.isWarnEnabled()) {
+                        LOGGER.log(Level.WARN, "Could not get replica socket", e);
                     }
                     reportFailedReplica(replica.getId());
                 }
@@ -859,11 +849,11 @@ public class ReplicationManager implements IReplicationManager {
      * @throws IOException
      */
     private SocketChannel getReplicaSocket(String replicaId) throws IOException {
-        Replica replica = replicationProperties.getReplicaById(replicaId);
         SocketChannel sc = SocketChannel.open();
         sc.configureBlocking(true);
-        InetSocketAddress address = replica.getAddress(replicationProperties);
-        sc.connect(new InetSocketAddress(address.getHostString(), address.getPort()));
+        IApplicationConfig config = ncConfig.getConfigManager().getNodeEffectiveConfig(replicaId);
+        sc.connect(new InetSocketAddress(config.getString(NCConfig.Option.REPLICATION_LISTEN_ADDRESS),
+                config.getInt(NCConfig.Option.REPLICATION_LISTEN_PORT)));
         return sc;
     }
 
@@ -872,7 +862,7 @@ public class ReplicationManager implements IReplicationManager {
         Set<String> replicasIds = new HashSet<>();
         for (Replica replica : replicas.values()) {
             if (replica.getState() == ReplicaState.DEAD) {
-                replicasIds.add(replica.getNode().getId());
+                replicasIds.add(replica.getId());
             }
         }
         return replicasIds;
@@ -883,7 +873,7 @@ public class ReplicationManager implements IReplicationManager {
         Set<String> replicasIds = new HashSet<>();
         for (Replica replica : replicas.values()) {
             if (replica.getState() == ReplicaState.ACTIVE) {
-                replicasIds.add(replica.getNode().getId());
+                replicasIds.add(replica.getId());
             }
         }
         return replicasIds;
@@ -981,9 +971,8 @@ public class ReplicationManager implements IReplicationManager {
     private String getReplicaIdBySocket(SocketChannel socketChannel) {
         InetSocketAddress socketAddress = NetworkingUtil.getSocketAddress(socketChannel);
         for (Replica replica : replicas.values()) {
-            InetSocketAddress replicaAddress = replica.getAddress(replicationProperties);
-            if (replicaAddress.getHostName().equals(socketAddress.getHostName())
-                    && replicaAddress.getPort() == socketAddress.getPort()) {
+            if (replica.getClusterIp().equals(socketAddress.getHostName())
+                    && ncConfig.getReplicationPublicPort() == socketAddress.getPort()) {
                 return replica.getId();
             }
         }
@@ -1026,10 +1015,10 @@ public class ReplicationManager implements IReplicationManager {
         ByteBuffer requestBuffer = ByteBuffer.allocate(INITIAL_BUFFER_SIZE);
         for (String replicaId : replicaIds) {
             //1. identify replica indexes with LSN less than nonSharpCheckpointTargetLSN.
-            Map<Long, String> laggingIndexes =
+            Map<Long, DatasetResourceReference> laggingIndexes =
                     replicaResourcesManager.getLaggingReplicaIndexesId2PathMap(replicaId, nonSharpCheckpointTargetLSN);
 
-            if (laggingIndexes.size() > 0) {
+            if (!laggingIndexes.isEmpty()) {
                 //2. send request to remote replicas that have lagging indexes.
                 ReplicaIndexFlushRequest laggingIndexesResponse = null;
                 try (SocketChannel socketChannel = getReplicaSocket(replicaId)) {
@@ -1052,16 +1041,14 @@ public class ReplicationManager implements IReplicationManager {
                 }
 
                 /*
-                 * 4. update the LSN_MAP for indexes that were not flushed
+                 * 4. update checkpoints for indexes that were not flushed
                  * to the current append LSN to indicate no operations happened
                  * since the checkpoint start.
                  */
                 if (laggingIndexesResponse != null) {
                     for (Long resouceId : laggingIndexesResponse.getLaggingRescouresIds()) {
-                        String indexPath = laggingIndexes.get(resouceId);
-                        Map<Long, Long> indexLSNMap = replicaResourcesManager.getReplicaIndexLSNMap(indexPath);
-                        indexLSNMap.put(ReplicaResourcesManager.REPLICA_INDEX_CREATION_LSN, startLSN);
-                        replicaResourcesManager.updateReplicaIndexLSNMap(indexPath, indexLSNMap);
+                        final DatasetResourceReference datasetResourceReference = laggingIndexes.get(resouceId);
+                        indexCheckpointManagerProvider.get(datasetResourceReference).advanceLowWatermark(startLSN);
                     }
                 }
             }
@@ -1141,12 +1128,11 @@ public class ReplicationManager implements IReplicationManager {
                     fileChannel.force(true);
                 }
 
-                //we need to create LSN map for .metadata files that belong to remote replicas
+                //we need to create initial map for .metadata files that belong to remote replicas
                 if (!fileProperties.isLSMComponentFile() && !fileProperties.getNodeId().equals(nodeId)) {
-                    //replica index
-                    replicaResourcesManager.initializeReplicaIndexLSNMap(indexPath, logManager.getAppendLSN());
+                    final ResourceReference indexRef = ResourceReference.of(destFile.getAbsolutePath());
+                    indexCheckpointManagerProvider.get(indexRef).init(logManager.getAppendLSN());
                 }
-
                 responseFunction = ReplicationProtocol.getRequestType(socketChannel, dataBuffer);
             }
 
@@ -1190,8 +1176,27 @@ public class ReplicationManager implements IReplicationManager {
                 buffer.reset();
             }
         }
-        //move the buffer position to the sent limit
+        //move the bufeer position to the sent limit
         buffer.position(buffer.limit());
+    }
+
+    @Override
+    public void register(IPartitionReplica replica) {
+        // find the replica node based on ip and replication port
+        Optional<Replica> replicaNode = replicationStrategy.getRemoteReplicasAndSelf(nodeId).stream()
+                .filter(node -> node.getClusterIp().equals(replica.getIdentifier().getLocation().getHostString())
+                        && node.getPort() == replica.getIdentifier().getLocation().getPort())
+                .findAny();
+        if (!replicaNode.isPresent()) {
+            throw new IllegalStateException("Couldn't find node for replica: " + replica);
+        }
+        Replica replicaRef = replicaNode.get();
+        final String replicaId = replicaRef.getId();
+        replicas.putIfAbsent(replicaId, replicaRef);
+        replica2PartitionsMap.computeIfAbsent(replicaId, k -> new HashSet<>());
+        replica2PartitionsMap.get(replicaId).add(replica.getIdentifier().getPartition());
+        updateReplicaInfo(replicaRef);
+        checkReplicaState(replicaId, false, true);
     }
 
     //supporting classes
@@ -1288,9 +1293,7 @@ public class ReplicationManager implements IReplicationManager {
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                 } catch (IOException e) {
-                    if (LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.log(Level.WARNING, "Couldn't complete processing replication job", e);
-                    }
+                    LOGGER.warn("Couldn't complete processing replication job", e);
                 }
             }
 
@@ -1340,12 +1343,17 @@ public class ReplicationManager implements IReplicationManager {
                     addAckToJob(jobId, ackFrom);
                 }
             } catch (AsynchronousCloseException e) {
-                if (LOGGER.isLoggable(Level.INFO)) {
+                if (LOGGER.isInfoEnabled()) {
                     LOGGER.log(Level.INFO, "Replication listener stopped for remote replica: " + replicaId, e);
                 }
             } catch (IOException e) {
                 handleReplicationFailure(replicaSocket, e);
             }
         }
+    }
+
+    @Override
+    public IReplicationStrategy getReplicationStrategy() {
+        return replicationStrategy;
     }
 }

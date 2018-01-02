@@ -26,14 +26,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.apache.asterix.app.nc.task.BindMetadataNodeTask;
 import org.apache.asterix.app.nc.task.CheckpointTask;
 import org.apache.asterix.app.nc.task.ExternalLibrarySetupTask;
 import org.apache.asterix.app.nc.task.MetadataBootstrapTask;
-import org.apache.asterix.app.nc.task.ReportMaxResourceIdTask;
+import org.apache.asterix.app.nc.task.ReportLocalCountersTask;
 import org.apache.asterix.app.nc.task.StartFailbackTask;
 import org.apache.asterix.app.nc.task.StartLifecycleComponentsTask;
 import org.apache.asterix.app.nc.task.StartReplicationServiceTask;
@@ -43,17 +42,16 @@ import org.apache.asterix.app.replication.message.CompleteFailbackResponseMessag
 import org.apache.asterix.app.replication.message.NCLifecycleTaskReportMessage;
 import org.apache.asterix.app.replication.message.PreparePartitionsFailbackRequestMessage;
 import org.apache.asterix.app.replication.message.PreparePartitionsFailbackResponseMessage;
-import org.apache.asterix.app.replication.message.StartupTaskRequestMessage;
-import org.apache.asterix.app.replication.message.StartupTaskResponseMessage;
-import org.apache.asterix.app.replication.message.TakeoverMetadataNodeRequestMessage;
-import org.apache.asterix.app.replication.message.TakeoverMetadataNodeResponseMessage;
+import org.apache.asterix.app.replication.message.RegistrationTasksRequestMessage;
+import org.apache.asterix.app.replication.message.RegistrationTasksResponseMessage;
+import org.apache.asterix.app.replication.message.MetadataNodeRequestMessage;
+import org.apache.asterix.app.replication.message.MetadataNodeResponseMessage;
 import org.apache.asterix.app.replication.message.TakeoverPartitionsRequestMessage;
 import org.apache.asterix.app.replication.message.TakeoverPartitionsResponseMessage;
 import org.apache.asterix.common.api.IClusterManagementWork.ClusterState;
 import org.apache.asterix.common.api.INCLifecycleTask;
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.cluster.IClusterStateManager;
-import org.apache.asterix.common.config.ReplicationProperties;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
@@ -61,16 +59,20 @@ import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.replication.IFaultToleranceStrategy;
 import org.apache.asterix.common.replication.INCLifecycleMessage;
 import org.apache.asterix.common.replication.IReplicationStrategy;
+import org.apache.asterix.common.replication.Replica;
 import org.apache.asterix.common.transactions.IRecoveryManager.SystemState;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.util.FaultToleranceUtil;
 import org.apache.hyracks.api.application.ICCServiceContext;
 import org.apache.hyracks.api.application.IClusterLifecycleListener.ClusterEventType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
 
-    private static final Logger LOGGER = Logger.getLogger(AutoFaultToleranceStrategy.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
     private long clusterRequestId = 0;
 
     private Set<String> failedNodes = new HashSet<>();
@@ -84,9 +86,11 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
     private IReplicationStrategy replicationStrategy;
     private ICCServiceContext serviceCtx;
     private Set<String> pendingStartupCompletionNodes = new HashSet<>();
+    private List<String> nodeIds;
+    private Map<String, SystemState> startupQueue = new HashMap<>();
 
     @Override
-    public void notifyNodeJoin(String nodeId) throws HyracksDataException {
+    public void notifyNodeJoin(String nodeId) {
         pendingStartupCompletionNodes.add(nodeId);
     }
 
@@ -135,14 +139,13 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
     private synchronized void requestPartitionsTakeover(String failedNodeId) {
         //replica -> list of partitions to takeover
         Map<String, List<Integer>> partitionRecoveryPlan = new HashMap<>();
-        ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
-        ReplicationProperties replicationProperties = appCtx.getReplicationProperties();
         //collect the partitions of the failed NC
         List<ClusterPartition> lostPartitions = getNodeAssignedPartitions(failedNodeId);
         if (!lostPartitions.isEmpty()) {
             for (ClusterPartition partition : lostPartitions) {
                 //find replicas for this partitions
-                Set<String> partitionReplicas = replicationProperties.getNodeReplicasIds(partition.getNodeId());
+                Set<String> partitionReplicas = replicationStrategy.getRemoteReplicas(partition.getNodeId()).stream()
+                        .map(Replica::getId).collect(Collectors.toSet());
                 //find a replica that is still active
                 for (String replica : partitionReplicas) {
                     //TODO (mhubail) currently this assigns the partition to the first found active replica.
@@ -155,7 +158,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
 
             if (partitionRecoveryPlan.size() == 0) {
                 //no active replicas were found for the failed node
-                LOGGER.severe("Could not find active replicas for the partitions " + lostPartitions);
+                LOGGER.error("Could not find active replicas for the partitions " + lostPartitions);
                 return;
             } else {
                 LOGGER.info("Partitions to recover: " + lostPartitions);
@@ -175,7 +178,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
                      * has failed. When the failure notification arrives, we will send any pending request
                      * that belongs to the failed NC to a different active replica.
                      */
-                    LOGGER.log(Level.WARNING, "Failed to send takeover request: " + takeoverRequest, e);
+                    LOGGER.log(Level.WARN, "Failed to send takeover request: " + takeoverRequest, e);
                 }
             });
         }
@@ -203,9 +206,8 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
         planId2FailbackPlanMap.put(plan.getPlanId(), plan);
 
         //get all partitions this node requires to resync
-        ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
-        ReplicationProperties replicationProperties = appCtx.getReplicationProperties();
-        Set<String> nodeReplicas = replicationProperties.getNodeReplicasIds(failingBackNodeId);
+        Set<String> nodeReplicas = replicationStrategy.getRemoteReplicas(failingBackNodeId).stream().map(Replica::getId)
+                .collect(Collectors.toSet());
         clusterManager.getClusterPartitons();
         for (String replicaId : nodeReplicas) {
             ClusterPartition[] nodePartitions = clusterManager.getNodePartitions(replicaId);
@@ -221,7 +223,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
             }
         }
 
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Prepared Failback plan: " + plan.toString());
         }
 
@@ -288,7 +290,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
                 messageBroker.sendApplicationMessageToNC(request, request.getNodeID());
                 plan.addPendingRequest(request);
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to send failback request to: " + request.getNodeID(), e);
+                LOGGER.log(Level.WARN, "Failed to send failback request to: " + request.getNodeID(), e);
                 plan.notifyNodeFailure(request.getNodeID());
                 revertFailedFailbackPlanEffects();
                 break;
@@ -337,7 +339,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
         validateClusterState();
     }
 
-    public synchronized void process(TakeoverMetadataNodeResponseMessage response) throws HyracksDataException {
+    public synchronized void process(MetadataNodeResponseMessage response) throws HyracksDataException {
         currentMetadataNode = response.getNodeId();
         metadataNodeActive = true;
         clusterManager.updateMetadataNode(currentMetadataNode, metadataNodeActive);
@@ -371,7 +373,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
             try {
                 messageBroker.sendApplicationMessageToNC(request, request.getNodeId());
             } catch (Exception e) {
-                LOGGER.log(Level.WARNING, "Failed to send complete failback request to: " + request.getNodeId(), e);
+                LOGGER.log(Level.WARN, "Failed to send complete failback request to: " + request.getNodeId(), e);
                 notifyFailbackPlansNodeFailure(request.getNodeId());
                 revertFailedFailbackPlanEffects();
             }
@@ -403,7 +405,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
         ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
         ClusterPartition metadataPartiton = appCtx.getMetadataProperties().getMetadataPartition();
         //request the metadataPartition node to register itself as the metadata node
-        TakeoverMetadataNodeRequestMessage takeoverRequest = new TakeoverMetadataNodeRequestMessage();
+        MetadataNodeRequestMessage takeoverRequest = new MetadataNodeRequestMessage(true);
         try {
             messageBroker.sendApplicationMessageToNC(takeoverRequest, metadataPartiton.getActiveNodeId());
             // Since the metadata node will be changed, we need to rebind the proxy object
@@ -414,7 +416,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
              * has failed. When the failure notification arrives, a new NC will be assigned to
              * the metadata partition and a new metadata node takeover request will be sent to it.
              */
-            LOGGER.log(Level.WARNING,
+            LOGGER.log(Level.WARN,
                     "Failed to send metadata node takeover request to: " + metadataPartiton.getActiveNodeId(), e);
         }
     }
@@ -425,23 +427,24 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
         ft.messageBroker = (ICCMessageBroker) serviceCtx.getMessageBroker();
         ft.replicationStrategy = replicationStrategy;
         ft.serviceCtx = serviceCtx;
+        ft.nodeIds = serviceCtx.getAppConfig().getNCNames();
         return ft;
     }
 
     @Override
     public synchronized void process(INCLifecycleMessage message) throws HyracksDataException {
         switch (message.getType()) {
-            case STARTUP_TASK_REQUEST:
-                process((StartupTaskRequestMessage) message);
+            case REGISTRATION_TASKS_REQUEST:
+                process((RegistrationTasksRequestMessage) message);
                 break;
-            case STARTUP_TASK_RESULT:
+            case REGISTRATION_TASKS_RESULT:
                 process((NCLifecycleTaskReportMessage) message);
                 break;
             case TAKEOVER_PARTITION_RESPONSE:
                 process((TakeoverPartitionsResponseMessage) message);
                 break;
-            case TAKEOVER_METADATA_NODE_RESPONSE:
-                process((TakeoverMetadataNodeResponseMessage) message);
+            case METADATA_NODE_RESPONSE:
+                process((MetadataNodeResponseMessage) message);
                 break;
             case PREPARE_FAILBACK_RESPONSE:
                 process((PreparePartitionsFailbackResponseMessage) message);
@@ -473,7 +476,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
             }
             clusterManager.refreshState();
         } else {
-            LOGGER.log(Level.SEVERE, msg.getNodeId() + " failed to complete startup. ", msg.getException());
+            LOGGER.log(Level.ERROR, msg.getNodeId() + " failed to complete startup. ", msg.getException());
         }
     }
 
@@ -483,28 +486,39 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
         currentMetadataNode = clusterManager.getCurrentMetadataNodeId();
     }
 
-    private synchronized void process(StartupTaskRequestMessage msg) throws HyracksDataException {
+    private synchronized void process(RegistrationTasksRequestMessage msg) throws HyracksDataException {
         final String nodeId = msg.getNodeId();
         final SystemState state = msg.getState();
-        List<INCLifecycleTask> tasks;
-        if (state == SystemState.BOOTSTRAPPING || state == SystemState.HEALTHY) {
-            tasks = buildStartupSequence(nodeId);
+        //last node needed to start
+        if (startupQueue.keySet().size() == nodeIds.size() - 1) {
+            startupQueue.put(nodeId, state);
+            for (Map.Entry<String, SystemState> nodeState : startupQueue.entrySet()) {
+                List<INCLifecycleTask> tasks = buildStartupSequence(nodeState.getKey());
+                RegistrationTasksResponseMessage response = new RegistrationTasksResponseMessage(nodeState.getKey(),
+                        tasks);
+                try {
+                    messageBroker.sendApplicationMessageToNC(response, nodeState.getKey());
+                } catch (Exception e) {
+                    throw HyracksDataException.create(e);
+                }
+            }
+        } else if (!failedNodes.isEmpty()) {
+            List<INCLifecycleTask> tasks = buildFailbackStartupSequence();
+            RegistrationTasksResponseMessage response = new RegistrationTasksResponseMessage(nodeId, tasks);
+            try {
+                messageBroker.sendApplicationMessageToNC(response, msg.getNodeId());
+            } catch (Exception e) {
+                throw HyracksDataException.create(e);
+            }
         } else {
-            // failed node returned. Need to start failback process
-            tasks = buildFailbackStartupSequence();
-        }
-        StartupTaskResponseMessage response = new StartupTaskResponseMessage(nodeId, tasks);
-        try {
-            messageBroker.sendApplicationMessageToNC(response, msg.getNodeId());
-        } catch (Exception e) {
-            throw HyracksDataException.create(e);
+            startupQueue.put(nodeId, state);
         }
     }
 
     private List<INCLifecycleTask> buildFailbackStartupSequence() {
         final List<INCLifecycleTask> tasks = new ArrayList<>();
         tasks.add(new StartFailbackTask());
-        tasks.add(new ReportMaxResourceIdTask());
+        tasks.add(new ReportLocalCountersTask());
         tasks.add(new StartLifecycleComponentsTask());
         return tasks;
     }
@@ -517,7 +531,7 @@ public class AutoFaultToleranceStrategy implements IFaultToleranceStrategy {
             tasks.add(new MetadataBootstrapTask());
         }
         tasks.add(new ExternalLibrarySetupTask(isMetadataNode));
-        tasks.add(new ReportMaxResourceIdTask());
+        tasks.add(new ReportLocalCountersTask());
         tasks.add(new CheckpointTask());
         tasks.add(new StartLifecycleComponentsTask());
         if (isMetadataNode) {

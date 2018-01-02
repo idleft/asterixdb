@@ -21,8 +21,6 @@ package org.apache.asterix.api.http.server;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.concurrent.ConcurrentMap;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.asterix.common.config.ExternalProperties;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
@@ -30,13 +28,16 @@ import org.apache.hyracks.http.api.IServletRequest;
 import org.apache.hyracks.http.api.IServletResponse;
 import org.apache.hyracks.http.server.StaticResourceServlet;
 import org.apache.hyracks.http.server.utils.HttpUtil;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import io.netty.handler.codec.http.HttpResponseStatus;
 
 public class QueryWebInterfaceServlet extends StaticResourceServlet {
-    private static final Logger LOGGER = Logger.getLogger(QueryWebInterfaceServlet.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
     private ICcApplicationContext appCtx;
 
     public QueryWebInterfaceServlet(ICcApplicationContext appCtx, ConcurrentMap<String, Object> ctx, String[] paths) {
@@ -49,7 +50,8 @@ public class QueryWebInterfaceServlet extends StaticResourceServlet {
         String requestURI = request.getHttpRequest().uri();
         if ("/".equals(requestURI)) {
             HttpUtil.setContentType(response, HttpUtil.ContentType.TEXT_HTML);
-            deliverResource("/queryui/queryui.html", response);
+            // Dashboard Administration Console
+            deliverResource("/dashboard/static/index.html", response);
         } else {
             deliverResource(requestURI, response);
         }
@@ -67,12 +69,12 @@ public class QueryWebInterfaceServlet extends StaticResourceServlet {
             out.println(obj.toString());
             return;
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failure writing response", e);
+            LOGGER.log(Level.ERROR, "Failure writing response", e);
         }
         try {
             response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "Failure setting response status", e);
+            LOGGER.log(Level.ERROR, "Failure setting response status", e);
         }
     }
 }

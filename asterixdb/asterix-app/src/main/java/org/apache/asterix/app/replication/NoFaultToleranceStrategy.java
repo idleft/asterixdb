@@ -23,8 +23,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.asterix.app.nc.task.BindMetadataNodeTask;
@@ -32,11 +30,11 @@ import org.apache.asterix.app.nc.task.CheckpointTask;
 import org.apache.asterix.app.nc.task.ExternalLibrarySetupTask;
 import org.apache.asterix.app.nc.task.LocalRecoveryTask;
 import org.apache.asterix.app.nc.task.MetadataBootstrapTask;
-import org.apache.asterix.app.nc.task.ReportMaxResourceIdTask;
+import org.apache.asterix.app.nc.task.ReportLocalCountersTask;
 import org.apache.asterix.app.nc.task.StartLifecycleComponentsTask;
 import org.apache.asterix.app.replication.message.NCLifecycleTaskReportMessage;
-import org.apache.asterix.app.replication.message.StartupTaskRequestMessage;
-import org.apache.asterix.app.replication.message.StartupTaskResponseMessage;
+import org.apache.asterix.app.replication.message.RegistrationTasksRequestMessage;
+import org.apache.asterix.app.replication.message.RegistrationTasksResponseMessage;
 import org.apache.asterix.common.api.INCLifecycleTask;
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.cluster.IClusterStateManager;
@@ -48,12 +46,16 @@ import org.apache.asterix.common.replication.INCLifecycleMessage;
 import org.apache.asterix.common.replication.IReplicationStrategy;
 import org.apache.asterix.common.transactions.IRecoveryManager.SystemState;
 import org.apache.hyracks.api.application.ICCServiceContext;
+import org.apache.hyracks.api.client.NodeStatus;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NoFaultToleranceStrategy implements IFaultToleranceStrategy {
 
-    private static final Logger LOGGER = Logger.getLogger(NoFaultToleranceStrategy.class.getName());
-    IClusterStateManager clusterManager;
+    private static final Logger LOGGER = LogManager.getLogger();
+    private IClusterStateManager clusterManager;
     private String metadataNodeId;
     private Set<String> pendingStartupCompletionNodes = new HashSet<>();
     private ICCMessageBroker messageBroker;
@@ -76,10 +78,10 @@ public class NoFaultToleranceStrategy implements IFaultToleranceStrategy {
     @Override
     public void process(INCLifecycleMessage message) throws HyracksDataException {
         switch (message.getType()) {
-            case STARTUP_TASK_REQUEST:
-                process((StartupTaskRequestMessage) message);
+            case REGISTRATION_TASKS_REQUEST:
+                process((RegistrationTasksRequestMessage) message);
                 break;
-            case STARTUP_TASK_RESULT:
+            case REGISTRATION_TASKS_RESULT:
                 process((NCLifecycleTaskReportMessage) message);
                 break;
             default:
@@ -100,10 +102,10 @@ public class NoFaultToleranceStrategy implements IFaultToleranceStrategy {
         metadataNodeId = clusterManager.getCurrentMetadataNodeId();
     }
 
-    private void process(StartupTaskRequestMessage msg) throws HyracksDataException {
+    private void process(RegistrationTasksRequestMessage msg) throws HyracksDataException {
         final String nodeId = msg.getNodeId();
-        List<INCLifecycleTask> tasks = buildNCStartupSequence(msg.getNodeId(), msg.getState());
-        StartupTaskResponseMessage response = new StartupTaskResponseMessage(nodeId, tasks);
+        List<INCLifecycleTask> tasks = buildNCRegTasks(msg.getNodeId(), msg.getNodeStatus(), msg.getState());
+        RegistrationTasksResponseMessage response = new RegistrationTasksResponseMessage(nodeId, tasks);
         try {
             messageBroker.sendApplicationMessageToNC(response, msg.getNodeId());
         } catch (Exception e) {
@@ -120,13 +122,22 @@ public class NoFaultToleranceStrategy implements IFaultToleranceStrategy {
             }
             clusterManager.refreshState();
         } else {
-            if (LOGGER.isLoggable(Level.SEVERE)) {
-                LOGGER.log(Level.SEVERE, msg.getNodeId() + " failed to complete startup. ", msg.getException());
+            if (LOGGER.isErrorEnabled()) {
+                LOGGER.log(Level.ERROR, msg.getNodeId() + " failed to complete startup. ", msg.getException());
             }
         }
     }
 
-    private List<INCLifecycleTask> buildNCStartupSequence(String nodeId, SystemState state) {
+    private List<INCLifecycleTask> buildNCRegTasks(String nodeId, NodeStatus nodeStatus, SystemState state) {
+        LOGGER.log(Level.INFO, () -> "Building registration tasks for node: " + nodeId + " with state: " + state);
+        final boolean isMetadataNode = nodeId.equals(metadataNodeId);
+        if (nodeStatus == NodeStatus.ACTIVE) {
+            /*
+             * if the node state is already ACTIVE then it completed
+             * booting and just re-registering with a new/failed CC.
+             */
+            return buildActiveNCRegTasks(isMetadataNode);
+        }
         final List<INCLifecycleTask> tasks = new ArrayList<>();
         if (state == SystemState.CORRUPTED) {
             //need to perform local recovery for node partitions
@@ -134,17 +145,27 @@ public class NoFaultToleranceStrategy implements IFaultToleranceStrategy {
                     .stream().map(ClusterPartition::getPartitionId).collect(Collectors.toSet()));
             tasks.add(rt);
         }
-        final boolean isMetadataNode = nodeId.equals(metadataNodeId);
         if (isMetadataNode) {
             tasks.add(new MetadataBootstrapTask());
         }
         tasks.add(new ExternalLibrarySetupTask(isMetadataNode));
-        tasks.add(new ReportMaxResourceIdTask());
+        tasks.add(new ReportLocalCountersTask());
         tasks.add(new CheckpointTask());
         tasks.add(new StartLifecycleComponentsTask());
         if (isMetadataNode) {
             tasks.add(new BindMetadataNodeTask(true));
         }
+        return tasks;
+    }
+
+    private List<INCLifecycleTask> buildActiveNCRegTasks(boolean metadataNode) {
+        final List<INCLifecycleTask> tasks = new ArrayList<>();
+        if (metadataNode) {
+            // need to unbind from old distributed state then rebind to new one
+            tasks.add(new BindMetadataNodeTask(false));
+            tasks.add(new BindMetadataNodeTask(true));
+        }
+        tasks.add(new ReportLocalCountersTask());
         return tasks;
     }
 }

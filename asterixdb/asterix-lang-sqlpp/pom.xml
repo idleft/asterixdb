@@ -49,13 +49,6 @@
               <javaUnicodeEscape>true</javaUnicodeEscape>
             </configuration>
           </execution>
-          <execution>
-            <id>javacc-jjdoc</id>
-            <goals>
-              <goal>jjdoc</goal>
-            </goals>
-            <phase>process-sources</phase>
-          </execution>
         </executions>
       </plugin>
       <plugin>
@@ -109,6 +102,36 @@
       </plugins>
     </pluginManagement>
   </build>
+
+  <profiles>
+    <profile>
+      <id>jjdoc</id>
+      <activation>
+        <property>
+          <name>jjdoc.skip</name>
+          <value>!true</value>
+        </property>
+      </activation>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>javacc-maven-plugin</artifactId>
+            <executions>
+              <execution>
+                <id>javacc-jjdoc</id>
+                <goals>
+                  <goal>jjdoc</goal>
+                </goals>
+                <phase>generate-test-sources</phase>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+
   <dependencies>
     <dependency>
       <groupId>org.apache.asterix</groupId>
@@ -123,10 +146,6 @@
       <groupId>org.apache.asterix</groupId>
       <artifactId>asterix-om</artifactId>
       <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.asterix</groupId>
@@ -150,6 +169,10 @@
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.logging.log4j</groupId>
+      <artifactId>log4j-api</artifactId>
     </dependency>
   </dependencies>
 </project>

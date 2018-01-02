@@ -19,8 +19,6 @@
 
 package org.apache.hyracks.storage.am.lsm.common.impls;
 
-import java.util.logging.Logger;
-
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileReference;
 import org.apache.hyracks.api.io.IODeviceHandle;
@@ -29,13 +27,15 @@ import org.apache.hyracks.storage.am.lsm.common.api.ILSMIOOperationCallback;
 import org.apache.hyracks.storage.am.lsm.common.api.ILSMIndexAccessor;
 import org.apache.hyracks.util.trace.ITracer;
 import org.apache.hyracks.util.trace.ITracer.Scope;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 class TracedIOOperation implements ILSMIOOperation {
 
-    static final Logger LOGGER = Logger.getLogger(TracedIOOperation.class.getName());
+    static final Logger LOGGER = LogManager.getLogger();
 
     protected final ILSMIOOperation ioOp;
-    private final LSMIOOpertionType ioOpType;
+    private final LSMIOOperationType ioOpType;
     private final ITracer tracer;
     private final long traceCategory;
 
@@ -80,7 +80,7 @@ class TracedIOOperation implements ILSMIOOperation {
     }
 
     @Override
-    public LSMIOOpertionType getIOOpertionType() {
+    public LSMIOOperationType getIOOpertionType() {
         return ioOpType;
     }
 
@@ -128,7 +128,7 @@ class ComparableTracedIOOperation extends TracedIOOperation implements Comparabl
         if (myIoOp instanceof Comparable && other instanceof ComparableTracedIOOperation) {
             return ((Comparable) myIoOp).compareTo(((ComparableTracedIOOperation) other).getIoOp());
         }
-        LOGGER.warning("Comparing ioOps of type " + myIoOp.getClass().getSimpleName() + " and "
+        LOGGER.warn("Comparing ioOps of type " + myIoOp.getClass().getSimpleName() + " and "
                 + other.getClass().getSimpleName() + " in " + getClass().getSimpleName());
         return Integer.signum(hashCode() - other.hashCode());
     }

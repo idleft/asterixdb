@@ -36,8 +36,6 @@ import java.util.TimerTask;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.application.ICCApplication;
@@ -50,7 +48,10 @@ import org.apache.hyracks.api.context.ICCContext;
 import org.apache.hyracks.api.deployment.DeploymentId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.exceptions.HyracksException;
+import org.apache.hyracks.api.job.DeployedJobSpecIdFactory;
+import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobIdFactory;
+import org.apache.hyracks.api.job.JobParameterByteStore;
 import org.apache.hyracks.api.job.resource.IJobCapacityController;
 import org.apache.hyracks.api.service.IControllerService;
 import org.apache.hyracks.api.topology.ClusterTopology;
@@ -84,10 +85,13 @@ import org.apache.hyracks.ipc.api.IIPCI;
 import org.apache.hyracks.ipc.impl.IPCSystem;
 import org.apache.hyracks.ipc.impl.JavaSerializationBasedPayloadSerializerDeserializer;
 import org.apache.hyracks.util.ExitUtil;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.xml.sax.InputSource;
 
 public class ClusterControllerService implements IControllerService {
-    private static final Logger LOGGER = Logger.getLogger(ClusterControllerService.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private final CCConfig ccConfig;
 
@@ -107,7 +111,9 @@ public class ClusterControllerService implements IControllerService {
 
     private CCServiceContext serviceCtx;
 
-    private final PreDistributedJobStore preDistributedJobStore = new PreDistributedJobStore();
+    private final DeployedJobSpecStore deployedJobSpecStore = new DeployedJobSpecStore();
+
+    private final Map<JobId, JobParameterByteStore> jobParameterByteStoreMap = new HashMap<>();
 
     private final WorkQueue workQueue;
 
@@ -134,6 +140,8 @@ public class ClusterControllerService implements IControllerService {
     private final ICCApplication application;
 
     private final JobIdFactory jobIdFactory;
+
+    private final DeployedJobSpecIdFactory deployedJobSpecIdFactory;
 
     private IJobManager jobManager;
 
@@ -165,7 +173,7 @@ public class ClusterControllerService implements IControllerService {
         ccContext = new ClusterControllerContext(topology);
         sweeper = new DeadNodeSweeper();
         datasetDirectoryService = new DatasetDirectoryService(ccConfig.getResultTTL(),
-                ccConfig.getResultSweepThreshold(), preDistributedJobStore);
+                ccConfig.getResultSweepThreshold());
 
         deploymentRunMap = new HashMap<>();
         stateDumpRunMap = new HashMap<>();
@@ -175,6 +183,8 @@ public class ClusterControllerService implements IControllerService {
         nodeManager = new NodeManager(this, ccConfig, resourceManager);
 
         jobIdFactory = new JobIdFactory();
+
+        deployedJobSpecIdFactory = new DeployedJobSpecIdFactory();
     }
 
     private static ClusterTopology computeClusterTopology(CCConfig ccConfig) throws Exception {
@@ -234,8 +244,8 @@ public class ClusterControllerService implements IControllerService {
             jobManager = (IJobManager) jobManagerConstructor.newInstance(ccConfig, this, jobCapacityController);
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException | NoSuchMethodException
                 | InvocationTargetException e) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.log(Level.WARNING, "class " + ccConfig.getJobManagerClass() + " could not be used: ", e);
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.log(Level.WARN, "class " + ccConfig.getJobManagerClass() + " could not be used: ", e);
             }
             // Falls back to the default implementation if the user-provided class name is not valid.
             jobManager = new JobManager(ccConfig, this, jobCapacityController);
@@ -261,30 +271,34 @@ public class ClusterControllerService implements IControllerService {
 
     private void connectNCs() {
         getNCServices().forEach((key, value) -> {
-            final TriggerNCWork triggerWork = new TriggerNCWork(ClusterControllerService.this,
-                    value.getLeft(), value.getRight(), key);
+            final TriggerNCWork triggerWork = new TriggerNCWork(ClusterControllerService.this, value.getLeft(),
+                    value.getRight(), key);
             executor.submit(triggerWork);
         });
         serviceCtx.addClusterLifecycleListener(new IClusterLifecycleListener() {
             @Override
             public void notifyNodeJoin(String nodeId, Map<IOption, Object> ncConfiguration) throws HyracksException {
                 // no-op, we don't care
-                LOGGER.log(Level.WARNING, "Getting notified that node: " + nodeId + " has joined. and we don't care");
+                LOGGER.log(Level.WARN, "Getting notified that node: " + nodeId + " has joined. and we don't care");
             }
 
             @Override
             public void notifyNodeFailure(Collection<String> deadNodeIds) throws HyracksException {
-                LOGGER.log(Level.WARNING, "Getting notified that nodes: " + deadNodeIds + " has failed");
-                for (String nodeId : deadNodeIds) {
-                    Pair<String, Integer> ncService = getNCService(nodeId);
-                    if (ncService.getRight() != NCConfig.NCSERVICE_PORT_DISABLED) {
-                        final TriggerNCWork triggerWork = new TriggerNCWork(ClusterControllerService.this,
-                                ncService.getLeft(), ncService.getRight(), nodeId);
-                        executor.submit(triggerWork);
-                    }
-                }
+                LOGGER.log(Level.WARN, "Getting notified that nodes: " + deadNodeIds + " has failed");
             }
         });
+    }
+
+    public boolean startNC(String nodeId) {
+        Pair<String, Integer> ncServiceAddress = getNCService(nodeId);
+        if (ncServiceAddress == null) {
+            return false;
+        }
+        final TriggerNCWork startNc = new TriggerNCWork(ClusterControllerService.this, ncServiceAddress.getLeft(),
+                ncServiceAddress.getRight(), nodeId);
+        executor.submit(startNc);
+        return true;
+
     }
 
     private void terminateNCServices() throws Exception {
@@ -347,8 +361,21 @@ public class ClusterControllerService implements IControllerService {
         return nodeManager;
     }
 
-    public PreDistributedJobStore getPreDistributedJobStore() throws HyracksException {
-        return preDistributedJobStore;
+    public DeployedJobSpecStore getDeployedJobSpecStore() throws HyracksException {
+        return deployedJobSpecStore;
+    }
+
+    public void removeJobParameterByteStore(JobId jobId) throws HyracksException {
+        jobParameterByteStoreMap.remove(jobId);
+    }
+
+    public JobParameterByteStore createOrGetJobParameterByteStore(JobId jobId) throws HyracksException {
+        JobParameterByteStore jpbs = jobParameterByteStoreMap.get(jobId);
+        if (jpbs == null) {
+            jpbs = new JobParameterByteStore();
+            jobParameterByteStoreMap.put(jobId, jpbs);
+        }
+        return jpbs;
     }
 
     public IResourceManager getResourceManager() {
@@ -395,6 +422,10 @@ public class ClusterControllerService implements IControllerService {
 
     public JobIdFactory getJobIdFactory() {
         return jobIdFactory;
+    }
+
+    public DeployedJobSpecIdFactory getDeployedJobSpecIdFactory() {
+        return deployedJobSpecIdFactory;
     }
 
     private final class ClusterControllerContext implements ICCContext {

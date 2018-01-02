@@ -46,7 +46,7 @@ public class BaseOperationTracker implements ITransactionOperationTracker {
     @Override
     public void afterOperation(ILSMIndex index, LSMOperationType opType, ISearchOperationCallback searchCallback,
             IModificationOperationCallback modificationCallback) throws HyracksDataException {
-        if (opType == LSMOperationType.FLUSH || opType == LSMOperationType.REPLICATE) {
+        if (opType == LSMOperationType.REPLICATE) {
             dsInfo.undeclareActiveIOOperation();
         }
     }
@@ -54,21 +54,24 @@ public class BaseOperationTracker implements ITransactionOperationTracker {
     @Override
     public void completeOperation(ILSMIndex index, LSMOperationType opType, ISearchOperationCallback searchCallback,
             IModificationOperationCallback modificationCallback) throws HyracksDataException {
-        if (opType == LSMOperationType.MERGE) {
+        if (opType == LSMOperationType.FLUSH || opType == LSMOperationType.MERGE) {
             dsInfo.undeclareActiveIOOperation();
         }
     }
 
-    public void exclusiveJobCommitted() throws HyracksDataException {
-    }
-
     @Override
-    public void beforeTransaction() {
+    public void beforeTransaction(long resourceId) {
+        /*
+         * Increment dataset and index ref count to prevent them
+         * from being evicted/dropped until the transaction completes
+         */
         dsInfo.touch();
+        dsInfo.getIndexes().get(resourceId).touch();
     }
 
     @Override
-    public void afterTransaction() {
+    public void afterTransaction(long resourceId) {
         dsInfo.untouch();
+        dsInfo.getIndexes().get(resourceId).untouch();
     }
 }

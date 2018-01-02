@@ -18,30 +18,42 @@
  */
 package org.apache.hyracks.control.common.ipc;
 
-import static org.apache.hyracks.control.common.ipc.CCNCFunctions.*;
-
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.logging.Logger;
 
 import org.apache.hyracks.api.comm.NetworkAddress;
 import org.apache.hyracks.api.dataflow.ConnectorDescriptorId;
 import org.apache.hyracks.api.dataflow.TaskAttemptId;
 import org.apache.hyracks.api.dataflow.connectors.IConnectorPolicy;
 import org.apache.hyracks.api.deployment.DeploymentId;
+import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.job.JobFlag;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobStatus;
 import org.apache.hyracks.api.partitions.PartitionId;
 import org.apache.hyracks.control.common.base.INodeController;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.AbortTasksFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.CleanupJobletFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.DeployBinaryFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.DeployJobSpecFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.ReportPartitionAvailabilityFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.SendApplicationMessageFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.ShutdownRequestFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.StartTasksFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.StateDumpRequestFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.ThreadDumpRequestFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.UnDeployBinaryFunction;
+import org.apache.hyracks.control.common.ipc.CCNCFunctions.UndeployJobSpecFunction;
 import org.apache.hyracks.control.common.job.TaskAttemptDescriptor;
 import org.apache.hyracks.ipc.impl.IPCSystem;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class NodeControllerRemoteProxy extends ControllerRemoteProxy implements INodeController {
-    private static final Logger LOGGER = Logger.getLogger(NodeControllerRemoteProxy.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     public NodeControllerRemoteProxy(IPCSystem ipc, InetSocketAddress inetSocketAddress) {
         super(ipc, inetSocketAddress);
@@ -61,9 +73,10 @@ public class NodeControllerRemoteProxy extends ControllerRemoteProxy implements 
     @Override
     public void startTasks(DeploymentId deploymentId, JobId jobId, byte[] planBytes,
             List<TaskAttemptDescriptor> taskDescriptors, Map<ConnectorDescriptorId, IConnectorPolicy> connectorPolicies,
-            Set<JobFlag> flags) throws Exception {
+            Set<JobFlag> flags, Map<byte[], byte[]> jobParameters, DeployedJobSpecId deployedJobSpecId)
+            throws Exception {
         StartTasksFunction stf = new StartTasksFunction(deploymentId, jobId, planBytes,
-                taskDescriptors, connectorPolicies, flags);
+                taskDescriptors, connectorPolicies, flags, jobParameters, deployedJobSpecId);
         ensureIpcHandle().send(-1, stf, null);
     }
 
@@ -99,14 +112,14 @@ public class NodeControllerRemoteProxy extends ControllerRemoteProxy implements 
     }
 
     @Override
-    public void distributeJob(JobId jobId, byte[] planBytes) throws Exception {
-        DistributeJobFunction fn = new DistributeJobFunction(jobId, planBytes);
+    public void deployJobSpec(DeployedJobSpecId deployedJobSpecId, byte[] planBytes) throws Exception {
+        DeployJobSpecFunction fn = new DeployJobSpecFunction(deployedJobSpecId, planBytes);
         ensureIpcHandle().send(-1, fn, null);
     }
 
     @Override
-    public void destroyJob(JobId jobId) throws Exception {
-        DestroyJobFunction fn = new DestroyJobFunction(jobId);
+    public void undeployJobSpec(DeployedJobSpecId deployedJobSpecId) throws Exception {
+        UndeployJobSpecFunction fn = new UndeployJobSpecFunction(deployedJobSpecId);
         ensureIpcHandle().send(-1, fn, null);
     }
 

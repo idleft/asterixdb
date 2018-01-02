@@ -35,8 +35,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.replication.IReplicationManager;
@@ -51,15 +49,17 @@ import org.apache.asterix.common.transactions.LogManagerProperties;
 import org.apache.asterix.common.transactions.LogType;
 import org.apache.asterix.common.transactions.MutableLong;
 import org.apache.asterix.common.transactions.TxnLogFile;
-import org.apache.asterix.common.utils.InterruptUtil;
+import org.apache.asterix.common.utils.InvokeUtil;
 import org.apache.hyracks.api.lifecycle.ILifeCycleComponent;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.Logger;
 
 public class LogManager implements ILogManager, ILifeCycleComponent {
 
     /*
      * Constants
      */
-    private static final Logger LOGGER = Logger.getLogger(LogManager.class.getName());
+    private static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
     private static final long SMALLEST_LOG_FILE_ID = 0;
     private static final int INITIAL_LOG_SIZE = 0;
     public static final boolean IS_DEBUG_MODE = false;// true
@@ -116,7 +116,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
         }
         appendLSN.set(initializeLogAnchor(nextLogFileId));
         flushLSN.set(appendLSN.get());
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("LogManager starts logging in LSN: " + appendLSN);
         }
         appendChannel = getFileChannel(appendLSN.get(), false);
@@ -159,7 +159,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
             ITransactionContext txnCtx = logRecord.getTxnCtx();
             if (txnCtx.getTxnState() == ITransactionManager.ABORTED && logRecord.getLogType() != LogType.ABORT) {
                 throw new ACIDException(
-                        "Aborted job(" + txnCtx.getJobId() + ") tried to write non-abort type log record.");
+                        "Aborted txn(" + txnCtx.getTxnId() + ") tried to write non-abort type log record.");
             }
         }
 
@@ -244,7 +244,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
         appendLSN.addAndGet(logFileSize - getLogFileOffset(appendLSN.get()));
         flushLSN.set(appendLSN.get());
         appendChannel = getFileChannel(appendLSN.get(), true);
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Created new txn log file with id(" + getLogFileId(appendLSN.get()) + ") starting with LSN = "
                     + appendLSN.get());
         }
@@ -334,7 +334,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
                 if (logFileIds == null) {
                     fileId = nextLogFileId;
                     createFileIfNotExists(getLogFilePath(fileId));
-                    if (LOGGER.isLoggable(Level.INFO)) {
+                    if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("created a log file: " + getLogFilePath(fileId));
                     }
                 } else {
@@ -345,18 +345,18 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
             } else {
                 fileId = nextLogFileId;
                 createNewDirectory(logDir);
-                if (LOGGER.isLoggable(Level.INFO)) {
+                if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("created the log directory: " + logManagerProperties.getLogDir());
                 }
                 createFileIfNotExists(getLogFilePath(fileId));
-                if (LOGGER.isLoggable(Level.INFO)) {
+                if (LOGGER.isInfoEnabled()) {
                     LOGGER.info("created a log file: " + getLogFilePath(fileId));
                 }
             }
         } catch (IOException ioe) {
             throw new IllegalStateException("Failed to initialize the log anchor", ioe);
         }
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("log file Id: " + fileId + ", offset: " + offset);
         }
         return logFileSize * fileId + offset;
@@ -395,7 +395,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
                     File file = new File(getLogFilePath(id));
                     file.delete();
                     txnLogFileId2ReaderCount.remove(id);
-                    if (LOGGER.isLoggable(Level.INFO)) {
+                    if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Deleted log file " + file.getAbsolutePath());
                     }
                 }
@@ -404,20 +404,20 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
     }
 
     private void terminateLogFlusher() {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Terminating LogFlusher thread ...");
         }
         logFlusher.terminate();
         try {
             futureLogFlusher.get();
         } catch (ExecutionException | InterruptedException e) {
-            if (LOGGER.isLoggable(Level.INFO)) {
+            if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("---------- warning(begin): LogFlusher thread is terminated abnormally --------");
                 e.printStackTrace();
                 LOGGER.info("---------- warning(end)  : LogFlusher thread is terminated abnormally --------");
             }
         }
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("LogFlusher thread is terminated.");
         }
     }
@@ -580,7 +580,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
     @Override
     public void closeLogFile(TxnLogFile logFileRef, FileChannel fileChannel) throws IOException {
         if (!fileChannel.isOpen()) {
-            throw new IllegalStateException("File channel is not open");
+            LOGGER.warn(() -> "Closing log file with id(" + logFileRef.getLogFileId() + ") with a closed channel.");
         }
         fileChannel.close();
         untouchLogFile(logFileRef.getLogFileId());
@@ -634,7 +634,7 @@ public class LogManager implements ILogManager, ILifeCycleComponent {
 }
 
 class LogFlusher implements Callable<Boolean> {
-    private static final Logger LOGGER = Logger.getLogger(LogFlusher.class.getName());
+    private static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
     private static final ILogBuffer POISON_PILL = new LogBuffer(null, ILogRecord.JOB_TERMINATE_LOG_SIZE, null);
     private final LogManager logMgr;//for debugging
     private final LinkedBlockingQueue<ILogBuffer> emptyQ;
@@ -655,7 +655,7 @@ class LogFlusher implements Callable<Boolean> {
 
     public void terminate() {
         // make sure the LogFlusher thread started before terminating it.
-        InterruptUtil.doUninterruptibly(started::acquire);
+        InvokeUtil.doUninterruptibly(started::acquire);
 
         stopping = true;
 
@@ -665,7 +665,7 @@ class LogFlusher implements Callable<Boolean> {
             currentFlushPage.stop();
         }
         // finally we put a POISON_PILL onto the flushQ to indicate to the flusher it is time to exit
-        InterruptUtil.doUninterruptibly(() -> flushQ.put(POISON_PILL));
+        InvokeUtil.doUninterruptibly(() -> flushQ.put(POISON_PILL));
     }
 
     @Override
@@ -675,7 +675,7 @@ class LogFlusher implements Callable<Boolean> {
         try {
             while (true) {
                 flushPage = null;
-                interrupted = InterruptUtil.doUninterruptiblyGet(() -> flushPage = flushQ.take()) || interrupted;
+                interrupted = InvokeUtil.doUninterruptiblyGet(() -> flushPage = flushQ.take()) || interrupted;
                 if (flushPage == POISON_PILL) {
                     return true;
                 }
@@ -685,7 +685,7 @@ class LogFlusher implements Callable<Boolean> {
                 emptyQ.add(flushPage.getLogPageSize() == logMgr.getLogPageSize() ? flushPage : stashQ.remove());
             }
         } catch (Exception e) {
-            LOGGER.log(Level.SEVERE, "LogFlusher is terminating abnormally. System is in unusable state.", e);
+            LOGGER.log(Level.ERROR, "LogFlusher is terminating abnormally. System is in unusable state.", e);
             throw e;
         } finally {
             if (interrupted) {

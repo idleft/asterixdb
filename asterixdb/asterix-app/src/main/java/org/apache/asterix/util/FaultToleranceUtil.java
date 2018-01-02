@@ -20,9 +20,6 @@ package org.apache.asterix.util;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import org.apache.asterix.common.cluster.IClusterStateManager;
@@ -34,10 +31,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.hyracks.api.application.IClusterLifecycleListener.ClusterEventType;
 import org.apache.hyracks.api.config.IOption;
 import org.apache.hyracks.control.common.controllers.NCConfig;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class FaultToleranceUtil {
 
-    private static final Logger LOGGER = Logger.getLogger(FaultToleranceUtil.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private FaultToleranceUtil() {
         throw new AssertionError();
@@ -49,22 +48,22 @@ public class FaultToleranceUtil {
         List<String> primaryRemoteReplicas = replicationStrategy.getRemotePrimaryReplicas(nodeId).stream()
                 .map(Replica::getId).collect(Collectors.toList());
         String nodeIdAddress = StringUtils.EMPTY;
-        Map<String, Map<IOption, Object>> ncConfiguration = clusterManager.getNcConfiguration();
+        int nodePort = -1;
+        Map<String, Map<IOption, Object>> activeNcConfiguration = clusterManager.getActiveNcConfiguration();
+
         // In case the node joined with a new IP address, we need to send it to the other replicas
         if (event == ClusterEventType.NODE_JOIN) {
-            nodeIdAddress = (String) ncConfiguration.get(nodeId).get(NCConfig.Option.CLUSTER_PUBLIC_ADDRESS);
+            nodeIdAddress = (String) activeNcConfiguration.get(nodeId).get(NCConfig.Option.REPLICATION_PUBLIC_ADDRESS);
+            nodePort = (int) activeNcConfiguration.get(nodeId).get(NCConfig.Option.REPLICATION_PUBLIC_PORT);
         }
-        final Set<String> participantNodes = clusterManager.getParticipantNodes();
-        ReplicaEventMessage msg = new ReplicaEventMessage(nodeId, nodeIdAddress, event);
+        ReplicaEventMessage msg = new ReplicaEventMessage(nodeId, nodeIdAddress, nodePort, event);
         for (String replica : primaryRemoteReplicas) {
             // If the remote replica is alive, send the event
-            if (participantNodes.contains(replica)) {
+            if (activeNcConfiguration.containsKey(replica)) {
                 try {
                     messageBroker.sendApplicationMessageToNC(msg, replica);
                 } catch (Exception e) {
-                    if (LOGGER.isLoggable(Level.WARNING)) {
-                        LOGGER.log(Level.WARNING, "Failed sending an application message to an NC", e);
-                    }
+                    LOGGER.warn("Failed sending an application message to an NC", e);
                 }
             }
         }

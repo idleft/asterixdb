@@ -29,21 +29,17 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import org.apache.asterix.common.api.IClusterManagementWork.ClusterState;
 import org.apache.asterix.common.cluster.ClusterPartition;
 import org.apache.asterix.common.cluster.IClusterStateManager;
-import org.apache.asterix.common.config.ClusterProperties;
-import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.replication.IFaultToleranceStrategy;
+import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.transactions.IResourceIdManager;
-import org.apache.asterix.event.schema.cluster.Cluster;
-import org.apache.asterix.event.schema.cluster.Node;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
+import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.config.IOption;
 import org.apache.hyracks.api.config.Section;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -51,6 +47,9 @@ import org.apache.hyracks.api.exceptions.HyracksException;
 import org.apache.hyracks.control.common.application.ConfigManagerApplicationConfig;
 import org.apache.hyracks.control.common.config.ConfigManager;
 import org.apache.hyracks.control.common.controllers.NCConfig;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -67,10 +66,9 @@ public class ClusterStateManager implements IClusterStateManager {
      * shutdown and using it on startup to identify the nodes that are expected the join.
      */
 
-    private static final Logger LOGGER = Logger.getLogger(ClusterStateManager.class.getName());
+    private static final Logger LOGGER = LogManager.getLogger();
     private final Map<String, Map<IOption, Object>> ncConfigMap = new HashMap<>();
     private Set<String> pendingRemoval = new HashSet<>();
-    private final Cluster cluster;
     private ClusterState state = ClusterState.UNUSABLE;
     private AlgebricksAbsolutePartitionConstraint clusterPartitionConstraint;
     private Map<String, ClusterPartition[]> node2PartitionsMap;
@@ -81,10 +79,6 @@ public class ClusterStateManager implements IClusterStateManager {
     private Set<String> participantNodes = new HashSet<>();
     private IFaultToleranceStrategy ftStrategy;
     private ICcApplicationContext appCtx;
-
-    public ClusterStateManager() {
-        cluster = ClusterProperties.INSTANCE.getCluster();
-    }
 
     @Override
     public void setCcAppCtx(ICcApplicationContext appCtx) {
@@ -98,7 +92,7 @@ public class ClusterStateManager implements IClusterStateManager {
 
     @Override
     public synchronized void notifyNodeFailure(String nodeId) throws HyracksException {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Removing configuration parameters for node id " + nodeId);
         }
         failedNodes.add(nodeId);
@@ -109,7 +103,7 @@ public class ClusterStateManager implements IClusterStateManager {
 
     @Override
     public synchronized void notifyNodeJoin(String nodeId, Map<IOption, Object> configuration) throws HyracksException {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Registering configuration parameters for node id " + nodeId);
         }
         failedNodes.remove(nodeId);
@@ -178,8 +172,8 @@ public class ClusterStateManager implements IClusterStateManager {
         }
         resetClusterPartitionConstraint();
         // if the cluster has no registered partitions or all partitions are pending activation -> UNUSABLE
-        if (clusterPartitions.isEmpty() || clusterPartitions.values().stream()
-                .allMatch(ClusterPartition::isPendingActivation)) {
+        if (clusterPartitions.isEmpty()
+                || clusterPartitions.values().stream().allMatch(ClusterPartition::isPendingActivation)) {
             LOGGER.info("Cluster does not have any registered partitions");
             setState(ClusterState.UNUSABLE);
             return;
@@ -246,8 +240,8 @@ public class ClusterStateManager implements IClusterStateManager {
     public synchronized String[] getIODevices(String nodeId) {
         Map<IOption, Object> ncConfig = ncConfigMap.get(nodeId);
         if (ncConfig == null) {
-            if (LOGGER.isLoggable(Level.WARNING)) {
-                LOGGER.warning("Configuration parameters for nodeId " + nodeId
+            if (LOGGER.isWarnEnabled()) {
+                LOGGER.warn("Configuration parameters for nodeId " + nodeId
                         + " not found. The node has not joined yet or has left.");
             }
             return new String[0];
@@ -258,12 +252,6 @@ public class ClusterStateManager implements IClusterStateManager {
     @Override
     public synchronized ClusterState getState() {
         return state;
-    }
-
-    @Override
-    public synchronized Node getAvailableSubstitutionNode() {
-        List<Node> subNodes = cluster.getSubstituteNodes() == null ? null : cluster.getSubstituteNodes().getNode();
-        return subNodes == null || subNodes.isEmpty() ? null : subNodes.get(0);
     }
 
     @Override
@@ -301,10 +289,6 @@ public class ClusterStateManager implements IClusterStateManager {
 
     @Override
     public synchronized boolean isClusterActive() {
-        if (cluster == null) {
-            // this is a virtual cluster
-            return true;
-        }
         return state == ClusterState.ACTIVE;
     }
 
@@ -396,8 +380,8 @@ public class ClusterStateManager implements IClusterStateManager {
 
     @Override
     public synchronized void registerNodePartitions(String nodeId, ClusterPartition[] nodePartitions)
-            throws AsterixException {
-        if (LOGGER.isLoggable(Level.INFO)) {
+            throws AlgebricksException {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Registering node partitions for node " + nodeId + ": " + Arrays.toString(nodePartitions));
         }
         // We want to make sure there are no conflicts; make two passes for simplicity...
@@ -420,7 +404,7 @@ public class ClusterStateManager implements IClusterStateManager {
         if (nodePartitions == null) {
             LOGGER.info("deregisterNodePartitions unknown node " + nodeId + " (already removed?)");
         } else {
-            if (LOGGER.isLoggable(Level.INFO)) {
+            if (LOGGER.isInfoEnabled()) {
                 LOGGER.info("deregisterNodePartitions for node " + nodeId + ": " + Arrays.toString(nodePartitions));
             }
             for (ClusterPartition nodePartition : nodePartitions) {
@@ -432,27 +416,32 @@ public class ClusterStateManager implements IClusterStateManager {
 
     @Override
     public synchronized void removePending(String nodeId) {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Registering intention to remove node id " + nodeId);
         }
         if (participantNodes.contains(nodeId)) {
             pendingRemoval.add(nodeId);
         } else {
-            LOGGER.warning("Cannot register unknown node " + nodeId + " for pending removal");
+            LOGGER.warn("Cannot register unknown node " + nodeId + " for pending removal");
         }
     }
 
     @Override
     public synchronized boolean cancelRemovePending(String nodeId) {
-        if (LOGGER.isLoggable(Level.INFO)) {
+        if (LOGGER.isInfoEnabled()) {
             LOGGER.info("Deregistering intention to remove node id " + nodeId);
         }
         if (!pendingRemoval.remove(nodeId)) {
-            LOGGER.warning("Cannot deregister intention to remove node id " + nodeId + " that was not registered");
+            LOGGER.warn("Cannot deregister intention to remove node id " + nodeId + " that was not registered");
             return false;
         } else {
             return true;
         }
+    }
+
+    @Override
+    public Map<String, Map<IOption, Object>> getActiveNcConfiguration() {
+        return ncConfigMap;
     }
 
     public synchronized Set<String> getNodesPendingRemoval() {
@@ -467,6 +456,10 @@ public class ClusterStateManager implements IClusterStateManager {
                 configManager.set(nodeId, key, value);
             }
         });
+    }
+
+    public String getStoragePathPrefix() {
+        return appCtx.getNodeProperties().getStorageSubdir();
     }
 
 }

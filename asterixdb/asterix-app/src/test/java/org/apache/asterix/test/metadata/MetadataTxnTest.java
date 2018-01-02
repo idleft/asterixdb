@@ -22,11 +22,20 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.asterix.api.common.AsterixHyracksIntegrationUtil;
+import org.apache.asterix.common.api.IDatasetLifecycleManager;
+import org.apache.asterix.common.api.INcApplicationContext;
+import org.apache.asterix.common.config.DatasetConfig;
 import org.apache.asterix.common.config.GlobalConfig;
+import org.apache.asterix.common.context.PrimaryIndexOperationTracker;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.metadata.MetadataManager;
 import org.apache.asterix.metadata.MetadataTransactionContext;
@@ -37,20 +46,22 @@ import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.metadata.utils.DatasetUtil;
 import org.apache.asterix.test.common.TestExecutor;
 import org.apache.asterix.testframework.context.TestCaseContext;
+import org.apache.hyracks.storage.am.lsm.common.impls.NoMergePolicyFactory;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
 public class MetadataTxnTest {
 
-    private static final String TEST_CONFIG_FILE_NAME = "asterix-build-configuration.xml";
+    protected static final String TEST_CONFIG_FILE_NAME = "src/main/resources/cc.conf";
     private static final TestExecutor testExecutor = new TestExecutor();
     private static final AsterixHyracksIntegrationUtil integrationUtil = new AsterixHyracksIntegrationUtil();
 
     @Before
     public void setUp() throws Exception {
         System.setProperty(GlobalConfig.CONFIG_FILE_PROPERTY, TEST_CONFIG_FILE_NAME);
-        integrationUtil.init(true);
+        integrationUtil.init(true, TEST_CONFIG_FILE_NAME);
     }
 
     @After
@@ -60,8 +71,8 @@ public class MetadataTxnTest {
 
     @Test
     public void abortMetadataTxn() throws Exception {
-        ICcApplicationContext appCtx =
-                (ICcApplicationContext) integrationUtil.getClusterControllerService().getApplicationContext();
+        ICcApplicationContext appCtx = (ICcApplicationContext) integrationUtil.getClusterControllerService()
+                .getApplicationContext();
         final MetadataProvider metadataProvider = new MetadataProvider(appCtx, null);
         final MetadataTransactionContext mdTxn = MetadataManager.INSTANCE.beginTransaction();
         metadataProvider.setMetadataTxnContext(mdTxn);
@@ -88,8 +99,8 @@ public class MetadataTxnTest {
 
     @Test
     public void rebalanceFailureMetadataTxn() throws Exception {
-        ICcApplicationContext appCtx =
-                (ICcApplicationContext) integrationUtil.getClusterControllerService().getApplicationContext();
+        ICcApplicationContext appCtx = (ICcApplicationContext) integrationUtil.getClusterControllerService()
+                .getApplicationContext();
         String nodeGroup = "ng";
         String datasetName = "dataset1";
         final TestCaseContext.OutputFormat format = TestCaseContext.OutputFormat.CLEAN_JSON;
@@ -136,6 +147,90 @@ public class MetadataTxnTest {
             }
         } finally {
             MetadataManager.INSTANCE.commitTransaction(readMdTxn);
+        }
+    }
+
+    @Test
+    public void concurrentMetadataTxn() throws Exception {
+        // get create type and dataset
+        String datasetName = "dataset1";
+        final TestCaseContext.OutputFormat format = TestCaseContext.OutputFormat.CLEAN_JSON;
+        testExecutor.executeSqlppUpdateOrDdl("CREATE TYPE KeyType AS { id: int };", format);
+        testExecutor.executeSqlppUpdateOrDdl("CREATE DATASET " + datasetName + "(KeyType) PRIMARY KEY id;", format);
+
+        // get created dataset
+        ICcApplicationContext appCtx = (ICcApplicationContext) integrationUtil.getClusterControllerService()
+                .getApplicationContext();
+        MetadataProvider metadataProvider = new MetadataProvider(appCtx, null);
+        final MetadataTransactionContext mdTxnCtx = MetadataManager.INSTANCE.beginTransaction();
+        metadataProvider.setMetadataTxnContext(mdTxnCtx);
+        Dataset sourceDataset;
+        try {
+            sourceDataset = metadataProvider.findDataset(MetadataBuiltinEntities.DEFAULT_DATAVERSE_NAME, datasetName);
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
+        } finally {
+            metadataProvider.getLocks().unlock();
+        }
+
+        /*
+         * Concurrently insert copies of the created dataset with
+         * different names and either commit or abort the transaction.
+         */
+        final AtomicInteger failCount = new AtomicInteger(0);
+        Thread transactor1 = new Thread(() -> IntStream.range(1, 100).forEach(x -> {
+            try {
+                addDataset(appCtx, sourceDataset, x, x % 2 == 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+                failCount.incrementAndGet();
+            }
+        }));
+
+        Thread transactor2 = new Thread(() -> IntStream.range(101, 200).forEach(x -> {
+            try {
+                addDataset(appCtx, sourceDataset, x, x % 3 == 0);
+            } catch (Exception e) {
+                e.printStackTrace();
+                failCount.incrementAndGet();
+            }
+        }));
+
+        transactor1.start();
+        transactor2.start();
+        transactor1.join();
+        transactor2.join();
+
+        Assert.assertEquals(0, failCount.get());
+
+        // make sure all metadata indexes have no pending operations after all txns committed/aborted
+        final IDatasetLifecycleManager datasetLifecycleManager = ((INcApplicationContext) integrationUtil.ncs[0]
+                .getApplicationContext()).getDatasetLifecycleManager();
+        int maxMetadatasetId = 14;
+        for (int i = 1; i <= maxMetadatasetId; i++) {
+            if (datasetLifecycleManager.getIndex(i, i) != null) {
+                final PrimaryIndexOperationTracker opTracker = datasetLifecycleManager.getOperationTracker(i);
+                Assert.assertEquals(0, opTracker.getNumActiveOperations());
+            }
+        }
+    }
+
+    private void addDataset(ICcApplicationContext appCtx, Dataset source, int datasetPostfix, boolean abort)
+            throws Exception {
+        Dataset dataset = new Dataset(source.getDataverseName(), "ds_" + datasetPostfix, source.getDataverseName(),
+                source.getDatasetType().name(), source.getNodeGroupName(), NoMergePolicyFactory.NAME, null,
+                source.getDatasetDetails(), source.getHints(), DatasetConfig.DatasetType.INTERNAL, datasetPostfix, 0);
+        MetadataProvider metadataProvider = new MetadataProvider(appCtx, null);
+        final MetadataTransactionContext writeTxn = MetadataManager.INSTANCE.beginTransaction();
+        metadataProvider.setMetadataTxnContext(writeTxn);
+        try {
+            MetadataManager.INSTANCE.addDataset(writeTxn, dataset);
+            if (abort) {
+                MetadataManager.INSTANCE.abortTransaction(writeTxn);
+            } else {
+                MetadataManager.INSTANCE.commitTransaction(writeTxn);
+            }
+        } finally {
+            metadataProvider.getLocks().unlock();
         }
     }
 }

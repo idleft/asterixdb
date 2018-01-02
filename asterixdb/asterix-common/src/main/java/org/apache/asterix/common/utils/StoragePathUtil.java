@@ -19,8 +19,12 @@
 package org.apache.asterix.common.utils;
 
 import java.io.File;
+import java.nio.file.Paths;
+import java.util.function.Function;
 
 import org.apache.asterix.common.cluster.ClusterPartition;
+import org.apache.asterix.common.storage.IndexPathElements;
+import org.apache.asterix.common.storage.ResourceReference;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.utils.Pair;
@@ -29,14 +33,13 @@ import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.io.MappedFileSplit;
 import org.apache.hyracks.dataflow.std.file.ConstantFileSplitProvider;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class StoragePathUtil {
-    private static final Logger LOGGER = Logger.getLogger(StoragePathUtil.class.getName());
-    public static final String PARTITION_DIR_PREFIX = "partition_";
-    public static final String TEMP_DATASETS_STORAGE_FOLDER = "temp";
-    public static final String DATASET_INDEX_NAME_SEPARATOR = "_idx_";
+
+    private static final Logger LOGGER = LogManager.getLogger();
+    private static Function<IndexPathElements, String> indexPathProvider;
 
     private StoragePathUtil() {
     }
@@ -56,8 +59,9 @@ public class StoragePathUtil {
         return new MappedFileSplit(partition.getActiveNodeId(), relativePath, partition.getIODeviceNum());
     }
 
-    public static String prepareStoragePartitionPath(String storageDirName, int partitonId) {
-        return storageDirName + File.separator + StoragePathUtil.PARTITION_DIR_PREFIX + partitonId;
+    public static String prepareStoragePartitionPath(int partitonId) {
+        return Paths.get(StorageConstants.STORAGE_ROOT_DIR_NAME, StorageConstants.PARTITION_DIR_PREFIX + partitonId)
+                .toString();
     }
 
     public static String prepareDataverseIndexName(String dataverseName, String datasetName, String idxName,
@@ -70,29 +74,34 @@ public class StoragePathUtil {
     }
 
     private static String prepareFullIndexName(String datasetName, String idxName, long rebalanceCount) {
-        return (rebalanceCount == 0 ? "" : rebalanceCount + File.separator) + datasetName + DATASET_INDEX_NAME_SEPARATOR
-                + idxName;
-    }
-
-    public static int getPartitionNumFromName(String name) {
-        return Integer.parseInt(name.substring(PARTITION_DIR_PREFIX.length()));
+        if (indexPathProvider != null) {
+            return indexPathProvider.apply(new IndexPathElements(datasetName, idxName, String.valueOf(rebalanceCount)));
+        }
+        return datasetName + File.separator + rebalanceCount + File.separator + idxName;
     }
 
     public static int getPartitionNumFromRelativePath(String relativePath) {
-        int startIdx = relativePath.indexOf(PARTITION_DIR_PREFIX) + PARTITION_DIR_PREFIX.length();
+        int startIdx =
+                relativePath.indexOf(StorageConstants.PARTITION_DIR_PREFIX) + StorageConstants.PARTITION_DIR_PREFIX
+                        .length();
         String partition = relativePath.substring(startIdx, relativePath.indexOf(File.separatorChar, startIdx));
         return Integer.parseInt(partition);
     }
 
     /**
      * @param fileAbsolutePath
-     * @return the file relative path starting from the partition directory
+     * @return the file's index relative path starting from the storage directory
      */
     public static String getIndexFileRelativePath(String fileAbsolutePath) {
-        String[] tokens = fileAbsolutePath.split(File.separator);
-        //partition/dataverse/idx/fileName
-        return tokens[tokens.length - 4] + File.separator + tokens[tokens.length - 3] + File.separator
-                + tokens[tokens.length - 2] + File.separator + tokens[tokens.length - 1];
+        return ResourceReference.of(fileAbsolutePath).getRelativePath().toString();
+    }
+
+    /**
+     * @param fileAbsolutePath
+     * @return the file's relative path starting from the storage directory
+     */
+    public static String getFileRelativePath(String fileAbsolutePath) {
+        return ResourceReference.of(fileAbsolutePath).getFileRelativePath().toString();
     }
 
     /**
@@ -117,7 +126,7 @@ public class StoragePathUtil {
                 if (!success) {
                     throw new HyracksDataException("Unable to create spill file " + fileName);
                 } else {
-                    if (LOGGER.isEnabledFor(Level.INFO)) {
+                    if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Created spill file " + file.getAbsolutePath());
                     }
                 }
@@ -137,7 +146,10 @@ public class StoragePathUtil {
      * @return The index name
      */
     public static String getIndexNameFromPath(String path) {
-        int idx = path.lastIndexOf(DATASET_INDEX_NAME_SEPARATOR);
-        return idx != -1 ? path.substring(idx + DATASET_INDEX_NAME_SEPARATOR.length()) : path;
+        return Paths.get(path).getFileName().toString();
+    }
+
+    public static void setIndexPathProvider(Function<IndexPathElements, String> indexPathProvider) {
+        StoragePathUtil.indexPathProvider = indexPathProvider;
     }
 }
