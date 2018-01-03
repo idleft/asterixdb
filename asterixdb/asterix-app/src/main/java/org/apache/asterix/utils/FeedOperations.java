@@ -210,7 +210,7 @@ public class FeedOperations {
         FromTerm fromterm = new FromTerm(datasrouceCallFunction, fromTermLeftExpr, null, null);
         FromClause fromClause = new FromClause(Arrays.asList(fromterm));
         WhereClause whereClause = null;
-        if(feedConnection.getWhereClauseBody() != null) {
+        if (feedConnection.getWhereClauseBody().length() != 0) {
             String whereClauseExpr = feedConnection.getWhereClauseBody() + ";";
             IParserFactory sqlppParserFactory = new SqlppParserFactory();
             IParser sqlppParser = sqlppParserFactory.createParser(whereClauseExpr);
