@@ -474,7 +474,7 @@ public class TestNodeController {
         public SecondaryIndexInfo(PrimaryIndexInfo primaryIndexInfo, Index secondaryIndex) {
             this.primaryIndexInfo = primaryIndexInfo;
             this.secondaryIndex = secondaryIndex;
-            List<String> nodes = Collections.singletonList(ExecutionTestUtil.integrationUtil.ncs[0].getId());
+            Set<String> nodes = Collections.singleton(ExecutionTestUtil.integrationUtil.ncs[0].getId());
             CcApplicationContext appCtx = (CcApplicationContext) ExecutionTestUtil.integrationUtil.cc
                     .getApplicationContext();
             FileSplit[] splits = SplitsAndConstraintsUtil.getIndexSplits(appCtx.getClusterStateManager(),
