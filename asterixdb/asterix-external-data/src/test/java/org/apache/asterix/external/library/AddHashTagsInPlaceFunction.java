@@ -46,16 +46,18 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
         processedRecords = 0;
         evalutaionEtime = null;
 //        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
-                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
-                + this.hashCode() + ".txt");
+//                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
+//                + this.hashCode() + ".txt");
         //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
     }
 
     @Override
     public void deinitialize() {
         try {
-            fw.write(String.valueOf(processedRecords) + "\n");
-            fw.flush();
+            if (fw!=null) {
+                fw.write(String.valueOf(processedRecords) + "\n");
+                fw.flush();
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
