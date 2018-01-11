@@ -220,7 +220,7 @@ public class MetadataTxnTest {
         metadataProvider.setMetadataTxnContext(mdTxn);
         final String nodeGroupName = "ng";
         Thread transactor = new Thread(() -> {
-            final List<String> ngNodes = Arrays.asList("asterix_nc1");
+            final Set<String> ngNodes = Collections.singleton("asterix_nc1");
             try {
                 MetadataManager.INSTANCE.addNodegroup(mdTxn, new NodeGroup(nodeGroupName, ngNodes));
                 Thread.currentThread().interrupt();
