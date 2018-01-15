@@ -434,7 +434,8 @@ class ActivityClusterPlanner {
                     nOutputPartitions[i] = nPartInt;
                 }
             }
-            ActivityPartitionDetails apd = new ActivityPartitionDetails(nParts, nInputPartitions, nOutputPartitions);
+            ActivityPartitionDetails apd = new ActivityPartitionDetails(nParts, nInputPartitions, nOutputPartitions,
+                    inputs != null ? inputs.get(0).getLocalMap() : null);
             activityPartsMap.put(anId, apd);
         }
         return activityPartsMap;

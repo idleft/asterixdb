@@ -18,6 +18,8 @@
  */
 package org.apache.hyracks.control.cc.job;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -63,6 +65,23 @@ public class Task {
 
     public void setTaskCluster(TaskCluster taskCluster) {
         this.taskCluster = taskCluster;
+    }
+
+    public int[] getInputPartitionCounts() {
+        if (activityPlan.getActivityPartitionDetails().getpCounts() != null) {
+            int[] modifiedInputPartitionCounts = Arrays
+                    .copyOf(activityPlan.getActivityPartitionDetails().getInputPartitionCounts(), 1);
+            modifiedInputPartitionCounts[0] = activityPlan.getActivityPartitionDetails().getpCounts()[taskId
+                    .getPartition()];
+            return modifiedInputPartitionCounts;
+        } else {
+            return activityPlan.getActivityPartitionDetails().getInputPartitionCounts();
+        }
+    }
+
+    public int getInputPartitionOffset() {
+        return activityPlan.getActivityPartitionDetails().getpOffsets() == null ? 0
+                : activityPlan.getActivityPartitionDetails().getpOffsets()[taskId.getPartition()];
     }
 
     @Override

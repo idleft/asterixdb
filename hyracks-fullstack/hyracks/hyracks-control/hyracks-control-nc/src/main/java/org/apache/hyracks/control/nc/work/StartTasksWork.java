@@ -281,12 +281,13 @@ public class StartTasksWork extends AbstractWork {
         NetworkAddress[][] inputAddresses = td.getInputPartitionLocations();
         List<List<PartitionChannel>> channelsForInputConnectors = new ArrayList<>();
         if (inputAddresses != null) {
+            // add offset here to make sure the listener listens to the right partition
             for (int i = 0; i < inputAddresses.length; i++) {
                 List<PartitionChannel> channels = new ArrayList<>();
                 if (inputAddresses[i] != null) {
                     for (int j = 0; j < inputAddresses[i].length; j++) {
                         NetworkAddress networkAddress = inputAddresses[i][j];
-                        PartitionId pid = new PartitionId(jobId, inputs.get(i).getConnectorId(), j,
+                        PartitionId pid = new PartitionId(jobId, inputs.get(i).getConnectorId(), td.getpOffset() + j,
                                 td.getTaskAttemptId().getTaskId().getPartition());
                         PartitionChannel channel = new PartitionChannel(pid,
                                 new NetworkInputChannel(ncs.getNetworkManager(),
