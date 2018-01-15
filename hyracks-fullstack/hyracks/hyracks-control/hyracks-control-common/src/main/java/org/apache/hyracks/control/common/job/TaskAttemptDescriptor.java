@@ -41,6 +41,8 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
 
     private NetworkAddress[][] inputPartitionLocations;
 
+    private int pOffset;
+
     public static TaskAttemptDescriptor create(DataInput dis) throws IOException {
         TaskAttemptDescriptor taskAttemptDescriptor = new TaskAttemptDescriptor();
         taskAttemptDescriptor.readFields(dis);
@@ -51,11 +53,12 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
 
     }
 
-    public TaskAttemptDescriptor(TaskAttemptId taId, int nPartitions, int[] nInputPartitions, int[] nOutputPartitions) {
+    public TaskAttemptDescriptor(TaskAttemptId taId, int nPartitions, int[] nInputPartitions, int[] nOutputPartitions, int offSet) {
         this.taId = taId;
         this.nPartitions = nPartitions;
         this.nInputPartitions = nInputPartitions;
         this.nOutputPartitions = nOutputPartitions;
+        this.pOffset = offSet;
     }
 
     public TaskAttemptId getTaskAttemptId() {
@@ -121,6 +124,7 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 }
             }
         }
+        output.writeInt(pOffset);
     }
 
     @Override
@@ -157,5 +161,10 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 }
             }
         }
+        pOffset = input.readInt();
+    }
+
+    public int getpOffset() {
+        return pOffset;
     }
 }

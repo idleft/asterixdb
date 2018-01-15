@@ -18,6 +18,8 @@
  */
 package org.apache.hyracks.control.cc.executor;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import java.util.Arrays;
 
 public class ActivityPartitionDetails {
@@ -27,10 +29,24 @@ public class ActivityPartitionDetails {
 
     private final int[] nOutputPartitions;
 
-    public ActivityPartitionDetails(int nPartitions, int[] nInputPartitions, int[] nOutputPartitions) {
+    private final int[] pOffsets;
+
+    private final int[] pCounts;
+
+    // ideally, the offsets and counts should be two dimension array
+
+    public ActivityPartitionDetails(int nPartitions, int[] nInputPartitions, int[] nOutputPartitions,
+            Pair<int[], int[]> localMap) {
         this.nPartitions = nPartitions;
         this.nInputPartitions = nInputPartitions;
         this.nOutputPartitions = nOutputPartitions;
+        if (localMap != null) {
+            this.pOffsets = localMap.getLeft();
+            this.pCounts = localMap.getRight();
+        } else {
+            pOffsets = null;
+            pCounts = null;
+        }
     }
 
     public int getPartitionCount() {
@@ -49,5 +65,13 @@ public class ActivityPartitionDetails {
     public String toString() {
         return nPartitions + ":" + (nInputPartitions == null ? "[]" : Arrays.toString(nInputPartitions)) + ":"
                 + (nOutputPartitions == null ? "[]" : Arrays.toString(nOutputPartitions));
+    }
+
+    public int[] getpOffsets() {
+        return pOffsets;
+    }
+
+    public int[] getpCounts() {
+        return pCounts;
     }
 }
