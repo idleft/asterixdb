@@ -53,7 +53,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final int WORKER_N = 4;
+    private static final int WORKER_N = 1;
     private static final ByteBuffer POISON_PILL = ByteBuffer.allocate(0);
 
     /**
@@ -205,7 +205,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 //                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
 //                List<Runnable> tasks = threadPoolExecutor.shutdownNow();
                 threadPoolExecutor.shutdown();
-                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(3, TimeUnit.SECONDS));
+                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 throw new HyracksDataException(e);
             }
@@ -264,9 +264,9 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         public void run() {
             boolean running = true;
             Thread.currentThread().setName(workerName);
-            System.out.println(workerName + " started.");
             try {
                 pipeline.open();
+                System.out.println(workerName + " started.");
                 while (running) {
                     ByteBuffer frame = inbox.poll();
                     if (frame == null) {
@@ -282,7 +282,8 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
                             LOGGER.log(Level.INFO, workerName + " obtained frame.");
                         }
                         running = consume(frame) == null;
-                        counter++;
+                        fta.reset(frame);
+                        counter += fta.getTupleCount();
                         framepool.release(frame);
                     }
                 }
@@ -298,11 +299,13 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
         private final IFrameWriter nextWriter;
         private Integer workerCounter;
+        private boolean opened;
 
 
         public ConcurrentSurrogateWriter(IFrameWriter nextWriter) {
             this.nextWriter = nextWriter;
-            workerCounter = 0;
+            this.workerCounter = 0;
+            this.opened = false;
         }
 
         @Override
@@ -344,5 +347,10 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
                 }
             }
         }
+
+        public boolean isOpened() {
+            return opened;
+        }
+
     }
 }

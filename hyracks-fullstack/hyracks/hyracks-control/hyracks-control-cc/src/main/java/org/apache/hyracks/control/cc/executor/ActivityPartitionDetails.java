@@ -18,8 +18,6 @@
  */
 package org.apache.hyracks.control.cc.executor;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 import java.util.Arrays;
 
 public class ActivityPartitionDetails {
@@ -29,24 +27,17 @@ public class ActivityPartitionDetails {
 
     private final int[] nOutputPartitions;
 
-    private final int[] pOffsets;
+    private final int[] inputFanouts;
 
-    private final int[] pCounts;
-
-    // ideally, the offsets and counts should be two dimension array
+    private final int[] outputFanouts;
 
     public ActivityPartitionDetails(int nPartitions, int[] nInputPartitions, int[] nOutputPartitions,
-            Pair<int[], int[]> localMap) {
+            int[] inputFanouts, int[] outputFanouts) {
         this.nPartitions = nPartitions;
         this.nInputPartitions = nInputPartitions;
         this.nOutputPartitions = nOutputPartitions;
-        if (localMap != null) {
-            this.pOffsets = localMap.getLeft();
-            this.pCounts = localMap.getRight();
-        } else {
-            pOffsets = null;
-            pCounts = null;
-        }
+        this.inputFanouts = inputFanouts;
+        this.outputFanouts = outputFanouts;
     }
 
     public int getPartitionCount() {
@@ -67,11 +58,24 @@ public class ActivityPartitionDetails {
                 + (nOutputPartitions == null ? "[]" : Arrays.toString(nOutputPartitions));
     }
 
-    public int[] getpOffsets() {
-        return pOffsets;
+    public int[] getInputOffsets(int pid) {
+        if (nInputPartitions!= null) {
+            int[] offsets = new int[nInputPartitions.length];
+            for (int iter1 = 0; iter1 < offsets.length; iter1++) {
+                if (inputFanouts[iter1] != -1) {
+                    offsets[iter1] = pid / inputFanouts[iter1];
+                } else {
+                    offsets[iter1] = 0;
+                }
+
+            }
+            return offsets;
+        } else {
+            return null;
+        }
     }
 
-    public int[] getpCounts() {
-        return pCounts;
+    public int[] getOutputOffsets(int pid) {
+        return outputFanouts;
     }
 }
