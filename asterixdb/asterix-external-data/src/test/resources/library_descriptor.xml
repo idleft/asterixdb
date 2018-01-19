@@ -20,6 +20,22 @@
   <language>JAVA</language>
   <libraryFunctions>
     <libraryFunction>
+      <name>fnameDetector</name>
+      <function_type>SCALAR</function_type>
+      <arguments>InputRecordType</arguments>
+      <return_type>DetectResultType</return_type>
+      <definition>org.apache.asterix.external.library.KeywordsDetectorFactory</definition>
+      <parameters>data/external_function/KeywordsDetector_List1.txt;fname</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>lnameDetector</name>
+      <function_type>SCALAR</function_type>
+      <arguments>InputRecordType</arguments>
+      <return_type>DetectResultType</return_type>
+      <definition>org.apache.asterix.external.library.KeywordsDetectorFactory</definition>
+      <parameters>data/external_function/KeywordsDetector_List2.txt;lname</parameters>
+    </libraryFunction>
+    <libraryFunction>
       <function_type>SCALAR</function_type>
       <name>parseTweet</name>
       <arguments>TweetInputType</arguments>

@@ -58,4 +58,8 @@ public interface ILibraryManager {
      * @return the library class loader associated with the dataverse and library.
      */
     public ClassLoader getLibraryClassLoader(String dataverseName, String libraryName);
+
+    public void addFunctionParameters(String dataverseName, String fullFunctionName, String parameter);
+
+    public String getFunctionParameters(String dataverseName, String fullFunctionName);
 }

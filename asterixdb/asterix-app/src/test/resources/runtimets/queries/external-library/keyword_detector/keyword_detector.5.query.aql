@@ -16,24 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
 
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+use dataverse test;
 
-public interface IFunctionHelper {
+for $i1 in dataset Res1
+for $i2 in dataset Res2
+where $i1.id = $i2.id and ($i1.sensitive = true or $i2.sensitive = true)
+order by $i1.id
+return $i1.id
 
-    public IJObject getArgument(int index);
-
-    public IJObject getResultObject();
-
-    public void setResult(IJObject result) throws HyracksDataException;
-
-    public boolean isValidResult();
-
-    public IJObject getObject(JTypeTag jtypeTag) throws HyracksDataException;
-
-    public void reset();
-
-    public String getParameters();
-}

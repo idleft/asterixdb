@@ -16,24 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
-
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-
-public interface IFunctionHelper {
-
-    public IJObject getArgument(int index);
-
-    public IJObject getResultObject();
-
-    public void setResult(IJObject result) throws HyracksDataException;
-
-    public boolean isValidResult();
-
-    public IJObject getObject(JTypeTag jtypeTag) throws HyracksDataException;
-
-    public void reset();
-
-    public String getParameters();
-}
+install test testlib target/data/externallib/asterix-external-data-testlib.zip

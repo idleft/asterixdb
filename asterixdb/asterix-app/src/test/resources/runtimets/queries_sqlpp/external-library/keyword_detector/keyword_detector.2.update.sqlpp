@@ -16,24 +16,9 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
 
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+use test;
 
-public interface IFunctionHelper {
-
-    public IJObject getArgument(int index);
-
-    public IJObject getResultObject();
-
-    public void setResult(IJObject result) throws HyracksDataException;
-
-    public boolean isValidResult();
-
-    public IJObject getObject(JTypeTag jtypeTag) throws HyracksDataException;
-
-    public void reset();
-
-    public String getParameters();
-}
+load dataset EmpDataset
+using localfs
+(("path"="asterix_nc1://data/names.adm"),("format"="delimited-text"),("delimiter"="|"));

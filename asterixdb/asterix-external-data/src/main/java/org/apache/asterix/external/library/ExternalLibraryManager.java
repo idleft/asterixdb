@@ -31,6 +31,7 @@ import org.apache.hyracks.algebricks.common.utils.Pair;
 public class ExternalLibraryManager implements ILibraryManager {
 
     private final Map<String, ClassLoader> libraryClassLoaders = new HashMap<>();
+    private final Map<String, String> externalFunctionParameters = new HashMap<>();
 
     @Override
     public void registerLibraryClassLoader(String dataverseName, String libraryName, ClassLoader classLoader)
@@ -67,6 +68,16 @@ public class ExternalLibraryManager implements ILibraryManager {
     public ClassLoader getLibraryClassLoader(String dataverseName, String libraryName) {
         String key = getKey(dataverseName, libraryName);
         return libraryClassLoaders.get(key);
+    }
+
+    @Override
+    public void addFunctionParameters(String dataverseName, String fullFunctionName, String parameter) {
+        externalFunctionParameters.put(dataverseName + "." + fullFunctionName, parameter);
+    }
+
+    @Override
+    public String getFunctionParameters(String dataverseName, String fullFunctionName) {
+        return externalFunctionParameters.getOrDefault(dataverseName + "." + fullFunctionName, "");
     }
 
     private static String getKey(String dataverseName, String libraryName) {

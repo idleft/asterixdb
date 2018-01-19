@@ -52,27 +52,28 @@ public class JavaFunctionHelper implements IFunctionHelper {
     private final IDataOutputProvider outputProvider;
     private final IJObject[] arguments;
     private IJObject resultHolder;
-    private final IObjectPool<IJObject, IAType> objectPool =
-            new ListObjectPool<IJObject, IAType>(JTypeObjectFactory.INSTANCE);
+    private final IObjectPool<IJObject, IAType> objectPool = new ListObjectPool<>(JTypeObjectFactory.INSTANCE);
     private final JObjectPointableVisitor pointableVisitor;
     private final PointableAllocator pointableAllocator;
     private final Map<Integer, TypeInfo> poolTypeInfo;
+    private final String parameters;
 
     private boolean isValidResult = false;
 
-    public JavaFunctionHelper(IExternalFunctionInfo finfo, IDataOutputProvider outputProvider)
+    public JavaFunctionHelper(IExternalFunctionInfo finfo, IDataOutputProvider outputProvider, String parameters)
             throws HyracksDataException {
         this.finfo = finfo;
         this.outputProvider = outputProvider;
         this.pointableVisitor = new JObjectPointableVisitor();
         this.pointableAllocator = new PointableAllocator();
-        this.arguments = new IJObject[finfo.getParamList().size()];
+        this.arguments = new IJObject[finfo.getArgumentList().size()];
         int index = 0;
-        for (IAType param : finfo.getParamList()) {
+        for (IAType param : finfo.getArgumentList()) {
             this.arguments[index++] = objectPool.allocate(param);
         }
         this.resultHolder = objectPool.allocate(finfo.getReturnType());
-        this.poolTypeInfo = new HashMap<Integer, TypeInfo>();
+        this.poolTypeInfo = new HashMap<>();
+        this.parameters = parameters;
 
     }
 
@@ -116,7 +117,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
     public void setArgument(int index, IValueReference valueReference) throws IOException, AsterixException {
         IVisitablePointable pointable = null;
         IJObject jObject = null;
-        IAType type = finfo.getParamList().get(index);
+        IAType type = finfo.getArgumentList().get(index);
         switch (type.getTypeTag()) {
             case OBJECT:
                 pointable = pointableAllocator.allocateRecordValue(type);
@@ -193,4 +194,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
         objectPool.reset();
     }
 
+    public String getParameters() {
+        return parameters;
+    }
 }
