@@ -18,34 +18,37 @@
  */
 package org.apache.hyracks.dataflow.std.connectors;
 
+import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputer;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
 
-public class HashRangePartitionDataWriter extends PartitionDataWriter {
-
+public class MToNHashCombinePartitioningConnectorDescriptor extends MToNPartitioningConnectorDescriptor {
+    private static final long serialVersionUID = 1L;
+    protected ITuplePartitionComputerFactory tpcf;
+    private int range;
     private int[] rangeMap;
 
-    public HashRangePartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
-            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc,
-            int[] rangeMap, int range) throws HyracksDataException {
-        super(ctx, range, pwFactory, recordDescriptor, tpc);
+    public MToNHashCombinePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
+            ITuplePartitionComputerFactory tpcf, int[] rangeMap, int range) {
+        super(spec, tpcf);
+        this.tpcf = tpcf;
         this.rangeMap = rangeMap;
-    }
-
-    private int remapPartitionIdx(int val) {
-        int idx = 0;
-        while (val >= rangeMap[idx] && idx < rangeMap.length) {
-            idx++;
-        }
-        return idx;
+        this.range = range;
     }
 
     @Override
-    protected int getPartitionIdx(int tupleIdx) throws HyracksDataException {
-        return remapPartitionIdx(tpc.partition(tupleAccessor, tupleIdx, consumerPartitionCount));
+    public IFrameWriter createPartitioner(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
+            IPartitionWriterFactory edwFactory, int index, int nProducerPartitions, int nConsumerPartitions)
+            throws HyracksDataException {
+        return new CombinePartitionDataWriter(ctx, nConsumerPartitions, edwFactory, recordDesc,
+                tpcf.createPartitioner(), rangeMap, range);
     }
 
+    public ITuplePartitionComputerFactory getTuplePartitionComputerFactory() {
+        return tpcf;
+    }
 }

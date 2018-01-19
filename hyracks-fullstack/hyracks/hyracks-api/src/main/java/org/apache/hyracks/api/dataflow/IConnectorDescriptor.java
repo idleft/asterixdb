@@ -142,7 +142,7 @@ public interface IConnectorDescriptor extends Serializable {
      */
     public void setConnectorId(ConnectorDescriptorId cdId);
 
-    public default Pair<int[], int[]> getLocalMap() {
-        return null;
+    public default int getFanout() {
+        return -1;
     }
 }

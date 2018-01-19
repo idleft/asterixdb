@@ -33,15 +33,12 @@ import org.apache.hyracks.algebricks.core.algebra.operators.logical.ExchangeOper
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.InsertDeleteUpsertOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.ProjectOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.AssignPOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashLocalPartitionExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashPartitionExchangePOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashRangePartitionExchangePOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.InsertDeleteUpsertPOperator;
-import org.apache.hyracks.algebricks.core.algebra.operators.physical.RandomPartitionExchangePOperator;
+import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashCombinePartitionExchangePOperator;
 import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
-
-import java.util.Arrays;
 
 public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraicRewriteRule {
 
@@ -104,19 +101,26 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
         // assign location constraint for udf assignOp
         AssignOperator udfAssignOp = (AssignOperator) op4;
         ((AssignPOperator) udfAssignOp.getPhysicalOperator())
-                .setLocationConstraint(((DefaultNodeGroupDomain) datasetDomain).getNodes());
+                .setLocationConstraint(((DefaultNodeGroupDomain) feedComputingDomain).getNodes());
 
         // update the Hash Partitioner to carry the range map
         HashPartitionExchangePOperator hashPartitionExchangePOperator = (HashPartitionExchangePOperator) ((ExchangeOperator) op1)
                 .getPhysicalOperator();
-        HashRangePartitionExchangePOperator hashRangePartitionExchangePOperator = new HashRangePartitionExchangePOperator(
-                hashPartitionExchangePOperator.getHashFields(), datasetDomain, datasetDomain);
-        ((ExchangeOperator) op1).setPhysicalOperator(hashRangePartitionExchangePOperator);
+        HashCombinePartitionExchangePOperator hashCombinePartitionExchangePOperator = new HashCombinePartitionExchangePOperator(
+                hashPartitionExchangePOperator.getHashFields(), feedComputingDomain, datasetDomain);
+        ((ExchangeOperator) op1).setPhysicalOperator(hashCombinePartitionExchangePOperator);
 
         // add local hash partitioner to further split udf partition to storage partition
-//        ExchangeOperator localPartitionExOp = new ExchangeOperator();
-//        localPartitionExOp.setPhysicalOperator(new Hash);
-
+        ExchangeOperator localPartitionExOp = new ExchangeOperator();
+        localPartitionExOp.setPhysicalOperator(new HashLocalPartitionExchangePOperator(
+                hashPartitionExchangePOperator.getHashFields(), feedComputingDomain));
+//        localPartitionExOp.setPhysicalOperator(
+//                new HashPartitionExchangePOperator(hashPartitionExchangePOperator.getHashFields(), datasetDomain));
+        op0.getInputs().get(0).setValue(localPartitionExOp);
+        localPartitionExOp.getInputs().add(new MutableObject<>(op3));
+        localPartitionExOp.setExecutionMode(scanOp.getExecutionMode());
+        localPartitionExOp.computeDeliveredPhysicalProperties(context);
+        context.computeAndSetTypeEnvironmentForOperator(localPartitionExOp);
 
         return true;
     }

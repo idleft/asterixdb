@@ -413,29 +413,44 @@ class ActivityClusterPlanner {
         for (ActivityId anId : ac.getActivityMap().keySet()) {
             int nParts = nPartMap.get(anId.getOperatorDescriptorId());
             int[] nInputPartitions = null;
+            int[] inputFanouts = null;
             List<IConnectorDescriptor> inputs = ac.getActivityInputMap().get(anId);
             if (inputs != null) {
                 nInputPartitions = new int[inputs.size()];
+                inputFanouts = new int[inputs.size()];
                 for (int i = 0; i < nInputPartitions.length; ++i) {
-                    ConnectorDescriptorId cdId = inputs.get(i).getConnectorId();
-                    ActivityId aid = ac.getProducerActivity(cdId);
-                    Integer nPartInt = nPartMap.get(aid.getOperatorDescriptorId());
-                    nInputPartitions[i] = nPartInt;
+                    inputFanouts[i] = inputs.get(i).getFanout();
+                    // if fanout is not empty, local divide, modify partition number and offset
+                    if (inputFanouts[i] != -1) {
+                        nInputPartitions[i] = 1;
+                    } else {
+                        ConnectorDescriptorId cdId = inputs.get(i).getConnectorId();
+                        ActivityId aid = ac.getProducerActivity(cdId);
+                        Integer nPartInt = nPartMap.get(aid.getOperatorDescriptorId());
+                        nInputPartitions[i] = nPartInt;
+                    }
                 }
             }
             int[] nOutputPartitions = null;
+            int[] outputFanouts = null;
             List<IConnectorDescriptor> outputs = ac.getActivityOutputMap().get(anId);
             if (outputs != null) {
                 nOutputPartitions = new int[outputs.size()];
+                outputFanouts = new int[outputs.size()];
                 for (int i = 0; i < nOutputPartitions.length; ++i) {
-                    ConnectorDescriptorId cdId = outputs.get(i).getConnectorId();
-                    ActivityId aid = ac.getConsumerActivity(cdId);
-                    Integer nPartInt = nPartMap.get(aid.getOperatorDescriptorId());
-                    nOutputPartitions[i] = nPartInt;
+                    outputFanouts[i] = outputs.get(i).getFanout();
+                    if (outputFanouts[i] != -1) {
+                        nOutputPartitions[i] = outputs.get(i).getFanout();
+                    } else {
+                        ConnectorDescriptorId cdId = outputs.get(i).getConnectorId();
+                        ActivityId aid = ac.getConsumerActivity(cdId);
+                        Integer nPartInt = nPartMap.get(aid.getOperatorDescriptorId());
+                        nOutputPartitions[i] = nPartInt;
+                    }
                 }
             }
             ActivityPartitionDetails apd = new ActivityPartitionDetails(nParts, nInputPartitions, nOutputPartitions,
-                    inputs != null ? inputs.get(0).getLocalMap() : null);
+                    inputFanouts, outputFanouts);
             activityPartsMap.put(anId, apd);
         }
         return activityPartsMap;

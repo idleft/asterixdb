@@ -287,7 +287,8 @@ public class StartTasksWork extends AbstractWork {
                 if (inputAddresses[i] != null) {
                     for (int j = 0; j < inputAddresses[i].length; j++) {
                         NetworkAddress networkAddress = inputAddresses[i][j];
-                        PartitionId pid = new PartitionId(jobId, inputs.get(i).getConnectorId(), td.getpOffset() + j,
+                        PartitionId pid = new PartitionId(jobId, inputs.get(i).getConnectorId(),
+                                td.getInputOffset(i) + j,
                                 td.getTaskAttemptId().getTaskId().getPartition());
                         PartitionChannel channel = new PartitionChannel(pid,
                                 new NetworkInputChannel(ncs.getNetworkManager(),

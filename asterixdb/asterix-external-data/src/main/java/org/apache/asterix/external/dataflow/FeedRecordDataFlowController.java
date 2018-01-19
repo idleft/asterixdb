@@ -121,6 +121,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         } finally {
             failure = finish(failure);
         }
+        System.out.println("Records into pipeline " + incomingRecordsCount);
         if (failure != null) {
             if (failure instanceof InterruptedException) {
                 throw (InterruptedException) failure;

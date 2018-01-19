@@ -37,11 +37,13 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
 
     private int[] nInputPartitions;
 
+    private int[] nInputOffsets;
+
     private int[] nOutputPartitions;
 
-    private NetworkAddress[][] inputPartitionLocations;
+    private int[] nOutputOffsets;
 
-    private int pOffset;
+    private NetworkAddress[][] inputPartitionLocations;
 
     public static TaskAttemptDescriptor create(DataInput dis) throws IOException {
         TaskAttemptDescriptor taskAttemptDescriptor = new TaskAttemptDescriptor();
@@ -53,12 +55,14 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
 
     }
 
-    public TaskAttemptDescriptor(TaskAttemptId taId, int nPartitions, int[] nInputPartitions, int[] nOutputPartitions, int offSet) {
+    public TaskAttemptDescriptor(TaskAttemptId taId, int nPartitions, int[] nInputPartitions, int[] nOutputPartitions,
+            int[] nInputOffsets, int[] nOutputOffsets) {
         this.taId = taId;
         this.nPartitions = nPartitions;
         this.nInputPartitions = nInputPartitions;
         this.nOutputPartitions = nOutputPartitions;
-        this.pOffset = offSet;
+        this.nInputOffsets = nInputOffsets;
+        this.nOutputOffsets = nOutputOffsets;
     }
 
     public TaskAttemptId getTaskAttemptId() {
@@ -92,24 +96,22 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 + "]";
     }
 
+    private void writeArray(int[] outArray, DataOutput output) throws IOException{
+        output.writeInt(outArray == null ? -1 : outArray.length);
+        if (outArray != null) {
+            for (int i = 0; i < outArray.length; i++) {
+                output.writeInt(outArray[i]);
+            }
+        }
+    }
+
     @Override
     public void writeFields(DataOutput output) throws IOException {
         taId.writeFields(output);
         output.writeInt(nPartitions);
 
-        output.writeInt(nInputPartitions == null ? -1 : nInputPartitions.length);
-        if (nInputPartitions != null) {
-            for (int i = 0; i < nInputPartitions.length; i++) {
-                output.writeInt(nInputPartitions[i]);
-            }
-        }
-
-        output.writeInt(nOutputPartitions == null ? -1 : nOutputPartitions.length);
-        if (nOutputPartitions != null) {
-            for (int i = 0; i < nOutputPartitions.length; i++) {
-                output.writeInt(nOutputPartitions[i]);
-            }
-        }
+        writeArray(nInputPartitions, output);
+        writeArray(nOutputPartitions, output);
 
         output.writeInt(inputPartitionLocations == null ? -1 : inputPartitionLocations.length);
         if (inputPartitionLocations != null) {
@@ -124,7 +126,21 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 }
             }
         }
-        output.writeInt(pOffset);
+
+        writeArray(nInputOffsets, output);
+        writeArray(nOutputOffsets, output);
+    }
+
+    private int[] readArray(DataInput input) throws IOException {
+        int[] inArray = null;
+        int inputCount = input.readInt();
+        if (inputCount >= 0) {
+            inArray = new int[inputCount];
+            for (int i = 0; i < inArray.length; i++) {
+                inArray[i] = input.readInt();
+            }
+        }
+        return inArray;
     }
 
     @Override
@@ -132,21 +148,8 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
         taId = TaskAttemptId.create(input);
         nPartitions = input.readInt();
 
-        int inputCount = input.readInt();
-        if (inputCount >= 0) {
-            nInputPartitions = new int[inputCount];
-            for (int i = 0; i < nInputPartitions.length; i++) {
-                nInputPartitions[i] = input.readInt();
-            }
-        }
-
-        int outputCount = input.readInt();
-        if (outputCount >= 0) {
-            nOutputPartitions = new int[outputCount];
-            for (int i = 0; i < nOutputPartitions.length; i++) {
-                nOutputPartitions[i] = input.readInt();
-            }
-        }
+        nInputPartitions = readArray(input);
+        nOutputPartitions = readArray(input);
 
         int addrCount = input.readInt();
         if (addrCount >= 0) {
@@ -161,10 +164,16 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 }
             }
         }
-        pOffset = input.readInt();
+
+        nInputOffsets = readArray(input);
+        nOutputOffsets = readArray(input);
     }
 
-    public int getpOffset() {
-        return pOffset;
+    public int getInputOffset(int i) {
+        return nInputOffsets[i];
+    }
+
+    public int[] getnOutputOffsets() {
+        return nOutputOffsets;
     }
 }

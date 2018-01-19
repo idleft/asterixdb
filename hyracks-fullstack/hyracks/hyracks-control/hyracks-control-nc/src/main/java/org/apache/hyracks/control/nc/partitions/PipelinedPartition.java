@@ -27,8 +27,14 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.partitions.IPartition;
 import org.apache.hyracks.api.partitions.PartitionId;
 import org.apache.hyracks.control.common.job.PartitionState;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class PipelinedPartition implements IFrameWriter, IPartition {
+
+    private static final Logger LOGGER = LogManager.getLogger();
+
     private final IHyracksTaskContext ctx;
 
     private final PartitionManager manager;
@@ -73,8 +79,14 @@ public class PipelinedPartition implements IFrameWriter, IPartition {
     public void open() throws HyracksDataException {
         manager.registerPartition(pid, ctx.getJobletContext().getJobId().getCcId(), taId, this, PartitionState.STARTED,
                 false);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.log(Level.DEBUG, "Partition " + pid + " registered, pending for connection.");
+        }
         pendingConnection = true;
         ensureConnected();
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.log(Level.DEBUG, "Partition " + pid + " connected.");
+        }
     }
 
     @Override

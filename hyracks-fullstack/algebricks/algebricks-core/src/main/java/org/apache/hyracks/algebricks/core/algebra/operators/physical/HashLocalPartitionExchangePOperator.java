@@ -18,6 +18,8 @@
  */
 package org.apache.hyracks.algebricks.core.algebra.operators.physical;
 
+import java.util.List;
+
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.ListSet;
 import org.apache.hyracks.algebricks.common.utils.Pair;
@@ -28,7 +30,6 @@ import org.apache.hyracks.algebricks.core.algebra.base.LogicalVariable;
 import org.apache.hyracks.algebricks.core.algebra.base.PhysicalOperatorTag;
 import org.apache.hyracks.algebricks.core.algebra.expressions.IVariableTypeEnvironment;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.IOperatorSchema;
-import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.IPartitioningProperty;
 import org.apache.hyracks.algebricks.core.algebra.properties.IPhysicalPropertiesVector;
@@ -42,30 +43,16 @@ import org.apache.hyracks.api.dataflow.value.IBinaryHashFunctionFactory;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
 import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
-import org.apache.hyracks.dataflow.std.connectors.MToNHashRangePartitioningConnectorDescriptor;
-import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
+import org.apache.hyracks.dataflow.std.connectors.MToNHashDividePartitioningConnectorDescriptor;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-
-public class HashRangePartitionExchangePOperator extends AbstractExchangePOperator {
+public class HashLocalPartitionExchangePOperator extends AbstractExchangePOperator {
 
     private List<LogicalVariable> hashFields;
-    private DefaultNodeGroupDomain domain;
-    private INodeDomain rangeDomain;
-    private int[] rangeMap = {1,2,3,4};
-    private HashSet nodes;
+    private INodeDomain domain;
 
-    public HashRangePartitionExchangePOperator(List<LogicalVariable> hashFields, INodeDomain domain, INodeDomain rangeDomain) {
+    public HashLocalPartitionExchangePOperator(List<LogicalVariable> hashFields, INodeDomain domain) {
         this.hashFields = hashFields;
-        this.domain = (DefaultNodeGroupDomain) domain;
-        this.rangeDomain = rangeDomain;
-        nodes = new HashSet<String>();
-        nodes.addAll(Arrays.asList(this.domain.getNodes()));
-//        rangeMap = new int[nodes.size()];
-//        generateRangeMap(domain);
+        this.domain = domain;
     }
 
     @Override
@@ -85,21 +72,6 @@ public class HashRangePartitionExchangePOperator extends AbstractExchangePOperat
     public void computeDeliveredProperties(ILogicalOperator op, IOptimizationContext context) {
         IPartitioningProperty p = new UnorderedPartitionedProperty(new ListSet<LogicalVariable>(hashFields), domain);
         this.deliveredProperties = new StructuralPropertiesVector(p, null);
-    }
-
-    private void generateRangeMap(INodeDomain domain) {
-        DefaultNodeGroupDomain nodeGroupDomain = (DefaultNodeGroupDomain) domain;
-        String[] nodes = nodeGroupDomain.getNodes();
-        Arrays.sort(nodes);
-        int idxMarker = 0;
-        int p = 0;
-        for (int iter1 = 0; iter1 < nodes.length; iter1++) {
-            if (iter1 == 0 || nodes[iter1].equals(nodes[iter1-1])) {
-                idxMarker++;
-                continue;
-            }
-            rangeMap[p++] = idxMarker++;
-        }
     }
 
     @Override
@@ -127,7 +99,10 @@ public class HashRangePartitionExchangePOperator extends AbstractExchangePOperat
             ++i;
         }
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
-        IConnectorDescriptor conn = new MToNHashRangePartitioningConnectorDescriptor(spec, tpcf, rangeMap, rangeDomain.cardinality());
+        int[] pCounts = {1, 1, 1, 1};
+        int[] pOffsets = {0, 0, 1, 1};
+        IConnectorDescriptor conn = new MToNHashDividePartitioningConnectorDescriptor(spec, tpcf, 2);
         return new Pair<>(conn, null);
     }
+
 }

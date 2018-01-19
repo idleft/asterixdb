@@ -19,36 +19,54 @@
 package org.apache.hyracks.dataflow.std.connectors;
 
 import org.apache.hyracks.api.comm.IFrameWriter;
+import org.apache.hyracks.api.comm.IPartitionCollector;
 import org.apache.hyracks.api.comm.IPartitionWriterFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IConnectorDescriptorRegistry;
+import org.apache.hyracks.dataflow.std.collectors.NonDeterministicChannelReader;
+import org.apache.hyracks.dataflow.std.collectors.NonDeterministicFrameReader;
+import org.apache.hyracks.dataflow.std.collectors.PartitionCollector;
+import org.apache.hyracks.dataflow.std.collectors.SafeNonDeterministicChannelReader;
 
-public class MToNHashRangePartitioningConnectorDescriptor extends MToNPartitioningConnectorDescriptor {
+import java.util.BitSet;
+
+public class MToNHashDividePartitioningConnectorDescriptor extends MToNPartitioningConnectorDescriptor {
     private static final long serialVersionUID = 1L;
     protected ITuplePartitionComputerFactory tpcf;
-    private int range;
-    private int[] rangeMap;
+    private final int fanout;
 
-    public MToNHashRangePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
-            ITuplePartitionComputerFactory tpcf, int[] rangeMap, int range) {
+    public MToNHashDividePartitioningConnectorDescriptor(IConnectorDescriptorRegistry spec,
+            ITuplePartitionComputerFactory tpcf, int fanout) {
         super(spec, tpcf);
         this.tpcf = tpcf;
-        this.rangeMap = rangeMap;
-        this.range = range;
+        this.fanout = fanout;
     }
 
     @Override
     public IFrameWriter createPartitioner(IHyracksTaskContext ctx, RecordDescriptor recordDesc,
             IPartitionWriterFactory edwFactory, int index, int nProducerPartitions, int nConsumerPartitions)
             throws HyracksDataException {
-        return new HashRangePartitionDataWriter(ctx, nConsumerPartitions, edwFactory, recordDesc,
-                tpcf.createPartitioner(), rangeMap, range);
+        return new DividePartitionDataWriter(ctx, nConsumerPartitions, edwFactory, recordDesc, tpcf.createPartitioner(),
+                index * fanout);
     }
 
-    public ITuplePartitionComputerFactory getTuplePartitionComputerFactory() {
-        return tpcf;
+
+    @Override
+    public IPartitionCollector createPartitionCollector(IHyracksTaskContext ctx, RecordDescriptor recordDesc, int index,
+            int nProducerPartitions, int nConsumerPartitions) throws HyracksDataException {
+        BitSet expectedPartitions = new BitSet(nProducerPartitions);
+        expectedPartitions.set(0, nProducerPartitions);
+        NonDeterministicChannelReader channelReader = new SafeNonDeterministicChannelReader(nProducerPartitions,
+                expectedPartitions);
+        NonDeterministicFrameReader frameReader = new NonDeterministicFrameReader(channelReader);
+        return new PartitionCollector(ctx, getConnectorId(), index, expectedPartitions, frameReader, channelReader);
+    }
+
+    @Override
+    public int getFanout() {
+        return fanout;
     }
 }

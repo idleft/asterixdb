@@ -201,6 +201,7 @@ public abstract class ActiveEntityEventsListener implements IActiveEntityControl
         } else {
             setState(state == ActivityState.SUSPENDING ? ActivityState.SUSPENDED : ActivityState.STOPPED);
         }
+        checkNoFailure();
     }
 
     protected void start(ActiveEvent event) {
