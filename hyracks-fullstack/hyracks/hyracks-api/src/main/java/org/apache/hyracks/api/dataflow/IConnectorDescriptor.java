@@ -20,8 +20,10 @@ package org.apache.hyracks.api.dataflow;
 
 import java.io.Serializable;
 import java.util.BitSet;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.application.ICCServiceContext;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.IPartitionCollector;
@@ -139,4 +141,8 @@ public interface IConnectorDescriptor extends Serializable {
      * Sets the connector Id
      */
     public void setConnectorId(ConnectorDescriptorId cdId);
+
+    public default int getFanout() {
+        return -1;
+    }
 }

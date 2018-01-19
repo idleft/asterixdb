@@ -72,6 +72,7 @@ public class FeedStreamDataFlowController extends AbstractFeedDataFlowController
 
     @Override
     public boolean stop(long timeout) throws HyracksDataException {
+        System.out.println("Produced record " + incomingRecordsCount);
         try {
             if (stream.stop()) {
                 return true;

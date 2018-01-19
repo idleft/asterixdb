@@ -22,7 +22,9 @@ import java.io.File;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.common.cluster.ClusterPartition;
@@ -247,7 +249,7 @@ public class MetadataBootstrap {
     }
 
     private static void insertInitialGroups(MetadataTransactionContext mdTxnCtx) throws AlgebricksException {
-        List<String> metadataGroupNodeNames = new ArrayList<>();
+        Set<String> metadataGroupNodeNames = new HashSet<>();
         metadataGroupNodeNames.add(metadataNodeName);
         NodeGroup groupRecord = new NodeGroup(MetadataConstants.METADATA_NODEGROUP_NAME, metadataGroupNodeNames);
         MetadataManager.INSTANCE.addNodegroup(mdTxnCtx, groupRecord);

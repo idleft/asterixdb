@@ -65,6 +65,22 @@ public class Task {
         this.taskCluster = taskCluster;
     }
 
+    public int[] getInputPartitionCounts() {
+        return activityPlan.getActivityPartitionDetails().getInputPartitionCounts();
+    }
+
+    public int[] getInputOffsets() {
+        return activityPlan.getActivityPartitionDetails().getInputOffsets(taskId.getPartition());
+    }
+
+    public int[] getOutputPartitionCounts() {
+        return activityPlan.getActivityPartitionDetails().getOutputPartitionCounts();
+    }
+
+    public int[] getOutputOffsets() {
+        return activityPlan.getActivityPartitionDetails().getOutputOffsets(taskId.getPartition());
+    }
+
     @Override
     public String toString() {
         return String.valueOf(taskId);

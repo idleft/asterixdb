@@ -20,30 +20,32 @@ package org.apache.asterix.external.operators;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.common.api.INcApplicationContext;
-import org.apache.asterix.external.feed.dataflow.FeedRuntimeInputHandler;
-import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
+import org.apache.asterix.common.memory.ConcurrentFramePool;
+import org.apache.asterix.external.feed.dataflow.FeedExceptionHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
-import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
-import org.apache.hyracks.api.comm.VSizeFrame;
+import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IActivity;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.util.HyracksConstants;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
-import org.apache.hyracks.dataflow.common.utils.TaskUtil;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 /*
  * This IFrameWriter doesn't follow the contract
  */
@@ -51,8 +53,8 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    /** Runtime node pushable corresponding to the core feed operator **/
-    private AbstractUnaryInputUnaryOutputOperatorNodePushable coreOperator;
+    private static final int WORKER_N = 1;
+    private static final ByteBuffer POISON_PILL = ByteBuffer.allocate(0);
 
     /**
      * A policy accessor that ensures dynamic decisions for a feed are taken
@@ -81,17 +83,25 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private final FeedRuntimeType runtimeType = FeedRuntimeType.COMPUTE;
 
-    private final VSizeFrame message;
-
     private final FeedMetaOperatorDescriptor opDesc;
 
     private final IRecordDescriptorProvider recordDescProvider;
 
     private boolean opened;
 
+    private final BlockingQueue<ByteBuffer> inbox;
+
+    private final FeedExceptionHandler feedExceptionHandler;
+
+    private final ConcurrentFramePool framepool;
+    private final AbstractUnaryInputUnaryOutputOperatorNodePushable[] pipelineList;
+    private final PipelineWorker[] workerList;
+    private final ExecutorService threadPoolExecutor;
+    private final int initialFrameSize;
+
     /*
      * In this operator:
-     * writer is the network partitioner
+     * nextWriter is the network partitioner
      * coreOperator is the first operator
      */
     public FeedMetaComputeNodePushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescProvider,
@@ -99,17 +109,25 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
             Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor)
             throws HyracksDataException {
         this.ctx = ctx;
-        this.coreOperator = (AbstractUnaryInputUnaryOutputOperatorNodePushable) ((IActivity) coreOperator)
-                .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
+        this.pipelineList = new AbstractUnaryInputUnaryOutputOperatorNodePushable[WORKER_N];
+        this.workerList = new PipelineWorker[WORKER_N];
+        for (int iter1 = 0; iter1 < WORKER_N; iter1++) {
+            pipelineList[iter1] = (AbstractUnaryInputUnaryOutputOperatorNodePushable) ((IActivity) coreOperator)
+                    .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
+        }
         this.policyAccessor = new FeedPolicyAccessor(feedPolicyProperties);
         this.partition = partition;
         this.connectionId = feedConnectionId;
         this.feedManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
-        this.message = new VSizeFrame(ctx);
-        TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
         this.opDesc = feedMetaOperatorDescriptor;
         this.recordDescProvider = recordDescProvider;
+        this.inbox = new LinkedBlockingQueue<>();
+        this.fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
+        this.feedExceptionHandler = new FeedExceptionHandler(ctx, fta);
+        this.framepool = feedManager.getFramePool();
+        this.threadPoolExecutor = Executors.newFixedThreadPool(WORKER_N);
+        this.initialFrameSize = ctx.getInitialFrameSize();
     }
 
     @Override
@@ -118,7 +136,9 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         try {
             initializeNewFeedRuntime(runtimeId);
             opened = true;
-            writer.open();
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is opened.");
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw new HyracksDataException(e);
@@ -126,25 +146,47 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     }
 
     private void initializeNewFeedRuntime(ActiveRuntimeId runtimeId) throws Exception {
-        fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
-        FeedPolicyAccessor fpa = policyAccessor;
-        coreOperator.setOutputFrameWriter(0, writer, recordDesc);
-        if (fpa.flowControlEnabled()) {
-            writer = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, coreOperator, fpa, fta,
-                    feedManager.getFramePool());
-        } else {
-            writer = new SyncFeedRuntimeInputHandler(ctx, coreOperator, fta);
+        //        FeedPolicyAccessor fpa = policyAccessor;
+        writer = new ConcurrentSurrogateWriter(writer);
+        for (int iter1 = 0; iter1 < pipelineList.length; iter1++) {
+            pipelineList[iter1].setOutputFrameWriter(0, writer, recordDesc);
+            workerList[iter1] = new PipelineWorker(pipelineList[iter1], iter1, partition);
+            threadPoolExecutor.submit(workerList[iter1]);
         }
+        //        if (fpa.flowControlEnabled()) {
+        //            nextWriter = new FeedRuntimeInputHandler(ctx, connectionId, runtimeId, coreOperator, fpa, fta,
+        //                    feedManager.getFramePool());
+        //        } else {
+        //        nextWriter = new SyncFeedRuntimeInputHandler(ctx, coreOperator, fta);
+        //        }
     }
 
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+
+        if (LOGGER.isInfoEnabled()) {
+            LOGGER.log(Level.INFO,
+                    this.getClass().getSimpleName() + " on " + partition + " received buffer " + buffer.array().length);
+        }
         try {
-            FeedUtils.processFeedMessage(buffer, message, fta);
-            writer.nextFrame(buffer);
+            ByteBuffer next = (buffer.capacity() <= framepool.getMaxFrameSize()) ? getFreeBuffer(buffer.capacity())
+                    : null;
+            if (next != null) {
+                next.put(buffer);
+                inbox.put(next);
+            }
         } catch (Exception e) {
             LOGGER.log(Level.WARN, e.getMessage(), e);
             throw new HyracksDataException(e);
+        }
+    }
+
+    private ByteBuffer getFreeBuffer(int frameSize) throws HyracksDataException {
+        int numFrames = frameSize / initialFrameSize;
+        if (numFrames == 1) {
+            return framepool.get();
+        } else {
+            return framepool.get(frameSize);
         }
     }
 
@@ -156,12 +198,159 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     @Override
     public void close() throws HyracksDataException {
         if (opened) {
-            writer.close();
+            try {
+                for (int iter1=0; iter1 < WORKER_N; iter1++) {
+                    inbox.put(POISON_PILL);
+                }
+//                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
+//                List<Runnable> tasks = threadPoolExecutor.shutdownNow();
+                threadPoolExecutor.shutdown();
+                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(e);
+            }
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is closed.");
+            }
         }
     }
 
     @Override
     public void flush() throws HyracksDataException {
         writer.flush();
+    }
+
+    private class PipelineWorker implements Runnable {
+
+        private final AbstractUnaryInputUnaryOutputOperatorNodePushable pipeline;
+        private Throwable cause;
+        private int counter;
+        private final int partition;
+        private final int workerId;
+        private final String workerName;
+
+        public PipelineWorker(AbstractUnaryInputUnaryOutputOperatorNodePushable pipeline, int id, int partition) {
+            this.pipeline = pipeline;
+            this.workerId = id;
+            this.counter = 0;
+            this.partition = partition;
+            workerName = "Pipeline_worker_" + partition + "-" + workerId;
+        }
+
+        public Throwable getCause() {
+            return this.cause;
+        }
+
+        private Throwable consume(ByteBuffer frame) {
+            while (frame != null) {
+                try {
+                    pipeline.nextFrame(frame);
+                    frame = null;
+                } catch (HyracksDataException e) {
+                    frame = feedExceptionHandler.handle(e, frame);
+                    if (frame == null) {
+                        this.cause = e;
+                        return e;
+                    }
+                } catch (Throwable th) {
+                    this.cause = th;
+                    return th;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public void run() {
+            boolean running = true;
+            Thread.currentThread().setName(workerName);
+            try {
+                pipeline.open();
+                System.out.println(workerName + " started.");
+                while (running) {
+                    ByteBuffer frame = inbox.poll();
+                    if (frame == null) {
+                        pipeline.flush();
+                        frame = inbox.take();
+                    }
+
+                    if (frame == POISON_PILL) {
+                        System.out.println(workerName + " poisoned.");
+                        running = false;
+                    } else {
+                        if (LOGGER.isInfoEnabled()) {
+                            LOGGER.log(Level.INFO, workerName + " obtained frame.");
+                        }
+                        running = consume(frame) == null;
+                        fta.reset(frame);
+                        counter += fta.getTupleCount();
+                        framepool.release(frame);
+                    }
+                }
+                pipeline.close();
+            } catch (HyracksDataException | InterruptedException e) {
+                this.cause = e;
+            }
+            System.out.println(workerName + " stopped with " + counter + " processed.");
+        }
+    }
+
+    private class ConcurrentSurrogateWriter implements IFrameWriter {
+
+        private final IFrameWriter nextWriter;
+        private Integer workerCounter;
+        private boolean opened;
+
+
+        public ConcurrentSurrogateWriter(IFrameWriter nextWriter) {
+            this.nextWriter = nextWriter;
+            this.workerCounter = 0;
+            this.opened = false;
+        }
+
+        @Override
+        public void open() throws HyracksDataException {
+            synchronized (this) {
+                if (workerCounter++ < 1) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.log(Level.INFO, "Surrogate nextWriter opened");
+                    }
+                    nextWriter.open();
+                    opened = true;
+                }
+            }
+        }
+
+        @Override
+        public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
+            synchronized (this) {
+                nextWriter.nextFrame(buffer);
+            }
+        }
+
+        @Override
+        public void fail() throws HyracksDataException {
+            synchronized (this) {
+                nextWriter.fail();
+            }
+        }
+
+        @Override
+        public void close() throws HyracksDataException {
+            synchronized (this) {
+                if (--workerCounter < 1) {
+                    if (LOGGER.isInfoEnabled()) {
+                        LOGGER.log(Level.INFO, "Surrogate nextWriter closed");
+                    }
+                    nextWriter.close();
+                    opened = false;
+                }
+            }
+        }
+
+        public boolean isOpened() {
+            return opened;
+        }
+
     }
 }

@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
@@ -303,7 +304,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
         return MetadataManagerUtil.findNodeDomain(appCtx.getClusterStateManager(), mdTxnCtx, nodeGroupName);
     }
 
-    public List<String> findNodes(String nodeGroupName) throws AlgebricksException {
+    public Set<String> findNodes(String nodeGroupName) throws AlgebricksException {
         return MetadataManagerUtil.findNodes(mdTxnCtx, nodeGroupName);
     }
 
@@ -694,8 +695,8 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
             numElementsHint = Long.parseLong(numElementsHintString);
         }
         int numPartitions = 0;
-        List<String> nodeGroup = MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, dataset.getNodeGroupName())
-                .getNodeNames();
+        Set<String> nodeGroup =
+                MetadataManager.INSTANCE.getNodegroup(mdTxnCtx, dataset.getNodeGroupName()).getNodeNames();
         IClusterStateManager csm = appCtx.getClusterStateManager();
         for (String nd : nodeGroup) {
             numPartitions += csm.getNodePartitionsCount(nd);

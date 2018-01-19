@@ -29,23 +29,23 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class NonDeterministicChannelReader implements IInputChannelMonitor, IPartitionAcceptor {
-    private static final Logger LOGGER = LogManager.getLogger();
+    protected static final Logger LOGGER = LogManager.getLogger();
 
-    private final int nSenderPartitions;
+    protected final int nSenderPartitions;
 
-    private final IInputChannel[] channels;
+    protected final IInputChannel[] channels;
 
-    private final BitSet frameAvailability;
+    protected final BitSet frameAvailability;
 
-    private final int[] availableFrameCounts;
+    protected final int[] availableFrameCounts;
 
-    private final BitSet eosSenders;
+    protected final BitSet eosSenders;
 
-    private final BitSet failSenders;
+    protected final BitSet failSenders;
 
-    private final BitSet closedSenders;
+    protected final BitSet closedSenders;
 
-    private int lastReadSender;
+    protected int lastReadSender;
 
     public NonDeterministicChannelReader(int nSenderPartitions, BitSet expectedPartitions) {
         this.nSenderPartitions = nSenderPartitions;

@@ -27,10 +27,17 @@ public class ActivityPartitionDetails {
 
     private final int[] nOutputPartitions;
 
-    public ActivityPartitionDetails(int nPartitions, int[] nInputPartitions, int[] nOutputPartitions) {
+    private final int[] inputFanouts;
+
+    private final int[] outputFanouts;
+
+    public ActivityPartitionDetails(int nPartitions, int[] nInputPartitions, int[] nOutputPartitions,
+            int[] inputFanouts, int[] outputFanouts) {
         this.nPartitions = nPartitions;
         this.nInputPartitions = nInputPartitions;
         this.nOutputPartitions = nOutputPartitions;
+        this.inputFanouts = inputFanouts;
+        this.outputFanouts = outputFanouts;
     }
 
     public int getPartitionCount() {
@@ -49,5 +56,26 @@ public class ActivityPartitionDetails {
     public String toString() {
         return nPartitions + ":" + (nInputPartitions == null ? "[]" : Arrays.toString(nInputPartitions)) + ":"
                 + (nOutputPartitions == null ? "[]" : Arrays.toString(nOutputPartitions));
+    }
+
+    public int[] getInputOffsets(int pid) {
+        if (nInputPartitions!= null) {
+            int[] offsets = new int[nInputPartitions.length];
+            for (int iter1 = 0; iter1 < offsets.length; iter1++) {
+                if (inputFanouts[iter1] != -1) {
+                    offsets[iter1] = pid / inputFanouts[iter1];
+                } else {
+                    offsets[iter1] = 0;
+                }
+
+            }
+            return offsets;
+        } else {
+            return null;
+        }
+    }
+
+    public int[] getOutputOffsets(int pid) {
+        return outputFanouts;
     }
 }

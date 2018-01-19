@@ -19,10 +19,11 @@
 package org.apache.asterix.metadata.declared;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -42,6 +43,7 @@ import org.apache.hyracks.algebricks.core.algebra.expressions.IVariableTypeEnvir
 import org.apache.hyracks.algebricks.core.algebra.expressions.ScalarFunctionCallExpression;
 import org.apache.hyracks.algebricks.core.algebra.metadata.IDataSource;
 import org.apache.hyracks.algebricks.core.algebra.operators.logical.IOperatorSchema;
+import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.jobgen.impl.JobGenContext;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
@@ -56,17 +58,16 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
     private final FeedRuntimeType location;
     private final String targetDataset;
     private final String[] locations;
-    private final int computeCardinality;
+    private final INodeDomain computationNodeDomain;
     private final List<IAType> pkTypes;
     private final List<ScalarFunctionCallExpression> keyAccessExpression;
     private final FeedConnection feedConnection;
 
-    public FeedDataSource(MetadataProvider metadataProvider, Feed feed, DataSourceId id, String targetDataset,
-            IAType itemType, IAType metaType, List<IAType> pkTypes,
-            List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId, FeedRuntimeType location,
-            String[] locations, INodeDomain domain, FeedConnection feedConnection) throws AlgebricksException {
+    public FeedDataSource(Feed feed, DataSourceId id, String targetDataset, IAType itemType, IAType metaType,
+            List<IAType> pkTypes, List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId,
+            FeedRuntimeType location, String[] locations, INodeDomain domain, FeedConnection feedConnection)
+            throws AlgebricksException {
         super(id, itemType, metaType, Type.FEED, domain);
-        ICcApplicationContext appCtx = metadataProvider.getApplicationContext();
         this.feed = feed;
         this.targetDataset = targetDataset;
         this.sourceFeedId = sourceFeedId;
@@ -74,7 +75,8 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
         this.locations = locations;
         this.pkTypes = pkTypes;
         this.keyAccessExpression = keyAccessExpression;
-        this.computeCardinality = appCtx.getClusterStateManager().getParticipantNodes().size();
+        this.computationNodeDomain = new DefaultNodeGroupDomain(Arrays
+                .asList(((DefaultNodeGroupDomain) domain).getNodes()).stream().distinct().collect(Collectors.toList()));
         this.feedConnection = feedConnection;
         initFeedDataSource();
     }
@@ -117,10 +119,6 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
                 schemaTypes[i++] = type;
             }
         }
-    }
-
-    public int getComputeCardinality() {
-        return computeCardinality;
     }
 
     public List<IAType> getPkTypes() {
@@ -207,5 +205,9 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
 
     public FeedConnection getFeedConnection() {
         return feedConnection;
+    }
+
+    public INodeDomain getComputationNodeDomain() {
+        return computationNodeDomain;
     }
 }

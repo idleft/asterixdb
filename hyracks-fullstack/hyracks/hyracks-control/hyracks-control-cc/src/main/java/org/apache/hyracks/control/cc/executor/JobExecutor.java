@@ -375,7 +375,8 @@ public class JobExecutor {
             jobRun.registerOperatorLocation(opId, tid.getPartition(), nodeId);
             ActivityPartitionDetails apd = ts.getActivityPlan().getActivityPartitionDetails();
             TaskAttemptDescriptor tad = new TaskAttemptDescriptor(taskAttempt.getTaskAttemptId(),
-                    apd.getPartitionCount(), apd.getInputPartitionCounts(), apd.getOutputPartitionCounts());
+                    apd.getPartitionCount(), ts.getInputPartitionCounts(), ts.getOutputPartitionCounts(),
+                    ts.getInputOffsets(), ts.getOutputOffsets());
             tads.add(tad);
         }
         tcAttempt.initializePendingTaskCounter();
@@ -402,6 +403,7 @@ public class JobExecutor {
                 for (int i = 0; i < inPartitionCounts.length; ++i) {
                     ConnectorDescriptorId cdId = inConnectors.get(i).getConnectorId();
                     IConnectorPolicy policy = jobRun.getConnectorPolicyMap().get(cdId);
+                    int offset = tad.getInputOffset(i);
                     /*
                      * carry sender location information into a task
                      * when it is not the case that it is an re-attempt and the send-side
@@ -413,7 +415,7 @@ public class JobExecutor {
                     ActivityId producerAid = acg.getProducerActivity(cdId);
                     partitionLocations[i] = new NetworkAddress[inPartitionCounts[i]];
                     for (int j = 0; j < inPartitionCounts[i]; ++j) {
-                        TaskId producerTaskId = new TaskId(producerAid, j);
+                        TaskId producerTaskId = new TaskId(producerAid, offset + j);
                         String nodeId = findTaskLocation(producerTaskId);
                         partitionLocations[i][j] = nodeManager.getNodeControllerState(nodeId).getDataPort();
                     }

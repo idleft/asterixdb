@@ -65,6 +65,7 @@ import org.apache.asterix.optimizer.rules.PushGroupByThroughProduct;
 import org.apache.asterix.optimizer.rules.PushLimitIntoOrderByRule;
 import org.apache.asterix.optimizer.rules.PushProperJoinThroughProduct;
 import org.apache.asterix.optimizer.rules.PushSimilarityFunctionsBelowJoin;
+import org.apache.asterix.optimizer.rules.PushdownHashPartitionerForFeedComputationRule;
 import org.apache.asterix.optimizer.rules.RemoveLeftOuterUnnestForLeftOuterJoinRule;
 import org.apache.asterix.optimizer.rules.RemoveRedundantListifyRule;
 import org.apache.asterix.optimizer.rules.RemoveRedundantSelectRule;
@@ -355,7 +356,7 @@ public final class RuleCollections {
         physicalRewritesTopLevel.add(new SetAlgebricksPhysicalOperatorsRule());
         physicalRewritesTopLevel.add(new IntroduceRapidFrameFlushProjectAssignRule());
         physicalRewritesTopLevel.add(new SetExecutionModeRule());
-        physicalRewritesTopLevel.add(new IntroduceRandomPartitioningFeedComputationRule());
+        physicalRewritesTopLevel.add(new PushdownHashPartitionerForFeedComputationRule());
         return physicalRewritesTopLevel;
     }
 

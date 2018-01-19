@@ -116,6 +116,9 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
             @Override
             public void close() throws HyracksDataException {
                 if (isOpen) {
+                    for (IScalarEvaluator se : eval) {
+                        se.close();
+                    }
                     super.close();
                 }
             }

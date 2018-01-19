@@ -24,4 +24,8 @@ import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
 
 public interface IScalarEvaluator {
     public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException;
+
+    public default void close() {
+        // no op
+    }
 }

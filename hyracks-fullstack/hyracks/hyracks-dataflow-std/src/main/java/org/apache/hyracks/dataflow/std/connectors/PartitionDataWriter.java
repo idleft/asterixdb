@@ -34,18 +34,18 @@ import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.util.trace.ITracer;
 
 public class PartitionDataWriter implements IFrameWriter {
-    private final int consumerPartitionCount;
-    private final IFrameWriter[] pWriters;
-    private final boolean[] isOpen;
-    private final FrameTupleAppender[] appenders;
-    private final FrameTupleAccessor tupleAccessor;
-    private final ITuplePartitionComputer tpc;
-    private final IHyracksTaskContext ctx;
-    private boolean[] allocatedFrames;
-    private boolean failed = false;
+    protected final int consumerPartitionCount;
+    protected final IFrameWriter[] pWriters;
+    protected final boolean[] isOpen;
+    protected final FrameTupleAppender[] appenders;
+    protected final FrameTupleAccessor tupleAccessor;
+    protected final ITuplePartitionComputer tpc;
+    protected final IHyracksTaskContext ctx;
+    protected boolean[] allocatedFrames;
+    protected boolean failed = false;
 
-    public PartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount, IPartitionWriterFactory pwFactory,
-            RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc) throws HyracksDataException {
+    protected PartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
+            RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc) {
         this.ctx = ctx;
         this.tpc = tpc;
         this.consumerPartitionCount = consumerPartitionCount;
@@ -54,6 +54,11 @@ public class PartitionDataWriter implements IFrameWriter {
         allocatedFrames = new boolean[consumerPartitionCount];
         appenders = new FrameTupleAppender[consumerPartitionCount];
         tupleAccessor = new FrameTupleAccessor(recordDescriptor);
+    }
+
+    public PartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount, IPartitionWriterFactory pwFactory,
+            RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc) throws HyracksDataException {
+        this(ctx, consumerPartitionCount, recordDescriptor, tpc);
         initializeAppenders(pwFactory);
     }
 
@@ -119,12 +124,16 @@ public class PartitionDataWriter implements IFrameWriter {
         }
     }
 
+    protected int getPartitionIdx(int tupleIdx) throws HyracksDataException {
+        return tpc.partition(tupleAccessor, tupleIdx, consumerPartitionCount);
+    }
+
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         tupleAccessor.reset(buffer);
         int tupleCount = tupleAccessor.getTupleCount();
         for (int i = 0; i < tupleCount; ++i) {
-            int h = tpc.partition(tupleAccessor, i, consumerPartitionCount);
+            int h = getPartitionIdx(i);
             if (!allocatedFrames[h]) {
                 allocateFrames(h);
             }
