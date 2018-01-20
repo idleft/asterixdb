@@ -395,7 +395,7 @@ public final class MetadataRecordTypes {
                     FIELD_NAME_POLICY_NAME },
             // FieldTypes
             new IAType[] { BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING, BuiltinType.ASTRING,
-                    new AUnorderedListType(BuiltinType.ASTRING, null), BuiltinType.ASTRING, BuiltinType.ASTRING},
+                    new AUnorderedListType(BuiltinType.ASTRING, null), BuiltinType.ASTRING, BuiltinType.ASTRING },
             //IsOpen?
             true);
 
