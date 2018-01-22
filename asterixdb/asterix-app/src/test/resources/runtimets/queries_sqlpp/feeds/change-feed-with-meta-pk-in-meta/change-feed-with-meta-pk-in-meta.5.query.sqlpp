@@ -23,7 +23,7 @@
  */
 use KeyVerse;
 
-select meta().vbucket as vbucket, count(d) as tuple_count from KVStore d
-group by vbucket
+select vbucket, count(d) as tuple_count from KVStore d
+group by meta().vbucket as vbucket
 order by vbucket
 limit 5;
