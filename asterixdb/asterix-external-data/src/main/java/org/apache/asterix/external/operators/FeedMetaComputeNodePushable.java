@@ -53,7 +53,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final int WORKER_N = 1;
+    private static final int WORKER_N = 4;
     private static final ByteBuffer POISON_PILL = ByteBuffer.allocate(0);
 
     /**
