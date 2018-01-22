@@ -121,6 +121,7 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
         localPartitionExOp.setExecutionMode(scanOp.getExecutionMode());
         localPartitionExOp.computeDeliveredPhysicalProperties(context);
         context.computeAndSetTypeEnvironmentForOperator(localPartitionExOp);
+        System.out.println("CC DEBUG LOG: compute domain " + feedComputingDomain + " storage domain " + datasetDomain );
 
         return true;
     }

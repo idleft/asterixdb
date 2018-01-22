@@ -49,7 +49,7 @@ public class CombinePartitionDataWriter extends PartitionDataWriter {
     protected int getPartitionIdx(int tupleIdx) throws HyracksDataException {
         int idx = tpc.partition(tupleAccessor, tupleIdx, range);
         int mappedIdx = remapPartitionIdx(idx);
-        System.out.println("Send " + tupleIdx + "  from " + idx + " to " + mappedIdx);
+//        System.out.println("Send " + tupleIdx + "  from " + idx + " to " + mappedIdx);
         return mappedIdx;
     }
 

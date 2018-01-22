@@ -99,8 +99,6 @@ public class HashLocalPartitionExchangePOperator extends AbstractExchangePOperat
             ++i;
         }
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
-        int[] pCounts = {1, 1, 1, 1};
-        int[] pOffsets = {0, 0, 1, 1};
         IConnectorDescriptor conn = new MToNHashDividePartitioningConnectorDescriptor(spec, tpcf, 2);
         return new Pair<>(conn, null);
     }

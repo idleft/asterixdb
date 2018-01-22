@@ -19,8 +19,10 @@
 package org.apache.asterix.runtime.operators;
 
 import java.io.DataOutput;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.time.Instant;
 
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.common.dataflow.LSMIndexUtil;
@@ -98,6 +100,13 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
     private final IFrameTupleProcessor processor;
     private LSMTreeIndexAccessor lsmAccessor;
     private IIndexAccessParameters iap;
+    private Instant startOfWindow, endOfWindow;
+    private static int delayTimeInSec = 120;
+    private static int measureTimeInSec = 300;
+        private static String resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
+//    private static String resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
+    private FileWriter fw;
+    private long processedRecords;
 
     public LSMPrimaryUpsertOperatorNodePushable(IHyracksTaskContext ctx, int partition,
             IIndexDataflowHelperFactory indexHelperFactory, int[] fieldPermutation, RecordDescriptor inputRecDesc,
@@ -244,8 +253,18 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
                     appender.write(writer, true);
                 }
             };
-        } catch (Throwable e) { // NOSONAR: Re-thrown
-            throw HyracksDataException.create(e);
+
+try {
+                // Start of evaluation code
+                fw = new FileWriter(resultFilePath + this.hashCode() + ".txt");
+                System.out.println(this.hashCode() + ".txt opened for writing result");
+                processedRecords = 0;
+                // end of evaluation code
+            } catch (Exception e) {
+                throw new HyracksDataException(e);
+            }        } catch (Throwable e) {
+            // NOSONAR: Re-thrown
+            throw  HyracksDataException.create(e);
         }
     }
 
@@ -283,6 +302,18 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         accessor.reset(buffer);
+
+        // Add processed number
+        Instant currentTime = Instant.now();
+        if (startOfWindow == null) {
+            startOfWindow = currentTime.plusSeconds(delayTimeInSec);
+            endOfWindow = currentTime.plusSeconds(delayTimeInSec + measureTimeInSec);
+        }
+        if (currentTime.compareTo(endOfWindow) < 0 && currentTime.compareTo(startOfWindow) >= 0) {
+            processedRecords += accessor.getTupleCount();
+        }
+        // End of evaluation
+
         lsmAccessor.batchOperate(accessor, tuple, processor, frameOpCallback);
     }
 
@@ -360,6 +391,17 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
 
     @Override
     public void close() throws HyracksDataException {
+        // Start of evaluation
+        try {
+            if (fw != null) {
+                fw.write(String.valueOf(processedRecords) + "\n");
+                fw.flush();
+            }
+        } catch (Exception e) {
+            throw new HyracksDataException(e);
+        }
+        // End of evaluation
+
         try {
             try {
                 if (cursor != null) {
