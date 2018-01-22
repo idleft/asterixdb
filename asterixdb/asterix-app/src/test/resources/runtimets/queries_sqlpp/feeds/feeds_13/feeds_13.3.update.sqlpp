@@ -23,6 +23,8 @@ use test;
 
 connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#addHashTagsInPlace;
 
+SET `compiler.parallelism` "5";
+SET `compiler.computation.location` "asterix_nc2";
 
 
 start feed SyntheticTweetFeed;
