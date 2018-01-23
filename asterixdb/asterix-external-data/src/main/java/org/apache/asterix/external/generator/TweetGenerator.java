@@ -115,6 +115,7 @@ public class TweetGenerator {
                 writeTweetString(tweetIterator.next());
                 count++;
             }
+            flush();
             return true;
         }
     }
