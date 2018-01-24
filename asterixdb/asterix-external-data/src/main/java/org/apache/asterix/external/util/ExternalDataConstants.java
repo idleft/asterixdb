@@ -97,6 +97,7 @@ public class ExternalDataConstants {
     public static final String KEY_META_TYPE_NAME = "meta-type-name";
     public static final String KEY_ADAPTER_NAME = "adapter-name";
     public static final String READER_STREAM = "stream";
+    public static final String KEY_HTTP_PORT = "http-port";
     public static final String KEY_HTTP_PROXY_HOST = "http-proxy-host";
     public static final String KEY_HTTP_PROXY_PORT = "http-proxy-port";
     public static final String KEY_HTTP_PROXY_USER = "http-proxy-user";

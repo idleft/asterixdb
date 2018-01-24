@@ -82,7 +82,7 @@ public class HttpServerHandler<T extends HttpServer> extends SimpleChannelInboun
         ctx.writeAndFlush(response).addListener(ChannelFutureListener.CLOSE);
     }
 
-    private void submit(ChannelHandlerContext ctx, IServlet servlet, FullHttpRequest request) throws IOException {
+    protected void submit(ChannelHandlerContext ctx, IServlet servlet, FullHttpRequest request) throws IOException {
         IServletRequest servletRequest;
         try {
             servletRequest = HttpUtil.toServletRequest(request);
