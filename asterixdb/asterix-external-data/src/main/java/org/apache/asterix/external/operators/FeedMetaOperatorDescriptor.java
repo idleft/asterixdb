@@ -72,9 +72,11 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
      **/
     private final FeedRuntimeType runtimeType;
 
+    private final int workerN;
+
     public FeedMetaOperatorDescriptor(final JobSpecification spec, final FeedConnectionId feedConnectionId,
             final IOperatorDescriptor coreOperatorDescriptor, final Map<String, String> feedPolicyProperties,
-            final FeedRuntimeType runtimeType) {
+            final FeedRuntimeType runtimeType, int workerN) {
         super(spec, coreOperatorDescriptor.getInputArity(), coreOperatorDescriptor.getOutputArity());
         this.feedConnectionId = feedConnectionId;
         this.feedPolicyProperties = feedPolicyProperties;
@@ -83,6 +85,7 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
         }
         this.coreOperator = coreOperatorDescriptor;
         this.runtimeType = runtimeType;
+        this.workerN = workerN;
     }
 
     @Override
@@ -93,7 +96,7 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
         switch (runtimeType) {
             case COMPUTE:
                 nodePushable = new FeedMetaComputeNodePushable(ctx, recordDescProvider, partition, nPartitions,
-                        coreOperator, feedConnectionId, feedPolicyProperties, this);
+                        coreOperator, feedConnectionId, feedPolicyProperties, this, workerN);
                 break;
             case STORE:
                 nodePushable = new FeedMetaStoreNodePushable(ctx, recordDescProvider, partition, nPartitions,

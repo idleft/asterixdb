@@ -56,5 +56,6 @@ with {
    "type-name":"Tweet",
    "dataverse-dataset":"feeds:SyntheticTweets",
    "format":"adm",
-   "mode":"controlled"
+   "mode":"controlled",
+   "plvl":"1"
 };
