@@ -103,8 +103,8 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
     private Instant startOfWindow, endOfWindow;
     private static int delayTimeInSec = 120;
     private static int measureTimeInSec = 300;
-        private static String resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
-//    private static String resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
+//        private static String resultFilePath = ;
+    private static String resultFilePath;
     private FileWriter fw;
     private long processedRecords;
 
@@ -138,6 +138,15 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
             this.prevRecWithPKWithFilterValue = new ArrayTupleBuilder(fieldPermutation.length + (hasMeta ? 1 : 0));
             this.prevDos = prevRecWithPKWithFilterValue.getDataOutput();
         }
+        // start of test
+        if (ctx.getJobletContext().getServiceContext().getNodeId().startsWith("asterix")) {
+            resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
+        } else {
+            resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
+        }
+
+        // end of test
+
         processor = new IFrameTupleProcessor() {
             @Override
             public void process(ITupleReference tuple, int index) throws HyracksDataException {
