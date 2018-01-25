@@ -104,7 +104,7 @@ public class FeedMetaComputeNodePushableUnitTest extends TestCase {
         FeedConnectionId feedConnectionId = new FeedConnectionId(DATAVERSE, FEED, DATASET);
 
         return new FeedMetaComputeNodePushable(ctx, recordDescProvider, PARTITION, PARTITION_N, getPipelineOp(),
-                feedConnectionId, Collections.EMPTY_MAP, metaOpDesc);
+                feedConnectionId, Collections.EMPTY_MAP, metaOpDesc, 4);
     }
 
     @org.junit.Test

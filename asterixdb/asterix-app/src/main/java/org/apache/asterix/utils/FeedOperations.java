@@ -253,7 +253,7 @@ public class FeedOperations {
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
             String[] intakeLocations) throws AlgebricksException, HyracksDataException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
-
+        int pLvl = Integer.valueOf(feed.getConfiguration().get("plvl"));
         // copy ingestor
         FeedIntakeOperatorDescriptor firstOp =
                 (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0));
@@ -312,7 +312,7 @@ public class FeedOperations {
                         // anything on the network interface needs to be message compatible
                         if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
                             metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-                                    feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
+                                    feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE, pLvl);
                             opId = metaOp.getOperatorId();
                             opDesc.setOperatorId(opId);
                         }

@@ -24,7 +24,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.active.ActiveRuntimeId;
@@ -44,7 +43,6 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 /*
  * This IFrameWriter doesn't follow the contract
@@ -53,7 +51,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static final int WORKER_N = 4;
+    private static final int DEFAULT_WORKER_N = 4;
     private static final ByteBuffer POISON_PILL = ByteBuffer.allocate(0);
 
     /**
@@ -98,6 +96,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     private final PipelineWorker[] workerList;
     private final ExecutorService threadPoolExecutor;
     private final int initialFrameSize;
+    private final int workerN;
 
     /*
      * In this operator:
@@ -106,12 +105,13 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
      */
     public FeedMetaComputeNodePushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescProvider,
             int partition, int nPartitions, IOperatorDescriptor coreOperator, FeedConnectionId feedConnectionId,
-            Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor)
+            Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor, int workerN)
             throws HyracksDataException {
         this.ctx = ctx;
-        this.pipelineList = new AbstractUnaryInputUnaryOutputOperatorNodePushable[WORKER_N];
-        this.workerList = new PipelineWorker[WORKER_N];
-        for (int iter1 = 0; iter1 < WORKER_N; iter1++) {
+        this.workerN = workerN == -1 ? DEFAULT_WORKER_N : workerN;
+        this.pipelineList = new AbstractUnaryInputUnaryOutputOperatorNodePushable[workerN];
+        this.workerList = new PipelineWorker[workerN];
+        for (int iter1 = 0; iter1 < workerN; iter1++) {
             pipelineList[iter1] = (AbstractUnaryInputUnaryOutputOperatorNodePushable) ((IActivity) coreOperator)
                     .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
         }
@@ -126,7 +126,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         this.fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
         this.feedExceptionHandler = new FeedExceptionHandler(ctx, fta);
         this.framepool = feedManager.getFramePool();
-        this.threadPoolExecutor = Executors.newFixedThreadPool(WORKER_N);
+        this.threadPoolExecutor = Executors.newFixedThreadPool(workerN);
         this.initialFrameSize = ctx.getInitialFrameSize();
     }
 
@@ -200,7 +200,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         if (opened) {
             try {
                 inbox.clear();
-                for (int iter1=0; iter1 < WORKER_N; iter1++) {
+                for (int iter1 = 0; iter1 < workerN; iter1++) {
                     inbox.put(POISON_PILL);
                 }
 //                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
