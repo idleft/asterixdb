@@ -199,19 +199,22 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     public void close() throws HyracksDataException {
         if (opened) {
             try {
+                inbox.clear();
                 for (int iter1=0; iter1 < WORKER_N; iter1++) {
                     inbox.put(POISON_PILL);
                 }
 //                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
 //                List<Runnable> tasks = threadPoolExecutor.shutdownNow();
+                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " close requested.");
                 threadPoolExecutor.shutdown();
-                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
+                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " closed.");
+//                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 throw new HyracksDataException(e);
             }
-            if (LOGGER.isInfoEnabled()) {
-                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is closed.");
-            }
+//            if (LOGGER.isInfoEnabled()) {
+//                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is closed.");
+//            }
         }
     }
 
@@ -225,7 +228,6 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
         private final AbstractUnaryInputUnaryOutputOperatorNodePushable pipeline;
         private Throwable cause;
         private int counter;
-        private final int partition;
         private final int workerId;
         private final String workerName;
 
@@ -233,7 +235,6 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
             this.pipeline = pipeline;
             this.workerId = id;
             this.counter = 0;
-            this.partition = partition;
             workerName = "Pipeline_worker_" + partition + "-" + workerId;
         }
 
