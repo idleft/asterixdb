@@ -18,24 +18,28 @@
  *  * under the License.
  *
  */
-package org.apache.hyracks.http.server;
+package org.apache.hyracks.http.server.authenticator;
 
+import io.netty.handler.codec.http.HttpRequest;
 import org.apache.hyracks.http.api.IAuthenticator;
 
-import io.netty.channel.EventLoopGroup;
+import java.util.Base64;
 
-public class AuthenticatedHttpServer extends HttpServer {
+public class BasicAuthenticator implements IAuthenticator {
 
-    private IAuthenticator authenticator;
+    public static final String SUFFIX_BASIC_AUTHENTICATION = "Basic ";
 
-    public AuthenticatedHttpServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int port, IAuthenticator authenticator) {
-        super(bossGroup, workerGroup, port);
-        this.authenticator = authenticator;
+    private String secret;
+
+    public BasicAuthenticator(String username, String password) {
+        this.secret = SUFFIX_BASIC_AUTHENTICATION
+                + Base64.getEncoder().encodeToString((username + ":" + password).getBytes());
+
     }
 
     @Override
-    protected HttpServerHandler<? extends HttpServer> createHttpHandler(int chunkSize) {
-        return new AuthenticatedHttpServerHandler(this, chunkSize, authenticator);
+    public boolean validate(HttpRequest request) {
+        String authorizationInfo = request.headers().get(KEY_REQUEST_AUTHORIZATION);
+        return (authorizationInfo != null && authorizationInfo.equals(this.secret));
     }
-
 }

@@ -97,11 +97,25 @@ public class ExternalDataConstants {
     public static final String KEY_META_TYPE_NAME = "meta-type-name";
     public static final String KEY_ADAPTER_NAME = "adapter-name";
     public static final String READER_STREAM = "stream";
-    public static final String KEY_HTTP_PORT = "http-port";
     public static final String KEY_HTTP_PROXY_HOST = "http-proxy-host";
     public static final String KEY_HTTP_PROXY_PORT = "http-proxy-port";
     public static final String KEY_HTTP_PROXY_USER = "http-proxy-user";
     public static final String KEY_HTTP_PROXY_PASSWORD = "http-proxy-password";
+
+    /**
+     *  Keys for adapter name
+     **/
+    public static final String KEY_ADAPTER_NAME_TWITTER_PUSH = "twitter_push";
+    public static final String KEY_ADAPTER_NAME_PUSH_TWITTER = "push_twitter";
+    public static final String KEY_ADAPTER_NAME_TWITTER_PULL = "twitter_pull";
+    public static final String KEY_ADAPTER_NAME_PULL_TWITTER = "pull_twitter";
+    public static final String KEY_ADAPTER_NAME_TWITTER_USER_STREAM = "twitter_user_stream";
+    public static final String KEY_ADAPTER_NAME_LOCALFS = "localfs";
+    public static final String KEY_ADAPTER_NAME_SOCKET = "socket";
+    public static final String KEY_ALIAS_ADAPTER_NAME_SOCKET = "socket_adapter";
+    public static final String KEY_ADAPTER_NAME_HTTP = "http_adapter";
+
+
     /**
      * HDFS class names
      */
@@ -123,11 +137,7 @@ public class ExternalDataConstants {
      * Builtin record readers
      */
     public static final String READER_HDFS = "hdfs";
-    public static final String READER_TWITTER_PUSH = "twitter_push";
-    public static final String READER_PUSH_TWITTER = "push_twitter";
-    public static final String READER_TWITTER_PULL = "twitter_pull";
-    public static final String READER_PULL_TWITTER = "pull_twitter";
-    public static final String READER_USER_STREAM_TWITTER = "twitter_user_stream";
+
 
     public static final String CLUSTER_LOCATIONS = "cluster-locations";
     public static final String SCHEDULER = "hdfs-scheduler";
@@ -158,8 +168,6 @@ public class ExternalDataConstants {
      * input streams
      */
     public static final String STREAM_HDFS = "hdfs";
-    public static final String STREAM_LOCAL_FILESYSTEM = "localfs";
-    public static final String SOCKET = "socket";
     public static final String STREAM_SOCKET_CLIENT = "socket-client";
 
     /**
@@ -169,13 +177,7 @@ public class ExternalDataConstants {
     public static final String ALIAS_LOCALFS_ADAPTER = "localfs";
     public static final String ALIAS_LOCALFS_PUSH_ADAPTER = "push_localfs";
     public static final String ALIAS_HDFS_ADAPTER = "hdfs";
-    public static final String ALIAS_SOCKET_ADAPTER = "socket_adapter";
     public static final String ALIAS_SOCKET_CLIENT_ADAPTER = "socket_client";
-    public static final String ALIAS_RSS_ADAPTER = "rss";
-    public static final String ALIAS_FILE_FEED_ADAPTER = "file_feed";
-    public static final String ALIAS_TWITTER_PUSH_ADAPTER = "push_twitter";
-    public static final String ALIAS_TWITTER_PULL_ADAPTER = "pull_twitter";
-    public static final String ALIAS_CNN_ADAPTER = "cnn_feed";
     public static final String ALIAS_FEED_WITH_META_ADAPTER = "feed_with_meta";
     public static final String ALIAS_CHANGE_FEED_WITH_META_ADAPTER = "change_feed_with_meta";
     // for testing purposes

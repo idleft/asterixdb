@@ -31,40 +31,43 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.http.api.IServletRequest;
 import org.apache.hyracks.http.api.IServletResponse;
 import org.apache.hyracks.http.server.AbstractServlet;
+import org.apache.hyracks.http.server.AuthenticatedHttpServer;
 import org.apache.hyracks.http.server.HttpServer;
 import org.apache.hyracks.http.server.WebManager;
+import org.apache.hyracks.http.server.authenticator.BasicAuthenticator;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public class HttpServerRecordReader implements IRecordReader<char[]> {
 
-    private static String ENTRY_POINT = "/datafeed/";
-    private static String POST_PARA_NAME = "adm";
-    private final int port;
+    private static String DEFAULT_ENTRY_POINT = "/";
     private LinkedBlockingQueue<String> inputQ;
     private GenericRecord<char[]> record;
     private boolean closed = false;
     private WebManager webManager;
+    private HttpServer webServer;
 
-    public HttpServerRecordReader(int port) throws Exception {
-        inputQ = new LinkedBlockingQueue<>();
-        record = new GenericRecord<>();
-        this.port = port;
+    public HttpServerRecordReader(int port, String username, String password, String entryPoint) throws Exception {
+        this.inputQ = new LinkedBlockingQueue<>();
+        this.record = new GenericRecord<>();
         webManager = new WebManager();
-        configureHttpServer();
+        if (username == null || password == null) {
+            webServer = new HttpServer(webManager.getBosses(), webManager.getWorkers(), port);
+        } else {
+            webServer = new AuthenticatedHttpServer(webManager.getBosses(), webManager.getWorkers(), port,
+                    new BasicAuthenticator(username, password));
+        }
+        webServer.addServlet(new HttpFeedServlet(webServer.ctx(),
+                new String[] { entryPoint == null ? DEFAULT_ENTRY_POINT : entryPoint }, inputQ));
+        webManager.add(webServer);
         webManager.start();
     }
 
-    private void configureHttpServer() {
-        HttpServer webServer = new HttpServer(webManager.getBosses(), webManager.getWorkers(), port);
-        webServer.addServlet(new HttpFeedServlet(webServer.ctx(), new String[] { ENTRY_POINT }, inputQ));
-        webManager.add(webServer);
-    }
-
     @Override
-    public boolean hasNext() throws Exception {
+    public boolean hasNext() {
         return !closed;
     }
 
@@ -81,12 +84,11 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
     @Override
     public boolean stop() {
         try {
-            webManager.stop();
-            return true;
+            close();
         } catch (Exception e) {
-            e.printStackTrace();
             return false;
         }
+        return true;
     }
 
     @Override
@@ -107,7 +109,12 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
     @Override
     public void close() throws IOException {
         try {
-            webManager.stop();
+            if (!closed) {
+                System.out.println("RR close requested ");
+                webManager.stop();
+                closed = true;
+                System.out.println("RR closed ");
+            }
         } catch (Exception e) {
             throw new IOException(e);
         }
@@ -117,7 +124,7 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
 
         private LinkedBlockingQueue<String> inputQ;
 
-        private void handleMultipleRecords(String admData) throws InterruptedException {
+        private void splitIntoRecords(String admData) throws InterruptedException {
             int p = 0, cnt = 0;
             boolean record = false;
             char[] charBuff = admData.toCharArray();
@@ -133,7 +140,7 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
                 }
                 if (cnt == 0) {
                     if (record) {
-                        inputQ.put(admData.substring(p, iter1+1)+'\n');
+                        inputQ.put(admData.substring(p, iter1 + 1) + '\n');
                         record = false;
                     }
                     p = iter1;
@@ -147,16 +154,15 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
         }
 
         private void doPost(IServletRequest request) throws InterruptedException {
-            String admData = request.getParameter(POST_PARA_NAME);
-            handleMultipleRecords(admData);
+            splitIntoRecords(request.getHttpRequest().content().toString(StandardCharsets.UTF_8));
         }
 
         @Override
         public void handle(IServletRequest request, IServletResponse response) {
-            response.setStatus(HttpResponseStatus.OK);
             if (request.getHttpRequest().method() == HttpMethod.POST) {
                 try {
                     doPost(request);
+                    response.setStatus(HttpResponseStatus.OK);
                 } catch (InterruptedException e) {
                     response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                 }

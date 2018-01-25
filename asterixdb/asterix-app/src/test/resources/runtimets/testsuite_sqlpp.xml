@@ -8408,6 +8408,12 @@
         <output-dir compare="Text">connect-feed-with-function</output-dir>
       </compilation-unit>
     </test-case>
+    <test-case FilePath="feeds">
+      <compilation-unit name="http_feed">
+        <output-dir compare="Text">http_feed</output-dir>
+        <expected-error>HTTP/1.1 401 Unauthorized</expected-error>
+      </compilation-unit>
+    </test-case>
   </test-group>
   <test-group name="hdfs">
     <test-case FilePath="hdfs">

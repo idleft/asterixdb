@@ -38,6 +38,7 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +58,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import io.netty.handler.codec.base64.Base64Encoder;
 import org.apache.asterix.api.http.server.QueryServiceServlet;
 import org.apache.asterix.app.external.IExternalUDFLibrarian;
 import org.apache.asterix.common.api.Duration;
@@ -86,9 +88,11 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.StandardHttpRequestRetryHandler;
+import org.apache.http.message.BasicHeader;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.hyracks.util.StorageUtil;
+import org.apache.hyracks.util.StringUtil;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -125,6 +129,7 @@ public class TestExecutor {
     private static final Pattern HTTP_STATUSCODE_PATTERN = Pattern.compile("statuscode (.*)", Pattern.MULTILINE);
     private static final Pattern MAX_RESULT_READS_PATTERN =
             Pattern.compile("maxresultreads=(\\d+)(\\D|$)", Pattern.MULTILINE);
+    private static final Pattern HTTP_AUTHORIZATION_PATTERN = Pattern.compile("auth=(.*)");
     public static final int TRUNCATE_THRESHOLD = 16384;
     public static final Set<String> NON_CANCELLABLE =
             Collections.unmodifiableSet(new HashSet<>(Arrays.asList("store", "validate")));
@@ -621,7 +626,8 @@ public class TestExecutor {
         return builder.build();
     }
 
-    private HttpUriRequest buildRequest(String method, URI uri, List<Parameter> params, Optional<String> body) {
+    private HttpUriRequest buildRequest(String method, URI uri, List<Parameter> params, Optional<String> body,
+            String auth) {
         RequestBuilder builder = RequestBuilder.create(method);
         builder.setUri(uri);
         for (Parameter param : params) {
@@ -631,12 +637,16 @@ public class TestExecutor {
         if (body.isPresent()) {
             builder.setEntity(new StringEntity(body.get(), StandardCharsets.UTF_8));
         }
+        if (auth != null) {
+            builder.addHeader("Authorization",
+                    "Basic " + Base64.getEncoder().encodeToString(auth.getBytes()));
+        }
         return builder.build();
     }
 
     private HttpUriRequest buildRequest(String method, URI uri, OutputFormat fmt, List<Parameter> params,
-            Optional<String> body) {
-        HttpUriRequest request = buildRequest(method, uri, params, body);
+            Optional<String> body, String auth) {
+        HttpUriRequest request = buildRequest(method, uri, params, body, auth);
         // Set accepted output response type
         request.setHeader("Accept", fmt.mimeType());
         return request;
@@ -707,21 +717,22 @@ public class TestExecutor {
 
     public InputStream executeJSONGet(OutputFormat fmt, URI uri, List<Parameter> params,
             Predicate<Integer> responseCodeValidator) throws Exception {
-        return executeJSON(fmt, "GET", uri, params, responseCodeValidator, Optional.empty());
+        return executeJSON(fmt, "GET", uri, params, responseCodeValidator, Optional.empty(), null);
     }
 
     public InputStream executeJSON(OutputFormat fmt, String method, URI uri, List<Parameter> params) throws Exception {
-        return executeJSON(fmt, method, uri, params, code -> code == HttpStatus.SC_OK, Optional.empty());
+        return executeJSON(fmt, method, uri, params, code -> code == HttpStatus.SC_OK, Optional.empty(), null);
     }
 
     public InputStream executeJSON(OutputFormat fmt, String method, URI uri, Predicate<Integer> responseCodeValidator)
             throws Exception {
-        return executeJSON(fmt, method, uri, Collections.emptyList(), responseCodeValidator, Optional.empty());
+        return executeJSON(fmt, method, uri, Collections.emptyList(), responseCodeValidator, Optional.empty(), null);
     }
 
     public InputStream executeJSON(OutputFormat fmt, String method, URI uri, List<Parameter> params,
-            Predicate<Integer> responseCodeValidator, Optional<String> body) throws Exception {
-        HttpUriRequest request = buildRequest(method, uri, fmt, params, body);
+            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth)
+            throws Exception {
+        HttpUriRequest request = buildRequest(method, uri, fmt, params, body, auth);
         HttpResponse response = executeAndCheckHttpRequest(request, responseCodeValidator);
         return response.getEntity().getContent();
     }
@@ -1163,15 +1174,18 @@ public class TestExecutor {
             int numResultFiles, String extension, ComparisonEnum compare) throws Exception {
         String handleVar = getHandleVariable(statement);
         final String trimmedPathAndQuery = stripAllComments(statement).trim();
+        final String auth = getAuthorizationInfo(statement);
         final String variablesReplaced = replaceVarRef(trimmedPathAndQuery, variableCtx);
         final List<Parameter> params = extractParameters(statement);
         final Optional<String> body = extractBody(statement);
         final Predicate<Integer> statusCodePredicate = extractStatusCodePredicate(statement);
         InputStream resultStream;
         if ("http".equals(extension)) {
-            resultStream = executeHttp(reqType, variablesReplaced, fmt, params, statusCodePredicate, body);
+            resultStream = executeHttp(reqType, variablesReplaced, fmt, params, statusCodePredicate, body,
+                    auth);
         } else if ("uri".equals(extension)) {
-            resultStream = executeURI(reqType, URI.create(variablesReplaced), fmt, params, statusCodePredicate, body);
+            resultStream = executeURI(reqType, URI.create(variablesReplaced), fmt, params, statusCodePredicate, body,
+                    auth);
         } else {
             throw new IllegalArgumentException("Unexpected format for method " + reqType + ": " + extension);
         }
@@ -1390,6 +1404,11 @@ public class TestExecutor {
         return handleVariableMatcher.find() ? handleVariableMatcher.group(1) : null;
     }
 
+    protected static String getAuthorizationInfo(String statement) {
+        final Matcher authorizationInfoMatcher = HTTP_AUTHORIZATION_PATTERN.matcher(statement);
+        return authorizationInfoMatcher.find() ? authorizationInfoMatcher.group(1) : null;
+    }
+
     protected static String replaceVarRef(String statement, Map<String, Object> variableCtx) {
         String tmpStmt = statement;
         Matcher variableReferenceMatcher = VARIABLE_REF_PATTERN.matcher(tmpStmt);
@@ -1445,10 +1464,10 @@ public class TestExecutor {
     }
 
     protected InputStream executeHttp(String ctxType, String endpoint, OutputFormat fmt, List<Parameter> params,
-            Predicate<Integer> statusCodePredicate, Optional<String> body) throws Exception {
+            Predicate<Integer> statusCodePredicate, Optional<String> body, String auth) throws Exception {
         String[] split = endpoint.split("\\?");
         URI uri = createEndpointURI(split[0], split.length > 1 ? split[1] : null);
-        return executeURI(ctxType, uri, fmt, params, statusCodePredicate, body);
+        return executeURI(ctxType, uri, fmt, params, statusCodePredicate, body, auth);
     }
 
     private InputStream executeURI(String ctxType, URI uri, OutputFormat fmt, List<Parameter> params) throws Exception {
@@ -1456,8 +1475,9 @@ public class TestExecutor {
     }
 
     private InputStream executeURI(String ctxType, URI uri, OutputFormat fmt, List<Parameter> params,
-            Predicate<Integer> responseCodeValidator, Optional<String> body) throws Exception {
-        return executeJSON(fmt, ctxType.toUpperCase(), uri, params, responseCodeValidator, body);
+            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth)
+            throws Exception {
+        return executeJSON(fmt, ctxType.toUpperCase(), uri, params, responseCodeValidator, body, auth);
     }
 
     public void killNC(String nodeId, CompilationUnit cUnit) throws Exception {
@@ -1610,6 +1630,7 @@ public class TestExecutor {
 
     protected URI createEndpointURI(String path, String query) throws URISyntaxException {
         InetSocketAddress endpoint;
+        int port = -1;
         if (!path.startsWith("nc:")) {
             int endpointIdx = Math.abs(endpointSelector++ % endpoints.size());
             endpoint = endpoints.get(endpointIdx);
@@ -1619,10 +1640,15 @@ public class TestExecutor {
                 throw new IllegalArgumentException("Unrecognized http pattern");
             }
             String nodeId = tokens[0].substring(3);
+            if (nodeId.contains(":")) {
+                String nodeParts[] = StringUtils.split(nodeId, ':');
+                nodeId = nodeParts[0];
+                port = Integer.valueOf(nodeParts[1]);
+            }
             endpoint = getNcEndPoint(nodeId);
             path = tokens[1];
         }
-        URI uri = new URI("http", null, endpoint.getHostString(), endpoint.getPort(), path, query, null);
+        URI uri = new URI("http", null, endpoint.getHostString(), port == -1 ? endpoint.getPort() : port, path, query, null);
         LOGGER.debug("Created endpoint URI: " + uri);
         return uri;
     }

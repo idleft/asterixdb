@@ -24,10 +24,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.exceptions.ErrorCode;
-import org.apache.asterix.external.api.AsterixInputStream;
 import org.apache.asterix.external.api.IInputStreamFactory;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.api.IRecordReaderFactory;
@@ -49,8 +47,8 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
     protected Map<String, String> configuration;
     protected Class recordReaderClazz;
     private static final List<String> recordReaderNames = Collections.unmodifiableList(
-            Arrays.asList(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER, ExternalDataConstants.ALIAS_SOCKET_ADAPTER,
-                    ExternalDataConstants.SOCKET, ExternalDataConstants.STREAM_SOCKET_CLIENT));
+            Arrays.asList(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER, ExternalDataConstants.KEY_ALIAS_ADAPTER_NAME_SOCKET,
+                    ExternalDataConstants.KEY_ADAPTER_NAME_SOCKET, ExternalDataConstants.STREAM_SOCKET_CLIENT));
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -71,8 +69,8 @@ public class StreamRecordReaderFactory implements IRecordReaderFactory<char[]> {
         String reader = config.get(ExternalDataConstants.KEY_READER);
         if (reader.equals(ExternalDataConstants.ALIAS_LOCALFS_ADAPTER)) {
             streamFactory = new LocalFSInputStreamFactory();
-        } else if (reader.equals(ExternalDataConstants.ALIAS_SOCKET_ADAPTER)
-                || reader.equals(ExternalDataConstants.SOCKET)) {
+        } else if (reader.equals(ExternalDataConstants.KEY_ALIAS_ADAPTER_NAME_SOCKET)
+                || reader.equals(ExternalDataConstants.KEY_ADAPTER_NAME_SOCKET)) {
             streamFactory = new SocketServerInputStreamFactory();
         } else if (reader.equals(ExternalDataConstants.STREAM_SOCKET_CLIENT)) {
             streamFactory = new SocketClientInputStreamFactory();
