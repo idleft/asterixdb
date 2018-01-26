@@ -115,7 +115,6 @@ public class ExternalDataConstants {
     public static final String KEY_ALIAS_ADAPTER_NAME_SOCKET = "socket_adapter";
     public static final String KEY_ADAPTER_NAME_HTTP = "http_adapter";
 
-
     /**
      * HDFS class names
      */
@@ -137,7 +136,6 @@ public class ExternalDataConstants {
      * Builtin record readers
      */
     public static final String READER_HDFS = "hdfs";
-
 
     public static final String CLUSTER_LOCATIONS = "cluster-locations";
     public static final String SCHEDULER = "hdfs-scheduler";

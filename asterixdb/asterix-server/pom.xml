@@ -366,6 +366,7 @@
             <usedDependency>org.apache.asterix:asterix-client-helper</usedDependency>
             <usedDependency>org.apache.hadoop:hadoop-minicluster</usedDependency>
             <usedDependency>org.apache.hyracks:hyracks-control-cc</usedDependency>
+            <usedDependency>org.apache.hyracks:hyracks-control-nc</usedDependency>
             <usedDependency>org.apache.hyracks:hyracks-nc-service</usedDependency>
             <usedDependency>org.codehaus.mojo.appassembler:appassembler-booter</usedDependency>
           </usedDependencies>

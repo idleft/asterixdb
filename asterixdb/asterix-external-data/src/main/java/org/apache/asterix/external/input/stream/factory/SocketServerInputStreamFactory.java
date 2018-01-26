@@ -43,11 +43,10 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
     private List<Pair<String, Integer>> sockets;
 
     @Override
-    public void configure(IServiceContext serviceCtx, Map<String, String> configuration)
-            throws CompilationException {
+    public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws CompilationException {
         try {
-            sockets = FeedUtils.extractHostsPorts(configuration.get(ExternalDataConstants.KEY_MODE),
-                    serviceCtx, configuration.get(ExternalDataConstants.KEY_SOCKETS));
+            sockets = FeedUtils.extractHostsPorts(configuration.get(ExternalDataConstants.KEY_MODE), serviceCtx,
+                    configuration.get(ExternalDataConstants.KEY_SOCKETS));
         } catch (CompilationException e) {
             throw e;
         } catch (Exception e) {

@@ -638,8 +638,7 @@ public class TestExecutor {
             builder.setEntity(new StringEntity(body.get(), StandardCharsets.UTF_8));
         }
         if (auth != null) {
-            builder.addHeader("Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString(auth.getBytes()));
+            builder.addHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(auth.getBytes()));
         }
         return builder.build();
     }
@@ -730,8 +729,7 @@ public class TestExecutor {
     }
 
     public InputStream executeJSON(OutputFormat fmt, String method, URI uri, List<Parameter> params,
-            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth)
-            throws Exception {
+            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth) throws Exception {
         HttpUriRequest request = buildRequest(method, uri, fmt, params, body, auth);
         HttpResponse response = executeAndCheckHttpRequest(request, responseCodeValidator);
         return response.getEntity().getContent();
@@ -1181,11 +1179,10 @@ public class TestExecutor {
         final Predicate<Integer> statusCodePredicate = extractStatusCodePredicate(statement);
         InputStream resultStream;
         if ("http".equals(extension)) {
-            resultStream = executeHttp(reqType, variablesReplaced, fmt, params, statusCodePredicate, body,
-                    auth);
+            resultStream = executeHttp(reqType, variablesReplaced, fmt, params, statusCodePredicate, body, auth);
         } else if ("uri".equals(extension)) {
-            resultStream = executeURI(reqType, URI.create(variablesReplaced), fmt, params, statusCodePredicate, body,
-                    auth);
+            resultStream =
+                    executeURI(reqType, URI.create(variablesReplaced), fmt, params, statusCodePredicate, body, auth);
         } else {
             throw new IllegalArgumentException("Unexpected format for method " + reqType + ": " + extension);
         }
@@ -1475,8 +1472,7 @@ public class TestExecutor {
     }
 
     private InputStream executeURI(String ctxType, URI uri, OutputFormat fmt, List<Parameter> params,
-            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth)
-            throws Exception {
+            Predicate<Integer> responseCodeValidator, Optional<String> body, String auth) throws Exception {
         return executeJSON(fmt, ctxType.toUpperCase(), uri, params, responseCodeValidator, body, auth);
     }
 

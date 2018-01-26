@@ -103,11 +103,10 @@ public abstract class AbstractExecutionIT {
 
         reportPath = new File(joinPath("target", "failsafe-reports")).getAbsolutePath();
 
-        Map<String, String> ncEndPoints = new HashMap<>();
+        final Map<String, String> ncEndPoints = new HashMap<>();
         final String ip = InetAddress.getLoopbackAddress().getHostAddress();
-        for (NodeControllerService nc : ExecutionTestUtil.integrationUtil.ncs) {
-            ncEndPoints.put(nc.getId(), ip);
-        }
+        ncEndPoints.put("asterix_nc1", ip);
+        ncEndPoints.put("asterix_nc2", ip);
         testExecutor.setNcEndPoints(ncEndPoints);
     }
 

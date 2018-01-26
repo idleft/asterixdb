@@ -44,8 +44,8 @@ public class HttpServerRecordReaderFactory implements IRecordReaderFactory<char[
     public static final String KEY_CONFIGURATION_ADDRESSES = "addresses";
     public static final String KEY_CONFIGURATION_PATH = "path";
 
-    private static final List<String> recordReaderNames = Collections
-            .unmodifiableList(Arrays.asList(ExternalDataConstants.KEY_ADAPTER_NAME_HTTP));
+    private static final List<String> recordReaderNames =
+            Collections.unmodifiableList(Arrays.asList(ExternalDataConstants.KEY_ADAPTER_NAME_HTTP));
 
     private String username;
     private String password;
@@ -88,8 +88,7 @@ public class HttpServerRecordReaderFactory implements IRecordReaderFactory<char[
     }
 
     @Override
-    public void configure(IServiceContext ctx, Map<String, String> configuration)
-            throws AlgebricksException {
+    public void configure(IServiceContext ctx, Map<String, String> configuration) throws AlgebricksException {
         this.configurations = configuration;
         // necessary configs
         addrValue = getConfigurationValue(KEY_CONFIGURATION_ADDRESSES, true);

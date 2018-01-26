@@ -159,8 +159,8 @@ public class FeedUtils {
             }
             Map<InetAddress, Set<String>> ncMap;
             ncMap = RuntimeUtils.getNodeControllerMap((ICcApplicationContext) serviceCtx.getApplicationContext());
-            List<String> ncs = RuntimeUtils
-                    .getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
+            List<String> ncs =
+                    RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
             String[] socketsArray = hostsValue.split(",");
             Random random = new Random();
             for (String socket : socketsArray) {
