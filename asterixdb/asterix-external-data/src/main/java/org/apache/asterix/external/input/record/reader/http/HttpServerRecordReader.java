@@ -35,6 +35,9 @@ import org.apache.hyracks.http.server.AuthenticatedHttpServer;
 import org.apache.hyracks.http.server.HttpServer;
 import org.apache.hyracks.http.server.WebManager;
 import org.apache.hyracks.http.server.authenticator.BasicAuthenticator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -43,7 +46,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 public class HttpServerRecordReader implements IRecordReader<char[]> {
 
-    private static String DEFAULT_ENTRY_POINT = "/";
+    public static final Logger LOGGER = LogManager.getLogger();
+
+    private static final String DEFAULT_ENTRY_POINT = "/";
     private LinkedBlockingQueue<String> inputQ;
     private GenericRecord<char[]> record;
     private boolean closed = false;
@@ -110,10 +115,8 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
     public void close() throws IOException {
         try {
             if (!closed) {
-                System.out.println("RR close requested ");
                 webManager.stop();
                 closed = true;
-                System.out.println("RR closed ");
             }
         } catch (Exception e) {
             throw new IOException(e);
@@ -126,22 +129,22 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
 
         private void splitIntoRecords(String admData) throws InterruptedException {
             int p = 0, cnt = 0;
-            boolean record = false;
+            boolean inRecord = false;
             char[] charBuff = admData.toCharArray();
             for (int iter1 = 0; iter1 < charBuff.length; iter1++) {
                 if (charBuff[iter1] == '{') {
-                    if (record == false) {
+                    if (inRecord == false) {
                         p = iter1;
-                        record = true;
+                        inRecord = true;
                     }
                     cnt++;
                 } else if (charBuff[iter1] == '}') {
                     cnt--;
                 }
                 if (cnt == 0) {
-                    if (record) {
+                    if (inRecord) {
                         inputQ.put(admData.substring(p, iter1 + 1) + '\n');
-                        record = false;
+                        inRecord = false;
                     }
                     p = iter1;
                 }
@@ -164,6 +167,7 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
                     doPost(request);
                     response.setStatus(HttpResponseStatus.OK);
                 } catch (InterruptedException e) {
+                    LOGGER.log(Level.INFO, "exception thrown for " + request, e);
                     response.setStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
                 }
             } else {

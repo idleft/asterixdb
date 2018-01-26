@@ -25,11 +25,13 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.IdentitiyResolverFactory;
 import org.apache.asterix.test.base.RetainLogsRule;
 import org.apache.asterix.test.common.TestExecutor;
+import org.apache.asterix.test.runtime.ExecutionTestUtil;
 import org.apache.asterix.testframework.context.TestCaseContext;
 import org.apache.asterix.testframework.context.TestFileContext;
 import org.apache.asterix.testframework.xml.TestCase.CompilationUnit;
 import org.apache.asterix.testframework.xml.TestGroup;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hyracks.control.nc.NodeControllerService;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.codehaus.plexus.util.FileUtils;
@@ -41,6 +43,10 @@ import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameters;
+
+import java.net.InetAddress;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Runs the runtime test cases under 'asterix-app/src/test/resources/runtimets'.
@@ -96,6 +102,13 @@ public abstract class AbstractExecutionIT {
                 IdentitiyResolverFactory.class.getName());
 
         reportPath = new File(joinPath("target", "failsafe-reports")).getAbsolutePath();
+
+        Map<String, String> ncEndPoints = new HashMap<>();
+        final String ip = InetAddress.getLoopbackAddress().getHostAddress();
+        for (NodeControllerService nc : ExecutionTestUtil.integrationUtil.ncs) {
+            ncEndPoints.put(nc.getId(), ip);
+        }
+        testExecutor.setNcEndPoints(ncEndPoints);
     }
 
     @AfterClass

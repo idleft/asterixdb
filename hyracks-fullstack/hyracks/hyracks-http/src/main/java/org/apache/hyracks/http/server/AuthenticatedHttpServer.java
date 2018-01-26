@@ -28,7 +28,8 @@ public class AuthenticatedHttpServer extends HttpServer {
 
     private IAuthenticator authenticator;
 
-    public AuthenticatedHttpServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int port, IAuthenticator authenticator) {
+    public AuthenticatedHttpServer(EventLoopGroup bossGroup, EventLoopGroup workerGroup, int port,
+            IAuthenticator authenticator) {
         super(bossGroup, workerGroup, port);
         this.authenticator = authenticator;
     }

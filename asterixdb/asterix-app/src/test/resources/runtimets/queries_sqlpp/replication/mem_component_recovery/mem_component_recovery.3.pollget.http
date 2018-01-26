@@ -18,4 +18,4 @@
  */
 //polltimeoutsecs=30
 
-nc:asterix_nc2 /admin/storage/partition/2
+nc:asterix_nc2:19005 /admin/storage/partition/2

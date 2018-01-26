@@ -40,6 +40,6 @@ public class BasicAuthenticator implements IAuthenticator {
     @Override
     public boolean validate(HttpRequest request) {
         String authorizationInfo = request.headers().get(KEY_REQUEST_AUTHORIZATION);
-        return (authorizationInfo != null && authorizationInfo.equals(this.secret));
+        return authorizationInfo != null && authorizationInfo.equals(this.secret);
     }
 }

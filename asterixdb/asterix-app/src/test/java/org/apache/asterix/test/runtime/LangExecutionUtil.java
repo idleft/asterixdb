@@ -27,9 +27,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.asterix.common.config.NodeProperties;
 import org.apache.asterix.app.external.ExternalUDFLibrarian;
@@ -72,6 +76,12 @@ public class LangExecutionUtil {
         if (repeat != 1) {
             System.out.println("FYI: each test will be run " + repeat + " times.");
         }
+        Map<String, String> ncEndPoints = new HashMap<>();
+        final String ip = InetAddress.getLoopbackAddress().getHostAddress();
+        for (NodeControllerService nc : ExecutionTestUtil.integrationUtil.ncs) {
+            ncEndPoints.put(nc.getId(), ip);
+        }
+        testExecutor.setNcEndPoints(ncEndPoints);
     }
 
     public static void tearDown() throws Exception {

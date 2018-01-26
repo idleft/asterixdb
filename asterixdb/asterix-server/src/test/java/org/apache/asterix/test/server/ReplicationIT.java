@@ -64,11 +64,11 @@ public class ReplicationIT {
     private static HyracksVirtualCluster cluster;
 
     static {
-        final Map<String, InetSocketAddress> ncEndPoints = new HashMap<>();
+        final Map<String, String> ncEndPoints = new HashMap<>();
         final Map<String, InetSocketAddress> replicationAddress = new HashMap<>();
         final String ip = InetAddress.getLoopbackAddress().getHostAddress();
-        ncEndPoints.put("asterix_nc1", InetSocketAddress.createUnresolved(ip, 19004));
-        ncEndPoints.put("asterix_nc2", InetSocketAddress.createUnresolved(ip, 19005));
+        ncEndPoints.put("asterix_nc1", ip);
+        ncEndPoints.put("asterix_nc2", ip);
         replicationAddress.put("asterix_nc1", InetSocketAddress.createUnresolved(ip, 2001));
         replicationAddress.put("asterix_nc2", InetSocketAddress.createUnresolved(ip, 2002));
         testExecutor.setNcEndPoints(ncEndPoints);

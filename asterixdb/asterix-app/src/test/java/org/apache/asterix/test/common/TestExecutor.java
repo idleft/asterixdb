@@ -141,7 +141,7 @@ public class TestExecutor {
     private static final String METRICS_QUERY_TYPE = "metrics";
 
     private static final HashMap<Integer, ITestServer> runningTestServers = new HashMap<>();
-    private static Map<String, InetSocketAddress> ncEndPoints;
+    private static Map<String, String> ncEndPoints;
     private static Map<String, InetSocketAddress> replicationAddress;
 
     /*
@@ -172,7 +172,7 @@ public class TestExecutor {
         this.librarian = librarian;
     }
 
-    public void setNcEndPoints(Map<String, InetSocketAddress> ncEndPoints) {
+    public void setNcEndPoints(Map<String, String> ncEndPoints) {
         this.ncEndPoints = ncEndPoints;
     }
 
@@ -1629,26 +1629,28 @@ public class TestExecutor {
     }
 
     protected URI createEndpointURI(String path, String query) throws URISyntaxException {
-        InetSocketAddress endpoint;
-        int port = -1;
+        String ip;
+        int port;
         if (!path.startsWith("nc:")) {
             int endpointIdx = Math.abs(endpointSelector++ % endpoints.size());
-            endpoint = endpoints.get(endpointIdx);
+            ip = endpoints.get(endpointIdx).getHostString();
+            port = endpoints.get(endpointIdx).getPort();
         } else {
             final String[] tokens = path.split(" ");
             if (tokens.length != 2) {
                 throw new IllegalArgumentException("Unrecognized http pattern");
             }
             String nodeId = tokens[0].substring(3);
-            if (nodeId.contains(":")) {
+            if (StringUtils.contains(nodeId, ':')) {
                 String nodeParts[] = StringUtils.split(nodeId, ':');
-                nodeId = nodeParts[0];
                 port = Integer.valueOf(nodeParts[1]);
+                ip = getNcEndPoint(nodeParts[0]);
+                path = tokens[1];
+            } else {
+                throw new IllegalArgumentException("Port number is missing");
             }
-            endpoint = getNcEndPoint(nodeId);
-            path = tokens[1];
         }
-        URI uri = new URI("http", null, endpoint.getHostString(), port == -1 ? endpoint.getPort() : port, path, query, null);
+        URI uri = new URI("http", null, ip, port, path, query, null);
         LOGGER.debug("Created endpoint URI: " + uri);
         return uri;
     }
@@ -1779,7 +1781,7 @@ public class TestExecutor {
         Assert.assertEquals(HttpStatus.SC_OK, httpResponse.getStatusLine().getStatusCode());
     }
 
-    private InetSocketAddress getNcEndPoint(String nodeId) {
+    private String getNcEndPoint(String nodeId) {
         if (ncEndPoints == null || !ncEndPoints.containsKey(nodeId)) {
             throw new IllegalStateException("No end point specified for node: " + nodeId);
         }

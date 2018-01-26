@@ -16,4 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-nc:asterix_nc2 /addReplica 3 asterix_nc1
+nc:asterix_nc2:19005 /addReplica 3 asterix_nc1

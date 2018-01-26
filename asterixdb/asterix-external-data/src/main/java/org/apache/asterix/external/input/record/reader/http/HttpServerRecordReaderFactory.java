@@ -40,7 +40,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 public class HttpServerRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     public static final String KEY_CONFIGURATION_USER_NAME = "username";
-    public static final String KEY_CONFIGURATION_PASSWORD = "password";
+    public static final String KEY_CONFIGURATION_PASS = "password";
     public static final String KEY_CONFIGURATION_ADDRESSES = "addresses";
     public static final String KEY_CONFIGURATION_PATH = "path";
 
@@ -97,7 +97,7 @@ public class HttpServerRecordReaderFactory implements IRecordReaderFactory<char[
                 addrValue);
         // optional configs
         username = getConfigurationValue(KEY_CONFIGURATION_USER_NAME, false);
-        password = getConfigurationValue(KEY_CONFIGURATION_PASSWORD, false);
+        password = getConfigurationValue(KEY_CONFIGURATION_PASS, false);
         entryPoint = getConfigurationValue(KEY_CONFIGURATION_PATH, false);
     }
 }

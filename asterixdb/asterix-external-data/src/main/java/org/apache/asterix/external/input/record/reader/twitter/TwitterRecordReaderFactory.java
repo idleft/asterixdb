@@ -55,10 +55,10 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
     private transient AlgebricksAbsolutePartitionConstraint clusterLocations;
     private transient IServiceContext serviceCtx;
 
-    private static final List<String> recordReaderNames =
-            Collections.unmodifiableList(Arrays.asList(ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_PULL,
-                    ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_PUSH, ExternalDataConstants.KEY_ADAPTER_NAME_PUSH_TWITTER,
-                    ExternalDataConstants.KEY_ADAPTER_NAME_PULL_TWITTER, ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_USER_STREAM));
+    private static final List<String> recordReaderNames = Collections.unmodifiableList(Arrays.asList(
+            ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_PULL, ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_PUSH,
+            ExternalDataConstants.KEY_ADAPTER_NAME_PUSH_TWITTER, ExternalDataConstants.KEY_ADAPTER_NAME_PULL_TWITTER,
+            ExternalDataConstants.KEY_ADAPTER_NAME_TWITTER_USER_STREAM));
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -98,7 +98,8 @@ public class TwitterRecordReaderFactory implements IRecordReaderFactory<String> 
             throw new AsterixException(builder.toString());
         }
 
-        if (configuration.get(ExternalDataConstants.KEY_READER).equals(ExternalDataConstants.KEY_ADAPTER_NAME_PULL_TWITTER)) {
+        if (configuration.get(ExternalDataConstants.KEY_READER)
+                .equals(ExternalDataConstants.KEY_ADAPTER_NAME_PULL_TWITTER)) {
             if (configuration.get(SearchAPIConstants.QUERY) == null) {
                 throw new AsterixException(
                         "parameter " + SearchAPIConstants.QUERY + " not specified as part of adaptor configuration");

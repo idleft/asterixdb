@@ -56,6 +56,8 @@ import org.apache.hyracks.util.IntSerDeUtils;
 public class FeedUtils {
 
     public static final String FEED_EXTENSION_NAME = "Feed";
+    public static final String FEED_HOST_MODE_NC = "NC";
+    public static final String FEED_HOST_MODE_IP = "IP";
 
     public enum JobType {
         INTAKE,
@@ -166,20 +168,20 @@ public class FeedUtils {
                 String host = socketTokens[0].trim();
                 int port = Integer.parseInt(socketTokens[1].trim());
                 Pair<String, Integer> p = null;
-                if (mode.equals("IP")) {
+                if (FEED_HOST_MODE_IP.equals(mode)) {
                     Set<String> ncsOnIp = ncMap.get(InetAddress.getByName(host));
                     if ((ncsOnIp == null) || ncsOnIp.isEmpty()) {
                         throw new CompilationException(ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_INVALID_HOST_NC,
-                                "host", host, StringUtils.join(ncMap.keySet(), ", "));
+                                FEED_HOST_MODE_IP, host, StringUtils.join(ncMap.keySet(), ", "));
                     }
                     String[] ncArray = ncsOnIp.toArray(new String[] {});
                     String nc = ncArray[random.nextInt(ncArray.length)];
                     p = Pair.of(nc, port);
-                } else if (mode.equals("NC")) {
+                } else if (FEED_HOST_MODE_NC.equals(mode)) {
                     p = Pair.of(host, port);
                     if (!ncs.contains(host)) {
                         throw new CompilationException(ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_INVALID_HOST_NC,
-                                "NC", host, StringUtils.join(ncs, ", "));
+                                FEED_HOST_MODE_NC, host, StringUtils.join(ncs, ", "));
 
                     }
                 }
