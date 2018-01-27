@@ -18,5 +18,4 @@
  */
 
 use test;
-
-select element count(*) from SyntheticTweets;
+stop feed SyntheticTweetFeed;

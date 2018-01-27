@@ -69,8 +69,13 @@ import org.apache.hyracks.storage.am.lsm.common.impls.LSMTreeIndexAccessor;
 import org.apache.hyracks.storage.common.IIndexAccessParameters;
 import org.apache.hyracks.storage.common.IIndexCursor;
 import org.apache.hyracks.storage.common.MultiComparator;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDeleteOperatorNodePushable {
+
+    Logger LOGGER = LogManager.getLogger();
 
     private final PermutingFrameTupleReference key;
     private MultiComparator keySearchCmp;
@@ -100,10 +105,8 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
     private final IFrameTupleProcessor processor;
     private LSMTreeIndexAccessor lsmAccessor;
     private IIndexAccessParameters iap;
-    private Instant startOfWindow, endOfWindow;
-    private static int delayTimeInSec = 120;
-    private static int measureTimeInSec = 300;
-//        private static String resultFilePath = ;
+    private Instant endOfWindow;
+    private static int measureTimeInSec = 600;
     private static String resultFilePath;
     private FileWriter fw;
     private long processedRecords;
@@ -260,8 +263,9 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
 
             try {
                 // Start of evaluation code
+                endOfWindow = Instant.now().plusSeconds(measureTimeInSec);
                 fw = new FileWriter(resultFilePath + this.hashCode() + ".txt");
-                System.out.println(this.hashCode() + ".txt opened for writing result");
+                LOGGER.log(Level.INFO, this.hashCode() + ".txt opened for writing result");
                 processedRecords = 0;
                 // end of evaluation code
             } catch (Exception e) {
@@ -311,12 +315,10 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
 
         // Add processed number
         Instant currentTime = Instant.now();
-        if (startOfWindow == null) {
-            startOfWindow = currentTime.plusSeconds(delayTimeInSec);
-            endOfWindow = currentTime.plusSeconds(delayTimeInSec + measureTimeInSec);
-        }
-        if (currentTime.compareTo(endOfWindow) < 0 && currentTime.compareTo(startOfWindow) >= 0) {
+        if (currentTime.compareTo(endOfWindow) < 0) {
             processedRecords += accessor.getTupleCount();
+            String logStr = "LSM " + this.hashCode() + " received one frame counted with " + accessor.getTupleCount();
+            LOGGER.log(Level.INFO, logStr);
         }
         // End of evaluation
 

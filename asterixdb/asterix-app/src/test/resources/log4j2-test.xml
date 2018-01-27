@@ -36,6 +36,5 @@
     <Logger name="org.apache.hyracks.control.nc.partitions" level="ALL">
       <AppenderRef ref="Console"/>
     </Logger>
-
   </Loggers>
 </Configuration>
