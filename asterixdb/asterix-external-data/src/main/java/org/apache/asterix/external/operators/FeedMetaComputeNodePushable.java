@@ -122,7 +122,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
                 .getApplicationContext()).getActiveManager();
         this.opDesc = feedMetaOperatorDescriptor;
         this.recordDescProvider = recordDescProvider;
-        this.inbox = new LinkedBlockingQueue<>();
+        this.inbox = new LinkedBlockingQueue<>(4 * DEFAULT_WORKER_N);
         this.fta = new FrameTupleAccessor(recordDescProvider.getInputRecordDescriptor(opDesc.getActivityId(), 0));
         this.feedExceptionHandler = new FeedExceptionHandler(ctx, fta);
         this.framepool = feedManager.getFramePool();
@@ -199,7 +199,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
     public void close() throws HyracksDataException {
         if (opened) {
             try {
-                inbox.clear();
+//                inbox.clear();
                 for (int iter1 = 0; iter1 < workerN; iter1++) {
                     inbox.put(POISON_PILL);
                 }
