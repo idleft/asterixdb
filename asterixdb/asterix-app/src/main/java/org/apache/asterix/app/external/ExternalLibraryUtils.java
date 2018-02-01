@@ -391,9 +391,8 @@ public class ExternalLibraryUtils {
      */
     protected static File getLibraryInstallDir() {
         // Check managix directory first. If not exists, check app home.
-        return new File(System.getProperty("user.home")
+        return new File(System.getProperty("app.home")
                     + File.separator + "lib" + File.separator + "udfs");
-
     }
 
     /**
@@ -401,7 +400,7 @@ public class ExternalLibraryUtils {
      */
     protected static File getLibraryUninstallDir() {
         // Check managix directory first. If not exists, check app home.
-        return new File( System.getProperty("user.home")
+        return new File( System.getProperty("app.home")
                     + File.separator + "lib" + File.separator + "udfs" + File.separator + "uninstall");
 
     }

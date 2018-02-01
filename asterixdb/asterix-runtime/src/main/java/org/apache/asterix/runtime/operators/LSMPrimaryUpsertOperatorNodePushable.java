@@ -142,10 +142,13 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
             this.prevDos = prevRecWithPKWithFilterValue.getDataOutput();
         }
         // start of test
-        if (ctx.getJobletContext().getServiceContext().getNodeId().startsWith("asterix")) {
+        String nodeId = ctx.getJobletContext().getServiceContext().getNodeId();
+        if (nodeId.startsWith("asterix")) {
             resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
-        } else {
+        } else if (nodeId.startsWith("nc")) {
             resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
+        } else if (nodeId.startsWith("aws")) {
+            resultFilePath = System.getProperty("user.home") + "/expr_logs/worker_";
         }
 
         // end of test
