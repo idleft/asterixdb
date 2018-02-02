@@ -110,8 +110,8 @@ public class FeedMetadataUtil {
             if (adapterName == null) {
                 throw new AlgebricksException("cannot find adatper name");
             }
-            if (configuration.get("mode") == null) {
-                throw new AlgebricksException("parallel mode is missing");
+            if (configuration.get(ExternalDataConstants.PARALLEL_MODE) == null) {
+                configuration.put(ExternalDataConstants.PARALLEL_MODE, "vanilla");
             }
             DatasourceAdapter adapterEntity = MetadataManager.INSTANCE.getAdapter(mdTxnCtx,
                     MetadataConstants.METADATA_DATAVERSE_NAME, adapterName);

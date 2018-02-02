@@ -48,15 +48,11 @@ create dataset SyntheticTweets(Tweet) primary key id;
 
 create feed  SyntheticTweetFeed 
 with {
-   "adapter-name" : "stream",
-   "duration":"10",
-   "stream-source":"org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory",
-   "tps":"50",
+   "adapter-name" : "expr_twitter",
    "ingestion-location":"asterix_nc1",
    "type-name":"Tweet",
-   "dataverse-dataset":"feeds:SyntheticTweets",
-   "format":"adm",
-   "mode":"controlled",
+   "format" : "adm",
+   "expr_amount" : 500,
    "plvl":"-1",
    "pmode" : "vanilla"
 };
