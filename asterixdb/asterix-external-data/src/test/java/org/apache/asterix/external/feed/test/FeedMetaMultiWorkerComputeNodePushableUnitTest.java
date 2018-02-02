@@ -24,21 +24,18 @@ import org.apache.asterix.active.ActiveManager;
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.common.memory.ConcurrentFramePool;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
-import org.apache.asterix.external.operators.FeedMetaComputeNodePushable;
+import org.apache.asterix.external.operators.FeedMetaMultiWorkerComputeNodePushable;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
-import org.apache.hyracks.api.dataflow.IActivity;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
-import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
 import org.apache.hyracks.test.support.TestUtils;
 import org.junit.Assert;
 import org.mockito.Mockito;
-import org.mockito.internal.matchers.Any;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -47,7 +44,7 @@ import static org.mockito.Matchers.anyInt;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.when;
 
-public class FeedMetaComputeNodePushableUnitTest extends TestCase {
+public class FeedMetaMultiWorkerComputeNodePushableUnitTest extends TestCase {
 
     private static final int FRAME_SIZE = 32768;
     public static final String NODE_ID = "nc0";
@@ -103,7 +100,7 @@ public class FeedMetaComputeNodePushableUnitTest extends TestCase {
         FeedMetaOperatorDescriptor metaOpDesc = Mockito.mock(FeedMetaOperatorDescriptor.class);
         FeedConnectionId feedConnectionId = new FeedConnectionId(DATAVERSE, FEED, DATASET);
 
-        return new FeedMetaComputeNodePushable(ctx, recordDescProvider, PARTITION, PARTITION_N, getPipelineOp(),
+        return new FeedMetaMultiWorkerComputeNodePushable(ctx, recordDescProvider, PARTITION, PARTITION_N, getPipelineOp(),
                 feedConnectionId, Collections.EMPTY_MAP, metaOpDesc, 4);
     }
 

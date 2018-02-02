@@ -75,8 +75,7 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
         this.locations = locations;
         this.pkTypes = pkTypes;
         this.keyAccessExpression = keyAccessExpression;
-        this.computationNodeDomain = new DefaultNodeGroupDomain(Arrays
-                .asList(((DefaultNodeGroupDomain) domain).getNodes()).stream().distinct().collect(Collectors.toList()));
+        this.computationNodeDomain = domain;
         this.feedConnection = feedConnection;
         initFeedDataSource();
     }

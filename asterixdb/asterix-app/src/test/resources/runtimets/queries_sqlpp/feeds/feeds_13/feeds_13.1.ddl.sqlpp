@@ -51,11 +51,12 @@ with {
    "adapter-name" : "stream",
    "duration":"10",
    "stream-source":"org.apache.asterix.external.input.stream.factory.TwitterFirehoseStreamFactory",
-   "tps":"5000",
+   "tps":"50",
    "ingestion-location":"asterix_nc1",
    "type-name":"Tweet",
    "dataverse-dataset":"feeds:SyntheticTweets",
    "format":"adm",
    "mode":"controlled",
-   "plvl":"1"
+   "plvl":"-1",
+   "pmode" : "vanilla"
 };

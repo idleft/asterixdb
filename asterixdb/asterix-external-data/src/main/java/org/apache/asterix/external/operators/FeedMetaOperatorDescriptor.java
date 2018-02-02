@@ -95,8 +95,13 @@ public class FeedMetaOperatorDescriptor extends AbstractSingleActivityOperatorDe
         IOperatorNodePushable nodePushable = null;
         switch (runtimeType) {
             case COMPUTE:
-                nodePushable = new FeedMetaComputeNodePushable(ctx, recordDescProvider, partition, nPartitions,
-                        coreOperator, feedConnectionId, feedPolicyProperties, this, workerN);
+                if (workerN > 0) {
+                    nodePushable = new FeedMetaMultiWorkerComputeNodePushable(ctx, recordDescProvider, partition,
+                            nPartitions, coreOperator, feedConnectionId, feedPolicyProperties, this, workerN);
+                } else {
+                    nodePushable = new FeedMetaComputeNodePushable(ctx, recordDescProvider, partition,
+                            nPartitions, coreOperator, feedConnectionId, feedPolicyProperties, this);
+                }
                 break;
             case STORE:
                 nodePushable = new FeedMetaStoreNodePushable(ctx, recordDescProvider, partition, nPartitions,

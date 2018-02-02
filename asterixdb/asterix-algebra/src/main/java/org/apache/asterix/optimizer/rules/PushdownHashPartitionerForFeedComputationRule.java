@@ -18,11 +18,15 @@
  */
 package org.apache.asterix.optimizer.rules;
 
+import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.metadata.declared.DataSource;
 import org.apache.asterix.metadata.declared.FeedDataSource;
+import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.commons.lang3.mutable.Mutable;
 import org.apache.commons.lang3.mutable.MutableObject;
+import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.core.algebra.base.ILogicalOperator;
 import org.apache.hyracks.algebricks.core.algebra.base.IOptimizationContext;
@@ -39,6 +43,9 @@ import org.apache.hyracks.algebricks.core.algebra.operators.physical.HashCombine
 import org.apache.hyracks.algebricks.core.algebra.properties.DefaultNodeGroupDomain;
 import org.apache.hyracks.algebricks.core.algebra.properties.INodeDomain;
 import org.apache.hyracks.algebricks.core.rewriter.base.IAlgebraicRewriteRule;
+
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraicRewriteRule {
 
@@ -85,8 +92,15 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
             return false;
         }
 
+        Feed feed = ((FeedDataSource) dataSource).getFeed();
+        if (!feed.getConfiguration().getOrDefault(ExternalDataConstants.PARALLEL_MODE, "").equals("intra")) {
+            return false;
+        }
+
         INodeDomain datasetDomain = ((InsertDeleteUpsertOperator) op0).getDataSource().getDomain();
-        INodeDomain feedComputingDomain = ((FeedDataSource) dataSource).getComputationNodeDomain();
+        INodeDomain feedComputingDomain = new DefaultNodeGroupDomain(
+                Arrays.asList(((DefaultNodeGroupDomain) datasetDomain).getNodes()).stream().distinct()
+                        .collect(Collectors.toList()));
 
         op0.getInputs().get(0).setValue(op3);
         op2.getInputs().get(0).setValue(op5);

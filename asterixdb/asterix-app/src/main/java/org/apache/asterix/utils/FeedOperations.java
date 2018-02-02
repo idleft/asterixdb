@@ -53,6 +53,7 @@ import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
+import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -251,9 +252,10 @@ public class FeedOperations {
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
-            String[] intakeLocations) throws AlgebricksException, HyracksDataException {
+            String[] intakeLocations) throws AlgebricksException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
-        int pLvl = Integer.valueOf(feed.getConfiguration().get("plvl"));
+        int pLvl = feed.getConfiguration().get(ExternalDataConstants.PARALLEL_MODE).equals("vanilla") ? -1
+                : Integer.valueOf(feed.getConfiguration().get("plvl"));
         // copy ingestor
         FeedIntakeOperatorDescriptor firstOp =
                 (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0));
