@@ -46,7 +46,7 @@ public class DataGenerator {
 
         private final int duration;
         private long startTime = 0;
-        private int tweetId;
+        private long tweetId = 0;
 
         public TweetMessageIterator(int duration) {
             this.duration = duration;
@@ -498,7 +498,7 @@ public class DataGenerator {
                 new String[] { TweetFields.TWEETID, TweetFields.USER, TweetFields.LATITUDE, TweetFields.LONGITUDE,
                         TweetFields.MESSAGE_TEXT, TweetFields.CREATED_AT, TweetFields.COUNTRY };
 
-        private int id;
+        private long id;
         private TwitterUser user;
         private double latitude;
         private double longitude;
@@ -536,7 +536,7 @@ public class DataGenerator {
             this.country = country;
         }
 
-        public void reset(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,
+        public void reset(long tweetid, TwitterUser user, double latitude, double longitude, String created_at,
                 Message messageText, String country) {
             this.id = tweetid;
             this.user = user;
@@ -603,7 +603,7 @@ public class DataGenerator {
             builder.append("\"" + fieldName + "\":");
         }
 
-        public int getTweetid() {
+        public long getTweetid() {
             return id;
         }
 

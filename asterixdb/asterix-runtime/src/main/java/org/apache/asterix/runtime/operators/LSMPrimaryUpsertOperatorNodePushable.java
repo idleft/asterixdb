@@ -105,11 +105,6 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
     private final IFrameTupleProcessor processor;
     private LSMTreeIndexAccessor lsmAccessor;
     private IIndexAccessParameters iap;
-    private Instant endOfWindow;
-    private static int measureTimeInSec = 600;
-    private static String resultFilePath;
-    private FileWriter fw;
-    private long processedRecords;
 
     public LSMPrimaryUpsertOperatorNodePushable(IHyracksTaskContext ctx, int partition,
             IIndexDataflowHelperFactory indexHelperFactory, int[] fieldPermutation, RecordDescriptor inputRecDesc,
@@ -141,17 +136,6 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
             this.prevRecWithPKWithFilterValue = new ArrayTupleBuilder(fieldPermutation.length + (hasMeta ? 1 : 0));
             this.prevDos = prevRecWithPKWithFilterValue.getDataOutput();
         }
-        // start of test
-        String nodeId = ctx.getJobletContext().getServiceContext().getNodeId();
-        if (nodeId.startsWith("asterix")) {
-            resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
-        } else if (nodeId.startsWith("nc")) {
-            resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
-        } else if (nodeId.startsWith("aws")) {
-            resultFilePath = System.getProperty("user.home") + "/expr_logs/worker_";
-        }
-
-        // end of test
 
         processor = new IFrameTupleProcessor() {
             @Override
@@ -269,18 +253,9 @@ public class LSMPrimaryUpsertOperatorNodePushable extends LSMIndexInsertUpdateDe
                 }
             };
 
-try {
-                // Start of evaluation code
-                endOfWindow = Instant.now().plusSeconds(measureTimeInSec);
-                fw = new FileWriter(resultFilePath + this.hashCode() + ".txt");
-                LOGGER.log(Level.INFO, this.hashCode() + ".txt opened for writing result");
-                processedRecords = 0;
-                // end of evaluation code
-            } catch (Exception e) {
-                throw new HyracksDataException(e);
-            }        } catch (Throwable e) {
-            // NOSONAR: Re-thrown
-            throw  HyracksDataException.create(e);
+        } catch (Exception e) {
+            indexHelper.close();
+            throw new HyracksDataException(e);
         }
     }
 
@@ -318,16 +293,6 @@ try {
     @Override
     public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
         accessor.reset(buffer);
-
-        // Add processed number
-        Instant currentTime = Instant.now();
-        if (currentTime.compareTo(endOfWindow) < 0) {
-            processedRecords += accessor.getTupleCount();
-            String logStr = "LSM " + this.hashCode() + " received one frame counted with " + accessor.getTupleCount();
-            LOGGER.log(Level.INFO, logStr);
-        }
-        // End of evaluation
-
         lsmAccessor.batchOperate(accessor, tuple, processor, frameOpCallback);
     }
 
@@ -405,17 +370,6 @@ try {
 
     @Override
     public void close() throws HyracksDataException {
-        // Start of evaluation
-        try {
-            if (fw != null) {
-                fw.write(String.valueOf(processedRecords) + "\n");
-                fw.flush();
-            }
-        } catch (Exception e) {
-            throw new HyracksDataException(e);
-        }
-        // End of evaluation
-
         try {
             try {
                 if (cursor != null) {
