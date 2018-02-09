@@ -91,6 +91,7 @@ public class HttpServerRecordReader implements IRecordReader<char[]> {
         try {
             close();
         } catch (Exception e) {
+            LOGGER.error(e);
             return false;
         }
         return true;
