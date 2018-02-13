@@ -34,12 +34,10 @@ import java.time.Instant;
 public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     int processedRecords = 0;
 
-    private JUnorderedList list = null;
     private JObjects.JLong varCounter = null;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
-        list = new JUnorderedList(functionHelper.getObject(JTypeTag.STRING));
         varCounter = new JObjects.JLong(0l);
         processedRecords = 0;
 //        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
@@ -55,7 +53,7 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 
     @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
-        JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
+//        JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         //        list.clear();
 //        JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
 //
@@ -68,19 +66,20 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 //            }
 //        }
 //        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
-        long varStart = 0;
 //
 //        if (Instant.now().compareTo(evalutaionEtime) < 0) {
 //            //            while (varStart < 520000000) { // this offers 20 tps
+//        Instant evaluationEtime = Instant.now().plusMillis(10);
+//        while (Instant.now().compareTo(evaluationEtime) < 0) {
+        long varStart = 0;
         while (varStart < 8000000) {
-            //            while (varStart < 80000000) {
             varStart++;
         }
 //            processedRecords++;
 //        }
 //        varCounter.setValue(varStart);
-        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
-        functionHelper.setResult(inputRecord);
+//        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
+//        functionHelper.setResult(inputRecord);
     }
 
 }

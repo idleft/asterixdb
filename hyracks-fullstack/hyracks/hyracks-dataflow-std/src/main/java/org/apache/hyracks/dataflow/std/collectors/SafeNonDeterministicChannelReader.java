@@ -39,7 +39,7 @@ public class SafeNonDeterministicChannelReader extends NonDeterministicChannelRe
         channel.registerMonitor(this);
         channel.setAttachment(pid);
         synchronized (this) {
-            channels[(pid.getSenderIndex())%nSenderPartitions] = channel;
+            channels[(pid.getSenderIndex()) % nSenderPartitions] = channel;
         }
     }
 

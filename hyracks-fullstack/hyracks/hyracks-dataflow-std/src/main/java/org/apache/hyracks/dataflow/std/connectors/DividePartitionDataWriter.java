@@ -49,7 +49,7 @@ public class DividePartitionDataWriter extends PartitionDataWriter {
     protected void initializeAppenders(IPartitionWriterFactory pwFactory) throws HyracksDataException {
         for (int i = 0; i < consumerPartitionCount; ++i) {
             try {
-                System.out.println("DPDW initialized on " + Thread.currentThread().getName() + " with offset " + offset);
+                System.out.println("DPDW "+ (offset + i) +" initialized on " + Thread.currentThread().getName() + " with offset " + offset);
                 pWriters[i] = pwFactory.createFrameWriter(offset + i);
                 appenders[i] = createTupleAppender(ctx);
             } catch (IOException e) {

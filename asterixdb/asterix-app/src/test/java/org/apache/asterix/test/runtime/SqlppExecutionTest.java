@@ -20,6 +20,7 @@ package org.apache.asterix.test.runtime;
 
 import java.util.Collection;
 
+import com.sun.javafx.runtime.SystemProperties;
 import org.apache.asterix.test.common.TestExecutor;
 import org.apache.asterix.testframework.context.TestCaseContext;
 import org.junit.AfterClass;
@@ -59,6 +60,7 @@ public class SqlppExecutionTest {
 
     @Test
     public void test() throws Exception {
+        System.setProperty("app.home", System.getProperty("user.home"));
         LangExecutionUtil.test(tcCtx);
     }
 }

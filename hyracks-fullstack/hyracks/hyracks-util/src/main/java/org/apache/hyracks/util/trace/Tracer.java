@@ -63,7 +63,7 @@ public class Tracer implements ITracer {
     }
 
     public void setCategories(String... categories) {
-        LOGGER.info("Set categories for Tracer " + this.traceLog.getName() + " to " + Arrays.toString(categories));
+        LOGGER.error("Set categories for Tracer " + this.traceLog.getName() + " to " + Arrays.toString(categories));
         this.categories = getRegistry().get(categories);
     }
 

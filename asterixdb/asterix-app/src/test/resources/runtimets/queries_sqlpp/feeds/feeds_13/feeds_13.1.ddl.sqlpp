@@ -53,6 +53,6 @@ with {
    "type-name":"Tweet",
    "format" : "adm",
    "expr_amount" : 500,
-   "plvl":"-1",
-   "pmode" : "vanilla"
+   "plvl":"3",
+   "pmode" : "intra"
 };
