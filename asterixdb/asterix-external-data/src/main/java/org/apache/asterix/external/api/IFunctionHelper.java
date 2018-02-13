@@ -35,5 +35,5 @@ public interface IFunctionHelper {
 
     public void reset();
 
-    public String getParameters();
+    public String getParamsString();
 }

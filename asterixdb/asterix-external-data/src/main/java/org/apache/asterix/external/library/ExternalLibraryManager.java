@@ -71,12 +71,12 @@ public class ExternalLibraryManager implements ILibraryManager {
     }
 
     @Override
-    public void addFunctionParameters(String dataverseName, String fullFunctionName, String parameter) {
-        externalFunctionParameters.put(dataverseName + "." + fullFunctionName, parameter);
+    public void addFunctionParamsString(String dataverseName, String fullFunctionName, String paramsString) {
+        externalFunctionParameters.put(dataverseName + "." + fullFunctionName, paramsString);
     }
 
     @Override
-    public String getFunctionParameters(String dataverseName, String fullFunctionName) {
+    public String getFunctionParamsString(String dataverseName, String fullFunctionName) {
         return externalFunctionParameters.getOrDefault(dataverseName + "." + fullFunctionName, "");
     }
 

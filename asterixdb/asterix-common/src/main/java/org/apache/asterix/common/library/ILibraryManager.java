@@ -59,7 +59,21 @@ public interface ILibraryManager {
      */
     public ClassLoader getLibraryClassLoader(String dataverseName, String libraryName);
 
-    public void addFunctionParameters(String dataverseName, String fullFunctionName, String parameter);
+    /**
+     * Add function parameters string to library manager if it exists. Multiple parameters are separated by semicolons.
+     * Example: param1;param2;param3.
+     * @param dataverseName
+     * @param fullFunctionName
+     * @param paramsString
+     */
 
-    public String getFunctionParameters(String dataverseName, String fullFunctionName);
+    public void addFunctionParamsString(String dataverseName, String fullFunctionName, String paramsString);
+
+    /**
+     * Get the semicolon separated function parameters string. Example: param1;param2;param3
+     * @param dataverseName
+     * @param fullFunctionName
+     * @return A string contains all pre-specified function parameters.
+     */
+    public String getFunctionParamsString(String dataverseName, String fullFunctionName);
 }

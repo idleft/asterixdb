@@ -21,7 +21,7 @@ use dataverse test;
 
 for $i1 in dataset Res1
 for $i2 in dataset Res2
-where $i1.id = $i2.id and ($i1.sensitive = true or $i2.sensitive = true)
+where $i1.id = $i2.id and ($i1.sensitive or $i2.sensitive)
 order by $i1.id
 return $i1.id
 

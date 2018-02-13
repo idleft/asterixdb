@@ -21,6 +21,6 @@ use test;
 
 SELECT value r1.id
 FROM Res1 r1, Res2 r2
-WHERE r1.id = r2.id AND (r1.sensitive = true OR r2.sensitive = true)
+WHERE r1.id = r2.id AND (r1.sensitive OR r2.sensitive)
 ORDER BY r1.id;
 

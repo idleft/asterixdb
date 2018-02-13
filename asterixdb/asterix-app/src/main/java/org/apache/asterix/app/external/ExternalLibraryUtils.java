@@ -216,19 +216,22 @@ public class ExternalLibraryUtils {
             if (library.getLibraryFunctions() != null) {
                 for (LibraryFunction function : library.getLibraryFunctions().getLibraryFunction()) {
                     String[] fargs = function.getArguments().trim().split(",");
+                    String functionFullName = getExternalFunctionFullName(libraryName, function.getName().trim());
+                    String functionReturnType = function.getReturnType().trim();
+                    String functionDefinition = function.getDefinition().trim();
+                    String functionLanguage = library.getLanguage().trim();
+                    String functionType = function.getFunctionType().trim();
                     List<String> args = new ArrayList<>();
                     for (String arg : fargs) {
                         args.add(arg);
                     }
                     FunctionSignature signature = new FunctionSignature(dataverse,
                             getExternalFunctionFullName(libraryName, function.getName().trim()), args.size());
-                    Function f = new Function(signature, args, function.getReturnType().trim(),
-                            function.getDefinition().trim(), library.getLanguage().trim(),
-                            function.getFunctionType().trim(), null);
+                    Function f = new Function(signature, args, functionReturnType, functionDefinition, functionLanguage,
+                            functionType, null);
                     MetadataManager.INSTANCE.addFunction(mdTxnCtx, f);
                     if (LOGGER.isInfoEnabled()) {
-                        LOGGER.info("Installed function: "
-                                + getExternalFunctionFullName(libraryName, function.getName().trim()));
+                        LOGGER.info("Installed function: " + functionFullName);
                     }
                 }
             }
@@ -288,7 +291,7 @@ public class ExternalLibraryUtils {
         if (library.getLibraryFunctions() != null) {
             library.getLibraryFunctions().getLibraryFunction().forEach(fun -> {
                 if (fun.getParameters() != null) {
-                    libraryManager.addFunctionParameters(dataverse,
+                    libraryManager.addFunctionParamsString(dataverse,
                             getExternalFunctionFullName(libraryName, fun.getName()), fun.getParameters());
                 }
             });

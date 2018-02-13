@@ -70,7 +70,7 @@ public abstract class ExternalFunction implements IExternalFunction {
         String dataverse = finfo.getFunctionIdentifier().getNamespace();
 
         functionHelper = new JavaFunctionHelper(finfo, resultBuffer,
-                libraryManager.getFunctionParameters(dataverse, finfo.getFunctionIdentifier().getName()));
+                libraryManager.getFunctionParamsString(dataverse, finfo.getFunctionIdentifier().getName()));
         ClassLoader libraryClassLoader = libraryManager.getLibraryClassLoader(dataverse, functionLibary);
         String classname = finfo.getFunctionBody().trim();
         Class<?> clazz;

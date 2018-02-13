@@ -49,7 +49,7 @@ public class KeywordsDetectorFunction implements IExternalScalarFunction {
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
         keywordsList = new ArrayList<>();
-        initStr = functionHelper.getParameters();
+        initStr = functionHelper.getParamsString();
         String[] params = initStr.split(";");
         dictPath = params[0];
         fieldName = params[1];

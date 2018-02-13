@@ -56,7 +56,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
     private final JObjectPointableVisitor pointableVisitor;
     private final PointableAllocator pointableAllocator;
     private final Map<Integer, TypeInfo> poolTypeInfo;
-    private final String parameters;
+    private final String paramsString;
 
     private boolean isValidResult = false;
 
@@ -73,7 +73,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
         }
         this.resultHolder = objectPool.allocate(finfo.getReturnType());
         this.poolTypeInfo = new HashMap<>();
-        this.parameters = parameters;
+        this.paramsString = parameters;
 
     }
 
@@ -194,7 +194,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
         objectPool.reset();
     }
 
-    public String getParameters() {
-        return parameters;
+    public String getParamsString() {
+        return paramsString;
     }
 }
