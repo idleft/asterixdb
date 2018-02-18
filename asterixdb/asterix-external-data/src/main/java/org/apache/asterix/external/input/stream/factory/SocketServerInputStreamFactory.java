@@ -44,8 +44,13 @@ import org.apache.hyracks.algebricks.common.utils.Pair;
 import org.apache.hyracks.api.application.IServiceContext;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class SocketServerInputStreamFactory implements IInputStreamFactory {
+
+    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final long serialVersionUID = 1L;
     private List<Pair<String, Integer>> sockets;
@@ -95,6 +100,7 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
 
                     case NC:
                         p = new Pair<>(host, port);
+                        LOGGER.log(Level.INFO, StringUtils.join(ncs, ","));
                         if (!ncs.contains(host)) {
                             throw new CompilationException(
                                     ErrorCode.FEED_METADATA_SOCKET_ADAPTOR_SOCKET_INVALID_HOST_NC, "NC", host,
@@ -122,6 +128,7 @@ public class SocketServerInputStreamFactory implements IInputStreamFactory {
             ServerSocket server;
             server = new ServerSocket();
             server.bind(new InetSocketAddress(socket.second));
+            LOGGER.log(Level.INFO, "Socket binds on " + socket.first + " port " + socket.second);
             return new SocketServerInputStream(server);
         } catch (IOException e) {
             throw HyracksDataException.create(e);

@@ -51,8 +51,9 @@ create dataset Tweets(TweetMessageType) primary key tweetid;
 
 create feed TweetFeed with {
   "adapter-name" : "socket_adapter",
-  "sockets" : "127.0.0.1:10001",
-  "address-type" : "IP",
+  "sockets" : "ac1:10001",
+  "address-type" : "NC",
   "type-name" : "TweetMessageType",
+  "insert-feed" : "true",
   "format" : "adm"
 };
