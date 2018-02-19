@@ -66,7 +66,6 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
             List<ScalarFunctionCallExpression> keyAccessExpression, EntityId sourceFeedId, FeedRuntimeType location,
             String[] locations, INodeDomain domain, FeedConnection feedConnection) throws AlgebricksException {
         super(id, itemType, metaType, Type.FEED, domain);
-        ICcApplicationContext appCtx = metadataProvider.getApplicationContext();
         this.feed = feed;
         this.targetDataset = targetDataset;
         this.sourceFeedId = sourceFeedId;
