@@ -94,8 +94,8 @@ public class AssignPOperator extends AbstractPhysicalOperator {
         // contribute one Asterix framewriter
         RecordDescriptor recDesc = JobGenHelper.mkRecordDescriptor(context.getTypeEnvironment(op), opSchema, context);
         if (locations != null && locations.length > 0) {
-            AlgebricksAbsolutePartitionConstraint locationConstraint = new AlgebricksAbsolutePartitionConstraint(
-                    locations);
+            AlgebricksAbsolutePartitionConstraint locationConstraint =
+                    new AlgebricksAbsolutePartitionConstraint(locations);
             builder.contributeMicroOperator(assign, runtime, recDesc, locationConstraint);
         } else {
             builder.contributeMicroOperator(assign, runtime, recDesc);
