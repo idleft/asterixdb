@@ -81,14 +81,6 @@ public abstract class ExternalFunction implements IExternalFunction {
         }
     }
 
-    public static ISerializerDeserializer<?> getSerDe(Object typeInfo) {
-        return SerializerDeserializerProvider.INSTANCE.getSerializerDeserializer(typeInfo);
-    }
-
-    public IExternalFunctionInfo getFinfo() {
-        return finfo;
-    }
-
     public void setArguments(IFrameTupleReference tuple) throws AlgebricksException, IOException {
         for (int i = 0; i < evaluatorFactories.length; i++) {
             argumentEvaluators[i].evaluate(tuple, inputVal);

@@ -28,9 +28,9 @@ import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.api.IJObject;
 import org.apache.asterix.external.library.java.JObjectPointableVisitor;
-import org.apache.asterix.external.library.java.JObjects;
-import org.apache.asterix.external.library.java.JObjects.JNull;
+import org.apache.asterix.external.library.java.base.JNull;
 import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.om.functions.IExternalFunctionInfo;
 import org.apache.asterix.om.pointables.AFlatValuePointable;
 import org.apache.asterix.om.pointables.AListVisitablePointable;
@@ -60,8 +60,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
 
     private boolean isValidResult = false;
 
-    public JavaFunctionHelper(IExternalFunctionInfo finfo, IDataOutputProvider outputProvider)
-            throws HyracksDataException {
+    public JavaFunctionHelper(IExternalFunctionInfo finfo, IDataOutputProvider outputProvider) {
         this.finfo = finfo;
         this.outputProvider = outputProvider;
         this.pointableVisitor = new JObjectPointableVisitor();
@@ -72,7 +71,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
             this.arguments[index++] = objectPool.allocate(param);
         }
         this.resultHolder = objectPool.allocate(finfo.getReturnType());
-        this.poolTypeInfo = new HashMap<Integer, TypeInfo>();
+        this.poolTypeInfo = new HashMap<>();
 
     }
 
@@ -97,7 +96,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
             return true;
         }
         if (expectedType.getTypeTag() == ATypeTag.OBJECT) {
-            return !expectedType.getTypeName().equals(((JObjects.JRecord) result).getRecordType().getTypeName());
+            return !expectedType.getTypeName().equals(((JRecord) result).getRecordType().getTypeName());
         }
         return false;
     }
