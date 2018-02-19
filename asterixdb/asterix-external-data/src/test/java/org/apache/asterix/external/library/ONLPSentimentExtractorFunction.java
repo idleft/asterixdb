@@ -22,8 +22,8 @@ import java.io.InputStream;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.JObjects.JRecord;
-import org.apache.asterix.external.library.java.JObjects.JString;
+import org.apache.asterix.external.library.java.base.JRecord;
+import org.apache.asterix.external.library.java.base.JString;
 import org.apache.asterix.external.library.java.JTypeTag;
 
 import opennlp.tools.doccat.DoccatModel;
@@ -55,7 +55,7 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
     public void initialize(IFunctionHelper functionHelper) throws Exception {
         InputStream in = this.getClass().getClassLoader().getResourceAsStream("data/en-doccat.bin");
         m = new DoccatModel(in);
-        sentimentText = (JString) functionHelper.getObject(JTypeTag.STRING);
+        sentimentText = new JString("");
     }
 
     public static int getSentiment(String tweet, DoccatModel model) {
@@ -75,5 +75,4 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
             return 4;
         }
     }
-
 }

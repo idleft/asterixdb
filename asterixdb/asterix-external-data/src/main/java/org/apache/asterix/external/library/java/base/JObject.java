@@ -16,19 +16,29 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
+package org.apache.asterix.external.library.java.base;
 
-import org.apache.asterix.external.library.java.JObjectPointableVisitor;
-import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.om.pointables.ARecordVisitablePointable;
-import org.apache.asterix.om.types.ARecordType;
-import org.apache.asterix.om.types.IAType;
-import org.apache.asterix.om.util.container.IObjectPool;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.om.base.IAObject;
+import org.apache.asterix.om.types.ATypeTag;
 
-public interface IJRecordAccessor {
+public abstract class JObject implements IJObject {
 
-    JRecord access(ARecordVisitablePointable pointable, IObjectPool<IJObject, IAType> objectPool,
-            ARecordType recordType, JObjectPointableVisitor pointableVisitor) throws HyracksDataException;
+    protected IAObject value;
+    protected byte[] bytes;
+
+    protected JObject(IAObject value) {
+        this.value = value;
+    }
+
+    @Override
+    public ATypeTag getTypeTag() {
+        return value.getType().getTypeTag();
+    }
+
+    @Override
+    public IAObject getIAObject() {
+        return value;
+    }
 
 }
