@@ -16,44 +16,46 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.AInt32SerializerDeserializer;
-import org.apache.asterix.om.base.AInt32;
-import org.apache.asterix.om.base.AMutableInt32;
+import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.om.base.AMissing;
+import org.apache.asterix.om.base.IAObject;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public class JInt extends JObject {
+public final class JMissing implements IJObject {
 
-    public JInt(int value) {
-        super(new AMutableInt32(value));
+    public final static JMissing INSTANCE = new JMissing();
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AMISSING;
     }
 
-    public void setValue(int v) {
-        ((AMutableInt32) value).setValue(v);
-    }
-
-    public int getValue() {
-        return ((AMutableInt32) value).getIntegerValue();
+    @Override
+    public IAObject getIAObject() {
+        return AMissing.MISSING;
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(value.getType().getTypeTag().serialize());
+                dataOutput.writeByte(ATypeTag.SERIALIZED_MISSING_TYPE_TAG);
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        AInt32SerializerDeserializer.INSTANCE.serialize((AInt32) value, dataOutput);
     }
 
     @Override
-    public void reset() {
-        ((AMutableInt32) value).setValue(0);
+    public void reset() throws HyracksDataException {
+        // no op
     }
 }

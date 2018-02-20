@@ -16,40 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ADateSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableDate;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.ARectangleSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableRectangle;
+import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.om.base.ARectangle;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JDate extends JObject {
+public final class JRectangle extends JObject {
 
-    public JDate(int chrononTimeInDays) {
-        super(new AMutableDate(chrononTimeInDays));
+    public JRectangle(JPoint p1, JPoint p2) {
+        super(new AMutableRectangle((APoint) p1.getIAObject(), (APoint) p2.getIAObject()));
     }
 
-    public void setValue(int chrononTimeInDays) {
-        ((AMutableDate) value).setValue(chrononTimeInDays);
+    public void setValue(JPoint p1, JPoint p2) {
+        ((AMutableRectangle) value).setValue((APoint) p1.getValue(), (APoint) p2.getValue());
+    }
+
+    public void setValue(APoint p1, APoint p2) {
+        ((AMutableRectangle) value).setValue(p1, p2);
+    }
+
+    public IAType getIAType() {
+        return BuiltinType.ARECTANGLE;
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.DATE.serialize());
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ADateSerializerDeserializer.INSTANCE.serialize(((AMutableDate) value), dataOutput);
+        ARectangleSerializerDeserializer.INSTANCE.serialize((ARectangle) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableDate) value).setValue(0);
+        ((AMutableRectangle) value).setValue(null, null);
     }
 }

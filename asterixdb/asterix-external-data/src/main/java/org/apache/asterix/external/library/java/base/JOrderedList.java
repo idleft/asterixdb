@@ -21,10 +21,11 @@ package org.apache.asterix.external.library.java.base;
 import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.external.library.java.base.builtin.IJType;
+import org.apache.asterix.external.library.java.base.builtin.JList;
 import org.apache.asterix.om.base.AMutableOrderedList;
 import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.AOrderedListType;
-import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
@@ -35,9 +36,9 @@ public final class JOrderedList extends JList {
 
     private AOrderedListType listType;
 
-    public JOrderedList(IJObject jObject) {
+    public JOrderedList(IJType listItemType) {
         super();
-        this.listType = new AOrderedListType(jObject.getIAObject().getType(), null);
+        this.listType = new AOrderedListType(listItemType.getIAType(), null);
     }
 
     public JOrderedList(IAType listItemType) {
@@ -46,8 +47,8 @@ public final class JOrderedList extends JList {
     }
 
     @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.ARRAY;
+    public IAType getIAType() {
+        return listType;
     }
 
     @Override
@@ -57,10 +58,6 @@ public final class JOrderedList extends JList {
             v.add(jObj.getIAObject());
         }
         return v;
-    }
-
-    public AOrderedListType getListType() {
-        return listType;
     }
 
     @Override
@@ -79,7 +76,6 @@ public final class JOrderedList extends JList {
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
-
+        jObjects.clear();
     }
 }

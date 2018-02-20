@@ -16,11 +16,12 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
 import org.apache.asterix.external.api.IJObject;
 import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.IAType;
 
 public abstract class JObject implements IJObject {
 
@@ -29,11 +30,6 @@ public abstract class JObject implements IJObject {
 
     protected JObject(IAObject value) {
         this.value = value;
-    }
-
-    @Override
-    public ATypeTag getTypeTag() {
-        return value.getType().getTypeTag();
     }
 
     @Override

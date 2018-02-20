@@ -16,28 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.AInt64SerializerDeserializer;
-import org.apache.asterix.om.base.AInt64;
-import org.apache.asterix.om.base.AMutableInt64;
+import org.apache.asterix.dataflow.data.nontagged.serde.AInt16SerializerDeserializer;
+import org.apache.asterix.om.base.AInt16;
+import org.apache.asterix.om.base.AMutableInt16;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JLong extends JObject {
+public final class JShort extends JObject {
 
-    public JLong(long v) {
-        super(new AMutableInt64(v));
+    public JShort(short value) {
+        super(new AMutableInt16(value));
     }
 
-    public void setValue(long v) {
-        ((AMutableInt64) value).setValue(v);
+    public void setValue(short v) {
+        ((AMutableInt16) value).setValue(v);
     }
 
-    public long getValue() {
-        return ((AMutableInt64) value).getLongValue();
+    public short getValue() {
+        return ((AMutableInt16) value).getShortValue();
     }
 
     @Override
@@ -49,12 +51,16 @@ public final class JLong extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        AInt64SerializerDeserializer.INSTANCE.serialize((AInt64) value, dataOutput);
+        AInt16SerializerDeserializer.INSTANCE.serialize((AInt16) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableInt64) value).setValue(0);
+        ((AMutableInt16) value).setValue((short) 0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AINT16;
+    }
 }

@@ -16,45 +16,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ACircleSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableCircle;
-import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.dataflow.data.nontagged.serde.ATimeSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableTime;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JCircle extends JObject {
+public final class JTime extends JObject {
 
-    public JCircle(JPoint center, double radius) {
-        super(new AMutableCircle((APoint) center.getIAObject(), radius));
+    public JTime(int timeInMillsec) {
+        super(new AMutableTime(timeInMillsec));
     }
 
-    public void setValue(JPoint center, double radius) {
-        ((AMutableCircle) (value)).setValue((APoint) center.getIAObject(), radius);
-    }
-
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.CIRCLE;
+    public void setValue(int timeInMillsec) {
+        ((AMutableTime) value).setValue(timeInMillsec);
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.CIRCLE.serialize());
+                dataOutput.writeByte(ATypeTag.TIME.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ACircleSerializerDeserializer.INSTANCE.serialize(((AMutableCircle) (value)), dataOutput);
+        ATimeSerializerDeserializer.INSTANCE.serialize((AMutableTime) value, dataOutput);
     }
 
     @Override
     public void reset() {
+        ((AMutableTime) value).setValue(0);
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ATIME;
     }
 }

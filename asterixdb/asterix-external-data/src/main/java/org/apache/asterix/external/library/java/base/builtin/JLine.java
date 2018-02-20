@@ -16,45 +16,52 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.AFloatSerializerDeserializer;
-import org.apache.asterix.om.base.AFloat;
-import org.apache.asterix.om.base.AMutableFloat;
+import org.apache.asterix.dataflow.data.nontagged.serde.ALineSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableLine;
+import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JFloat extends JObject {
+public final class JLine extends JObject {
 
-    public JFloat(float v) {
-        super(new AMutableFloat(v));
+    public JLine(JPoint p1, JPoint p2) {
+        super(new AMutableLine((APoint) p1.getIAObject(), (APoint) p2.getIAObject()));
     }
 
-    public void setValue(float v) {
-        ((AMutableFloat) value).setValue(v);
+    public void setValue(JPoint p1, JPoint p2) {
+        ((AMutableLine) value).setValue((APoint) p1.getIAObject(), (APoint) p2.getIAObject());
     }
 
-    public float getValue() {
-        return ((AMutableFloat) value).getFloatValue();
+    public void setValue(APoint p1, APoint p2) {
+        ((AMutableLine) value).setValue(p1, p2);
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(value.getType().getTypeTag().serialize());
+                dataOutput.writeByte(ATypeTag.LINE.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        AFloatSerializerDeserializer.INSTANCE.serialize((AFloat) value, dataOutput);
+        ALineSerializerDeserializer.INSTANCE.serialize(((AMutableLine) value), dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableFloat) value).setValue(0);
+        ((AMutableLine) value).setValue(null, null);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ALINE;
+    }
 }

@@ -16,44 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.external.api.IJObject;
-import org.apache.asterix.om.base.AMissing;
-import org.apache.asterix.om.base.IAObject;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.AStringSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableString;
+import org.apache.asterix.om.base.AString;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JMissing implements IJObject {
+public final class JString extends JObject {
 
-    public final static JMissing INSTANCE = new JMissing();
-
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.MISSING;
+    public JString(String v) {
+        super(new AMutableString(v));
     }
 
-    @Override
-    public IAObject getIAObject() {
-        return AMissing.MISSING;
+    public void setValue(String v) {
+        ((AMutableString) value).setValue(v);
+    }
+
+    public String getValue() {
+        return ((AMutableString) value).getStringValue();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.SERIALIZED_MISSING_TYPE_TAG);
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
+        AStringSerializerDeserializer.INSTANCE.serialize((AString) value, dataOutput);
     }
 
     @Override
-    public void reset() throws HyracksDataException {
-        // no op
+    public void reset() {
+        ((AMutableString) value).setValue("");
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ASTRING;
     }
 }

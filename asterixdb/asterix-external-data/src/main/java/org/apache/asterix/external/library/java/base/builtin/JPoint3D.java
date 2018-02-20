@@ -16,45 +16,59 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ALineSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableLine;
-import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.dataflow.data.nontagged.serde.APoint3DSerializerDeserializer;
+import org.apache.asterix.om.base.AMutablePoint3D;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JLine extends JObject {
+public final class JPoint3D extends JObject {
 
-    public JLine(JPoint p1, JPoint p2) {
-        super(new AMutableLine((APoint) p1.getIAObject(), (APoint) p2.getIAObject()));
+    public JPoint3D(double x, double y, double z) {
+        super(new AMutablePoint3D(x, y, z));
     }
 
-    public void setValue(JPoint p1, JPoint p2) {
-        ((AMutableLine) value).setValue((APoint) p1.getIAObject(), (APoint) p2.getIAObject());
+    public void setValue(double x, double y, double z) {
+        ((AMutablePoint3D) value).setValue(x, y, z);
     }
 
-    public void setValue(APoint p1, APoint p2) {
-        ((AMutableLine) value).setValue(p1, p2);
+    public double getXValue() {
+        return ((AMutablePoint3D) value).getX();
+    }
+
+    public double getYValue() {
+        return ((AMutablePoint3D) value).getY();
+    }
+
+    public double getZValue() {
+        return ((AMutablePoint3D) value).getZ();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.LINE.serialize());
+                dataOutput.writeByte(ATypeTag.POINT3D.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ALineSerializerDeserializer.INSTANCE.serialize(((AMutableLine) value), dataOutput);
+        APoint3DSerializerDeserializer.INSTANCE.serialize(((AMutablePoint3D) value), dataOutput);
     }
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
+        ((AMutablePoint3D) value).setValue(0, 0, 0);
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.APOINT3D;
     }
 }

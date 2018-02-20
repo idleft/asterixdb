@@ -16,52 +16,54 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.APoint3DSerializerDeserializer;
-import org.apache.asterix.om.base.AMutablePoint3D;
+import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.om.base.ANull;
+import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JPoint3D extends JObject {
+/*
+ *  This class is necessary to be able to serialize null base
+ *  in cases of setting "null" results
+ *
+ */
+public final class JNull implements IJObject {
 
-    public JPoint3D(double x, double y, double z) {
-        super(new AMutablePoint3D(x, y, z));
+    public final static JNull INSTANCE = new JNull();
+
+    private JNull() {
     }
 
-    public void setValue(double x, double y, double z) {
-        ((AMutablePoint3D) value).setValue(x, y, z);
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ANULL;
     }
 
-    public double getXValue() {
-        return ((AMutablePoint3D) value).getX();
-    }
-
-    public double getYValue() {
-        return ((AMutablePoint3D) value).getY();
-    }
-
-    public double getZValue() {
-        return ((AMutablePoint3D) value).getZ();
+    @Override
+    public IAObject getIAObject() {
+        return ANull.NULL;
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.POINT3D.serialize());
+                dataOutput.writeByte(ATypeTag.SERIALIZED_NULL_TYPE_TAG);
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        APoint3DSerializerDeserializer.INSTANCE.serialize(((AMutablePoint3D) value), dataOutput);
     }
 
     @Override
     public void reset() {
-        // TODO Auto-generated method stub
     }
+
 }
