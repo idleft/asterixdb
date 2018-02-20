@@ -118,6 +118,7 @@ import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
@@ -286,60 +287,35 @@ public class FeedOperations {
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
-
-            FeedPolicyEntity feedPolicyEntity =
-                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
-                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
+            IOperatorDescriptor subRoot = null;
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
                 OperatorDescriptorId opId = null;
                 if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
-                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
-                    opId = metaOp.getOperatorId();
-                    opDesc.setOperatorId(opId);
-                } else {
-                    if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-                        AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
-                        IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
-                        // Tweak AssignOp to work with messages
-                        if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-                            IConnectorDescriptor connectorDesc =
-                                    subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
-                            // anything on the network interface needs to be message compatible
-                            if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
-                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-                                        feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
-                                opId = metaOp.getOperatorId();
-                                opDesc.setOperatorId(opId);
-                            }
+                        || (opDesc instanceof AlgebricksMetaOperatorDescriptor
+                                && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
+                                        .getRuntimeFactories().length < 3)) {
+                    continue;
                         }
-                    }
-                    if (opId == null) {
                         opId = jobSpec.createOperatorDescriptorId(opDesc);
-                    }
-                }
+
                 operatorIdMapping.put(oldId, opId);
             }
 
             // copy connectors
             connectorIdMapping.clear();
             subJob.getConnectorMap().forEach((key, connDesc) -> {
+                if (!(connDesc instanceof MToNPartitioningConnectorDescriptor
+                        && ((MToNPartitioningConnectorDescriptor) connDesc)
+                                .getTuplePartitionComputerFactory() instanceof FieldHashPartitionComputerFactory)
+                        && (operatorIdMapping.containsValue(subJob.getConnectorOperatorMap()
+                                .get(connDesc.getConnectorId()).getKey().getKey().getOperatorId()))) {
                 ConnectorDescriptorId newConnId;
-                if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
-                    MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-                    connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
-                            m2nConn.getTuplePartitionComputerFactory());
-                    newConnId = connDesc.getConnectorId();
-                } else {
                     newConnId = jobSpec.createConnectorDescriptor(connDesc);
-                }
                 connectorIdMapping.put(key, newConnId);
+                }
             });
 
             // make connections between operators
@@ -351,11 +327,20 @@ public class FeedOperations {
                 Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
                 IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
                 IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
+                if (!operatorIdMapping.containsValue(leftOpDesc.getOperatorId())) {
+                    continue;
+                }
                 if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
                     jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
                             leftOp.getRight());
-                }
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
+                } else if (rightOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                    subRoot = new NullSinkOperatorDescriptor(jobSpec);
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), leftOpDesc, leftOp.getRight(), subRoot,
+                            0);
+                } else if (!(leftOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor)) {
                 jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
+            }
             }
 
             // prepare for setting partition constraints
@@ -369,10 +354,16 @@ public class FeedOperations {
                 switch (lexpr.getTag()) {
                     case PARTITION_COUNT:
                         opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
+                        if (!operatorIdMapping.containsKey(opId)) {
+                            continue;
+                        }
                         operatorCounts.put(operatorIdMapping.get(opId), (int) ((ConstantExpression) cexpr).getValue());
                         break;
                     case PARTITION_LOCATION:
                         opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
+                        if (!operatorIdMapping.containsKey(opId)) {
+                            continue;
+                        }
                         IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(operatorIdMapping.get(opId));
                         List<LocationConstraint> locations = operatorLocations.get(opDesc.getOperatorId());
                         if (locations == null) {
@@ -411,9 +402,7 @@ public class FeedOperations {
                 }
             });
             // roots
-            for (OperatorDescriptorId root : subJob.getRoots()) {
-                jobSpec.addRoot(jobSpec.getOperatorMap().get(operatorIdMapping.get(root)));
-            }
+            jobSpec.addRoot(subRoot);
             int datasetId = metadataProvider
                     .findDataset(curFeedConnection.getDataverseName(), curFeedConnection.getDatasetName())
                     .getDatasetId();
