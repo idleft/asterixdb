@@ -90,7 +90,7 @@ public class JavaFunctionHelper implements IFunctionHelper {
     }
 
     private boolean checkInvalidReturnValueType(IJObject result, IAType expectedType) {
-        if (expectedType.deepEqual(result.getIAType())) {
+        if (!expectedType.deepEqual(result.getIAType())) {
             return true;
         }
         return false;
