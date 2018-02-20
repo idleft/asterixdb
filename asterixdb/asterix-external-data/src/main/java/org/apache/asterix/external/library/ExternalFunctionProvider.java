@@ -30,7 +30,14 @@ import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.data.std.api.IPointable;
+import org.apache.hyracks.data.std.primitive.VoidPointable;
 import org.apache.hyracks.dataflow.common.data.accessors.IFrameTupleReference;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import java.io.FileWriter;
+import java.time.Instant;
 
 public class ExternalFunctionProvider {
 
@@ -51,11 +58,28 @@ public class ExternalFunctionProvider {
 
 class ExternalScalarFunction extends ExternalFunction implements IExternalScalarFunction, IScalarEvaluator {
 
+    Logger LOGGER = LogManager.getLogger();
+
+    private String resultFilePath;
+    private FileWriter fw;
+    private long elapsedTime;
+    private long recordCounter;
+
     public ExternalScalarFunction(IExternalFunctionInfo finfo, IScalarEvaluatorFactory args[],
             IHyracksTaskContext context, IApplicationContext appCtx) throws HyracksDataException {
         super(finfo, args, context, appCtx);
         try {
             initialize(functionHelper);
+            // start of test
+            String nodeId = context.getJobletContext().getServiceContext().getNodeId();
+            if (nodeId.startsWith("asterix")) {
+                resultFilePath = "/Volumes/Storage/Users/Xikui/worker_";
+            } else if (nodeId.startsWith("local")) {
+                resultFilePath = "/lv_scratch/scratch/xikuiw/logs/worker_";
+            } else if (nodeId.startsWith("aws")) {
+                resultFilePath = System.getProperty("user.home") + "/expr_logs/worker_";
+            }
+            // end of test
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -64,10 +88,28 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
     @Override
     public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
         try {
+            try {
+                // Start of evaluation code
+                if (fw == null) {
+                    fw = new FileWriter(resultFilePath + this.hashCode() + ".txt");
+                    LOGGER.log(Level.INFO, this.hashCode() + ".txt opened for writing result");
+                    elapsedTime = 0;
+                    recordCounter = 0;
+                }
+                // end of evaluation code
+            } catch (Exception e) {
+                throw new HyracksDataException(e);
+            }
+            long val0;
+            long startTime = System.currentTimeMillis();
             setArguments(tuple);
             evaluate(functionHelper);
             result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
             functionHelper.reset();
+            val0 = System.currentTimeMillis() - startTime;
+            elapsedTime = elapsedTime + val0;
+            recordCounter++;
+            fw.write(Instant.now().toString() + " Record " + recordCounter + " etime0 " + val0 + "\n");
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -84,6 +126,22 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
+    }
+
+    @Override
+    public void close() {
+        System.out.println("Function is closed " + externalFunction.getClass().getSimpleName());
+        // Start of evaluation
+        try {
+            if (fw != null) {
+                fw.write("Summary " + recordCounter + " " + elapsedTime + "\n" + String.valueOf(elapsedTime) + "\n");
+                fw.flush();
+            }
+        } catch (Exception e) {
+            LOGGER.log(Level.ERROR, e);
+        }
+        // End of evaluation
+        externalFunction.deinitialize();
     }
 
 }

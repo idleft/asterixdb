@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.external.library;
 
+import java.io.FileInputStream;
 import java.io.InputStream;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
@@ -52,7 +53,7 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
-        InputStream in = this.getClass().getClassLoader().getResourceAsStream("data/en-doccat.bin");
+        InputStream in = new FileInputStream("/home/xikuiw/en-doccat.bin");
         m = new DoccatModel(in);
         sentimentText = new JString("");
     }
