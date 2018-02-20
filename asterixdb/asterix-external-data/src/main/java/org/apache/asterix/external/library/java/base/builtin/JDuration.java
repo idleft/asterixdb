@@ -16,45 +16,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.AInt16SerializerDeserializer;
-import org.apache.asterix.om.base.AInt16;
-import org.apache.asterix.om.base.AMutableInt16;
+import org.apache.asterix.dataflow.data.nontagged.serde.ADurationSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableDuration;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JShort extends JObject {
+public final class JDuration extends JObject {
 
-    public JShort(short value) {
-        super(new AMutableInt16(value));
+    public JDuration(int months, long milliseconds) {
+        super(new AMutableDuration(months, milliseconds));
     }
 
-    public void setValue(short v) {
-        ((AMutableInt16) value).setValue(v);
-    }
-
-    public short getValue() {
-        return ((AMutableInt16) value).getShortValue();
+    public void setValue(int months, long milliseconds) {
+        ((AMutableDuration) value).setValue(months, milliseconds);
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(value.getType().getTypeTag().serialize());
+                dataOutput.writeByte(ATypeTag.DURATION.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        AInt16SerializerDeserializer.INSTANCE.serialize((AInt16) value, dataOutput);
+        ADurationSerializerDeserializer.INSTANCE.serialize(((AMutableDuration) value), dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableInt16) value).setValue((short) 0);
+        ((AMutableDuration) value).setValue(0, 0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ADURATION;
+    }
 }

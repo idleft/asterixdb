@@ -22,7 +22,7 @@ import java.io.InputStream;
 import java.util.Properties;
 
 import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.JString;
+import org.apache.asterix.external.library.java.base.builtin.JString;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
@@ -56,7 +56,7 @@ public class CapitalFinderFunction implements IExternalScalarFunction {
                 CapitalFinderFunction.class.getClassLoader().getResourceAsStream("data/countriesCapitals.properties");
         capitalList = new Properties();
         capitalList.load(in);
-        capital = (JString) functionHelper.getObject(JTypeTag.STRING);
+        capital = new JString("");
     }
 
 }

@@ -16,59 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.APolygonSerializerDeserializer;
-import org.apache.asterix.om.base.AMutablePolygon;
-import org.apache.asterix.om.base.APoint;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.ADoubleSerializerDeserializer;
+import org.apache.asterix.om.base.ADouble;
+import org.apache.asterix.om.base.AMutableDouble;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JPolygon extends JObject {
+public final class JDouble extends JObject {
 
-    public JPolygon(JPoint[] points) {
-        super(new AMutablePolygon(getAPoints(points)));
+    public JDouble(double v) {
+        super(new AMutableDouble(v));
     }
 
-    public void setValue(APoint[] points) {
-        ((AMutablePolygon) value).setValue(points);
+    public void setValue(double v) {
+        ((AMutableDouble) value).setValue(v);
     }
 
-    public void setValue(JPoint[] points) {
-        ((AMutablePolygon) value).setValue(getAPoints(points));
-    }
-
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.POLYGON;
+    public double getValue() {
+        return ((AMutableDouble) value).getDoubleValue();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.POLYGON.serialize());
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        APolygonSerializerDeserializer.INSTANCE.serialize((AMutablePolygon) value, dataOutput);
+        ADoubleSerializerDeserializer.INSTANCE.serialize((ADouble) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutablePolygon) value).setValue(null);
+        ((AMutableDouble) value).setValue(0);
     }
 
-    protected static APoint[] getAPoints(JPoint[] jpoints) {
-        APoint[] apoints = new APoint[jpoints.length];
-        int index = 0;
-        for (JPoint jpoint : jpoints) {
-            apoints[index++] = (APoint) jpoint.getIAObject();
-        }
-        return apoints;
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ADOUBLE;
     }
 }

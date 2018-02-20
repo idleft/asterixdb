@@ -16,41 +16,57 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ATimeSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableTime;
+import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
+import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.om.base.ABoolean;
+import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JTime extends JObject {
+public final class JBoolean implements IJObject {
 
-    public JTime(int timeInMillsec) {
-        super(new AMutableTime(timeInMillsec));
+    private boolean value;
+
+    public JBoolean(boolean value) {
+        this.value = value;
     }
 
-    public void setValue(int timeInMillsec) {
-        ((AMutableTime) value).setValue(timeInMillsec);
+    public void setValue(boolean value) {
+        this.value = value;
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ABOOLEAN;
+    }
+
+    @Override
+    public IAObject getIAObject() {
+        return value ? ABoolean.TRUE : ABoolean.FALSE;
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.TIME.serialize());
+                dataOutput.writeByte(ATypeTag.BOOLEAN.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ATimeSerializerDeserializer.INSTANCE.serialize((AMutableTime) value, dataOutput);
+        ABooleanSerializerDeserializer.INSTANCE.serialize((ABoolean) getIAObject(), dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableTime) value).setValue(0);
+        value = false;
     }
 
 }

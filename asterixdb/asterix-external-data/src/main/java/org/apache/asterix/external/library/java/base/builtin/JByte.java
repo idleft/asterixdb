@@ -16,41 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ADateTimeSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableDateTime;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.AInt8SerializerDeserializer;
+import org.apache.asterix.om.base.AInt8;
+import org.apache.asterix.om.base.AMutableInt8;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JDateTime extends JObject {
+public final class JByte extends JObject {
 
-    public JDateTime(long chrononTime) {
-        super(new AMutableDateTime(chrononTime));
+    public JByte(byte value) {
+        super(new AMutableInt8(value));
     }
 
-    public void setValue(long chrononTime) {
-        ((AMutableDateTime) value).setValue(chrononTime);
+    public void setValue(byte v) {
+        ((AMutableInt8) value).setValue(v);
+    }
+
+    public byte getValue() {
+        return ((AMutableInt8) value).getByteValue();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.DATETIME.serialize());
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ADateTimeSerializerDeserializer.INSTANCE.serialize(((AMutableDateTime) value), dataOutput);
+        AInt8SerializerDeserializer.INSTANCE.serialize((AInt8) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableDateTime) value).setValue(0);
+        ((AMutableInt8) value).setValue((byte) 0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AINT8;
+    }
 }

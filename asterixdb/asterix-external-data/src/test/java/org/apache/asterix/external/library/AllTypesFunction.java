@@ -18,26 +18,28 @@
  */
 package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.library.java.base.JBoolean;
-import org.apache.asterix.external.library.java.base.JCircle;
-import org.apache.asterix.external.library.java.base.JDate;
-import org.apache.asterix.external.library.java.base.JDateTime;
-import org.apache.asterix.external.library.java.base.JDouble;
-import org.apache.asterix.external.library.java.base.JDuration;
-import org.apache.asterix.external.library.java.base.JFloat;
-import org.apache.asterix.external.library.java.base.JInt;
-import org.apache.asterix.external.library.java.base.JLine;
+import org.apache.asterix.external.library.java.base.builtin.JBoolean;
+import org.apache.asterix.external.library.java.base.builtin.JBuiltinType;
+import org.apache.asterix.external.library.java.base.builtin.JCircle;
+import org.apache.asterix.external.library.java.base.builtin.JDate;
+import org.apache.asterix.external.library.java.base.builtin.JDateTime;
+import org.apache.asterix.external.library.java.base.builtin.JDouble;
+import org.apache.asterix.external.library.java.base.builtin.JDuration;
+import org.apache.asterix.external.library.java.base.builtin.JFloat;
+import org.apache.asterix.external.library.java.base.builtin.JInt;
+import org.apache.asterix.external.library.java.base.builtin.JLine;
 import org.apache.asterix.external.library.java.base.JOrderedList;
-import org.apache.asterix.external.library.java.base.JPoint;
-import org.apache.asterix.external.library.java.base.JPoint3D;
-import org.apache.asterix.external.library.java.base.JPolygon;
+import org.apache.asterix.external.library.java.base.builtin.JPoint;
+import org.apache.asterix.external.library.java.base.builtin.JPoint3D;
+import org.apache.asterix.external.library.java.base.builtin.JPolygon;
 import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.JString;
-import org.apache.asterix.external.library.java.base.JTime;
+import org.apache.asterix.external.library.java.base.builtin.JString;
+import org.apache.asterix.external.library.java.base.builtin.JTime;
 import org.apache.asterix.external.library.java.base.JUnorderedList;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.asterix.om.types.BuiltinType;
 
 public class AllTypesFunction implements IExternalScalarFunction {
 
@@ -45,7 +47,7 @@ public class AllTypesFunction implements IExternalScalarFunction {
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
-        newFieldList = new JOrderedList(functionHelper.getObject(JTypeTag.INT));
+        newFieldList = new JOrderedList(JBuiltinType.JIntType);
     }
 
     @Override

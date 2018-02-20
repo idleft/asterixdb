@@ -16,40 +16,47 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ADurationSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableDuration;
+import org.apache.asterix.dataflow.data.nontagged.serde.ADateSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableDate;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JDuration extends JObject {
+public final class JDate extends JObject {
 
-    public JDuration(int months, long milliseconds) {
-        super(new AMutableDuration(months, milliseconds));
+    public JDate(int chrononTimeInDays) {
+        super(new AMutableDate(chrononTimeInDays));
     }
 
-    public void setValue(int months, long milliseconds) {
-        ((AMutableDuration) value).setValue(months, milliseconds);
+    public void setValue(int chrononTimeInDays) {
+        ((AMutableDate) value).setValue(chrononTimeInDays);
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.DURATION.serialize());
+                dataOutput.writeByte(ATypeTag.DATE.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ADurationSerializerDeserializer.INSTANCE.serialize(((AMutableDuration) value), dataOutput);
+        ADateSerializerDeserializer.INSTANCE.serialize(((AMutableDate) value), dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableDuration) value).setValue(0, 0);
+        ((AMutableDate) value).setValue(0);
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.ADATE;
     }
 }
