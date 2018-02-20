@@ -16,51 +16,61 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ARectangleSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableRectangle;
+import org.apache.asterix.dataflow.data.nontagged.serde.APolygonSerializerDeserializer;
+import org.apache.asterix.om.base.AMutablePolygon;
 import org.apache.asterix.om.base.APoint;
-import org.apache.asterix.om.base.ARectangle;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JRectangle extends JObject {
+public final class JPolygon extends JObject {
 
-    public JRectangle(JPoint p1, JPoint p2) {
-        super(new AMutableRectangle((APoint) p1.getIAObject(), (APoint) p2.getIAObject()));
+    public JPolygon(JPoint[] points) {
+        super(new AMutablePolygon(getAPoints(points)));
     }
 
-    public void setValue(JPoint p1, JPoint p2) {
-        ((AMutableRectangle) value).setValue((APoint) p1.getValue(), (APoint) p2.getValue());
+    public void setValue(APoint[] points) {
+        ((AMutablePolygon) value).setValue(points);
     }
 
-    public void setValue(APoint p1, APoint p2) {
-        ((AMutableRectangle) value).setValue(p1, p2);
-    }
-
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.RECTANGLE;
+    public void setValue(JPoint[] points) {
+        ((AMutablePolygon) value).setValue(getAPoints(points));
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(value.getType().getTypeTag().serialize());
+                dataOutput.writeByte(ATypeTag.POLYGON.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ARectangleSerializerDeserializer.INSTANCE.serialize((ARectangle) value, dataOutput);
+        APolygonSerializerDeserializer.INSTANCE.serialize((AMutablePolygon) value, dataOutput);
     }
 
     @Override
     public void reset() {
+        ((AMutablePolygon) value).setValue(null);
     }
 
+    protected static APoint[] getAPoints(JPoint[] jpoints) {
+        APoint[] apoints = new APoint[jpoints.length];
+        int index = 0;
+        for (JPoint jpoint : jpoints) {
+            apoints[index++] = (APoint) jpoint.getIAObject();
+        }
+        return apoints;
+    }
+
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.APOLYGON;
+    }
 }

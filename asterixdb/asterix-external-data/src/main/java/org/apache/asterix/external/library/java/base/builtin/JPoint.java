@@ -16,53 +16,65 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.AIntervalSerializerDeserializer;
-import org.apache.asterix.om.base.AMutableInterval;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.APointSerializerDeserializer;
+import org.apache.asterix.om.base.AMutablePoint;
+import org.apache.asterix.om.base.APoint;
+import org.apache.asterix.om.base.IAObject;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JInterval extends JObject {
+public final class JPoint extends JObject {
 
-    public JInterval(long intervalStart, long intervalEnd) {
-        super(new AMutableInterval(intervalStart, intervalEnd, (byte) 0));
+    public JPoint(double x, double y) {
+        super(new AMutablePoint(x, y));
     }
 
-    public void setValue(long intervalStart, long intervalEnd, byte typetag) throws HyracksDataException {
-        ((AMutableInterval) value).setValue(intervalStart, intervalEnd, typetag);
+    public void setValue(double x, double y) {
+        ((AMutablePoint) value).setValue(x, y);
     }
 
-    public long getIntervalStart() {
-        return ((AMutableInterval) value).getIntervalStart();
+    public double getXValue() {
+        return ((AMutablePoint) value).getX();
     }
 
-    public long getIntervalEnd() {
-        return ((AMutableInterval) value).getIntervalEnd();
+    public double getYValue() {
+        return ((AMutablePoint) value).getY();
     }
 
-    public short getIntervalType() {
-        return ((AMutableInterval) value).getIntervalType();
+    public IAObject getValue() {
+        return value;
+    }
+
+    @Override
+    public String toString() {
+        return value.toString();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.INTERVAL.serialize());
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        AIntervalSerializerDeserializer.INSTANCE.serialize(((AMutableInterval) value), dataOutput);
+        APointSerializerDeserializer.INSTANCE.serialize((APoint) value, dataOutput);
     }
 
     @Override
-    public void reset() throws HyracksDataException {
-        ((AMutableInterval) value).setValue(0L, 0L, (byte) 0);
+    public void reset() {
+        ((AMutablePoint) value).setValue(0, 0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.APOINT;
+    }
 }

@@ -21,9 +21,10 @@ package org.apache.asterix.external.library.java.base;
 import org.apache.asterix.builders.IAsterixListBuilder;
 import org.apache.asterix.builders.UnorderedListBuilder;
 import org.apache.asterix.external.api.IJObject;
+import org.apache.asterix.external.library.java.base.builtin.IJType;
+import org.apache.asterix.external.library.java.base.builtin.JList;
 import org.apache.asterix.om.base.AMutableUnorderedList;
 import org.apache.asterix.om.base.IAObject;
-import org.apache.asterix.om.types.ATypeTag;
 import org.apache.asterix.om.types.AUnorderedListType;
 import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -36,15 +37,16 @@ public final class JUnorderedList extends JList {
 
     private AUnorderedListType listType;
 
-    public JUnorderedList(IJObject jObject) {
-        this.listType = new AUnorderedListType(jObject.getIAObject().getType(), null);
-        this.jObjects = new ArrayList<IJObject>();
+    public JUnorderedList(IJType elementType) {
+        super();
+        this.listType = new AUnorderedListType(elementType.getIAType(), null);
+        this.jObjects = new ArrayList<>();
     }
 
-    public JUnorderedList(IAType listItemType) {
+    public JUnorderedList(IAType elementType) {
         super();
-        this.listType = new AUnorderedListType(listItemType, null);
-        this.jObjects = new ArrayList<IJObject>();
+        this.listType = new AUnorderedListType(elementType, null);
+        this.jObjects = new ArrayList<>();
     }
 
     @Override
@@ -53,8 +55,8 @@ public final class JUnorderedList extends JList {
     }
 
     @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.MULTISET;
+    public IAType getIAType() {
+        return listType;
     }
 
     @Override
@@ -64,10 +66,6 @@ public final class JUnorderedList extends JList {
             v.add(jObj.getIAObject());
         }
         return v;
-    }
-
-    public AUnorderedListType getListType() {
-        return listType;
     }
 
     @Override

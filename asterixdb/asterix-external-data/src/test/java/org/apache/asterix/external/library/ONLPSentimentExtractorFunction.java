@@ -23,8 +23,7 @@ import java.io.InputStream;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.JString;
-import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.asterix.external.library.java.base.builtin.JString;
 
 import opennlp.tools.doccat.DoccatModel;
 import opennlp.tools.doccat.DocumentCategorizerME;

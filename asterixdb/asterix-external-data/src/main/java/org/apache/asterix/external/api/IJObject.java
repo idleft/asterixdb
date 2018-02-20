@@ -22,15 +22,16 @@ import java.io.DataOutput;
 
 import org.apache.asterix.om.base.IAObject;
 import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public interface IJObject {
 
-    public ATypeTag getTypeTag();
+    IAType getIAType();
 
-    public IAObject getIAObject();
+    IAObject getIAObject();
 
-    public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException;
+    void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException;
 
-    public void reset() throws HyracksDataException;
+    void reset() throws HyracksDataException;
 }

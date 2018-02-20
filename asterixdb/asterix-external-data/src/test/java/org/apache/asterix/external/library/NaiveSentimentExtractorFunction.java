@@ -24,7 +24,7 @@ import java.util.Properties;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.JString;
+import org.apache.asterix.external.library.java.base.builtin.JString;
 import org.apache.asterix.external.library.java.JTypeTag;
 
 public class NaiveSentimentExtractorFunction implements IExternalScalarFunction {
@@ -68,7 +68,7 @@ public class NaiveSentimentExtractorFunction implements IExternalScalarFunction 
                 NaiveSentimentExtractorFunction.class.getClassLoader().getResourceAsStream("data/wordList.properties");
         tokenList = new Properties();
         tokenList.load(in);
-        sentiment = (JString) functionHelper.getObject(JTypeTag.STRING);
+        sentiment = new JString("");
     }
 
 }

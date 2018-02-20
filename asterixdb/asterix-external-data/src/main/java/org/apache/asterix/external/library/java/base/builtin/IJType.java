@@ -16,14 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.api;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.om.base.IAObject;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.IAType;
 
 public interface IJType {
 
-    public ATypeTag getTypeTag();
-
-    public IAObject getIAObject();
+    public IAType getIAType();
 }

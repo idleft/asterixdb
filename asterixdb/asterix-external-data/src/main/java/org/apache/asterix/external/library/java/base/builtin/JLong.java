@@ -16,55 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ABooleanSerializerDeserializer;
-import org.apache.asterix.external.api.IJObject;
-import org.apache.asterix.om.base.ABoolean;
-import org.apache.asterix.om.base.IAObject;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.AInt64SerializerDeserializer;
+import org.apache.asterix.om.base.AInt64;
+import org.apache.asterix.om.base.AMutableInt64;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JBoolean implements IJObject {
+public final class JLong extends JObject {
 
-    private boolean value;
-
-    public JBoolean(boolean value) {
-        this.value = value;
+    public JLong(long v) {
+        super(new AMutableInt64(v));
     }
 
-    public void setValue(boolean value) {
-        this.value = value;
+    public void setValue(long v) {
+        ((AMutableInt64) value).setValue(v);
     }
 
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.BOOLEAN;
-    }
-
-    @Override
-    public IAObject getIAObject() {
-        return value ? ABoolean.TRUE : ABoolean.FALSE;
+    public long getValue() {
+        return ((AMutableInt64) value).getLongValue();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.BOOLEAN.serialize());
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        ABooleanSerializerDeserializer.INSTANCE.serialize((ABoolean) getIAObject(), dataOutput);
+        AInt64SerializerDeserializer.INSTANCE.serialize((AInt64) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        value = false;
+        ((AMutableInt64) value).setValue(0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AINT64;
+    }
 }

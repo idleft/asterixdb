@@ -16,28 +16,30 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.ADoubleSerializerDeserializer;
-import org.apache.asterix.om.base.ADouble;
-import org.apache.asterix.om.base.AMutableDouble;
+import org.apache.asterix.dataflow.data.nontagged.serde.AInt32SerializerDeserializer;
+import org.apache.asterix.om.base.AInt32;
+import org.apache.asterix.om.base.AMutableInt32;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JDouble extends JObject {
+public class JInt extends JObject {
 
-    public JDouble(double v) {
-        super(new AMutableDouble(v));
+    public JInt(int value) {
+        super(new AMutableInt32(value));
     }
 
-    public void setValue(double v) {
-        ((AMutableDouble) value).setValue(v);
+    public void setValue(int v) {
+        ((AMutableInt32) value).setValue(v);
     }
 
-    public double getValue() {
-        return ((AMutableDouble) value).getDoubleValue();
+    public int getValue() {
+        return ((AMutableInt32) value).getIntegerValue();
     }
 
     @Override
@@ -49,12 +51,16 @@ public final class JDouble extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        ADoubleSerializerDeserializer.INSTANCE.serialize((ADouble) value, dataOutput);
+        AInt32SerializerDeserializer.INSTANCE.serialize((AInt32) value, dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutableDouble) value).setValue(0);
+        ((AMutableInt32) value).setValue(0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AINT32;
+    }
 }

@@ -16,58 +16,48 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.dataflow.data.nontagged.serde.APointSerializerDeserializer;
-import org.apache.asterix.om.base.AMutablePoint;
+import org.apache.asterix.dataflow.data.nontagged.serde.ACircleSerializerDeserializer;
+import org.apache.asterix.om.base.AMutableCircle;
 import org.apache.asterix.om.base.APoint;
-import org.apache.asterix.om.base.IAObject;
+import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-public final class JPoint extends JObject {
+public final class JCircle extends JObject {
 
-    public JPoint(double x, double y) {
-        super(new AMutablePoint(x, y));
+    public JCircle(JPoint center, double radius) {
+        super(new AMutableCircle((APoint) center.getIAObject(), radius));
     }
 
-    public void setValue(double x, double y) {
-        ((AMutablePoint) value).setValue(x, y);
-    }
-
-    public double getXValue() {
-        return ((AMutablePoint) value).getX();
-    }
-
-    public double getYValue() {
-        return ((AMutablePoint) value).getY();
-    }
-
-    public IAObject getValue() {
-        return value;
+    public void setValue(JPoint center, double radius) {
+        ((AMutableCircle) (value)).setValue((APoint) center.getIAObject(), radius);
     }
 
     @Override
-    public String toString() {
-        return value.toString();
+    public IAType getIAType() {
+        return BuiltinType.ACIRCLE;
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(value.getType().getTypeTag().serialize());
+                dataOutput.writeByte(ATypeTag.CIRCLE.serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
-        APointSerializerDeserializer.INSTANCE.serialize((APoint) value, dataOutput);
+        ACircleSerializerDeserializer.INSTANCE.serialize(((AMutableCircle) (value)), dataOutput);
     }
 
     @Override
     public void reset() {
-        ((AMutablePoint) value).setValue(0, 0);
+        ((AMutableCircle) value).setValue(null, 0);
     }
 }

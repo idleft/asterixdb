@@ -20,9 +20,9 @@ package org.apache.asterix.external.library;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.base.JInt;
+import org.apache.asterix.external.library.java.base.builtin.JInt;
 import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.JString;
+import org.apache.asterix.external.library.java.base.builtin.JString;
 
 /**
  * Accepts an input record of type Open{ id: int32, text: string }

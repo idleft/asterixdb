@@ -16,52 +16,51 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library.java.base;
+package org.apache.asterix.external.library.java.base.builtin;
 
-import org.apache.asterix.external.api.IJObject;
-import org.apache.asterix.om.base.ANull;
-import org.apache.asterix.om.base.IAObject;
-import org.apache.asterix.om.types.ATypeTag;
+import org.apache.asterix.dataflow.data.nontagged.serde.AFloatSerializerDeserializer;
+import org.apache.asterix.om.base.AFloat;
+import org.apache.asterix.om.base.AMutableFloat;
+import org.apache.asterix.om.types.BuiltinType;
+import org.apache.asterix.om.types.IAType;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 import java.io.DataOutput;
 import java.io.IOException;
 
-/*
- *  This class is necessary to be able to serialize null base
- *  in cases of setting "null" results
- *
- */
-public final class JNull implements IJObject {
+public final class JFloat extends JObject {
 
-    public final static JNull INSTANCE = new JNull();
-
-    private JNull() {
+    public JFloat(float v) {
+        super(new AMutableFloat(v));
     }
 
-    @Override
-    public ATypeTag getTypeTag() {
-        return ATypeTag.NULL;
+    public void setValue(float v) {
+        ((AMutableFloat) value).setValue(v);
     }
 
-    @Override
-    public IAObject getIAObject() {
-        return ANull.NULL;
+    public float getValue() {
+        return ((AMutableFloat) value).getFloatValue();
     }
 
     @Override
     public void serialize(DataOutput dataOutput, boolean writeTypeTag) throws HyracksDataException {
         if (writeTypeTag) {
             try {
-                dataOutput.writeByte(ATypeTag.SERIALIZED_NULL_TYPE_TAG);
+                dataOutput.writeByte(value.getType().getTypeTag().serialize());
             } catch (IOException e) {
                 throw new HyracksDataException(e);
             }
         }
+        AFloatSerializerDeserializer.INSTANCE.serialize((AFloat) value, dataOutput);
     }
 
     @Override
     public void reset() {
+        ((AMutableFloat) value).setValue(0);
     }
 
+    @Override
+    public IAType getIAType() {
+        return BuiltinType.AFLOAT;
+    }
 }

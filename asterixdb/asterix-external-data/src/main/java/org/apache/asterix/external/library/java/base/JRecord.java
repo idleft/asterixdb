@@ -90,9 +90,8 @@ public final class JRecord implements IJObject {
         fields[pos] = jObject;
     }
 
-    @Override
-    public ATypeTag getTypeTag() {
-        return recordType.getTypeTag();
+    public IAType getIAType() {
+        return recordType;
     }
 
     public void setField(String fieldName, IJObject fieldValue) throws HyracksDataException {
@@ -167,7 +166,7 @@ public final class JRecord implements IJObject {
             openFieldTypes[idx] = entry.getValue().getIAObject().getType();
             openFieldValues[idx] = entry.getValue().getIAObject();
         }
-        for (int iter1 = 0; iter1 < fields.length; iter1 ++) {
+        for (int iter1 = 0; iter1 < fields.length; iter1++) {
             closedFieldValues[iter1] = fields[iter1].getIAObject();
         }
         ARecordType openPartRecType = new ARecordType(null, openFieldNames, openFieldTypes, true);
