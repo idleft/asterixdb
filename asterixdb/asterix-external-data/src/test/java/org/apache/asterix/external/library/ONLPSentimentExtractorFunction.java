@@ -24,6 +24,7 @@ import java.io.InputStream;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.base.JRecord;
+import org.apache.asterix.external.library.java.base.builtin.JInt;
 import org.apache.asterix.external.library.java.base.builtin.JString;
 
 import opennlp.tools.doccat.DoccatModel;
@@ -34,6 +35,7 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
     private static String[] sentimentType = { "Very Negative", "Negative", "Neutral", "Positive", "Very Positive" };
     private static DoccatModel m;
     private JString sentimentText;
+    private JInt counterVal;
 
     @Override
     public void deinitialize() {
@@ -48,6 +50,12 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
         String sentiment = sentimentType[getSentiment(text.getValue(), m)];
         sentimentText.setValue(sentiment);
         inputRecord.addField("sentiment", sentimentText);
+        int cnt = 0;
+        while (cnt < 80000000) {
+            cnt++;
+        }
+        counterVal.setValue(cnt);
+        inputRecord.addField("counter", counterVal);
         functionHelper.setResult(inputRecord);
     }
 
@@ -56,6 +64,7 @@ public class ONLPSentimentExtractorFunction implements IExternalScalarFunction {
         InputStream in = new FileInputStream("/home/xikuiw/en-doccat.bin");
         m = new DoccatModel(in);
         sentimentText = new JString("");
+        counterVal = new JInt(0);
     }
 
     public static int getSentiment(String tweet, DoccatModel model) {

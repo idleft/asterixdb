@@ -298,8 +298,8 @@ public class FeedOperations {
                                 && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
                                         .getRuntimeFactories().length < 3)) {
                     continue;
-                        }
-                        opId = jobSpec.createOperatorDescriptorId(opDesc);
+                }
+                opId = jobSpec.createOperatorDescriptorId(opDesc);
 
                 operatorIdMapping.put(oldId, opId);
             }
@@ -312,9 +312,9 @@ public class FeedOperations {
                                 .getTuplePartitionComputerFactory() instanceof FieldHashPartitionComputerFactory)
                         && (operatorIdMapping.containsValue(subJob.getConnectorOperatorMap()
                                 .get(connDesc.getConnectorId()).getKey().getKey().getOperatorId()))) {
-                ConnectorDescriptorId newConnId;
+                    ConnectorDescriptorId newConnId;
                     newConnId = jobSpec.createConnectorDescriptor(connDesc);
-                connectorIdMapping.put(key, newConnId);
+                    connectorIdMapping.put(key, newConnId);
                 }
             });
 
@@ -339,8 +339,8 @@ public class FeedOperations {
                     jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), leftOpDesc, leftOp.getRight(), subRoot,
                             0);
                 } else if (!(leftOp.getLeft() instanceof LSMTreeInsertDeleteOperatorDescriptor)) {
-                jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
-            }
+                    jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
+                }
             }
 
             // prepare for setting partition constraints

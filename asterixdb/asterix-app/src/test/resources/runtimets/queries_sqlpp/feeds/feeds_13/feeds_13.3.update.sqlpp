@@ -23,7 +23,7 @@ set `wait-for-completion-feed` `true`;
 
 connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#getONLPSentiment;
 
-SET `compiler.parallelism` "8";
+SET `compiler.parallelism` "1";
 //SET `compiler.computation.location` "asterix_nc2";
 
 start feed SyntheticTweetFeed;

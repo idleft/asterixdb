@@ -81,6 +81,7 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
             }
             // end of test
         } catch (Exception e) {
+            e.printStackTrace();
             throw new HyracksDataException(e);
         }
     }
