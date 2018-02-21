@@ -64,6 +64,7 @@ public final class JNull implements IJObject {
 
     @Override
     public void reset() {
+        // no op for NULL
     }
 
 }

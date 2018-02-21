@@ -40,14 +40,14 @@ import java.util.Map;
 
 public final class JRecord implements IJObject {
 
+    private static final AStringSerializerDeserializer aStringSerDer = AStringSerializerDeserializer.INSTANCE;
     private ARecordType recordType;
     private IJObject[] fields;
     private Map<String, IJObject> openFields;
     RecordBuilder recordBuilder = new RecordBuilder();
-    ArrayBackedValueStorage fieldName = new ArrayBackedValueStorage();
-    ArrayBackedValueStorage fieldValue = new ArrayBackedValueStorage();
+    ArrayBackedValueStorage fieldNameBuffer = new ArrayBackedValueStorage();
+    ArrayBackedValueStorage fieldValueBuffer = new ArrayBackedValueStorage();
     AMutableString nameString = new AMutableString("");
-    private final AStringSerializerDeserializer aStringSerDer = AStringSerializerDeserializer.INSTANCE;
 
     public JRecord(ARecordType recordType, IJObject[] fields) {
         this.recordType = recordType;
@@ -55,7 +55,7 @@ public final class JRecord implements IJObject {
         this.openFields = new LinkedHashMap<>();
     }
 
-    public JRecord(ARecordType recordType, IJObject[] fields, LinkedHashMap<String, IJObject> openFields) {
+    public JRecord(ARecordType recordType, IJObject[] fields, Map<String, IJObject> openFields) {
         this(recordType, fields);
         this.openFields = openFields;
     }
@@ -128,22 +128,22 @@ public final class JRecord implements IJObject {
         recordBuilder.reset(recordType);
         int index = 0;
         for (IJObject jObject : fields) {
-            fieldValue.reset();
-            jObject.serialize(fieldValue.getDataOutput(), writeTypeTag);
-            recordBuilder.addField(index, fieldValue);
+            fieldValueBuffer.reset();
+            jObject.serialize(fieldValueBuffer.getDataOutput(), writeTypeTag);
+            recordBuilder.addField(index, fieldValueBuffer);
             index++;
         }
 
         try {
             if (openFields != null && !openFields.isEmpty()) {
                 for (Map.Entry<String, IJObject> entry : openFields.entrySet()) {
-                    fieldName.reset();
-                    fieldValue.reset();
+                    fieldNameBuffer.reset();
+                    fieldValueBuffer.reset();
                     nameString.setValue(entry.getKey());
-                    fieldName.getDataOutput().write(ATypeTag.STRING.serialize());
-                    aStringSerDer.serialize(nameString, fieldName.getDataOutput());
-                    entry.getValue().serialize(fieldValue.getDataOutput(), true);
-                    recordBuilder.addField(fieldName, fieldValue);
+                    fieldNameBuffer.getDataOutput().write(ATypeTag.STRING.serialize());
+                    aStringSerDer.serialize(nameString, fieldNameBuffer.getDataOutput());
+                    entry.getValue().serialize(fieldValueBuffer.getDataOutput(), true);
+                    recordBuilder.addField(fieldNameBuffer, fieldValueBuffer);
                 }
             }
         } catch (IOException ae) {
@@ -190,7 +190,7 @@ public final class JRecord implements IJObject {
         }
     }
 
-    public void reset(IJObject[] fields, LinkedHashMap<String, IJObject> openFields) throws HyracksDataException {
+    public void reset(IJObject[] fields, Map<String, IJObject> openFields) throws HyracksDataException {
         this.reset();
         this.fields = fields;
         this.openFields = openFields;

@@ -53,7 +53,7 @@ public final class JCircle extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        ACircleSerializerDeserializer.INSTANCE.serialize(((AMutableCircle) (value)), dataOutput);
+        ACircleSerializerDeserializer.INSTANCE.serialize((AMutableCircle) value, dataOutput);
     }
 
     @Override

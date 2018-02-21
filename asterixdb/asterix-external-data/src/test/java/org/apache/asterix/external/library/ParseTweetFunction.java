@@ -32,7 +32,7 @@ public class ParseTweetFunction implements IExternalScalarFunction {
 
     @Override
     public void initialize(IFunctionHelper functionHelper) {
-        list = new JUnorderedList(JBuiltinType.JStringType);
+        list = new JUnorderedList(JBuiltinType.JSTRING);
     }
 
     @Override

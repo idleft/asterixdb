@@ -59,7 +59,7 @@ public final class JInterval extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        AIntervalSerializerDeserializer.INSTANCE.serialize(((AMutableInterval) value), dataOutput);
+        AIntervalSerializerDeserializer.INSTANCE.serialize((AMutableInterval) value, dataOutput);
     }
 
     @Override
