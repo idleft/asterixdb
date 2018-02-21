@@ -16,14 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.asterix.external.library;
 
-use test;
+import org.apache.asterix.external.api.IExternalScalarFunction;
+import org.apache.asterix.external.api.IFunctionFactory;
 
-set `wait-for-completion-feed` `true`;
+public class SNLPSentimentExtractorFactory implements IFunctionFactory {
 
-connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#getSNLPSentiment;
+    @Override
+    public IExternalScalarFunction getExternalFunction() {
+        return new SNLPSentimentExtractorFunction();
+    }
 
-//SET `compiler.parallelism` "1";
-//SET `compiler.computation.location` "asterix_nc2";
-
-start feed SyntheticTweetFeed;
+}

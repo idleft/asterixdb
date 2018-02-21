@@ -141,6 +141,7 @@
           </ignoredUsedUndeclaredDependencies>
           <ignoredUnusedDeclaredDependencies>
             <ignoredUnusedDeclaredDependency>xml-apis:xml-apis:*</ignoredUnusedDeclaredDependency>
+            <ignoredUnusedDeclaredDependency>edu.stanford.nlp:stanford-corenlp:*</ignoredUnusedDeclaredDependency>
           </ignoredUnusedDeclaredDependencies>
         </configuration>
       </plugin>
@@ -421,5 +422,18 @@
           <artifactId>opennlp-tools</artifactId>
           <version>1.7.0</version>
       </dependency>
+    <dependency>
+      <groupId>edu.stanford.nlp</groupId>
+      <artifactId>stanford-corenlp</artifactId>
+      <version>3.7.0</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>edu.stanford.nlp</groupId>
+      <artifactId>stanford-corenlp</artifactId>
+      <version>3.7.0</version>
+      <classifier>models</classifier>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 </project>
