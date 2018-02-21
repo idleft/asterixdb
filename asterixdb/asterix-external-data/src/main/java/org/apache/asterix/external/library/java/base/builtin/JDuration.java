@@ -47,7 +47,7 @@ public final class JDuration extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        ADurationSerializerDeserializer.INSTANCE.serialize(((AMutableDuration) value), dataOutput);
+        ADurationSerializerDeserializer.INSTANCE.serialize((AMutableDuration) value, dataOutput);
     }
 
     @Override

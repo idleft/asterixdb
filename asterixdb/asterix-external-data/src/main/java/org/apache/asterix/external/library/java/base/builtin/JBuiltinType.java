@@ -23,134 +23,138 @@ import org.apache.asterix.om.types.IAType;
 
 public abstract class JBuiltinType implements IJType {
 
-    public static JBuiltinType JBooleanType = new JBuiltinType() {
+    private JBuiltinType(){
+        // no op
+    }
+
+    public static final JBuiltinType JBOOLEAN = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ABOOLEAN;
         }
     };
 
-    public static JBuiltinType JByteType = new JBuiltinType() {
+    public static final JBuiltinType JBYTE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AINT8;
         }
     };
-    public static JBuiltinType JCircleType = new JBuiltinType() {
+    public static final JBuiltinType JCIRCLE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ACIRCLE;
         }
     };
-    public static JBuiltinType JDateType = new JBuiltinType() {
+    public static final JBuiltinType JDATE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ADATE;
         }
     };
-    public static JBuiltinType JDateTimeType = new JBuiltinType() {
+    public static final JBuiltinType JDATETIME = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ADATETIME;
         }
     };
 
-    public static JBuiltinType JDoubleType = new JBuiltinType() {
+    public static final JBuiltinType JDOUBLE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ADOUBLE;
         }
     };
 
-    public static JBuiltinType JDurationType = new JBuiltinType() {
+    public static final JBuiltinType JDURATION = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ADURATION;
         }
     };
 
-    public static JBuiltinType JFloatType = new JBuiltinType() {
+    public static final JBuiltinType JFLOAT = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AFLOAT;
         }
     };
 
-    public static JBuiltinType JIntType = new JBuiltinType() {
+    public static final JBuiltinType JINT = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AINT32;
         }
     };
 
-    public static JBuiltinType JIntervalType = new JBuiltinType() {
+    public static final JBuiltinType JINTERVAL = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AINTERVAL;
         }
     };
 
-    public static JBuiltinType JLineType = new JBuiltinType() {
+    public static final JBuiltinType JLINE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ALINE;
         }
     };
-    public static JBuiltinType JLongType = new JBuiltinType() {
+    public static final JBuiltinType JLONG = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AINT64;
         }
     };
-    public static JBuiltinType JMissingType = new JBuiltinType() {
+    public static final JBuiltinType JMISSING = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AMISSING;
         }
     };
-    public static JBuiltinType JNullType = new JBuiltinType() {
+    public static final JBuiltinType JNULL = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ANULL;
         }
     };
-    public static JBuiltinType JPointType = new JBuiltinType() {
+    public static final JBuiltinType JPOINT = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.APOINT;
         }
     };
-    public static JBuiltinType JPoint3DType = new JBuiltinType() {
+    public static final JBuiltinType JPOINT3D = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.APOINT3D;
         }
     };
-    public static JBuiltinType JPolygonType = new JBuiltinType() {
+    public static final JBuiltinType JPOLYGON = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.APOLYGON;
         }
     };
-    public static JBuiltinType JRectangleType = new JBuiltinType() {
+    public static final JBuiltinType JRECTANGLE = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ARECTANGLE;
         }
     };
-    public static JBuiltinType JShortType = new JBuiltinType() {
+    public static final JBuiltinType JSHORT = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.AINT8;
         }
     };
-    public static JBuiltinType JStringType = new JBuiltinType() {
+    public static final JBuiltinType JSTRING = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ASTRING;
         }
     };
-    public static JBuiltinType JTimeType = new JBuiltinType() {
+    public static final JBuiltinType JTIME = new JBuiltinType() {
         @Override
         public IAType getIAType() {
             return BuiltinType.ATIME;

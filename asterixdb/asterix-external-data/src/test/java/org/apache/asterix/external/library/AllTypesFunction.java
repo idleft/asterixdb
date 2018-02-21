@@ -39,7 +39,6 @@ import org.apache.asterix.external.library.java.base.JUnorderedList;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.asterix.om.types.BuiltinType;
 
 public class AllTypesFunction implements IExternalScalarFunction {
 
@@ -47,7 +46,7 @@ public class AllTypesFunction implements IExternalScalarFunction {
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
-        newFieldList = new JOrderedList(JBuiltinType.JIntType);
+        newFieldList = new JOrderedList(JBuiltinType.JINT);
     }
 
     @Override

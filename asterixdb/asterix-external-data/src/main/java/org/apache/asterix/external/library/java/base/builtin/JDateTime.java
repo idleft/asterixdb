@@ -47,7 +47,7 @@ public final class JDateTime extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        ADateTimeSerializerDeserializer.INSTANCE.serialize(((AMutableDateTime) value), dataOutput);
+        ADateTimeSerializerDeserializer.INSTANCE.serialize((AMutableDateTime) value, dataOutput);
     }
 
     @Override

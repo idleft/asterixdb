@@ -52,7 +52,7 @@ public final class JLine extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        ALineSerializerDeserializer.INSTANCE.serialize(((AMutableLine) value), dataOutput);
+        ALineSerializerDeserializer.INSTANCE.serialize((AMutableLine) value, dataOutput);
     }
 
     @Override

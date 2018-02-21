@@ -59,7 +59,7 @@ public final class JPoint3D extends JObject {
                 throw new HyracksDataException(e);
             }
         }
-        APoint3DSerializerDeserializer.INSTANCE.serialize(((AMutablePoint3D) value), dataOutput);
+        APoint3DSerializerDeserializer.INSTANCE.serialize((AMutablePoint3D) value, dataOutput);
     }
 
     @Override
