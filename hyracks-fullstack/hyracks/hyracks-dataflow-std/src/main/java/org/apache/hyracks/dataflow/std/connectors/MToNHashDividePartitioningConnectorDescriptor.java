@@ -53,14 +53,13 @@ public class MToNHashDividePartitioningConnectorDescriptor extends MToNPartition
                 index * fanout);
     }
 
-
     @Override
     public IPartitionCollector createPartitionCollector(IHyracksTaskContext ctx, RecordDescriptor recordDesc, int index,
             int nProducerPartitions, int nConsumerPartitions) throws HyracksDataException {
         BitSet expectedPartitions = new BitSet(nProducerPartitions);
         expectedPartitions.set(0, nProducerPartitions);
-        NonDeterministicChannelReader channelReader = new SafeNonDeterministicChannelReader(nProducerPartitions,
-                expectedPartitions);
+        NonDeterministicChannelReader channelReader =
+                new SafeNonDeterministicChannelReader(nProducerPartitions, expectedPartitions);
         NonDeterministicFrameReader frameReader = new NonDeterministicFrameReader(channelReader);
         return new PartitionCollector(ctx, getConnectorId(), index, expectedPartitions, frameReader, channelReader);
     }

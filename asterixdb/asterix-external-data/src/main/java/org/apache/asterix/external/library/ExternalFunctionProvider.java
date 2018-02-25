@@ -25,7 +25,6 @@ import org.apache.asterix.external.api.IExternalFunction;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.om.functions.IExternalFunctionInfo;
-import org.apache.asterix.om.pointables.nonvisitor.ARecordPointable;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluator;
 import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -64,9 +63,7 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
     private String resultFilePath;
     private FileWriter fw;
     private long elapsedTime;
-    private long elapsedInstantTime;
     private long recordCounter;
-    private IPointable inputValPointable;
 
     public ExternalScalarFunction(IExternalFunctionInfo finfo, IScalarEvaluatorFactory args[],
             IHyracksTaskContext context, IApplicationContext appCtx) throws HyracksDataException {
@@ -82,7 +79,6 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
             } else if (nodeId.startsWith("aws")) {
                 resultFilePath = System.getProperty("user.home") + "/expr_logs/worker_";
             }
-            inputValPointable = new VoidPointable();
             // end of test
         } catch (Exception e) {
             throw new HyracksDataException(e);
@@ -92,14 +88,13 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
     @Override
     public void evaluate(IFrameTupleReference tuple, IPointable result) throws HyracksDataException {
         try {
-
             try {
                 // Start of evaluation code
                 if (fw == null) {
                     fw = new FileWriter(resultFilePath + this.hashCode() + ".txt");
+                    System.out.println(this.hashCode() + ".txt opened for writing result");
                     LOGGER.log(Level.INFO, this.hashCode() + ".txt opened for writing result");
                     elapsedTime = 0;
-                    elapsedInstantTime = 0;
                     recordCounter = 0;
                 }
                 // end of evaluation code
@@ -108,19 +103,14 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
             }
             long val0;
             long startTime = System.currentTimeMillis();
-            Instant startInstant = Instant.now();
-            // End of evaluation
-            //setArguments(tuple);
-            argumentEvaluators[0].evaluate(tuple, inputValPointable);
-            result.set(inputValPointable);
+            setArguments(tuple);
             evaluate(functionHelper);
-//            result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
+            result.set(resultBuffer.getByteArray(), resultBuffer.getStartOffset(), resultBuffer.getLength());
             functionHelper.reset();
             val0 = System.currentTimeMillis() - startTime;
             elapsedTime = elapsedTime + val0;
             recordCounter++;
             fw.write(Instant.now().toString() + " Record " + recordCounter + " etime0 " + val0 + "\n");
-            LOGGER.error("Worker " + this.hashCode() + " " + val0);
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -131,9 +121,9 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
         try {
             resultBuffer.reset();
             ((IExternalScalarFunction) externalFunction).evaluate(argumentProvider);
-//            if (!argumentProvider.isValidResult()) {
-//                throw new RuntimeDataException(ErrorCode.EXTERNAL_UDF_RESULT_TYPE_ERROR);
-//            }
+            //            if (!argumentProvider.isValidResult()) {
+            //                throw new RuntimeDataException(ErrorCode.EXTERNAL_UDF_RESULT_TYPE_ERROR);
+            //            }
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -145,8 +135,7 @@ class ExternalScalarFunction extends ExternalFunction implements IExternalScalar
         // Start of evaluation
         try {
             if (fw != null) {
-                fw.write("Summary " + recordCounter + " " + elapsedTime + " " + elapsedInstantTime + "\n"
-                        + String.valueOf(elapsedTime) + "\n");
+                fw.write("Summary " + recordCounter + " " + elapsedTime + "\n" + String.valueOf(elapsedTime) + "\n");
                 fw.flush();
             }
         } catch (Exception e) {

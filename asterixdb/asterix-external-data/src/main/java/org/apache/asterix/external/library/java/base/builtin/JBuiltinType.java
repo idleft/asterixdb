@@ -23,7 +23,7 @@ import org.apache.asterix.om.types.IAType;
 
 public abstract class JBuiltinType implements IJType {
 
-    private JBuiltinType(){
+    private JBuiltinType() {
         // no op
     }
 

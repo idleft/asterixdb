@@ -108,7 +108,7 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         this.feedManager = (ActiveManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getActiveManager();
         this.message = new VSizeFrame(ctx);
-//        TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
+        //        TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
         this.recordDescProvider = recordDescProvider;
         this.opDesc = feedMetaOperatorDescriptor;
         tracer = ctx.getJobletContext().getServiceContext().getTracer();
@@ -174,8 +174,8 @@ public class FeedMetaStoreNodePushable extends AbstractUnaryInputUnaryOutputOper
         System.out.println("Storage Received " + recordCounter);
         try {
             String resultPath = "/lv_scratch/scratch/xikuiw/logs/partition_" + partition + ".txt";
-//            String resultPath = "/Volumes/Storage/Users/Xikui/partition_" + partition + ".txt";
-//            System.out.println(resultPath);
+            //            String resultPath = "/Volumes/Storage/Users/Xikui/partition_" + partition + ".txt";
+            //            System.out.println(resultPath);
             FileWriter fw = new FileWriter(resultPath);
             fw.write(recordCounter + "\n");
             fw.close();

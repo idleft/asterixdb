@@ -20,7 +20,6 @@
 package org.apache.asterix.metadata.entities;
 
 import java.util.List;
-import java.util.Set;
 
 import org.apache.asterix.metadata.MetadataCache;
 import org.apache.asterix.metadata.api.IMetadataEntity;
@@ -34,9 +33,9 @@ public class NodeGroup implements IMetadataEntity<NodeGroup> {
 
     // Enforced to be unique within an Asterix cluster.
     private final String groupName;
-    private final Set<String> nodeNames;
+    private final List<String> nodeNames;
 
-    public NodeGroup(String groupName, Set<String> nodeNames) {
+    public NodeGroup(String groupName, List<String> nodeNames) {
         this.groupName = groupName;
         this.nodeNames = nodeNames;
     }
@@ -45,7 +44,7 @@ public class NodeGroup implements IMetadataEntity<NodeGroup> {
         return this.groupName;
     }
 
-    public Set<String> getNodeNames() {
+    public List<String> getNodeNames() {
         return this.nodeNames;
     }
 

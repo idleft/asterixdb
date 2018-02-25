@@ -59,7 +59,7 @@ public class ActivityPartitionDetails {
     }
 
     public int[] getInputOffsets(int pid) {
-        if (nInputPartitions!= null) {
+        if (nInputPartitions != null) {
             int[] offsets = new int[nInputPartitions.length];
             for (int iter1 = 0; iter1 < offsets.length; iter1++) {
                 if (inputFanouts[iter1] != -1) {

@@ -52,7 +52,7 @@ with {
    "ingestion-location":"asterix_nc1",
    "type-name":"Tweet",
    "format" : "adm",
-   "expr_amount" : 500,
-   "plvl":"3",
-   "pmode" : "intra"
+   "expr_amount" : 2000,
+   "plvl":"4",
+   "pmode" : "vanilla"
 };

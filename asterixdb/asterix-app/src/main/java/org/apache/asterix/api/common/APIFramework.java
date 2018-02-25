@@ -127,11 +127,11 @@ public class APIFramework {
     private static final Set<String> CONFIGURABLE_PARAMETER_NAMES =
             ImmutableSet.of(CompilerProperties.COMPILER_JOINMEMORY_KEY, CompilerProperties.COMPILER_GROUPMEMORY_KEY,
                     CompilerProperties.COMPILER_SORTMEMORY_KEY, CompilerProperties.COMPILER_TEXTSEARCHMEMORY_KEY,
-                    CompilerProperties.COMPILER_PARALLELISM_KEY, CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY, FunctionUtil.IMPORT_PRIVATE_FUNCTIONS,
-                    FuzzyUtils.SIM_FUNCTION_PROP_NAME, FuzzyUtils.SIM_THRESHOLD_PROP_NAME,
-                    StartFeedStatement.WAIT_FOR_COMPLETION, FeedActivityDetails.FEED_POLICY_NAME,
-                    FeedActivityDetails.COLLECT_LOCATIONS, "inline_with", "hash_merge", "output-record-type",
-                    AbstractIntroduceAccessMethodRule.NO_INDEX_ONLY_PLAN_OPTION);
+                    CompilerProperties.COMPILER_PARALLELISM_KEY, CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY,
+                    FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, FuzzyUtils.SIM_FUNCTION_PROP_NAME,
+                    FuzzyUtils.SIM_THRESHOLD_PROP_NAME, StartFeedStatement.WAIT_FOR_COMPLETION,
+                    FeedActivityDetails.FEED_POLICY_NAME, FeedActivityDetails.COLLECT_LOCATIONS, "inline_with",
+                    "hash_merge", "output-record-type", AbstractIntroduceAccessMethodRule.NO_INDEX_ONLY_PLAN_OPTION);
 
     private final IRewriterFactory rewriterFactory;
     private final IAstPrintVisitorFactory astPrintVisitorFactory;
@@ -260,9 +260,8 @@ public class APIFramework {
 
         int parallelism = getParallelism(querySpecificConfig.get(CompilerProperties.COMPILER_PARALLELISM_KEY),
                 compilerProperties.getParallelism());
-        String computationLocationHint = querySpecificConfig
-                .getOrDefault(CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY,
-                        compilerProperties.getComputationLocation());
+        String computationLocationHint = querySpecificConfig.getOrDefault(
+                CompilerProperties.COMPILER_COMPUTATION_LOCATION_KEY, compilerProperties.getComputationLocation());
         AlgebricksAbsolutePartitionConstraint computationLocations = chooseLocations(clusterInfoCollector, parallelism,
                 metadataProvider.getClusterLocations(), computationLocationHint);
         builder.setClusterLocations(computationLocations);
@@ -471,7 +470,7 @@ public class APIFramework {
     private static AlgebricksAbsolutePartitionConstraint getComputationLocations(Map<String, NodeControllerInfo> ncMap,
             int parallelismHint, String computationLocationHint) throws CompilationException {
         // Unifies the handling of non-positive parallelism.
-//        int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
+        //        int parallelism = parallelismHint <= 0 ? -2 * ncMap.size() : parallelismHint;
         int parallelism = parallelismHint;
 
         // Calculate computation nodes. If no computation node is found, all nodes will be used for computation.
@@ -497,7 +496,7 @@ public class APIFramework {
 
         // Handle nodes with one more partition.
         Set<String> selectedNodesWithOneMorePartition = new HashSet<>();
-//        Collections.shuffle(computationNodes);
+        //        Collections.shuffle(computationNodes);
         Collections.sort(computationNodes);
         for (int iter1 = 0; iter1 < numNodesWithOneMorePartition; iter1++) {
             selectedNodesWithOneMorePartition.add(computationNodes.get(iter1));
@@ -506,11 +505,11 @@ public class APIFramework {
         // Generates cluster locations, which has duplicates for a node if it contains more than one partitions.
         List<String> computationPartitions = new ArrayList<>();
         for (String nodeId : computationNodes) {
-//            int availableCores = ncMap.get(nodeId).getNumAvailableCores();
+            //            int availableCores = ncMap.get(nodeId).getNumAvailableCores();
             int nodeParallelism =
                     selectedNodesWithOneMorePartition.contains(nodeId) ? perNodeParallelismMax : perNodeParallelismMin;
-//            int coresToUse =
-//                    nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
+            //            int coresToUse =
+            //                    nodeParallelism >= 0 && nodeParallelism < availableCores ? nodeParallelism : availableCores;
             int coresToUse = nodeParallelism;
             for (int count = 0; count < coresToUse; ++count) {
                 computationPartitions.add(nodeId);

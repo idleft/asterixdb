@@ -19,17 +19,17 @@
 package org.apache.hyracks.algebricks.core.algebra.properties;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.collections4.MultiSet;
+import org.apache.commons.collections4.multiset.HashMultiSet;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraint.PartitionConstraintType;
 
 public class DefaultNodeGroupDomain implements INodeDomain {
 
-    private List<String> nodes = new ArrayList<>();
+    private MultiSet<String> nodes = new HashMultiSet<>();
 
     public DefaultNodeGroupDomain(List<String> nodes) {
         this.nodes.addAll(nodes);
@@ -42,7 +42,10 @@ public class DefaultNodeGroupDomain implements INodeDomain {
     public DefaultNodeGroupDomain(AlgebricksPartitionConstraint clusterLocations) {
         if (clusterLocations.getPartitionConstraintType() == PartitionConstraintType.ABSOLUTE) {
             AlgebricksAbsolutePartitionConstraint absPc = (AlgebricksAbsolutePartitionConstraint) clusterLocations;
-            nodes.addAll(Arrays.asList(absPc.getLocations()));
+            String[] locations = absPc.getLocations();
+            for (String location : locations) {
+                nodes.add(location);
+            }
         } else {
             throw new IllegalStateException("A node domain can only take absolute location constraints.");
         }
@@ -54,8 +57,6 @@ public class DefaultNodeGroupDomain implements INodeDomain {
             return false;
         }
         DefaultNodeGroupDomain nodeDomain = (DefaultNodeGroupDomain) domain;
-        Collections.sort(nodes);
-        Collections.sort(nodeDomain.nodes);
         return nodes.equals(nodeDomain.nodes);
     }
 

@@ -37,8 +37,9 @@ public class DividePartitionDataWriter extends PartitionDataWriter {
 
     private final int offset;
 
-    public DividePartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount, IPartitionWriterFactory pwFactory,
-            RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc, int offset) throws HyracksDataException {
+    public DividePartitionDataWriter(IHyracksTaskContext ctx, int consumerPartitionCount,
+            IPartitionWriterFactory pwFactory, RecordDescriptor recordDescriptor, ITuplePartitionComputer tpc,
+            int offset) throws HyracksDataException {
         super(ctx, consumerPartitionCount, recordDescriptor, tpc);
         this.offset = offset;
         initializeAppenders(pwFactory);
@@ -49,7 +50,8 @@ public class DividePartitionDataWriter extends PartitionDataWriter {
     protected void initializeAppenders(IPartitionWriterFactory pwFactory) throws HyracksDataException {
         for (int i = 0; i < consumerPartitionCount; ++i) {
             try {
-                System.out.println("DPDW "+ (offset + i) +" initialized on " + Thread.currentThread().getName() + " with offset " + offset);
+                System.out.println("DPDW " + (offset + i) + " initialized on " + Thread.currentThread().getName()
+                        + " with offset " + offset);
                 pWriters[i] = pwFactory.createFrameWriter(offset + i);
                 appenders[i] = createTupleAppender(ctx);
             } catch (IOException e) {

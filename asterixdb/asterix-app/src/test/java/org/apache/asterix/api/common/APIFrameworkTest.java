@@ -117,8 +117,9 @@ public class APIFrameworkTest {
         APIFramework apiFramework = new APIFramework(mock(ILangCompilationProvider.class));
 
         // Tests odd number parallelism.
-        AlgebricksAbsolutePartitionConstraint loc = (AlgebricksAbsolutePartitionConstraint) PA
-                .invokeMethod(apiFramework, "getComputationLocations(java.util.Map,String)", map, 5,
+        AlgebricksAbsolutePartitionConstraint loc =
+                (AlgebricksAbsolutePartitionConstraint) PA.invokeMethod(apiFramework,
+                        "getComputationLocations(java.util.Map,String)", map, 5,
                         CompilerProperties.COMPILER_COMPUTATION_LOCATION_AS_STORAGE);
         int nc1Count = 0, nc2Count = 0;
         String[] partitions = loc.getLocations();

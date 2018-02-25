@@ -96,7 +96,7 @@ public class TaskAttemptDescriptor implements IWritable, Serializable {
                 + "]";
     }
 
-    private void writeArray(int[] outArray, DataOutput output) throws IOException{
+    private void writeArray(int[] outArray, DataOutput output) throws IOException {
         output.writeInt(outArray == null ? -1 : outArray.length);
         if (outArray != null) {
             for (int i = 0; i < outArray.length; i++) {

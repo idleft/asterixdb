@@ -56,7 +56,8 @@ public class HashCombinePartitionExchangePOperator extends AbstractExchangePOper
     private int[] rangeMap;
     private HashSet nodes;
 
-    public HashCombinePartitionExchangePOperator(List<LogicalVariable> hashFields, INodeDomain domain, INodeDomain rangeDomain) {
+    public HashCombinePartitionExchangePOperator(List<LogicalVariable> hashFields, INodeDomain domain,
+            INodeDomain rangeDomain) {
         this.hashFields = hashFields;
         this.domain = (DefaultNodeGroupDomain) domain;
         this.rangeDomain = rangeDomain;
@@ -92,7 +93,7 @@ public class HashCombinePartitionExchangePOperator extends AbstractExchangePOper
         int idxMarker = 0;
         int p = 0;
         for (int iter1 = 0; iter1 < nodes.length; iter1++) {
-            if (iter1 == 0 || nodes[iter1].equals(nodes[iter1-1])) {
+            if (iter1 == 0 || nodes[iter1].equals(nodes[iter1 - 1])) {
                 idxMarker++;
                 continue;
             }
@@ -125,7 +126,8 @@ public class HashCombinePartitionExchangePOperator extends AbstractExchangePOper
             ++i;
         }
         ITuplePartitionComputerFactory tpcf = new FieldHashPartitionComputerFactory(keys, hashFunctionFactories);
-        IConnectorDescriptor conn = new MToNHashCombinePartitioningConnectorDescriptor(spec, tpcf, rangeMap, rangeDomain.cardinality());
+        IConnectorDescriptor conn =
+                new MToNHashCombinePartitioningConnectorDescriptor(spec, tpcf, rangeMap, rangeDomain.cardinality());
         return new Pair<>(conn, null);
     }
 }

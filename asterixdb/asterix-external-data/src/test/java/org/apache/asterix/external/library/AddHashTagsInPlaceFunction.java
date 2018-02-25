@@ -18,32 +18,21 @@
  */
 package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.library.java.JObjects;
-import org.apache.asterix.external.library.java.base.builtin.JBuiltinType;
-import org.apache.asterix.external.library.java.base.JRecord;
-import org.apache.asterix.external.library.java.base.builtin.JString;
-import org.apache.asterix.external.library.java.base.JUnorderedList;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.asterix.external.util.Datatypes;
-
-import java.io.FileWriter;
-import java.time.Instant;
+import org.apache.asterix.external.library.java.base.JRecord;
+import org.apache.asterix.external.library.java.base.builtin.JLong;
+import org.apache.asterix.external.library.java.base.builtin.JString;
 
 public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     int processedRecords = 0;
 
-    private JObjects.JLong varCounter = null;
+    private JLong varCounter = null;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
-        varCounter = new JObjects.JLong(0l);
+        varCounter = new JLong(0l);
         processedRecords = 0;
-//        fw = new FileWriter("/lv_scratch/scratch/xikuiw/logs/worker_"
-//                        fw = new FileWriter("/Volumes/Storage/Users/Xikui/worker_"
-//                + this.hashCode() + ".txt");
-        //        fw.write("Worker " + Thread.currentThread().getId() + "initialized \n");
     }
 
     @Override
@@ -53,33 +42,15 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
 
     @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
-//        JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        //        list.clear();
-//        JString text = (JString) inputRecord.getValueByName(Datatypes.Tweet.MESSAGE);
-//
-//        String[] tokens = text.getValue().split(" ");
-//        for (String tk : tokens) {
-//            if (tk.startsWith("#")) {
-//                JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
-//                newField.setValue(tk);
-//                list.add(newField);
-//            }
-//        }
-//        inputRecord.addField(Datatypes.ProcessedTweet.TOPICS, list);
-//
-//        if (Instant.now().compareTo(evalutaionEtime) < 0) {
-//            //            while (varStart < 520000000) { // this offers 20 tps
-//        Instant evaluationEtime = Instant.now().plusMillis(10);
-//        while (Instant.now().compareTo(evaluationEtime) < 0) {
-        long varStart = 0;
-        while (varStart < 8000000) {
-            varStart++;
+        JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
+        //        JString text = (JString) inputRecord.getValueByName("message_text");
+        long valStart = 0;
+        while (valStart < 8000000) {
+            valStart++;
         }
-//            processedRecords++;
-//        }
-//        varCounter.setValue(varStart);
-//        inputRecord.addField(Datatypes.ProcessedTweet.VAR_COUNTER, varCounter);
-//        functionHelper.setResult(inputRecord);
+        varCounter.setValue(valStart);
+        inputRecord.addField("ctr", varCounter);
+        functionHelper.setResult(inputRecord);
     }
 
 }

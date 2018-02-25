@@ -67,8 +67,7 @@ public class IntroduceRandomPartitioningFeedComputationRule implements IAlgebrai
             return false;
         }
 
-
-        Feed feed = ((FeedDataSource)dataSource).getFeed();
+        Feed feed = ((FeedDataSource) dataSource).getFeed();
         if (!feed.getConfiguration().getOrDefault(ExternalDataConstants.PARALLEL_MODE, "").equals("vanilla")) {
             return false;
         }

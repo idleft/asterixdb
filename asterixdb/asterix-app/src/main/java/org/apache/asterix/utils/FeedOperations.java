@@ -289,28 +289,29 @@ public class FeedOperations {
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
 
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(),
-                    curFeedConnection.getDatasetName());FeedPolicyEntity feedPolicyEntity = FeedMetadataUtil
-                    .validateIfPolicyExists(curFeedConnection.getDataverseName(), curFeedConnection.getPolicyName(),
-                            metadataProvider.getMetadataTxnContext());
+            FeedConnectionId feedConnectionId =
+                    new FeedConnectionId(ingestionOp.getEntityId(), curFeedConnection.getDatasetName());
+            FeedPolicyEntity feedPolicyEntity =
+                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
+                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
                 OperatorDescriptorId opId = null;
-//                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
-//                        || (opDesc instanceof AlgebricksMetaOperatorDescriptor
-//                                && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
-//                                        .getRuntimeFactories().length < 3)) {
-//                    continue;
-//                } else
+                //                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                //                        || (opDesc instanceof AlgebricksMetaOperatorDescriptor
+                //                                && ((AlgebricksMetaOperatorDescriptor) opDesc).getPipeline()
+                //                                        .getRuntimeFactories().length < 3)) {
+                //                    continue;
+                //                } else
                 if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
                     AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
                     IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
                     // Tweak AssignOp to work with messages
                     if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-                        IConnectorDescriptor connectorDesc = subJob.getOperatorInputMap().get(opDesc.getOperatorId())
-                                .get(0);
+                        IConnectorDescriptor connectorDesc =
+                                subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
                         // anything on the network interface needs to be message compatible
                         if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
                             metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
@@ -331,14 +332,14 @@ public class FeedOperations {
             connectorIdMapping.clear();
             subJob.getConnectorMap().forEach((key, connDesc) -> {
                 ConnectorDescriptorId newConnId;
-//                if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
-//                    MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-//                    connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
-//                            m2nConn.getTuplePartitionComputerFactory());
-//                    newConnId = connDesc.getConnectorId();
-//                } else {
-                    newConnId = jobSpec.createConnectorDescriptor(connDesc);
-//                }
+                //                if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
+                //                    MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
+                //                    connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
+                //                            m2nConn.getTuplePartitionComputerFactory());
+                //                    newConnId = connDesc.getConnectorId();
+                //                } else {
+                newConnId = jobSpec.createConnectorDescriptor(connDesc);
+                //                }
                 connectorIdMapping.put(key, newConnId);
             });
 

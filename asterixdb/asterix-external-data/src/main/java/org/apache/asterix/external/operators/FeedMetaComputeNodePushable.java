@@ -45,6 +45,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperato
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+
 /*
  * This IFrameWriter doesn't follow the contract
  */
@@ -88,7 +89,6 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
 
     private boolean opened;
 
-
     /*
      * In this operator:
      * nextWriter is the network partitioner
@@ -100,7 +100,7 @@ public class FeedMetaComputeNodePushable extends AbstractUnaryInputUnaryOutputOp
             throws HyracksDataException {
         this.ctx = ctx;
         this.coreOperator = (AbstractUnaryInputUnaryOutputOperatorNodePushable) ((IActivity) coreOperator)
-                    .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
+                .createPushRuntime(ctx, recordDescProvider, partition, nPartitions);
         this.policyAccessor = new FeedPolicyAccessor(feedPolicyProperties);
         this.partition = partition;
         this.connectionId = feedConnectionId;

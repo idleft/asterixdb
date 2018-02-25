@@ -2535,7 +2535,7 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 }
             } else {
                 List<Identifier> ncIdentifiers = stmtCreateNodegroup.getNodeControllerNames();
-                Set<String> ncNames = new HashSet<>(ncIdentifiers.size());
+                List<String> ncNames = new ArrayList<>(ncIdentifiers.size());
                 for (Identifier id : ncIdentifiers) {
                     ncNames.add(id.getValue());
                 }

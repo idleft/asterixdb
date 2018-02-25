@@ -44,6 +44,7 @@ import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperato
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
+
 /*
  * This IFrameWriter doesn't follow the contract
  */
@@ -105,8 +106,8 @@ public class FeedMetaMultiWorkerComputeNodePushable extends AbstractUnaryInputUn
      */
     public FeedMetaMultiWorkerComputeNodePushable(IHyracksTaskContext ctx, IRecordDescriptorProvider recordDescProvider,
             int partition, int nPartitions, IOperatorDescriptor coreOperator, FeedConnectionId feedConnectionId,
-            Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor, int workerN)
-            throws HyracksDataException {
+            Map<String, String> feedPolicyProperties, FeedMetaOperatorDescriptor feedMetaOperatorDescriptor,
+            int workerN) throws HyracksDataException {
         this.ctx = ctx;
         this.workerN = workerN == -1 ? DEFAULT_WORKER_N : workerN;
         this.pipelineList = new AbstractUnaryInputUnaryOutputOperatorNodePushable[workerN];
@@ -169,8 +170,8 @@ public class FeedMetaMultiWorkerComputeNodePushable extends AbstractUnaryInputUn
                     this.getClass().getSimpleName() + " on " + partition + " received buffer " + buffer.array().length);
         }
         try {
-            ByteBuffer next = (buffer.capacity() <= framepool.getMaxFrameSize()) ? getFreeBuffer(buffer.capacity())
-                    : null;
+            ByteBuffer next =
+                    (buffer.capacity() <= framepool.getMaxFrameSize()) ? getFreeBuffer(buffer.capacity()) : null;
             if (next != null) {
                 next.put(buffer);
                 inbox.put(next);
@@ -199,22 +200,22 @@ public class FeedMetaMultiWorkerComputeNodePushable extends AbstractUnaryInputUn
     public void close() throws HyracksDataException {
         if (opened) {
             try {
-//                inbox.clear();
+                //                inbox.clear();
                 for (int iter1 = 0; iter1 < workerN; iter1++) {
                     inbox.put(POISON_PILL);
                 }
-//                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
-//                List<Runnable> tasks = threadPoolExecutor.shutdownNow();
+                //                System.out.println("Close call " + threadPoolExecutor.shutdownNow());
+                //                List<Runnable> tasks = threadPoolExecutor.shutdownNow();
                 LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " close requested.");
                 threadPoolExecutor.shutdown();
                 LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " closed.");
-//                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
+                //                System.out.println("Executor stops at " + threadPoolExecutor.awaitTermination(999, TimeUnit.SECONDS));
             } catch (InterruptedException e) {
                 throw new HyracksDataException(e);
             }
-//            if (LOGGER.isInfoEnabled()) {
-//                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is closed.");
-//            }
+            //            if (LOGGER.isInfoEnabled()) {
+            //                LOGGER.log(Level.INFO, this.getClass().getSimpleName() + " on " + partition + " is closed.");
+            //            }
         }
     }
 
@@ -301,7 +302,6 @@ public class FeedMetaMultiWorkerComputeNodePushable extends AbstractUnaryInputUn
         private final IFrameWriter nextWriter;
         private Integer workerCounter;
         private boolean opened;
-
 
         public ConcurrentSurrogateWriter(IFrameWriter nextWriter) {
             this.nextWriter = nextWriter;

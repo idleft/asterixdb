@@ -49,7 +49,8 @@ import java.util.stream.Collectors;
 
 public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraicRewriteRule {
 
-    @Override public boolean rewritePre(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
+    @Override
+    public boolean rewritePre(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
             throws AlgebricksException {
         ILogicalOperator op0 = opRef.getValue();
         if (!op0.getOperatorTag().equals(LogicalOperatorTag.INSERT_DELETE_UPSERT)) {
@@ -98,9 +99,9 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
         }
 
         INodeDomain datasetDomain = ((InsertDeleteUpsertOperator) op0).getDataSource().getDomain();
-        INodeDomain feedComputingDomain = new DefaultNodeGroupDomain(
-                Arrays.asList(((DefaultNodeGroupDomain) datasetDomain).getNodes()).stream().distinct()
-                        .collect(Collectors.toList()));
+        INodeDomain feedComputingDomain =
+                new DefaultNodeGroupDomain(Arrays.asList(((DefaultNodeGroupDomain) datasetDomain).getNodes()).stream()
+                        .distinct().collect(Collectors.toList()));
 
         op0.getInputs().get(0).setValue(op3);
         op2.getInputs().get(0).setValue(op5);
@@ -109,7 +110,8 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
         // replace variable
         AssignOperator extractKeyAssignOp = (AssignOperator) op2;
         extractKeyAssignOp.recomputeSchema();
-        extractKeyAssignOp.getExpressions().get(0).getValue().substituteVar(op3.getSchema().get(0), op5.getSchema().get(0));
+        extractKeyAssignOp.getExpressions().get(0).getValue().substituteVar(op3.getSchema().get(0),
+                op5.getSchema().get(0));
         ((ProjectOperator) op3).getVariables().add(extractKeyAssignOp.getVariables().get(0));
 
         // assign location constraint for udf assignOp
@@ -118,29 +120,31 @@ public class PushdownHashPartitionerForFeedComputationRule implements IAlgebraic
                 .setLocationConstraint(((DefaultNodeGroupDomain) feedComputingDomain).getNodes());
 
         // update the Hash Partitioner to carry the range map
-        HashPartitionExchangePOperator hashPartitionExchangePOperator = (HashPartitionExchangePOperator) ((ExchangeOperator) op1)
-                .getPhysicalOperator();
-        HashCombinePartitionExchangePOperator hashCombinePartitionExchangePOperator = new HashCombinePartitionExchangePOperator(
-                hashPartitionExchangePOperator.getHashFields(), feedComputingDomain, datasetDomain);
+        HashPartitionExchangePOperator hashPartitionExchangePOperator =
+                (HashPartitionExchangePOperator) ((ExchangeOperator) op1).getPhysicalOperator();
+        HashCombinePartitionExchangePOperator hashCombinePartitionExchangePOperator =
+                new HashCombinePartitionExchangePOperator(hashPartitionExchangePOperator.getHashFields(),
+                        feedComputingDomain, datasetDomain);
         ((ExchangeOperator) op1).setPhysicalOperator(hashCombinePartitionExchangePOperator);
 
         // add local hash partitioner to further split udf partition to storage partition
         ExchangeOperator localPartitionExOp = new ExchangeOperator();
         localPartitionExOp.setPhysicalOperator(new HashLocalPartitionExchangePOperator(
                 hashPartitionExchangePOperator.getHashFields(), feedComputingDomain));
-//        localPartitionExOp.setPhysicalOperator(
-//                new HashPartitionExchangePOperator(hashPartitionExchangePOperator.getHashFields(), datasetDomain));
+        //        localPartitionExOp.setPhysicalOperator(
+        //                new HashPartitionExchangePOperator(hashPartitionExchangePOperator.getHashFields(), datasetDomain));
         op0.getInputs().get(0).setValue(localPartitionExOp);
         localPartitionExOp.getInputs().add(new MutableObject<>(op3));
         localPartitionExOp.setExecutionMode(scanOp.getExecutionMode());
         localPartitionExOp.computeDeliveredPhysicalProperties(context);
         context.computeAndSetTypeEnvironmentForOperator(localPartitionExOp);
-        System.out.println("CC DEBUG LOG: compute domain " + feedComputingDomain + " storage domain " + datasetDomain );
+        System.out.println("CC DEBUG LOG: compute domain " + feedComputingDomain + " storage domain " + datasetDomain);
 
         return true;
     }
 
-    @Override public boolean rewritePost(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
+    @Override
+    public boolean rewritePost(Mutable<ILogicalOperator> opRef, IOptimizationContext context)
             throws AlgebricksException {
         return false;
     }
