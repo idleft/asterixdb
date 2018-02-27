@@ -22,12 +22,15 @@ import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.external.library.java.base.builtin.JLong;
-import org.apache.asterix.external.library.java.base.builtin.JString;
 
 public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     int processedRecords = 0;
 
     private JLong varCounter = null;
+    // local config
+    //    private int sliceQuota = 1600000; //5 piece 8M
+    private int sliceQuota = 3200000; //
+    private int tms = 100;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {
@@ -44,13 +47,21 @@ public class AddHashTagsInPlaceFunction implements IExternalScalarFunction {
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         //        JString text = (JString) inputRecord.getValueByName("message_text");
-        long valStart = 0;
-        while (valStart < 8000000) {
-            valStart++;
+        // measure in counter
+        //        long valStart = 0;
+        //        while (valStart < 8000000) {
+        //            valStart++;
+        //        }
+        // measure in counter piece
+        long etime = System.currentTimeMillis() + tms;
+        while (System.currentTimeMillis() < etime) {
+            long valStart = 0;
+            while (valStart < sliceQuota) {
+                valStart++;
+            }
         }
-        varCounter.setValue(valStart);
+        varCounter.setValue(etime);
         inputRecord.addField("ctr", varCounter);
         functionHelper.setResult(inputRecord);
     }
-
 }

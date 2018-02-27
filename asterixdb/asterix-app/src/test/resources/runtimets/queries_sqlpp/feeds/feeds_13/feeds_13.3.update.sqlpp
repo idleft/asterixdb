@@ -21,7 +21,8 @@ use test;
 
 set `wait-for-completion-feed` `true`;
 
-connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#addHashTagsInPlace;
+//connect feed SyntheticTweetFeed to dataset SyntheticTweets apply function testlib#addHashTagsInPlace;
+connect feed SyntheticTweetFeed to dataset SyntheticTweets;
 
 SET `compiler.parallelism` "5";
 //SET `compiler.computation.location` "asterix_nc2";
