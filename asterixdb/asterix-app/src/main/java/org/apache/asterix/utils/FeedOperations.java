@@ -243,22 +243,19 @@ public class FeedOperations {
 
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
-            throws AlgebricksException, RemoteException, ACIDException {
+            throws AlgebricksException, ACIDException {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
+        metadataProvider.setWriteTransaction(true);
         Query feedConnQuery = makeConnectionQuery(feedConn);
-        CompiledStatements.ICompiledDmlStatement clfrqs;
+        InsertStatement stmt;
         if (insertFeed) {
-            InsertStatement stmtUpsert = new InsertStatement(new Identifier(feedConn.getDataverseName()),
+            stmt = new InsertStatement(new Identifier(feedConn.getDataverseName()),
                     new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledInsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
         } else {
-            UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
+            stmt = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
                     new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
         }
-        return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, feedConnQuery, clfrqs, null, null);
+        return statementExecutor.rewriteCompileInsertUpsert(hcc, metadataProvider, stmt, null, null);
     }
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
@@ -280,18 +277,18 @@ public class FeedOperations {
                     firstOp.getOutputRecordDescriptors()[0]);
         }
         // create replicator
-        ReplicateOperatorDescriptor replicateOp =
-                new ReplicateOperatorDescriptor(jobSpec, ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
-        jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
+        //        ReplicateOperatorDescriptor replicateOp =
+        //                new ReplicateOperatorDescriptor(jobSpec, ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
+        //        jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, intakeLocations);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
+        //        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
         // Loop over the jobs to copy operators and connections
         Map<OperatorDescriptorId, OperatorDescriptorId> operatorIdMapping = new HashMap<>();
         Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
         Map<Integer, TxnId> txnIdMap = new HashMap<>();
-        FeedMetaOperatorDescriptor metaOp;
+        //        FeedMetaOperatorDescriptor metaOp;
 
         for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
             FeedConnection curFeedConnection = feedConnections.get(iter1);
@@ -299,11 +296,11 @@ public class FeedOperations {
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
             String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
-
-            FeedPolicyEntity feedPolicyEntity =
-                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
-                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
+            //            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
+            //
+            //            FeedPolicyEntity feedPolicyEntity =
+            //                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
+            //                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
@@ -366,7 +363,7 @@ public class FeedOperations {
                 IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
                 IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
                 if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
-                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
+                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, iter1, leftOpDesc,
                             leftOp.getRight());
                 }
                 jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());

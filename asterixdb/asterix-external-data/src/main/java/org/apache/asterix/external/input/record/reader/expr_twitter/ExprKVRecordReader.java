@@ -56,7 +56,7 @@ public class ExprKVRecordReader implements IRecordReader<char[]> {
     }
 
     private String makeRecord() {
-        return "{ \"id\" : int64(\"" + recordCounter + "\"), \"val1\" : \"val" + recordCounter + "\" }";
+        return String.format("{ \"id\" : int64(\"%010d\"), \"val1\" : \"val%010d\" }", recordCounter, recordCounter);
     }
 
     @Override

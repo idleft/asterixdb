@@ -19,6 +19,7 @@
 package org.apache.asterix.external.dataflow;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.asterix.common.exceptions.ErrorCode;
@@ -57,6 +58,9 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected long incomingRecordsCount = 0;
     protected long failedRecordsCount = 0;
 
+    private long timeOnParsing = 0;
+    private long timeOnPassing = 0;
+
     public FeedRecordDataFlowController(IHyracksTaskContext ctx, FeedLogManager feedLogManager, int numOfOutputFields,
             IRecordDataParser<T> dataParser, IRecordReader<T> recordReader) throws HyracksDataException {
         super(ctx, feedLogManager, numOfOutputFields);
@@ -93,6 +97,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             }
         } catch (HyracksDataException e) {
             LOGGER.log(Level.WARN, "Exception during ingestion", e);
+            e.printStackTrace();
             if (e.getComponent() == ErrorCode.ASTERIX
                     && (e.getErrorCode() == ErrorCode.FEED_FAILED_WHILE_GETTING_A_NEW_RECORD)) {
                 // Failure but we know we can for sure push the previously parsed records safely
@@ -121,7 +126,8 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     private synchronized void setState(State newState) {
-        LOGGER.log(Level.INFO, "State is being set from " + state + " to " + newState);
+        LOGGER.log(Level.INFO, "State is being set from " + state + " to " + newState + " DEBUG_MARK -- PARSING_TIME "
+                + timeOnParsing + "  PASSING_TIME " + timeOnPassing);
         state = newState;
     }
 
@@ -177,8 +183,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     private boolean parseAndForward(IRawRecord<? extends T> record) throws IOException {
+        Instant startInstant = Instant.now();
         try {
             dataParser.parse(record, tb.getDataOutput());
+            timeOnParsing += Instant.now().toEpochMilli() - startInstant.toEpochMilli();
         } catch (Exception e) {
             LOGGER.log(Level.WARN, ExternalDataConstants.ERROR_PARSE_RECORD, e);
             feedLogManager.logRecord(record.toString(), ExternalDataConstants.ERROR_PARSE_RECORD);
@@ -186,9 +194,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             return false;
         }
         tb.addFieldEndOffset();
-        addMetaPart(tb, record);
-        addPrimaryKeys(tb, record);
+        //        addMetaPart(tb, record);
+        //        addPrimaryKeys(tb, record);
         tupleForwarder.addTuple(tb);
+        timeOnPassing += Instant.now().toEpochMilli() - startInstant.toEpochMilli();
         return true;
     }
 

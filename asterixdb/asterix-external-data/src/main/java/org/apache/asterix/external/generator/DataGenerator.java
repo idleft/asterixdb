@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 import org.apache.asterix.external.util.Datatypes;
@@ -33,7 +34,7 @@ public class DataGenerator {
     private RandomNameGenerator randNameGen;
     private RandomMessageGenerator randMessageGen;
     private RandomLocationGenerator randLocationGen;
-    private Random random = new Random();
+    private Random random = new Random(0);
     private TwitterUser twUser = new TwitterUser();
     private TweetMessage twMessage = new TweetMessage();
     private static final String DEFAULT_COUNTRY = "US";
@@ -63,6 +64,7 @@ public class DataGenerator {
 
         @Override
         public TweetMessage next() {
+            int country_idx = random.nextInt(country_list.length);
             tweetId++;
             TweetMessage msg;
             getTwitterUser(null);
@@ -70,7 +72,7 @@ public class DataGenerator {
             Point location = randLocationGen.getRandomPoint();
             DateTime sendTime = randDateGen.getNextRandomDatetime();
             twMessage.reset(tweetId, twUser, location.getLatitude(), location.getLongitude(), sendTime.toString(),
-                    message, DEFAULT_COUNTRY);
+                    message, country_list[country_idx] + String.valueOf(random.nextInt(10)));
             msg = twMessage;
             return msg;
         }
@@ -1204,4 +1206,6 @@ public class DataGenerator {
             "Lexicone", "Fax-fax", "Viatechi", "Inchdox", "Kongreen", "Doncare", "Y-geohex", "Opeelectronics",
             "Medflex", "Dancode", "Roundhex", "Labzatron", "Newhotplus", "Sancone", "Ronholdings", "Quoline",
             "zoomplus", "Fix-touch", "Codetechno", "Tanzumbam", "Indiex", "Canline" };
+
+    public static final String[] country_list = Locale.getISOCountries();
 }
