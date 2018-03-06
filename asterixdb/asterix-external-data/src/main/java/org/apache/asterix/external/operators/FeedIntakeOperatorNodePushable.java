@@ -76,10 +76,10 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
              * One use case is adapters which consume data sources that allow restartability. Such adapters
              * can propagate progress information through the ingestion pipeline to storage nodes
              */
-            IFrame message = new VSizeFrame(ctx);
-            TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
-            message.getBuffer().put(MessagingFrameTupleAppender.NULL_FEED_MESSAGE);
-            message.getBuffer().flip();
+            //            IFrame message = new VSizeFrame(ctx);
+            //            TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
+            //            message.getBuffer().put(MessagingFrameTupleAppender.NULL_FEED_MESSAGE);
+            //            message.getBuffer().flip();
             run();
         } catch (Throwable e) {
             failure = e;
