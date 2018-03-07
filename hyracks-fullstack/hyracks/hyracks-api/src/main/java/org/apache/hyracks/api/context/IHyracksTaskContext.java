@@ -53,7 +53,7 @@ public interface IHyracksTaskContext
 
     Object getSharedObject();
 
-    public byte[] getJobParameter(byte[] name, int start, int length) throws HyracksException;
+    byte[] getJobParameter(byte[] name, int start, int length);
 
     Set<JobFlag> getJobFlags();
 

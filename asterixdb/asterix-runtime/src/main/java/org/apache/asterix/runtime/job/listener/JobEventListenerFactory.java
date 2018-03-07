@@ -62,7 +62,8 @@ public class JobEventListenerFactory implements IJobEventListenerFactory {
         String AsterixTransactionIdString = new String(jobParameterByteStore
                 .getParameterValue(TRANSACTION_ID_PARAMETER_NAME, 0, TRANSACTION_ID_PARAMETER_NAME.length));
         if (AsterixTransactionIdString.length() > 0) {
-            this.txnId = new TxnId(Integer.parseInt(AsterixTransactionIdString));
+            // TODO: update master
+            this.txnId = new TxnId(Long.valueOf(AsterixTransactionIdString));
         }
     }
 

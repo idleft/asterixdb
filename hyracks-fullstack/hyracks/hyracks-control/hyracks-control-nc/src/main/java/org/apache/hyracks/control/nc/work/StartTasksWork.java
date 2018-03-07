@@ -190,6 +190,7 @@ public class StartTasksWork extends AbstractWork {
                 taskIndex++;
             }
         } catch (Exception e) {
+            e.printStackTrace();
             LOGGER.log(Level.WARN, "Failure starting a task", e);
             // notify cc of start task failure
             List<Exception> exceptions = new ArrayList<>();

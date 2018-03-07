@@ -61,4 +61,8 @@ public class JobParameterByteStore implements Serializable {
         return empty;
     }
 
+    public byte[] getParameterByName(String name) {
+        return getParameterValue(name.getBytes(), 0, name.getBytes().length);
+    }
+
 }

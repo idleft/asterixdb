@@ -25,16 +25,13 @@ import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
-import org.apache.hyracks.api.comm.IFrame;
-import org.apache.hyracks.api.comm.VSizeFrame;
+import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.util.CleanupUtils;
-import org.apache.hyracks.api.util.HyracksConstants;
-import org.apache.hyracks.dataflow.common.io.MessagingFrameTupleAppender;
-import org.apache.hyracks.dataflow.common.utils.TaskUtil;
+import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,17 +43,20 @@ import org.apache.logging.log4j.Logger;
  */
 public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePushable {
     private static final Logger LOGGER = LogManager.getLogger();
-    private final FeedIntakeOperatorDescriptor opDesc;
     private final FeedAdapter adapter;
     private boolean poisoned = false;
+    private DeployedJobSpecId connJobId;
+    private final int connectedDs;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor) throws HyracksDataException {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int connectedDs)
+            throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
-        this.opDesc = feedIntakeOperatorDescriptor;
-        this.recordDesc = recordDescProvider.getOutputRecordDescriptor(opDesc.getActivityId(), 0);
+        this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
+        this.connJobId = jobSpecId;
+        this.connectedDs = connectedDs;
     }
 
     @Override
@@ -64,6 +64,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
+            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs);
             writer.open();
             synchronized (this) {
                 if (poisoned) {

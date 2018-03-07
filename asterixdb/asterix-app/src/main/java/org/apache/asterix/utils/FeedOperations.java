@@ -45,6 +45,7 @@ import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
+import org.apache.asterix.external.operators.FeedCallableOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
@@ -142,14 +143,14 @@ public class FeedOperations {
     }
 
     private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
-            MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
+            MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor, int connDs) throws Exception {
         JobSpecification spec = RuntimeUtils.createJobSpecification(metadataProvider.getApplicationContext());
         spec.setFrameSize(metadataProvider.getApplicationContext().getCompilerProperties().getFrameSize());
         IAdapterFactory adapterFactory;
         IOperatorDescriptor feedIngestor;
         AlgebricksPartitionConstraint ingesterPc;
         Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t =
-                metadataProvider.buildFeedIntakeRuntime(spec, feed, policyAccessor);
+                metadataProvider.buildFeedIntakeRuntime(spec, feed, policyAccessor, connDs);
         feedIngestor = t.first;
         ingesterPc = t.second;
         adapterFactory = t.third;
@@ -283,25 +284,19 @@ public class FeedOperations {
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
             JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
-            String[] intakeLocations) throws AlgebricksException, HyracksDataException {
+            String[] intakeLocations) throws AlgebricksException {
         JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
 
         // copy ingestor
         FeedIntakeOperatorDescriptor firstOp =
                 (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0));
-        FeedIntakeOperatorDescriptor ingestionOp;
-        if (firstOp.getAdaptorFactory() == null) {
-            ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed, firstOp.getAdaptorLibraryName(),
-                    firstOp.getAdaptorFactoryClassName(), firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
-                    firstOp.getOutputRecordDescriptors()[0]);
-        } else {
-            ingestionOp = new FeedIntakeOperatorDescriptor(jobSpec, feed, firstOp.getAdaptorFactory(),
-                    firstOp.getAdapterOutputType(), firstOp.getPolicyAccessor(),
-                    firstOp.getOutputRecordDescriptors()[0]);
-        }
+
+        // create callable feed source
+        FeedCallableOperatorDescriptor ingestionOp = new FeedCallableOperatorDescriptor(jobSpec);
+
         // create replicator
         ReplicateOperatorDescriptor replicateOp =
-                new ReplicateOperatorDescriptor(jobSpec, ingestionOp.getOutputRecordDescriptors()[0], jobsList.size());
+                new ReplicateOperatorDescriptor(jobSpec, firstOp.getOutputRecordDescriptors()[0], jobsList.size());
         jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, intakeLocations);
         PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
@@ -443,31 +438,35 @@ public class FeedOperations {
     }
 
     public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
-            MetadataProvider metadataProvider, Feed feed, List<FeedConnection> feedConnections,
-            IStatementExecutor statementExecutor, IHyracksClientConnection hcc) throws Exception {
+            MetadataProvider metadataProvider, Feed feed, int connDs) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
-        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
-        List<JobSpecification> jobsList = new ArrayList<>();
+        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa, connDs);
         // TODO: Figure out a better way to handle insert/upsert per conn instead of per feed
-        Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getConfiguration());
         // Construct the ingestion Job
         JobSpecification intakeJob = intakeInfo.getLeft();
-        IAdapterFactory ingestionAdaptorFactory = intakeInfo.getRight();
-        String[] ingestionLocations = ingestionAdaptorFactory.getPartitionConstraint().getLocations();
+        return Pair.of(intakeJob, intakeInfo.getRight().getPartitionConstraint());
+    }
+
+    public static JobSpecification buildFeedConnectionJob(MetadataProvider metadataProvider,
+            List<FeedConnection> feedConnections, JobSpecification intakeJob, IHyracksClientConnection hcc,
+            IStatementExecutor statementExecutor, Feed feed, AlgebricksAbsolutePartitionConstraint ingestionLocations)
+            throws Exception {
         // Add metadata configs
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, Boolean.TRUE.toString());
         metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
-                StringUtils.join(ingestionLocations, ','));
+                StringUtils.join(ingestionLocations.getLocations(), ','));
         // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
         IStatementExecutor translator =
                 getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
+        List<JobSpecification> jobsList = new ArrayList<>();
+        Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getConfiguration());
         for (FeedConnection feedConnection : feedConnections) {
             JobSpecification connectionJob =
                     getConnectionJob(metadataProvider, feedConnection, translator, hcc, insertFeed);
             jobsList.add(connectionJob);
         }
-        return Pair.of(combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
-                ingestionLocations), intakeInfo.getRight().getPartitionConstraint());
+        return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+                ingestionLocations.getLocations());
     }
 }

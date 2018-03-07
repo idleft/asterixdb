@@ -18,6 +18,7 @@
  */
 package org.apache.asterix.runtime.job.listener;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.asterix.common.api.IJobEventListenerFactory;
@@ -39,10 +40,13 @@ import org.apache.hyracks.api.job.JobStatus;
  */
 public class MultiTransactionJobletEventListenerFactory implements IJobEventListenerFactory {
 
+    public static final String TRANSACTION_ID_PARAMETER_NAME = "TxnIdParameter";
+
     private static final long serialVersionUID = 1L;
     private final Map<Integer, TxnId> txnIdMap;
     private final boolean transactionalWrite;
 
+    // TODO: maybe we want to replace multiple insert with one
     public MultiTransactionJobletEventListenerFactory(Map<Integer, TxnId> txnIdMap, boolean transactionalWrite) {
         this.txnIdMap = txnIdMap;
         this.transactionalWrite = transactionalWrite;
@@ -55,12 +59,22 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
 
     @Override
     public IJobletEventListenerFactory copyFactory() {
-        return new MultiTransactionJobletEventListenerFactory(txnIdMap, transactionalWrite);
+        // TODO: this needs to be merged in master
+        Map<Integer, TxnId> newTxnIdMap = new HashMap<>();
+        newTxnIdMap.putAll(txnIdMap);
+        return new MultiTransactionJobletEventListenerFactory(newTxnIdMap, transactionalWrite);
     }
 
     @Override
     public void updateListenerJobParameters(JobParameterByteStore jobParameterByteStore) {
-        //no op
+        int txnIdOffset = 0;
+        for (Map.Entry<Integer, TxnId> entry : txnIdMap.entrySet()) {
+            String txnIdString = new String(
+                    jobParameterByteStore.getParameterByName(TRANSACTION_ID_PARAMETER_NAME + txnIdOffset));
+            TxnId newTxnId = new TxnId(Long.valueOf(txnIdString));
+            txnIdMap.put(entry.getKey(), newTxnId);
+            txnIdOffset++;
+        }
     }
 
     @Override
@@ -76,6 +90,7 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
                     for (TxnId subTxnId : txnIdMap.values()) {
                         ITransactionContext txnContext = txnManager.getTransactionContext(subTxnId);
                         txnContext.setWriteTxn(transactionalWrite);
+                        System.out.println("SubTxn " + subTxnId + " finishing.");
                         if (jobStatus != JobStatus.FAILURE) {
                             txnManager.commitTransaction(subTxnId);
                         } else {
@@ -95,6 +110,7 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
                     for (TxnId subTxnId : txnIdMap.values()) {
                         ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
                                 .getTransactionSubsystem().getTransactionManager().beginTransaction(subTxnId, options);
+                        System.out.println("SubTxn " + subTxnId + " started");
                     }
                 } catch (ACIDException e) {
                     throw new Error(e);

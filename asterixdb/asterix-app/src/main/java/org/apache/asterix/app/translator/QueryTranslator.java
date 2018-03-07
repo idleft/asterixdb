@@ -2241,10 +2241,12 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                         datasets, null, FeedIntakeOperatorNodePushable.class.getSimpleName(),
                         NoRetryPolicyFactory.INSTANCE, feed, feedConnections);
             }
-            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
             committed = true;
             listener.start(metadataProvider);
+            // TODO: revisit the metadata handling here.
+            MetadataManager.INSTANCE.commitTransaction(mdTxnCtx);
         } catch (Exception e) {
+            e.printStackTrace();
             if (!committed) {
                 abort(e, e, mdTxnCtx);
             }

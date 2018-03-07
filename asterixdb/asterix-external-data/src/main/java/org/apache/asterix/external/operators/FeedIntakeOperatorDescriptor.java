@@ -34,6 +34,7 @@ import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 import org.apache.logging.log4j.LogManager;
@@ -68,19 +69,24 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     /** The configuration parameters associated with the adapter. **/
     private Map<String, String> adaptorConfiguration;
 
+    private DeployedJobSpecId connJobId;
+
+    int connDs;
+
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
-            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
+            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc, int connDs) {
         super(spec, 0, 1);
         this.feedId = new EntityId(FEED_EXTENSION_NAME, primaryFeed.getDataverseName(), primaryFeed.getFeedName());
         this.adaptorFactory = adapterFactory;
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.connDs = connDs;
     }
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed feed, String adapterLibraryName,
             String adapterFactoryClassName, ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor,
-            RecordDescriptor rDesc) {
+            RecordDescriptor rDesc, int connDs) {
         super(spec, 0, 1);
         this.feedId = new EntityId(FEED_EXTENSION_NAME, feed.getDataverseName(), feed.getFeedName());
         this.adaptorFactoryClassName = adapterFactoryClassName;
@@ -89,6 +95,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.connDs = connDs;
     }
 
     @Override
@@ -97,7 +104,8 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         if (adaptorFactory == null) {
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
-        return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this);
+        return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this,
+                connJobId, connDs);
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {
@@ -152,4 +160,11 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         return this.adaptorFactoryClassName;
     }
 
+    public DeployedJobSpecId getConnJobId() {
+        return connJobId;
+    }
+
+    public void setConnJobId(DeployedJobSpecId connJobId) {
+        this.connJobId = connJobId;
+    }
 }

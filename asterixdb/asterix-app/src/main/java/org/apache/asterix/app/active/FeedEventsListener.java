@@ -32,6 +32,7 @@ import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.external.feed.watch.WaitForStateSubscriber;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
+import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Dataset;
@@ -42,14 +43,17 @@ import org.apache.asterix.utils.FeedOperations;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
+import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.job.JobSpecification;
 
 public class FeedEventsListener extends ActiveEntityEventsListener {
 
     private final Feed feed;
     private final List<FeedConnection> feedConnections;
+    private DeployedJobSpecId feedConnJobId;
 
     public FeedEventsListener(IStatementExecutor statementExecutor, ICcApplicationContext appCtx,
             IHyracksClientConnection hcc, EntityId entityId, List<Dataset> datasets,
@@ -75,6 +79,10 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         return feed;
     }
 
+    public DeployedJobSpecId getFeedConnJobId() {
+        return feedConnJobId;
+    }
+
     @Override
     public synchronized void start(MetadataProvider metadataProvider)
             throws HyracksDataException, InterruptedException {
@@ -93,15 +101,24 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     @Override
     protected JobId compileAndStartJob(MetadataProvider mdProvider) throws HyracksDataException {
         try {
-            Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> jobInfo =
-                    FeedOperations.buildStartFeedJob(mdProvider, feed, feedConnections, statementExecutor, hcc);
-            JobSpecification feedJob = jobInfo.getLeft();
-            feedJob.setProperty(ActiveNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
+            Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> intakeJobInfo =
+                    FeedOperations.buildStartFeedJob(mdProvider, feed, feedConnections.size());
+            JobSpecification intakeJob = intakeJobInfo.getLeft();
+            intakeJob.setProperty(ActiveNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
             // TODO(Yingyi): currently we do not check IFrameWriter protocol violations for Feed jobs.
             // We will need to design general exception handling mechanism for feeds.
-            setLocations(jobInfo.getRight());
-            return JobUtils.runJob(hcc, feedJob, false);
+            setLocations(intakeJobInfo.getRight());
+            boolean wait = Boolean.parseBoolean(mdProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION));
+            JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections,
+                    intakeJob, hcc, statementExecutor, feed, intakeJobInfo.getRight());
+            // Deploy conn job
+            this.feedConnJobId = hcc.deployJobSpec(connectJob);
+            ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
+                    .setConnJobId(feedConnJobId);
+            // Run intake job
+            JobUtils.runJob(hcc, intakeJob, false);
         } catch (Exception e) {
+            e.printStackTrace();
             throw HyracksDataException.create(e);
         }
     }

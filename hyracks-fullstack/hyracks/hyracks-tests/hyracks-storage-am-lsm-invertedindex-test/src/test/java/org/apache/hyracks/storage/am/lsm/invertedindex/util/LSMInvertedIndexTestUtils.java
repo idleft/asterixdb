@@ -751,7 +751,7 @@ public class LSMInvertedIndexTestUtils {
         }
 
         @Override
-        public byte[] getJobParameter(byte[] name, int start, int length) throws HyracksException {
+        public byte[] getJobParameter(byte[] name, int start, int length) {
             return null;
         }
 
