@@ -38,7 +38,8 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
     private DeployedJobSpecId deployedJobSpecId;
     private final int connDs;
 
-    public CallDeployedJobWithDataWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId, int connDs) {
+    public CallDeployedJobWithDataWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId,
+            int connDs) {
         this.writer = writer;
         this.ctx = ctx;
         this.deployedJobSpecId = jobSpecId;

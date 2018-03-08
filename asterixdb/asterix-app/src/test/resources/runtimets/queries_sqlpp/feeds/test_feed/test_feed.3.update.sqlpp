@@ -18,7 +18,8 @@
  */
 
 use feeds;
-set `wait-for-completion-feed` `true`;
-connect feed TweetFeed to dataset Tweets1;
+set `wait-for-completion-feed` "true";
+
+connect feed TweetFeed to dataset Tweets1 apply function `testlib#heavyFunction`;
 
 start feed TweetFeed;

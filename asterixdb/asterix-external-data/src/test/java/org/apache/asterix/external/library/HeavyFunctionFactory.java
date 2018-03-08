@@ -16,21 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.asterix.external.library;
 
-drop  dataverse feeds if exists;
-create  dataverse feeds;
-use feeds;
+import org.apache.asterix.external.api.IExternalScalarFunction;
+import org.apache.asterix.external.api.IFunctionFactory;
 
-create type TweetType as open {
-  id : int64
-};
+public class HeavyFunctionFactory implements IFunctionFactory {
 
-create dataset Tweets1(TweetType) primary key id;
+    @Override
+    public IExternalScalarFunction getExternalFunction() {
+        return new HeavyFunction();
+    }
 
-create feed TweetFeed with {
-  "adapter-name" : "expr_kv",
-  "ingestion-location":"asterix_nc1",
-  "type-name":"TweetType",
-  "format" : "adm",
-  "expr_amount" : 10
-};
+}

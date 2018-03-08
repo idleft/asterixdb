@@ -440,7 +440,8 @@ public class FeedOperations {
     public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
             MetadataProvider metadataProvider, Feed feed, int connDs) throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
-        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa, connDs);
+        Pair<JobSpecification, IAdapterFactory> intakeInfo =
+                buildFeedIntakeJobSpec(feed, metadataProvider, fpa, connDs);
         // TODO: Figure out a better way to handle insert/upsert per conn instead of per feed
         // Construct the ingestion Job
         JobSpecification intakeJob = intakeInfo.getLeft();

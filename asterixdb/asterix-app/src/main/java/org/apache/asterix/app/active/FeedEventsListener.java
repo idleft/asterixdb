@@ -109,8 +109,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
             // We will need to design general exception handling mechanism for feeds.
             setLocations(intakeJobInfo.getRight());
             boolean wait = Boolean.parseBoolean(mdProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION));
-            JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections,
-                    intakeJob, hcc, statementExecutor, feed, intakeJobInfo.getRight());
+            JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections, intakeJob,
+                    hcc, statementExecutor, feed, intakeJobInfo.getRight());
             // Deploy conn job
             this.feedConnJobId = hcc.deployJobSpec(connectJob);
             ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))

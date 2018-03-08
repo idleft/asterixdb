@@ -46,6 +46,7 @@ public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperat
         return new AbstractUnaryOutputSourceOperatorNodePushable() {
             private byte[] dataByteArray;
             private ByteBuffer buffer;
+
             @Override
             public void initialize() throws HyracksDataException {
                 // get data frame in job parameters

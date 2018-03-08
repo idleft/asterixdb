@@ -16,21 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-
-drop  dataverse feeds if exists;
-create  dataverse feeds;
-use feeds;
-
-create type TweetType as open {
-  id : int64
-};
-
-create dataset Tweets1(TweetType) primary key id;
-
-create feed TweetFeed with {
-  "adapter-name" : "expr_kv",
-  "ingestion-location":"asterix_nc1",
-  "type-name":"TweetType",
-  "format" : "adm",
-  "expr_amount" : 10
-};
+install feeds testlib target/data/externallib/asterix-external-data-testlib.zip

@@ -69,8 +69,8 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
     public void updateListenerJobParameters(JobParameterByteStore jobParameterByteStore) {
         int txnIdOffset = 0;
         for (Map.Entry<Integer, TxnId> entry : txnIdMap.entrySet()) {
-            String txnIdString = new String(
-                    jobParameterByteStore.getParameterByName(TRANSACTION_ID_PARAMETER_NAME + txnIdOffset));
+            String txnIdString =
+                    new String(jobParameterByteStore.getParameterByName(TRANSACTION_ID_PARAMETER_NAME + txnIdOffset));
             TxnId newTxnId = new TxnId(Long.valueOf(txnIdString));
             txnIdMap.put(entry.getKey(), newTxnId);
             txnIdOffset++;
