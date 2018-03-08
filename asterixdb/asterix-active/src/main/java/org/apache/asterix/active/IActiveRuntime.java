@@ -20,6 +20,8 @@ package org.apache.asterix.active;
 
 import java.util.concurrent.TimeUnit;
 
+import org.apache.asterix.active.message.ActiveEntityMessage;
+import org.apache.asterix.common.messaging.api.INcAddressedMessage;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 
@@ -53,5 +55,9 @@ public interface IActiveRuntime {
      */
     default String getStats() {
         return "\"Runtime stats is not available.\"";
+    }
+
+    default void handleMessage(ActiveEntityMessage msg) {
+        // do nothing
     }
 }

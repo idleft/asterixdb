@@ -292,7 +292,9 @@ public class FeedOperations {
                 (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0));
 
         // create callable feed source
-        FeedCallableOperatorDescriptor ingestionOp = new FeedCallableOperatorDescriptor(jobSpec);
+        // TODO: this only covers 1 adapter case, more adapters need to change.
+        FeedCallableOperatorDescriptor ingestionOp = new FeedCallableOperatorDescriptor(jobSpec, intakeLocations[0],
+                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
 
         // create replicator
         ReplicateOperatorDescriptor replicateOp =

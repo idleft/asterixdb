@@ -50,6 +50,7 @@ import org.apache.asterix.api.http.server.ServletConstants;
 import org.apache.asterix.api.http.server.ShutdownApiServlet;
 import org.apache.asterix.api.http.server.VersionApiServlet;
 import org.apache.asterix.app.active.ActiveNotificationHandler;
+import org.apache.asterix.active.DeployedJobLifeCycleListener;
 import org.apache.asterix.app.cc.CCExtensionManager;
 import org.apache.asterix.app.external.ExternalLibraryUtils;
 import org.apache.asterix.app.replication.NcLifecycleCoordinator;
@@ -162,6 +163,7 @@ public class CCApplication extends BaseCCApplication {
         ccServiceCtx.setDistributedState(proxy);
         MetadataManager.initialize(proxy, metadataProperties, appCtx);
         ccServiceCtx.addJobLifecycleListener(appCtx.getActiveNotificationHandler());
+        ccServiceCtx.addJobLifecycleListener(appCtx.getDeployedJobLifeCycleListener());
 
         // create event loop groups
         webManager = new WebManager();
@@ -180,7 +182,7 @@ public class CCApplication extends BaseCCApplication {
             throws AlgebricksException, IOException {
         return new CcApplicationContext(ccServiceCtx, getHcc(), libraryManager, () -> MetadataManager.INSTANCE,
                 globalRecoveryManager, lifecycleCoordinator, new ActiveNotificationHandler(), componentProvider,
-                new MetadataLockManager());
+                new MetadataLockManager(), new DeployedJobLifeCycleListener(this.ccServiceCtx));
     }
 
     protected IGlobalRecoveryManager createGlobalRecoveryManager() throws Exception {

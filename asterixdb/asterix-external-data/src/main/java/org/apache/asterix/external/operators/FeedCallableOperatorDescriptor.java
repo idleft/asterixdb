@@ -20,8 +20,11 @@ package org.apache.asterix.external.operators;
 
 import java.nio.ByteBuffer;
 
-import org.apache.asterix.om.types.ARecordType;
-import org.apache.asterix.om.types.IAType;
+import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.message.ActiveEntityMessage;
+import org.apache.asterix.common.config.GlobalConfig;
+import org.apache.asterix.common.messaging.api.INCMessageBroker;
+import org.apache.hyracks.api.application.INCServiceContext;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -30,14 +33,21 @@ import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
 
+import static org.apache.asterix.active.message.InvokeDeployedMessage.DATA_FRAME_FRAME_ID_NAME;
+import static org.apache.asterix.active.message.InvokeDeployedMessage.DATA_FRAME_PARAMETER_NAME;
+
 public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperatorDescriptor {
 
-    public static final int DEFAULT_FRAME_SIZE = 32768;
-    public static final byte[] DATA_FRAME_PARAMETER_NAME = "DataFrameParameter".getBytes();
+    public static final int DEFAULT_FRAME_SIZE = GlobalConfig.DEFAULT_FRAME_SIZE;
     private static final long serialVersionUID = 1L;
 
-    public FeedCallableOperatorDescriptor(JobSpecification spec) {
+    private final String sourceFeedNC;
+    private final ActiveRuntimeId sourceFeedActiveRuntimeId;
+
+    public FeedCallableOperatorDescriptor(JobSpecification spec, String sourceFeedNC, ActiveRuntimeId activeRuntimeId) {
         super(spec, 0, 1);
+        this.sourceFeedNC = sourceFeedNC;
+        this.sourceFeedActiveRuntimeId = activeRuntimeId;
     }
 
     @Override
@@ -46,12 +56,19 @@ public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperat
         return new AbstractUnaryOutputSourceOperatorNodePushable() {
             private byte[] dataByteArray;
             private ByteBuffer buffer;
+            private INCServiceContext ncCtx;
+            private long dataframeId;
 
             @Override
             public void initialize() throws HyracksDataException {
                 // get data frame in job parameters
                 buffer = ByteBuffer.allocate(DEFAULT_FRAME_SIZE);
-                dataByteArray = ctx.getJobParameter(DATA_FRAME_PARAMETER_NAME, 0, DATA_FRAME_PARAMETER_NAME.length);
+                dataByteArray = ctx.getJobParameter(DATA_FRAME_PARAMETER_NAME.getBytes(), 0,
+                        DATA_FRAME_PARAMETER_NAME.length());
+                String dataframeIdString = new String(
+                        ctx.getJobParameter(DATA_FRAME_FRAME_ID_NAME.getBytes(), 0, DATA_FRAME_FRAME_ID_NAME.length()));
+                dataframeId = Long.valueOf(dataframeIdString);
+                ncCtx = ctx.getJobletContext().getServiceContext();
                 buffer.put(dataByteArray);
 
                 writer.open();

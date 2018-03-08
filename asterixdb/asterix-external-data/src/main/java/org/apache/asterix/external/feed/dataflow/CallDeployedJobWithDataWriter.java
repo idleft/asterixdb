@@ -19,8 +19,15 @@
 package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.logging.Level;
 
+import io.netty.buffer.ByteBuf;
+import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.message.InvokeDeployedMessage;
+import org.apache.asterix.transaction.management.service.logging.LogManager;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -31,20 +38,33 @@ import org.apache.hyracks.control.nc.NodeControllerService;
 import org.apache.hyracks.control.nc.application.NCServiceContext;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
+import org.apache.logging.log4j.Logger;
 
 public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
+
+    private static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
+    private final static int BUFFER_SIZE = 16;
+
     private NodeControllerService ncs;
     private IHyracksTaskContext ctx;
     private DeployedJobSpecId deployedJobSpecId;
     private final int connDs;
+    private long frameCounter;
+    private LinkedBlockingDeque<Pair<Long, ByteBuffer>> frameBuffer;
+    private final ActiveRuntimeId runtimeId;
+    private final String ncId;
 
     public CallDeployedJobWithDataWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId,
-            int connDs) {
+            int connDs, ActiveRuntimeId runtimeId) {
         this.writer = writer;
         this.ctx = ctx;
         this.deployedJobSpecId = jobSpecId;
         this.connDs = connDs;
-        ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
+        this.frameCounter = 0;
+        this.frameBuffer = new LinkedBlockingDeque<>(BUFFER_SIZE);
+        this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
+        this.ncId = ncs.getId();
+        this.runtimeId =runtimeId;
     }
 
     @Override
@@ -55,9 +75,12 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
     @Override
     public void nextFrame(ByteBuffer frame) throws HyracksDataException {
         try {
-            InvokeDeployedMessage msg = new InvokeDeployedMessage(deployedJobSpecId, frame.array(), connDs);
+            frameBuffer.put(Pair.of(frameCounter, frame));
+            InvokeDeployedMessage msg =
+                    new InvokeDeployedMessage(deployedJobSpecId, frame.array(), connDs, frameCounter, ncId, runtimeId);
             ncs.sendApplicationMessageToCC(ctx.getJobletContext().getJobId().getCcId(),
                     JavaSerializationUtils.serialize(msg), null);
+            frameCounter++;
         } catch (Exception e) {
             throw new HyracksDataException(e);
         }
@@ -70,6 +93,16 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
 
     @Override
     public void close() throws HyracksDataException {
+        try {
+            while (frameBuffer.size() != 0) {
+                synchronized (frameBuffer) {
+                    frameBuffer.wait();
+                }
+            }
+        } catch (InterruptedException e) {
+            LOGGER.warn("CallDeployedJobWriter is stopped some data left");
+            throw new HyracksDataException(e);
+        }
         writer.close();
     }
 
@@ -78,4 +111,13 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
         writer.flush();
     }
 
+    public void ackFrame(long frameId) {
+        // remove frame from queue
+        frameBuffer.removeIf(p -> p.getLeft() == frameId);
+        if (frameBuffer.isEmpty()) {
+            synchronized (frameBuffer) {
+                frameBuffer.notify();
+            }
+        }
+    }
 }

@@ -73,6 +73,11 @@ public interface ICcApplicationContext extends IApplicationContext {
     IJobLifecycleListener getActiveNotificationHandler();
 
     /**
+     * @return the active notification handler at Cluster controller
+     */
+    IJobLifecycleListener getDeployedJobLifeCycleListener();
+
+    /**
      * @return the cluster wide resource id manager
      */
     IResourceIdManager getResourceIdManager();

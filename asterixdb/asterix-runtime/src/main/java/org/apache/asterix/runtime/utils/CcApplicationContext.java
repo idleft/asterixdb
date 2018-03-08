@@ -87,12 +87,13 @@ public class CcApplicationContext implements ICcApplicationContext {
     private IClusterStateManager clusterStateManager;
     private final INodeJobTracker nodeJobTracker;
     private final ITxnIdFactory txnIdFactory;
+    private final IJobLifecycleListener deployedJobLifeCycleListener;
 
     public CcApplicationContext(ICCServiceContext ccServiceCtx, IHyracksClientConnection hcc,
             ILibraryManager libraryManager, Supplier<IMetadataBootstrap> metadataBootstrapSupplier,
             IGlobalRecoveryManager globalRecoveryManager, INcLifecycleCoordinator ftStrategy,
             IJobLifecycleListener activeLifeCycleListener, IStorageComponentProvider storageComponentProvider,
-            IMetadataLockManager mdLockManager) throws AlgebricksException, IOException {
+            IMetadataLockManager mdLockManager, IJobLifecycleListener deployedJobLifeCycleListener) throws AlgebricksException, IOException {
         this.ccServiceCtx = ccServiceCtx;
         this.hcc = hcc;
         this.libraryManager = libraryManager;
@@ -121,7 +122,7 @@ public class CcApplicationContext implements ICcApplicationContext {
         this.resourceIdManager = new ResourceIdManager(clusterStateManager);
         nodeJobTracker = new NodeJobTracker();
         txnIdFactory = new BulkTxnIdFactory();
-
+        this.deployedJobLifeCycleListener = deployedJobLifeCycleListener;
     }
 
     @Override
@@ -272,5 +273,10 @@ public class CcApplicationContext implements ICcApplicationContext {
 
     public ITxnIdFactory getTxnIdFactory() {
         return txnIdFactory;
+    }
+
+    @Override
+    public IJobLifecycleListener getDeployedJobLifeCycleListener() {
+        return deployedJobLifeCycleListener;
     }
 }

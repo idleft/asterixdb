@@ -20,9 +20,12 @@ package org.apache.asterix.external.operators;
 
 import java.util.concurrent.TimeUnit;
 
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.active.message.ActiveEntityMessage;
+import org.apache.asterix.common.messaging.api.INcAddressedMessage;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
@@ -35,6 +38,8 @@ import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.io.Serializable;
 
 /**
  * The runtime for @see{FeedIntakeOperationDescriptor}.
@@ -64,7 +69,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs);
+            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs, runtimeId);
             writer.open();
             synchronized (this) {
                 if (poisoned) {
@@ -154,5 +159,13 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         } else {
             return "\"Runtime stats is not available.\"";
         }
+    }
+
+    @Override
+    public void handleMessage(ActiveEntityMessage msg) {
+        // can be extended to multiple kinds. only ack frame for now.
+        Serializable payload = msg.getPayload();
+        long ackedFrameId = (Long) payload;
+        ((CallDeployedJobWithDataWriter) writer).ackFrame(ackedFrameId);
     }
 }

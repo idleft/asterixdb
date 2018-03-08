@@ -116,7 +116,6 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
                     throw new Error(e);
                 }
             }
-
         };
     }
 }
