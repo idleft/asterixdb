@@ -308,51 +308,14 @@ public class FeedOperations {
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
-                OperatorDescriptorId opId = null;
-                //                if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
-                //                        && ((LSMTreeInsertDeleteOperatorDescriptor) opDesc).isPrimary()) {
-                //                    metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-                //                            feedPolicyEntity.getProperties(), FeedRuntimeType.STORE);
-                //                    opId = metaOp.getOperatorId();
-                //                    opDesc.setOperatorId(opId);
-                //                } else {
-                //                    if (opDesc instanceof AlgebricksMetaOperatorDescriptor) {
-                //                        AlgebricksMetaOperatorDescriptor algOp = (AlgebricksMetaOperatorDescriptor) opDesc;
-                //                        IPushRuntimeFactory[] runtimeFactories = algOp.getPipeline().getRuntimeFactories();
-                //                        // Tweak AssignOp to work with messages
-                //                        if (runtimeFactories[0] instanceof AssignRuntimeFactory && runtimeFactories.length > 1) {
-                //                            IConnectorDescriptor connectorDesc =
-                //                                    subJob.getOperatorInputMap().get(opDesc.getOperatorId()).get(0);
-                //                            // anything on the network interface needs to be message compatible
-                //                            if (connectorDesc instanceof MToNPartitioningConnectorDescriptor) {
-                //                                metaOp = new FeedMetaOperatorDescriptor(jobSpec, feedConnectionId, opDesc,
-                //                                        feedPolicyEntity.getProperties(), FeedRuntimeType.COMPUTE);
-                //                                opId = metaOp.getOperatorId();
-                //                                opDesc.setOperatorId(opId);
-                //                            }
-                //                        }
-                //                    }
-                //                    if (opId == null) {
-                //
-                //                    }
-                //                }
-                opId = jobSpec.createOperatorDescriptorId(opDesc);
+                OperatorDescriptorId opId = jobSpec.createOperatorDescriptorId(opDesc);
                 operatorIdMapping.put(oldId, opId);
             }
 
             // copy connectors
             connectorIdMapping.clear();
             subJob.getConnectorMap().forEach((key, connDesc) -> {
-                ConnectorDescriptorId newConnId;
-                //                if (connDesc instanceof MToNPartitioningConnectorDescriptor) {
-                //                    MToNPartitioningConnectorDescriptor m2nConn = (MToNPartitioningConnectorDescriptor) connDesc;
-                //                    connDesc = new MToNPartitioningWithMessageConnectorDescriptor(jobSpec,
-                //                            m2nConn.getTuplePartitionComputerFactory());
-                //                    newConnId = connDesc.getConnectorId();
-                //                } else {
-                //                    newConnId = jobSpec.createConnectorDescriptor(connDesc);
-                //                }
-                newConnId = jobSpec.createConnectorDescriptor(connDesc);
+                ConnectorDescriptorId newConnId = jobSpec.createConnectorDescriptor(connDesc);
                 connectorIdMapping.put(key, newConnId);
             });
 
