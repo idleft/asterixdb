@@ -41,13 +41,8 @@ public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperat
     public static final int DEFAULT_FRAME_SIZE = GlobalConfig.DEFAULT_FRAME_SIZE;
     private static final long serialVersionUID = 1L;
 
-    private final String sourceFeedNC;
-    private final ActiveRuntimeId sourceFeedActiveRuntimeId;
-
     public FeedCallableOperatorDescriptor(JobSpecification spec, String sourceFeedNC, ActiveRuntimeId activeRuntimeId) {
         super(spec, 0, 1);
-        this.sourceFeedNC = sourceFeedNC;
-        this.sourceFeedActiveRuntimeId = activeRuntimeId;
     }
 
     @Override
@@ -56,8 +51,6 @@ public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperat
         return new AbstractUnaryOutputSourceOperatorNodePushable() {
             private byte[] dataByteArray;
             private ByteBuffer buffer;
-            private INCServiceContext ncCtx;
-            private long dataframeId;
 
             @Override
             public void initialize() throws HyracksDataException {
@@ -65,10 +58,6 @@ public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperat
                 buffer = ByteBuffer.allocate(DEFAULT_FRAME_SIZE);
                 dataByteArray = ctx.getJobParameter(DATA_FRAME_PARAMETER_NAME.getBytes(), 0,
                         DATA_FRAME_PARAMETER_NAME.length());
-                String dataframeIdString = new String(
-                        ctx.getJobParameter(DATA_FRAME_FRAME_ID_NAME.getBytes(), 0, DATA_FRAME_FRAME_ID_NAME.length()));
-                dataframeId = Long.valueOf(dataframeIdString);
-                ncCtx = ctx.getJobletContext().getServiceContext();
                 buffer.put(dataByteArray);
 
                 writer.open();

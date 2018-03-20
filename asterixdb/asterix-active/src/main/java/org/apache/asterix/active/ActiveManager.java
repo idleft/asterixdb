@@ -186,6 +186,7 @@ public class ActiveManager {
             throws HyracksDataException, InterruptedException {
         if (runtimes.containsKey(runtime.getRuntimeId())) {
             runtime.stop(timeout, unit);
+            runtimes.remove(runtime.getRuntimeId());
         } else {
             LOGGER.info("Not stopping already stopped runtime {}", runtime.getRuntimeId());
         }

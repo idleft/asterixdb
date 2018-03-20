@@ -44,7 +44,8 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         this.jobToDataframeMapping = new HashMap<>();
     }
 
-    public void registerDeployedJobWithDataFrame(JobId jobId, ActiveRuntimeId runtimeId, long dataFrameId, String ncId) {
+    public void registerDeployedJobWithDataFrame(JobId jobId, ActiveRuntimeId runtimeId, long dataFrameId,
+            String ncId) {
         DeployedJobInstanceInfo info = new DeployedJobInstanceInfo(ncId, dataFrameId, runtimeId);
         jobToDataframeMapping.put(jobId, info);
     }

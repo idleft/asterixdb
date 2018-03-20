@@ -93,7 +93,8 @@ public class CcApplicationContext implements ICcApplicationContext {
             ILibraryManager libraryManager, Supplier<IMetadataBootstrap> metadataBootstrapSupplier,
             IGlobalRecoveryManager globalRecoveryManager, INcLifecycleCoordinator ftStrategy,
             IJobLifecycleListener activeLifeCycleListener, IStorageComponentProvider storageComponentProvider,
-            IMetadataLockManager mdLockManager, IJobLifecycleListener deployedJobLifeCycleListener) throws AlgebricksException, IOException {
+            IMetadataLockManager mdLockManager, IJobLifecycleListener deployedJobLifeCycleListener)
+            throws AlgebricksException, IOException {
         this.ccServiceCtx = ccServiceCtx;
         this.hcc = hcc;
         this.libraryManager = libraryManager;

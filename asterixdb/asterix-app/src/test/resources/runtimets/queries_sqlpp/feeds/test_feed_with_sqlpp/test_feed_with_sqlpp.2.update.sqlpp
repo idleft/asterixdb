@@ -16,12 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use test;
 
-use feeds;
-
-//insert into Tweets1 func10(volcano());
-set `wait-for-completion-feed` `true`;
-//connect feed TweetFeed to dataset Tweets1;
-connect feed TweetFeed to dataset Tweets1 apply function `func10`;
-
-start feed TweetFeed;
+load dataset countryDataset using localfs ((`path`=`asterix_nc1://data/nontagged/countryList.txt`),(`format`=`adm`))

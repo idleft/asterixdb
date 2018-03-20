@@ -17,13 +17,13 @@
  * under the License.
  */
 
+//use feeds;
+//insert into Customer (select value c from `volcano`() as c);
+
 use feeds;
-insert into Customer (
-    [
-       {"id":1,"cname":"hello"},
-       {"id":2,"cname":"goodbye"},
-       {"id":3,"cname":"the end"},
-       {"id":4,"cname":"what"},
-       {"id":5,"cname":"good"}
-    ]
-);
+insert into Customer[
+  {"id":1, "screenName":"NathanGiesen@211","lang":"en","friendsCount":18,"statusesCount":473,"name":"Nathan Giesen","followersCount":49416, "country": "IT5" },
+    {"id":2, "screenName":"ColineGeyer@63","lang":"en","friendsCount":121,"statusesCount":362,"name":"Coline Geyer","followersCount":17159, "country": "AR3" },
+    {"id":3, "screenName":"NilaMilliron_tw","lang":"en","friendsCount":445,"statusesCount":164,"name":"Nila Milliron","followersCount":22649, "country": "GB5" },
+    {"id":4, "screenName":"ChangEwing_573","lang":"en","friendsCount":182,"statusesCount":394,"name":"Chang Ewing","followersCount":32136, "country": "YE2" }
+    ];

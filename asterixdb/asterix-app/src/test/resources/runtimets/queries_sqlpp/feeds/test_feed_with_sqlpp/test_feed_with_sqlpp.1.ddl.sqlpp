@@ -17,11 +17,33 @@
  * under the License.
  */
 
-use feeds;
+drop  dataverse test if exists;
+create  dataverse test;
+use test;
 
-//insert into Tweets1 func10(volcano());
-set `wait-for-completion-feed` `true`;
-//connect feed TweetFeed to dataset Tweets1;
-connect feed TweetFeed to dataset Tweets1 apply function `func10`;
+create type TweetType as open {
+  id : int64
+};
 
-start feed TweetFeed;
+create type Country as open {
+  country_code : string,
+  country_name : string
+};
+
+create dataset Tweets1(TweetType) primary key id;
+create dataset countryDataset(Country) primary key country_code;
+
+create feed TweetFeed with {
+  "adapter-name" : "expr_twitter",
+  "ingestion-location":"asterix_nc1",
+  "type-name":"TweetType",
+  "format" : "adm",
+  "intake-buffer" : 1,
+  "expr_amount" : 1000
+};
+
+create function annotateCountry(x) {
+    (
+      select x, countryDetails from x left outer join countryDataset countryDetails on countryDetails.country_code = x.country
+    )
+};

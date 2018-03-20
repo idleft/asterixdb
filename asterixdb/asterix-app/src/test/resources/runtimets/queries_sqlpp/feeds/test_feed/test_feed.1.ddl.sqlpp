@@ -32,5 +32,6 @@ create feed TweetFeed with {
   "ingestion-location":"asterix_nc1",
   "type-name":"TweetType",
   "format" : "adm",
+  "intake-buffer" : 1,
   "expr_amount" : 1000
 };

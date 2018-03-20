@@ -59,11 +59,9 @@ public class InvokeDeployedMessage implements ICcAddressedMessage {
         try {
             ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
             Map<byte[], byte[]> jobParameter = new HashMap<>();
-            for (int iter1 = 0; iter1 < connDs; iter1++) {
-                TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
-                jobParameter.put((TRANSACTION_ID_PARAMETER_NAME + String.valueOf(iter1)).getBytes(),
-                        String.valueOf(newDeployedJobTxnId.getId()).getBytes());
-            }
+            TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
+            jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
+                    String.valueOf(newDeployedJobTxnId.getId()).getBytes());
             jobParameter.put(DATA_FRAME_PARAMETER_NAME.getBytes(), dataframe);
             jobParameter.put(DATA_FRAME_FRAME_ID_NAME.getBytes(), String.valueOf(frameId).getBytes());
             JobId runtimeJobId = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);

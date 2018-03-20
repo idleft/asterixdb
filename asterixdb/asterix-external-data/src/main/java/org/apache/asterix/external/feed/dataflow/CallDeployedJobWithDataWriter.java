@@ -43,7 +43,6 @@ import org.apache.logging.log4j.Logger;
 public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutputOperatorNodePushable {
 
     private static final Logger LOGGER = org.apache.logging.log4j.LogManager.getLogger();
-    private final static int BUFFER_SIZE = 16;
 
     private NodeControllerService ncs;
     private IHyracksTaskContext ctx;
@@ -55,16 +54,16 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
     private final String ncId;
 
     public CallDeployedJobWithDataWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId,
-            int connDs, ActiveRuntimeId runtimeId) {
+            int connDs, ActiveRuntimeId runtimeId, int bufferSize) {
         this.writer = writer;
         this.ctx = ctx;
         this.deployedJobSpecId = jobSpecId;
         this.connDs = connDs;
         this.frameCounter = 0;
-        this.frameBuffer = new LinkedBlockingDeque<>(BUFFER_SIZE);
+        this.frameBuffer = new LinkedBlockingDeque<>(bufferSize == 0 ? Integer.MAX_VALUE : bufferSize);
         this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
         this.ncId = ncs.getId();
-        this.runtimeId =runtimeId;
+        this.runtimeId = runtimeId;
     }
 
     @Override

@@ -251,182 +251,162 @@ public class FeedOperations {
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
             throws AlgebricksException, RemoteException, ACIDException {
-        // TODO: change it to statements
-        String dataverse = metadataProvider.getDefaultDataverseName();
-        String dataset = feedConn.getDatasetName();
-        StringBuilder sb = new StringBuilder();
-        sb.append("[{}]");
-        for (FunctionSignature fn : feedConn.getAppliedFunctions()) {
-            sb.insert(0, fn.getNamespace() + "." + fn.getName() + "(");
-            sb.append(")");
+        metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
+        Query feedConnQuery = makeConnectionQuery(feedConn);
+        CompiledStatements.ICompiledDmlStatement clfrqs;
+        if (insertFeed) {
+            InsertStatement stmtUpsert = new InsertStatement(new Identifier(feedConn.getDataverseName()),
+                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
+            clfrqs = new CompiledStatements.CompiledInsertStatement(feedConn.getDataverseName(),
+                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
+        } else {
+            UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
+                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
+            clfrqs = new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(),
+                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
         }
-
-        String query = "insert into " + dataverse + "." + dataset + " (" + sb.toString() + ");";
-        IParser sqlParser = new SqlppParserFactory().createParser(query);
-        List<Statement> stmts = sqlParser.parse();
-        InsertStatement stmt = (InsertStatement) stmts.get(0);
-        return statementExecutor.rewriteCompileInsertUpsert(hcc, metadataProvider, stmt, null, null);
+        return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, feedConnQuery, clfrqs, null, null);
     }
 
-    private static AlgebricksMetaOperatorDescriptor createShadowMetaOp(AlgebricksMetaOperatorDescriptor metaOp,
-            int removal, JobSpecification jobSpec) {
-        AlgebricksPipeline pipeline = metaOp.getPipeline();
-        int newLength = pipeline.getRuntimeFactories().length;
-        IPushRuntimeFactory[] runtimeFactories = Arrays.copyOfRange(pipeline.getRuntimeFactories(), removal, newLength);
-        RecordDescriptor[] recordDesc = Arrays.copyOfRange(pipeline.getRecordDescriptors(), removal, newLength);
-        IPushRuntimeFactory[] outputRuntimeFactories =
-                Arrays.copyOf(pipeline.getOutputRuntimeFactories(), pipeline.getOutputRuntimeFactories().length);
-        int[] outputPos = Arrays.copyOf(pipeline.getOutputPositions(), pipeline.getOutputPositions().length);
-        AlgebricksMetaOperatorDescriptor shadowMetaOp = new AlgebricksMetaOperatorDescriptor(jobSpec, 1, 1,
-                runtimeFactories, recordDesc, outputRuntimeFactories, outputPos);
-        return shadowMetaOp;
-    }
+    private static JobSpecification simpleModifyConnJob(MetadataProvider metadataProvider, Feed feed,
+            JobSpecification intakeJob, JobSpecification connJob, FeedConnection currentConnection,
+            String[] intakeLocations) {
+        FeedCollectOperatorDescriptor firstOp =
+                (FeedCollectOperatorDescriptor) connJob.getOperatorMap().get(new OperatorDescriptorId(0));
 
-    private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
-            JobSpecification intakeJob, List<JobSpecification> jobsList, List<FeedConnection> feedConnections,
-            String[] intakeLocations) throws AlgebricksException {
-        JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
-
-        // copy ingestor
-        FeedIntakeOperatorDescriptor firstOp =
-                (FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0));
-
-        // create callable feed source
-        // TODO: this only covers 1 adapter case, more adapters need to change.
-        FeedCallableOperatorDescriptor ingestionOp = new FeedCallableOperatorDescriptor(jobSpec, intakeLocations[0],
+        FeedCallableOperatorDescriptor callableOpDesc = new FeedCallableOperatorDescriptor(connJob, intakeLocations[0],
                 new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
 
         // create replicator
-        ReplicateOperatorDescriptor replicateOp =
-                new ReplicateOperatorDescriptor(jobSpec, firstOp.getOutputRecordDescriptors()[0], jobsList.size());
-        jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), ingestionOp, 0, replicateOp, 0);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, ingestionOp, intakeLocations);
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, replicateOp, intakeLocations);
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(connJob, callableOpDesc, intakeLocations);
+        connJob.connect(new OneToOneConnectorDescriptor(connJob), callableOpDesc, 0, firstOp, 0);
+        return connJob;
+    }
+
+    private static JobSpecification modifyConnectJob(MetadataProvider metadataProvider, Feed feed,
+            JobSpecification intakeJob, JobSpecification connJob, FeedConnection currentConnection,
+            String[] intakeLocations) throws AlgebricksException {
+        JobSpecification jobSpec = new JobSpecification(intakeJob.getFrameSize());
+
+        // create callable feed source
+        // TODO: this only covers 1 adapter case, more adapters need to change.
+        FeedCallableOperatorDescriptor callableOpDesc = new FeedCallableOperatorDescriptor(jobSpec, intakeLocations[0],
+                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
+
+        // create replicator
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, callableOpDesc, intakeLocations);
         // Loop over the jobs to copy operators and connections
         Map<OperatorDescriptorId, OperatorDescriptorId> operatorIdMapping = new HashMap<>();
         Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
-        Map<Integer, TxnId> txnIdMap = new HashMap<>();
-        int ASSIGN_PIPELINE_LENGTH = 3;
+        Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = connJob.getOperatorMap();
 
-        for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
-            FeedConnection curFeedConnection = feedConnections.get(iter1);
-            JobSpecification subJob = jobsList.get(iter1);
-            operatorIdMapping.clear();
-            Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-
-            for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
-                IOperatorDescriptor opDesc = entry.getValue();
-                OperatorDescriptorId oldId = opDesc.getOperatorId();
-                OperatorDescriptorId opId;
-                if (opDesc instanceof AlgebricksMetaOperatorDescriptor && ((AlgebricksMetaOperatorDescriptor) opDesc)
-                        .getPipeline().getRuntimeFactories().length == ASSIGN_PIPELINE_LENGTH) {
-                    AlgebricksMetaOperatorDescriptor metaOp = (AlgebricksMetaOperatorDescriptor) opDesc;
-                    AlgebricksMetaOperatorDescriptor shadowMetaOp =
-                            createShadowMetaOp(metaOp, ASSIGN_PIPELINE_LENGTH - 1, jobSpec);
-                    opId = shadowMetaOp.getOperatorId();
-                    metaOp.setOperatorId(shadowMetaOp.getOperatorId());
-                } else {
-                    opId = jobSpec.createOperatorDescriptorId(opDesc);
-                }
-                operatorIdMapping.put(oldId, opId);
+        for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
+            IOperatorDescriptor opDesc = entry.getValue();
+            OperatorDescriptorId oldId = opDesc.getOperatorId();
+            if (opDesc instanceof FeedCollectOperatorDescriptor) {
+                continue;
             }
+            OperatorDescriptorId opId = jobSpec.createOperatorDescriptorId(opDesc);
+            operatorIdMapping.put(oldId, opId);
+        }
 
-            // copy connectors
-            connectorIdMapping.clear();
-            subJob.getConnectorMap().forEach((key, connDesc) -> {
+        // copy connectors
+        connectorIdMapping.clear();
+        connJob.getConnectorMap().forEach((key, connDesc) -> {
+            Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>> entry =
+                    connJob.getConnectorOperatorMap().get(key);
+            if (entry.getLeft().getLeft() instanceof FeedCollectOperatorDescriptor) {
+                // do nothing
+            } else {
                 ConnectorDescriptorId newConnId = jobSpec.createConnectorDescriptor(connDesc);
                 connectorIdMapping.put(key, newConnId);
-            });
+            }
+        });
 
-            // make connections between operators
-            for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : subJob
-                    .getConnectorOperatorMap().entrySet()) {
-                ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
-                IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
-                Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
-                Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
-                IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
-                IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
-                if (leftOp.getLeft() instanceof AlgebricksMetaOperatorDescriptor
-                        && ((AlgebricksMetaOperatorDescriptor) leftOp.getLeft()).getPipeline()
-                                .getRuntimeFactories().length == ASSIGN_PIPELINE_LENGTH) {
-                    jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
-                            leftOp.getRight());
-                }
+        // make connections between operators
+        for (Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : connJob
+                .getConnectorOperatorMap().entrySet()) {
+            ConnectorDescriptorId newId = connectorIdMapping.get(entry.getKey());
+            IConnectorDescriptor connDesc = jobSpec.getConnectorMap().get(newId);
+            Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
+            Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
+            IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
+            IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
+            if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
+                jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), callableOpDesc, 0, rightOpDesc,
+                        rightOp.getRight());
+            } else {
                 jobSpec.connect(connDesc, leftOpDesc, leftOp.getRight(), rightOpDesc, rightOp.getRight());
             }
+        }
 
-            // prepare for setting partition constraints
-            operatorLocations.clear();
-            operatorCounts.clear();
+        // prepare for setting partition constraints
+        operatorLocations.clear();
+        operatorCounts.clear();
 
-            for (Constraint constraint : subJob.getUserConstraints()) {
-                LValueConstraintExpression lexpr = constraint.getLValue();
-                ConstraintExpression cexpr = constraint.getRValue();
-                OperatorDescriptorId opId;
-                switch (lexpr.getTag()) {
-                    case PARTITION_COUNT:
-                        opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
-                        operatorCounts.put(operatorIdMapping.get(opId), (int) ((ConstantExpression) cexpr).getValue());
-                        break;
-                    case PARTITION_LOCATION:
-                        opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
-                        IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(operatorIdMapping.get(opId));
-                        List<LocationConstraint> locations = operatorLocations.get(opDesc.getOperatorId());
-                        if (locations == null) {
-                            locations = new ArrayList<>();
-                            operatorLocations.put(opDesc.getOperatorId(), locations);
-                        }
-                        String location = (String) ((ConstantExpression) cexpr).getValue();
-                        LocationConstraint lc =
-                                new LocationConstraint(location, ((PartitionLocationExpression) lexpr).getPartition());
-                        locations.add(lc);
-                        break;
-                    default:
-                        break;
-                }
+        for (Constraint constraint : connJob.getUserConstraints()) {
+            LValueConstraintExpression lexpr = constraint.getLValue();
+            ConstraintExpression cexpr = constraint.getRValue();
+            OperatorDescriptorId opId;
+            switch (lexpr.getTag()) {
+                case PARTITION_COUNT:
+                    opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
+                    if (opId.getId() == 0) {
+                        continue;
+                    }
+                    operatorCounts.put(operatorIdMapping.get(opId), (int) ((ConstantExpression) cexpr).getValue());
+                    break;
+                case PARTITION_LOCATION:
+                    opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
+                    if (opId.getId() == 0) {
+                        continue;
+                    }
+                    IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(operatorIdMapping.get(opId));
+                    List<LocationConstraint> locations = operatorLocations.get(opDesc.getOperatorId());
+                    if (locations == null) {
+                        locations = new ArrayList<>();
+                        operatorLocations.put(opDesc.getOperatorId(), locations);
+                    }
+                    String location = (String) ((ConstantExpression) cexpr).getValue();
+                    LocationConstraint lc =
+                            new LocationConstraint(location, ((PartitionLocationExpression) lexpr).getPartition());
+                    locations.add(lc);
+                    break;
+                default:
+                    break;
             }
+        }
 
-            // set absolute location constraints
-            for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
-                IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(entry.getKey());
-                // why do we need to sort?
-                Collections.sort(entry.getValue(), (LocationConstraint o1, LocationConstraint o2) -> {
-                    return o1.partition - o2.partition;
-                });
-                String[] locations = new String[entry.getValue().size()];
-                for (int j = 0; j < locations.length; ++j) {
-                    locations[j] = entry.getValue().get(j).location;
-                }
-                PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, opDesc, locations);
+        // set absolute location constraints
+        for (Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
+            IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(entry.getKey());
+            String[] locations = new String[entry.getValue().size()];
+            for (int j = 0; j < locations.length; ++j) {
+                locations[j] = entry.getValue().get(j).location;
             }
+            PartitionConstraintHelper.addAbsoluteLocationConstraint(jobSpec, opDesc, locations);
+        }
 
-            // set count constraints
-            operatorCounts.forEach((key, value) -> {
-                IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(key);
-                if (!operatorLocations.keySet().contains(key)) {
-                    PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, opDesc, value);
-                }
-            });
-            // roots
-            for (OperatorDescriptorId root : subJob.getRoots()) {
-                jobSpec.addRoot(jobSpec.getOperatorMap().get(operatorIdMapping.get(root)));
+        // set count constraints
+        operatorCounts.forEach((key, value) -> {
+            IOperatorDescriptor opDesc = jobSpec.getOperatorMap().get(key);
+            if (!operatorLocations.keySet().contains(key)) {
+                PartitionConstraintHelper.addPartitionCountConstraint(jobSpec, opDesc, value);
             }
-            int datasetId = metadataProvider
-                    .findDataset(curFeedConnection.getDataverseName(), curFeedConnection.getDatasetName())
-                    .getDatasetId();
-            TxnId txnId = ((JobEventListenerFactory) subJob.getJobletEventListenerFactory()).getTxnId(datasetId);
-            txnIdMap.put(datasetId, txnId);
+        });
+        // roots
+        for (OperatorDescriptorId root : connJob.getRoots()) {
+            jobSpec.addRoot(jobSpec.getOperatorMap().get(operatorIdMapping.get(root)));
         }
 
         // jobEventListenerFactory
-        jobSpec.setJobletEventListenerFactory(new MultiTransactionJobletEventListenerFactory(txnIdMap, true));
+        jobSpec.setJobletEventListenerFactory(connJob.getJobletEventListenerFactory());
         // useConnectorSchedulingPolicy
-        jobSpec.setUseConnectorPolicyForScheduling(jobsList.get(0).isUseConnectorPolicyForScheduling());
+        jobSpec.setUseConnectorPolicyForScheduling(connJob.isUseConnectorPolicyForScheduling());
         // connectorAssignmentPolicy
-        jobSpec.setConnectorPolicyAssignmentPolicy(jobsList.get(0).getConnectorPolicyAssignmentPolicy());
+        jobSpec.setConnectorPolicyAssignmentPolicy(connJob.getConnectorPolicyAssignmentPolicy());
         return jobSpec;
     }
 
@@ -462,14 +442,18 @@ public class FeedOperations {
         IStatementExecutor translator =
                 getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
-        List<JobSpecification> jobsList = new ArrayList<>();
         Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getConfiguration());
-        for (FeedConnection feedConnection : feedConnections) {
-            JobSpecification connectionJob =
-                    getConnectionJob(metadataProvider, feedConnection, translator, hcc, insertFeed);
-            jobsList.add(connectionJob);
-        }
-        return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+        JobSpecification connJob =
+                getConnectionJob(metadataProvider, feedConnections.get(0), translator, hcc, insertFeed);
+        return simpleModifyConnJob(metadataProvider, feed, intakeJob, connJob, feedConnections.get(0),
                 ingestionLocations.getLocations());
+        //                ingestionLocations.getLocations())
+        //        for (FeedConnection feedConnection : feedConnections) {
+        //            JobSpecification connectionJob =
+        //                    getConnectionJob(metadataProvider, feedConnection, translator, hcc, insertFeed);
+        //            jobsList.add(connectionJob);
+        //        }
+        //        return combineIntakeCollectJobs(metadataProvider, feed, intakeJob, jobsList, feedConnections,
+        //                ingestionLocations.getLocations());
     }
 }

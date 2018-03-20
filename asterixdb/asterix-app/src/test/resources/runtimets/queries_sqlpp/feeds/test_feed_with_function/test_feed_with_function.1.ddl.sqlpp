@@ -29,6 +29,9 @@ create type CustomerType as open {
   id : int64
 };
 
+create type emptyType as open {
+};
+
 create dataset Customer(CustomerType) primary key id;
 create dataset Tweets1(TweetType) primary key id;
 
@@ -37,10 +40,10 @@ create feed TweetFeed with {
   "ingestion-location":"asterix_nc1",
   "type-name":"TweetType",
   "format" : "adm",
-  "expr_amount" : 10
+  "expr_amount" : 100
 };
 
 // join on primary key
 create function func10(x) {
-	select value object_merge(t, {"q" : (select c from Customer c where c.id = t.id)}) from x as t
+  object_merge(x, {"q" : (select value c from Customer c where c.country = x.country)})
 };

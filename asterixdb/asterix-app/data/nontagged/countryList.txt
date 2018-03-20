@@ -1,0 +1,2500 @@
+{"country_code":"AD0","country_name":"Andorra"}
+{"country_code":"AD1","country_name":"Andorra"}
+{"country_code":"AD2","country_name":"Andorra"}
+{"country_code":"AD3","country_name":"Andorra"}
+{"country_code":"AD4","country_name":"Andorra"}
+{"country_code":"AD5","country_name":"Andorra"}
+{"country_code":"AD6","country_name":"Andorra"}
+{"country_code":"AD7","country_name":"Andorra"}
+{"country_code":"AD8","country_name":"Andorra"}
+{"country_code":"AD9","country_name":"Andorra"}
+{"country_code":"AE0","country_name":"United Arab Emirates"}
+{"country_code":"AE1","country_name":"United Arab Emirates"}
+{"country_code":"AE2","country_name":"United Arab Emirates"}
+{"country_code":"AE3","country_name":"United Arab Emirates"}
+{"country_code":"AE4","country_name":"United Arab Emirates"}
+{"country_code":"AE5","country_name":"United Arab Emirates"}
+{"country_code":"AE6","country_name":"United Arab Emirates"}
+{"country_code":"AE7","country_name":"United Arab Emirates"}
+{"country_code":"AE8","country_name":"United Arab Emirates"}
+{"country_code":"AE9","country_name":"United Arab Emirates"}
+{"country_code":"AF0","country_name":"Afghanistan"}
+{"country_code":"AF1","country_name":"Afghanistan"}
+{"country_code":"AF2","country_name":"Afghanistan"}
+{"country_code":"AF3","country_name":"Afghanistan"}
+{"country_code":"AF4","country_name":"Afghanistan"}
+{"country_code":"AF5","country_name":"Afghanistan"}
+{"country_code":"AF6","country_name":"Afghanistan"}
+{"country_code":"AF7","country_name":"Afghanistan"}
+{"country_code":"AF8","country_name":"Afghanistan"}
+{"country_code":"AF9","country_name":"Afghanistan"}
+{"country_code":"AG0","country_name":"Antigua and Barbuda"}
+{"country_code":"AG1","country_name":"Antigua and Barbuda"}
+{"country_code":"AG2","country_name":"Antigua and Barbuda"}
+{"country_code":"AG3","country_name":"Antigua and Barbuda"}
+{"country_code":"AG4","country_name":"Antigua and Barbuda"}
+{"country_code":"AG5","country_name":"Antigua and Barbuda"}
+{"country_code":"AG6","country_name":"Antigua and Barbuda"}
+{"country_code":"AG7","country_name":"Antigua and Barbuda"}
+{"country_code":"AG8","country_name":"Antigua and Barbuda"}
+{"country_code":"AG9","country_name":"Antigua and Barbuda"}
+{"country_code":"AI0","country_name":"Anguilla"}
+{"country_code":"AI1","country_name":"Anguilla"}
+{"country_code":"AI2","country_name":"Anguilla"}
+{"country_code":"AI3","country_name":"Anguilla"}
+{"country_code":"AI4","country_name":"Anguilla"}
+{"country_code":"AI5","country_name":"Anguilla"}
+{"country_code":"AI6","country_name":"Anguilla"}
+{"country_code":"AI7","country_name":"Anguilla"}
+{"country_code":"AI8","country_name":"Anguilla"}
+{"country_code":"AI9","country_name":"Anguilla"}
+{"country_code":"AL0","country_name":"Albania"}
+{"country_code":"AL1","country_name":"Albania"}
+{"country_code":"AL2","country_name":"Albania"}
+{"country_code":"AL3","country_name":"Albania"}
+{"country_code":"AL4","country_name":"Albania"}
+{"country_code":"AL5","country_name":"Albania"}
+{"country_code":"AL6","country_name":"Albania"}
+{"country_code":"AL7","country_name":"Albania"}
+{"country_code":"AL8","country_name":"Albania"}
+{"country_code":"AL9","country_name":"Albania"}
+{"country_code":"AM0","country_name":"Armenia"}
+{"country_code":"AM1","country_name":"Armenia"}
+{"country_code":"AM2","country_name":"Armenia"}
+{"country_code":"AM3","country_name":"Armenia"}
+{"country_code":"AM4","country_name":"Armenia"}
+{"country_code":"AM5","country_name":"Armenia"}
+{"country_code":"AM6","country_name":"Armenia"}
+{"country_code":"AM7","country_name":"Armenia"}
+{"country_code":"AM8","country_name":"Armenia"}
+{"country_code":"AM9","country_name":"Armenia"}
+{"country_code":"AN0","country_name":"Netherlands Antilles"}
+{"country_code":"AN1","country_name":"Netherlands Antilles"}
+{"country_code":"AN2","country_name":"Netherlands Antilles"}
+{"country_code":"AN3","country_name":"Netherlands Antilles"}
+{"country_code":"AN4","country_name":"Netherlands Antilles"}
+{"country_code":"AN5","country_name":"Netherlands Antilles"}
+{"country_code":"AN6","country_name":"Netherlands Antilles"}
+{"country_code":"AN7","country_name":"Netherlands Antilles"}
+{"country_code":"AN8","country_name":"Netherlands Antilles"}
+{"country_code":"AN9","country_name":"Netherlands Antilles"}
+{"country_code":"AO0","country_name":"Angola"}
+{"country_code":"AO1","country_name":"Angola"}
+{"country_code":"AO2","country_name":"Angola"}
+{"country_code":"AO3","country_name":"Angola"}
+{"country_code":"AO4","country_name":"Angola"}
+{"country_code":"AO5","country_name":"Angola"}
+{"country_code":"AO6","country_name":"Angola"}
+{"country_code":"AO7","country_name":"Angola"}
+{"country_code":"AO8","country_name":"Angola"}
+{"country_code":"AO9","country_name":"Angola"}
+{"country_code":"AQ0","country_name":"Antarctica"}
+{"country_code":"AQ1","country_name":"Antarctica"}
+{"country_code":"AQ2","country_name":"Antarctica"}
+{"country_code":"AQ3","country_name":"Antarctica"}
+{"country_code":"AQ4","country_name":"Antarctica"}
+{"country_code":"AQ5","country_name":"Antarctica"}
+{"country_code":"AQ6","country_name":"Antarctica"}
+{"country_code":"AQ7","country_name":"Antarctica"}
+{"country_code":"AQ8","country_name":"Antarctica"}
+{"country_code":"AQ9","country_name":"Antarctica"}
+{"country_code":"AR0","country_name":"Argentina"}
+{"country_code":"AR1","country_name":"Argentina"}
+{"country_code":"AR2","country_name":"Argentina"}
+{"country_code":"AR3","country_name":"Argentina"}
+{"country_code":"AR4","country_name":"Argentina"}
+{"country_code":"AR5","country_name":"Argentina"}
+{"country_code":"AR6","country_name":"Argentina"}
+{"country_code":"AR7","country_name":"Argentina"}
+{"country_code":"AR8","country_name":"Argentina"}
+{"country_code":"AR9","country_name":"Argentina"}
+{"country_code":"AS0","country_name":"American Samoa"}
+{"country_code":"AS1","country_name":"American Samoa"}
+{"country_code":"AS2","country_name":"American Samoa"}
+{"country_code":"AS3","country_name":"American Samoa"}
+{"country_code":"AS4","country_name":"American Samoa"}
+{"country_code":"AS5","country_name":"American Samoa"}
+{"country_code":"AS6","country_name":"American Samoa"}
+{"country_code":"AS7","country_name":"American Samoa"}
+{"country_code":"AS8","country_name":"American Samoa"}
+{"country_code":"AS9","country_name":"American Samoa"}
+{"country_code":"AT0","country_name":"Austria"}
+{"country_code":"AT1","country_name":"Austria"}
+{"country_code":"AT2","country_name":"Austria"}
+{"country_code":"AT3","country_name":"Austria"}
+{"country_code":"AT4","country_name":"Austria"}
+{"country_code":"AT5","country_name":"Austria"}
+{"country_code":"AT6","country_name":"Austria"}
+{"country_code":"AT7","country_name":"Austria"}
+{"country_code":"AT8","country_name":"Austria"}
+{"country_code":"AT9","country_name":"Austria"}
+{"country_code":"AU0","country_name":"Australia"}
+{"country_code":"AU1","country_name":"Australia"}
+{"country_code":"AU2","country_name":"Australia"}
+{"country_code":"AU3","country_name":"Australia"}
+{"country_code":"AU4","country_name":"Australia"}
+{"country_code":"AU5","country_name":"Australia"}
+{"country_code":"AU6","country_name":"Australia"}
+{"country_code":"AU7","country_name":"Australia"}
+{"country_code":"AU8","country_name":"Australia"}
+{"country_code":"AU9","country_name":"Australia"}
+{"country_code":"AW0","country_name":"Aruba"}
+{"country_code":"AW1","country_name":"Aruba"}
+{"country_code":"AW2","country_name":"Aruba"}
+{"country_code":"AW3","country_name":"Aruba"}
+{"country_code":"AW4","country_name":"Aruba"}
+{"country_code":"AW5","country_name":"Aruba"}
+{"country_code":"AW6","country_name":"Aruba"}
+{"country_code":"AW7","country_name":"Aruba"}
+{"country_code":"AW8","country_name":"Aruba"}
+{"country_code":"AW9","country_name":"Aruba"}
+{"country_code":"AX0","country_name":"Åland Islands"}
+{"country_code":"AX1","country_name":"Åland Islands"}
+{"country_code":"AX2","country_name":"Åland Islands"}
+{"country_code":"AX3","country_name":"Åland Islands"}
+{"country_code":"AX4","country_name":"Åland Islands"}
+{"country_code":"AX5","country_name":"Åland Islands"}
+{"country_code":"AX6","country_name":"Åland Islands"}
+{"country_code":"AX7","country_name":"Åland Islands"}
+{"country_code":"AX8","country_name":"Åland Islands"}
+{"country_code":"AX9","country_name":"Åland Islands"}
+{"country_code":"AZ0","country_name":"Azerbaijan"}
+{"country_code":"AZ1","country_name":"Azerbaijan"}
+{"country_code":"AZ2","country_name":"Azerbaijan"}
+{"country_code":"AZ3","country_name":"Azerbaijan"}
+{"country_code":"AZ4","country_name":"Azerbaijan"}
+{"country_code":"AZ5","country_name":"Azerbaijan"}
+{"country_code":"AZ6","country_name":"Azerbaijan"}
+{"country_code":"AZ7","country_name":"Azerbaijan"}
+{"country_code":"AZ8","country_name":"Azerbaijan"}
+{"country_code":"AZ9","country_name":"Azerbaijan"}
+{"country_code":"BA0","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA1","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA2","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA3","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA4","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA5","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA6","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA7","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA8","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BA9","country_name":"Bosnia and Herzegovina"}
+{"country_code":"BB0","country_name":"Barbados"}
+{"country_code":"BB1","country_name":"Barbados"}
+{"country_code":"BB2","country_name":"Barbados"}
+{"country_code":"BB3","country_name":"Barbados"}
+{"country_code":"BB4","country_name":"Barbados"}
+{"country_code":"BB5","country_name":"Barbados"}
+{"country_code":"BB6","country_name":"Barbados"}
+{"country_code":"BB7","country_name":"Barbados"}
+{"country_code":"BB8","country_name":"Barbados"}
+{"country_code":"BB9","country_name":"Barbados"}
+{"country_code":"BD0","country_name":"Bangladesh"}
+{"country_code":"BD1","country_name":"Bangladesh"}
+{"country_code":"BD2","country_name":"Bangladesh"}
+{"country_code":"BD3","country_name":"Bangladesh"}
+{"country_code":"BD4","country_name":"Bangladesh"}
+{"country_code":"BD5","country_name":"Bangladesh"}
+{"country_code":"BD6","country_name":"Bangladesh"}
+{"country_code":"BD7","country_name":"Bangladesh"}
+{"country_code":"BD8","country_name":"Bangladesh"}
+{"country_code":"BD9","country_name":"Bangladesh"}
+{"country_code":"BE0","country_name":"Belgium"}
+{"country_code":"BE1","country_name":"Belgium"}
+{"country_code":"BE2","country_name":"Belgium"}
+{"country_code":"BE3","country_name":"Belgium"}
+{"country_code":"BE4","country_name":"Belgium"}
+{"country_code":"BE5","country_name":"Belgium"}
+{"country_code":"BE6","country_name":"Belgium"}
+{"country_code":"BE7","country_name":"Belgium"}
+{"country_code":"BE8","country_name":"Belgium"}
+{"country_code":"BE9","country_name":"Belgium"}
+{"country_code":"BF0","country_name":"Burkina Faso"}
+{"country_code":"BF1","country_name":"Burkina Faso"}
+{"country_code":"BF2","country_name":"Burkina Faso"}
+{"country_code":"BF3","country_name":"Burkina Faso"}
+{"country_code":"BF4","country_name":"Burkina Faso"}
+{"country_code":"BF5","country_name":"Burkina Faso"}
+{"country_code":"BF6","country_name":"Burkina Faso"}
+{"country_code":"BF7","country_name":"Burkina Faso"}
+{"country_code":"BF8","country_name":"Burkina Faso"}
+{"country_code":"BF9","country_name":"Burkina Faso"}
+{"country_code":"BG0","country_name":"Bulgaria"}
+{"country_code":"BG1","country_name":"Bulgaria"}
+{"country_code":"BG2","country_name":"Bulgaria"}
+{"country_code":"BG3","country_name":"Bulgaria"}
+{"country_code":"BG4","country_name":"Bulgaria"}
+{"country_code":"BG5","country_name":"Bulgaria"}
+{"country_code":"BG6","country_name":"Bulgaria"}
+{"country_code":"BG7","country_name":"Bulgaria"}
+{"country_code":"BG8","country_name":"Bulgaria"}
+{"country_code":"BG9","country_name":"Bulgaria"}
+{"country_code":"BH0","country_name":"Bahrain"}
+{"country_code":"BH1","country_name":"Bahrain"}
+{"country_code":"BH2","country_name":"Bahrain"}
+{"country_code":"BH3","country_name":"Bahrain"}
+{"country_code":"BH4","country_name":"Bahrain"}
+{"country_code":"BH5","country_name":"Bahrain"}
+{"country_code":"BH6","country_name":"Bahrain"}
+{"country_code":"BH7","country_name":"Bahrain"}
+{"country_code":"BH8","country_name":"Bahrain"}
+{"country_code":"BH9","country_name":"Bahrain"}
+{"country_code":"BI0","country_name":"Burundi"}
+{"country_code":"BI1","country_name":"Burundi"}
+{"country_code":"BI2","country_name":"Burundi"}
+{"country_code":"BI3","country_name":"Burundi"}
+{"country_code":"BI4","country_name":"Burundi"}
+{"country_code":"BI5","country_name":"Burundi"}
+{"country_code":"BI6","country_name":"Burundi"}
+{"country_code":"BI7","country_name":"Burundi"}
+{"country_code":"BI8","country_name":"Burundi"}
+{"country_code":"BI9","country_name":"Burundi"}
+{"country_code":"BJ0","country_name":"Benin"}
+{"country_code":"BJ1","country_name":"Benin"}
+{"country_code":"BJ2","country_name":"Benin"}
+{"country_code":"BJ3","country_name":"Benin"}
+{"country_code":"BJ4","country_name":"Benin"}
+{"country_code":"BJ5","country_name":"Benin"}
+{"country_code":"BJ6","country_name":"Benin"}
+{"country_code":"BJ7","country_name":"Benin"}
+{"country_code":"BJ8","country_name":"Benin"}
+{"country_code":"BJ9","country_name":"Benin"}
+{"country_code":"BL0","country_name":"Saint Barthélemy"}
+{"country_code":"BL1","country_name":"Saint Barthélemy"}
+{"country_code":"BL2","country_name":"Saint Barthélemy"}
+{"country_code":"BL3","country_name":"Saint Barthélemy"}
+{"country_code":"BL4","country_name":"Saint Barthélemy"}
+{"country_code":"BL5","country_name":"Saint Barthélemy"}
+{"country_code":"BL6","country_name":"Saint Barthélemy"}
+{"country_code":"BL7","country_name":"Saint Barthélemy"}
+{"country_code":"BL8","country_name":"Saint Barthélemy"}
+{"country_code":"BL9","country_name":"Saint Barthélemy"}
+{"country_code":"BM0","country_name":"Bermuda"}
+{"country_code":"BM1","country_name":"Bermuda"}
+{"country_code":"BM2","country_name":"Bermuda"}
+{"country_code":"BM3","country_name":"Bermuda"}
+{"country_code":"BM4","country_name":"Bermuda"}
+{"country_code":"BM5","country_name":"Bermuda"}
+{"country_code":"BM6","country_name":"Bermuda"}
+{"country_code":"BM7","country_name":"Bermuda"}
+{"country_code":"BM8","country_name":"Bermuda"}
+{"country_code":"BM9","country_name":"Bermuda"}
+{"country_code":"BN0","country_name":"Brunei"}
+{"country_code":"BN1","country_name":"Brunei"}
+{"country_code":"BN2","country_name":"Brunei"}
+{"country_code":"BN3","country_name":"Brunei"}
+{"country_code":"BN4","country_name":"Brunei"}
+{"country_code":"BN5","country_name":"Brunei"}
+{"country_code":"BN6","country_name":"Brunei"}
+{"country_code":"BN7","country_name":"Brunei"}
+{"country_code":"BN8","country_name":"Brunei"}
+{"country_code":"BN9","country_name":"Brunei"}
+{"country_code":"BO0","country_name":"Bolivia"}
+{"country_code":"BO1","country_name":"Bolivia"}
+{"country_code":"BO2","country_name":"Bolivia"}
+{"country_code":"BO3","country_name":"Bolivia"}
+{"country_code":"BO4","country_name":"Bolivia"}
+{"country_code":"BO5","country_name":"Bolivia"}
+{"country_code":"BO6","country_name":"Bolivia"}
+{"country_code":"BO7","country_name":"Bolivia"}
+{"country_code":"BO8","country_name":"Bolivia"}
+{"country_code":"BO9","country_name":"Bolivia"}
+{"country_code":"BQ0","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ1","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ2","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ3","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ4","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ5","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ6","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ7","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ8","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BQ9","country_name":"Bonaire, Sint Eustatius and Saba"}
+{"country_code":"BR0","country_name":"Brazil"}
+{"country_code":"BR1","country_name":"Brazil"}
+{"country_code":"BR2","country_name":"Brazil"}
+{"country_code":"BR3","country_name":"Brazil"}
+{"country_code":"BR4","country_name":"Brazil"}
+{"country_code":"BR5","country_name":"Brazil"}
+{"country_code":"BR6","country_name":"Brazil"}
+{"country_code":"BR7","country_name":"Brazil"}
+{"country_code":"BR8","country_name":"Brazil"}
+{"country_code":"BR9","country_name":"Brazil"}
+{"country_code":"BS0","country_name":"Bahamas"}
+{"country_code":"BS1","country_name":"Bahamas"}
+{"country_code":"BS2","country_name":"Bahamas"}
+{"country_code":"BS3","country_name":"Bahamas"}
+{"country_code":"BS4","country_name":"Bahamas"}
+{"country_code":"BS5","country_name":"Bahamas"}
+{"country_code":"BS6","country_name":"Bahamas"}
+{"country_code":"BS7","country_name":"Bahamas"}
+{"country_code":"BS8","country_name":"Bahamas"}
+{"country_code":"BS9","country_name":"Bahamas"}
+{"country_code":"BT0","country_name":"Bhutan"}
+{"country_code":"BT1","country_name":"Bhutan"}
+{"country_code":"BT2","country_name":"Bhutan"}
+{"country_code":"BT3","country_name":"Bhutan"}
+{"country_code":"BT4","country_name":"Bhutan"}
+{"country_code":"BT5","country_name":"Bhutan"}
+{"country_code":"BT6","country_name":"Bhutan"}
+{"country_code":"BT7","country_name":"Bhutan"}
+{"country_code":"BT8","country_name":"Bhutan"}
+{"country_code":"BT9","country_name":"Bhutan"}
+{"country_code":"BV0","country_name":"Bouvet Island"}
+{"country_code":"BV1","country_name":"Bouvet Island"}
+{"country_code":"BV2","country_name":"Bouvet Island"}
+{"country_code":"BV3","country_name":"Bouvet Island"}
+{"country_code":"BV4","country_name":"Bouvet Island"}
+{"country_code":"BV5","country_name":"Bouvet Island"}
+{"country_code":"BV6","country_name":"Bouvet Island"}
+{"country_code":"BV7","country_name":"Bouvet Island"}
+{"country_code":"BV8","country_name":"Bouvet Island"}
+{"country_code":"BV9","country_name":"Bouvet Island"}
+{"country_code":"BW0","country_name":"Botswana"}
+{"country_code":"BW1","country_name":"Botswana"}
+{"country_code":"BW2","country_name":"Botswana"}
+{"country_code":"BW3","country_name":"Botswana"}
+{"country_code":"BW4","country_name":"Botswana"}
+{"country_code":"BW5","country_name":"Botswana"}
+{"country_code":"BW6","country_name":"Botswana"}
+{"country_code":"BW7","country_name":"Botswana"}
+{"country_code":"BW8","country_name":"Botswana"}
+{"country_code":"BW9","country_name":"Botswana"}
+{"country_code":"BY0","country_name":"Belarus"}
+{"country_code":"BY1","country_name":"Belarus"}
+{"country_code":"BY2","country_name":"Belarus"}
+{"country_code":"BY3","country_name":"Belarus"}
+{"country_code":"BY4","country_name":"Belarus"}
+{"country_code":"BY5","country_name":"Belarus"}
+{"country_code":"BY6","country_name":"Belarus"}
+{"country_code":"BY7","country_name":"Belarus"}
+{"country_code":"BY8","country_name":"Belarus"}
+{"country_code":"BY9","country_name":"Belarus"}
+{"country_code":"BZ0","country_name":"Belize"}
+{"country_code":"BZ1","country_name":"Belize"}
+{"country_code":"BZ2","country_name":"Belize"}
+{"country_code":"BZ3","country_name":"Belize"}
+{"country_code":"BZ4","country_name":"Belize"}
+{"country_code":"BZ5","country_name":"Belize"}
+{"country_code":"BZ6","country_name":"Belize"}
+{"country_code":"BZ7","country_name":"Belize"}
+{"country_code":"BZ8","country_name":"Belize"}
+{"country_code":"BZ9","country_name":"Belize"}
+{"country_code":"CA0","country_name":"Canada"}
+{"country_code":"CA1","country_name":"Canada"}
+{"country_code":"CA2","country_name":"Canada"}
+{"country_code":"CA3","country_name":"Canada"}
+{"country_code":"CA4","country_name":"Canada"}
+{"country_code":"CA5","country_name":"Canada"}
+{"country_code":"CA6","country_name":"Canada"}
+{"country_code":"CA7","country_name":"Canada"}
+{"country_code":"CA8","country_name":"Canada"}
+{"country_code":"CA9","country_name":"Canada"}
+{"country_code":"CC0","country_name":"Cocos Islands"}
+{"country_code":"CC1","country_name":"Cocos Islands"}
+{"country_code":"CC2","country_name":"Cocos Islands"}
+{"country_code":"CC3","country_name":"Cocos Islands"}
+{"country_code":"CC4","country_name":"Cocos Islands"}
+{"country_code":"CC5","country_name":"Cocos Islands"}
+{"country_code":"CC6","country_name":"Cocos Islands"}
+{"country_code":"CC7","country_name":"Cocos Islands"}
+{"country_code":"CC8","country_name":"Cocos Islands"}
+{"country_code":"CC9","country_name":"Cocos Islands"}
+{"country_code":"CD0","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD1","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD2","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD3","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD4","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD5","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD6","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD7","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD8","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CD9","country_name":"The Democratic Republic Of Congo"}
+{"country_code":"CF0","country_name":"Central African Republic"}
+{"country_code":"CF1","country_name":"Central African Republic"}
+{"country_code":"CF2","country_name":"Central African Republic"}
+{"country_code":"CF3","country_name":"Central African Republic"}
+{"country_code":"CF4","country_name":"Central African Republic"}
+{"country_code":"CF5","country_name":"Central African Republic"}
+{"country_code":"CF6","country_name":"Central African Republic"}
+{"country_code":"CF7","country_name":"Central African Republic"}
+{"country_code":"CF8","country_name":"Central African Republic"}
+{"country_code":"CF9","country_name":"Central African Republic"}
+{"country_code":"CG0","country_name":"Congo"}
+{"country_code":"CG1","country_name":"Congo"}
+{"country_code":"CG2","country_name":"Congo"}
+{"country_code":"CG3","country_name":"Congo"}
+{"country_code":"CG4","country_name":"Congo"}
+{"country_code":"CG5","country_name":"Congo"}
+{"country_code":"CG6","country_name":"Congo"}
+{"country_code":"CG7","country_name":"Congo"}
+{"country_code":"CG8","country_name":"Congo"}
+{"country_code":"CG9","country_name":"Congo"}
+{"country_code":"CH0","country_name":"Switzerland"}
+{"country_code":"CH1","country_name":"Switzerland"}
+{"country_code":"CH2","country_name":"Switzerland"}
+{"country_code":"CH3","country_name":"Switzerland"}
+{"country_code":"CH4","country_name":"Switzerland"}
+{"country_code":"CH5","country_name":"Switzerland"}
+{"country_code":"CH6","country_name":"Switzerland"}
+{"country_code":"CH7","country_name":"Switzerland"}
+{"country_code":"CH8","country_name":"Switzerland"}
+{"country_code":"CH9","country_name":"Switzerland"}
+{"country_code":"CI0","country_name":"Côte d'Ivoire"}
+{"country_code":"CI1","country_name":"Côte d'Ivoire"}
+{"country_code":"CI2","country_name":"Côte d'Ivoire"}
+{"country_code":"CI3","country_name":"Côte d'Ivoire"}
+{"country_code":"CI4","country_name":"Côte d'Ivoire"}
+{"country_code":"CI5","country_name":"Côte d'Ivoire"}
+{"country_code":"CI6","country_name":"Côte d'Ivoire"}
+{"country_code":"CI7","country_name":"Côte d'Ivoire"}
+{"country_code":"CI8","country_name":"Côte d'Ivoire"}
+{"country_code":"CI9","country_name":"Côte d'Ivoire"}
+{"country_code":"CK0","country_name":"Cook Islands"}
+{"country_code":"CK1","country_name":"Cook Islands"}
+{"country_code":"CK2","country_name":"Cook Islands"}
+{"country_code":"CK3","country_name":"Cook Islands"}
+{"country_code":"CK4","country_name":"Cook Islands"}
+{"country_code":"CK5","country_name":"Cook Islands"}
+{"country_code":"CK6","country_name":"Cook Islands"}
+{"country_code":"CK7","country_name":"Cook Islands"}
+{"country_code":"CK8","country_name":"Cook Islands"}
+{"country_code":"CK9","country_name":"Cook Islands"}
+{"country_code":"CL0","country_name":"Chile"}
+{"country_code":"CL1","country_name":"Chile"}
+{"country_code":"CL2","country_name":"Chile"}
+{"country_code":"CL3","country_name":"Chile"}
+{"country_code":"CL4","country_name":"Chile"}
+{"country_code":"CL5","country_name":"Chile"}
+{"country_code":"CL6","country_name":"Chile"}
+{"country_code":"CL7","country_name":"Chile"}
+{"country_code":"CL8","country_name":"Chile"}
+{"country_code":"CL9","country_name":"Chile"}
+{"country_code":"CM0","country_name":"Cameroon"}
+{"country_code":"CM1","country_name":"Cameroon"}
+{"country_code":"CM2","country_name":"Cameroon"}
+{"country_code":"CM3","country_name":"Cameroon"}
+{"country_code":"CM4","country_name":"Cameroon"}
+{"country_code":"CM5","country_name":"Cameroon"}
+{"country_code":"CM6","country_name":"Cameroon"}
+{"country_code":"CM7","country_name":"Cameroon"}
+{"country_code":"CM8","country_name":"Cameroon"}
+{"country_code":"CM9","country_name":"Cameroon"}
+{"country_code":"CN0","country_name":"China"}
+{"country_code":"CN1","country_name":"China"}
+{"country_code":"CN2","country_name":"China"}
+{"country_code":"CN3","country_name":"China"}
+{"country_code":"CN4","country_name":"China"}
+{"country_code":"CN5","country_name":"China"}
+{"country_code":"CN6","country_name":"China"}
+{"country_code":"CN7","country_name":"China"}
+{"country_code":"CN8","country_name":"China"}
+{"country_code":"CN9","country_name":"China"}
+{"country_code":"CO0","country_name":"Colombia"}
+{"country_code":"CO1","country_name":"Colombia"}
+{"country_code":"CO2","country_name":"Colombia"}
+{"country_code":"CO3","country_name":"Colombia"}
+{"country_code":"CO4","country_name":"Colombia"}
+{"country_code":"CO5","country_name":"Colombia"}
+{"country_code":"CO6","country_name":"Colombia"}
+{"country_code":"CO7","country_name":"Colombia"}
+{"country_code":"CO8","country_name":"Colombia"}
+{"country_code":"CO9","country_name":"Colombia"}
+{"country_code":"CR0","country_name":"Costa Rica"}
+{"country_code":"CR1","country_name":"Costa Rica"}
+{"country_code":"CR2","country_name":"Costa Rica"}
+{"country_code":"CR3","country_name":"Costa Rica"}
+{"country_code":"CR4","country_name":"Costa Rica"}
+{"country_code":"CR5","country_name":"Costa Rica"}
+{"country_code":"CR6","country_name":"Costa Rica"}
+{"country_code":"CR7","country_name":"Costa Rica"}
+{"country_code":"CR8","country_name":"Costa Rica"}
+{"country_code":"CR9","country_name":"Costa Rica"}
+{"country_code":"CU0","country_name":"Cuba"}
+{"country_code":"CU1","country_name":"Cuba"}
+{"country_code":"CU2","country_name":"Cuba"}
+{"country_code":"CU3","country_name":"Cuba"}
+{"country_code":"CU4","country_name":"Cuba"}
+{"country_code":"CU5","country_name":"Cuba"}
+{"country_code":"CU6","country_name":"Cuba"}
+{"country_code":"CU7","country_name":"Cuba"}
+{"country_code":"CU8","country_name":"Cuba"}
+{"country_code":"CU9","country_name":"Cuba"}
+{"country_code":"CV0","country_name":"Cape Verde"}
+{"country_code":"CV1","country_name":"Cape Verde"}
+{"country_code":"CV2","country_name":"Cape Verde"}
+{"country_code":"CV3","country_name":"Cape Verde"}
+{"country_code":"CV4","country_name":"Cape Verde"}
+{"country_code":"CV5","country_name":"Cape Verde"}
+{"country_code":"CV6","country_name":"Cape Verde"}
+{"country_code":"CV7","country_name":"Cape Verde"}
+{"country_code":"CV8","country_name":"Cape Verde"}
+{"country_code":"CV9","country_name":"Cape Verde"}
+{"country_code":"CW0","country_name":"Curaçao"}
+{"country_code":"CW1","country_name":"Curaçao"}
+{"country_code":"CW2","country_name":"Curaçao"}
+{"country_code":"CW3","country_name":"Curaçao"}
+{"country_code":"CW4","country_name":"Curaçao"}
+{"country_code":"CW5","country_name":"Curaçao"}
+{"country_code":"CW6","country_name":"Curaçao"}
+{"country_code":"CW7","country_name":"Curaçao"}
+{"country_code":"CW8","country_name":"Curaçao"}
+{"country_code":"CW9","country_name":"Curaçao"}
+{"country_code":"CX0","country_name":"Christmas Island"}
+{"country_code":"CX1","country_name":"Christmas Island"}
+{"country_code":"CX2","country_name":"Christmas Island"}
+{"country_code":"CX3","country_name":"Christmas Island"}
+{"country_code":"CX4","country_name":"Christmas Island"}
+{"country_code":"CX5","country_name":"Christmas Island"}
+{"country_code":"CX6","country_name":"Christmas Island"}
+{"country_code":"CX7","country_name":"Christmas Island"}
+{"country_code":"CX8","country_name":"Christmas Island"}
+{"country_code":"CX9","country_name":"Christmas Island"}
+{"country_code":"CY0","country_name":"Cyprus"}
+{"country_code":"CY1","country_name":"Cyprus"}
+{"country_code":"CY2","country_name":"Cyprus"}
+{"country_code":"CY3","country_name":"Cyprus"}
+{"country_code":"CY4","country_name":"Cyprus"}
+{"country_code":"CY5","country_name":"Cyprus"}
+{"country_code":"CY6","country_name":"Cyprus"}
+{"country_code":"CY7","country_name":"Cyprus"}
+{"country_code":"CY8","country_name":"Cyprus"}
+{"country_code":"CY9","country_name":"Cyprus"}
+{"country_code":"CZ0","country_name":"Czech Republic"}
+{"country_code":"CZ1","country_name":"Czech Republic"}
+{"country_code":"CZ2","country_name":"Czech Republic"}
+{"country_code":"CZ3","country_name":"Czech Republic"}
+{"country_code":"CZ4","country_name":"Czech Republic"}
+{"country_code":"CZ5","country_name":"Czech Republic"}
+{"country_code":"CZ6","country_name":"Czech Republic"}
+{"country_code":"CZ7","country_name":"Czech Republic"}
+{"country_code":"CZ8","country_name":"Czech Republic"}
+{"country_code":"CZ9","country_name":"Czech Republic"}
+{"country_code":"DE0","country_name":"Germany"}
+{"country_code":"DE1","country_name":"Germany"}
+{"country_code":"DE2","country_name":"Germany"}
+{"country_code":"DE3","country_name":"Germany"}
+{"country_code":"DE4","country_name":"Germany"}
+{"country_code":"DE5","country_name":"Germany"}
+{"country_code":"DE6","country_name":"Germany"}
+{"country_code":"DE7","country_name":"Germany"}
+{"country_code":"DE8","country_name":"Germany"}
+{"country_code":"DE9","country_name":"Germany"}
+{"country_code":"DJ0","country_name":"Djibouti"}
+{"country_code":"DJ1","country_name":"Djibouti"}
+{"country_code":"DJ2","country_name":"Djibouti"}
+{"country_code":"DJ3","country_name":"Djibouti"}
+{"country_code":"DJ4","country_name":"Djibouti"}
+{"country_code":"DJ5","country_name":"Djibouti"}
+{"country_code":"DJ6","country_name":"Djibouti"}
+{"country_code":"DJ7","country_name":"Djibouti"}
+{"country_code":"DJ8","country_name":"Djibouti"}
+{"country_code":"DJ9","country_name":"Djibouti"}
+{"country_code":"DK0","country_name":"Denmark"}
+{"country_code":"DK1","country_name":"Denmark"}
+{"country_code":"DK2","country_name":"Denmark"}
+{"country_code":"DK3","country_name":"Denmark"}
+{"country_code":"DK4","country_name":"Denmark"}
+{"country_code":"DK5","country_name":"Denmark"}
+{"country_code":"DK6","country_name":"Denmark"}
+{"country_code":"DK7","country_name":"Denmark"}
+{"country_code":"DK8","country_name":"Denmark"}
+{"country_code":"DK9","country_name":"Denmark"}
+{"country_code":"DM0","country_name":"Dominica"}
+{"country_code":"DM1","country_name":"Dominica"}
+{"country_code":"DM2","country_name":"Dominica"}
+{"country_code":"DM3","country_name":"Dominica"}
+{"country_code":"DM4","country_name":"Dominica"}
+{"country_code":"DM5","country_name":"Dominica"}
+{"country_code":"DM6","country_name":"Dominica"}
+{"country_code":"DM7","country_name":"Dominica"}
+{"country_code":"DM8","country_name":"Dominica"}
+{"country_code":"DM9","country_name":"Dominica"}
+{"country_code":"DO0","country_name":"Dominican Republic"}
+{"country_code":"DO1","country_name":"Dominican Republic"}
+{"country_code":"DO2","country_name":"Dominican Republic"}
+{"country_code":"DO3","country_name":"Dominican Republic"}
+{"country_code":"DO4","country_name":"Dominican Republic"}
+{"country_code":"DO5","country_name":"Dominican Republic"}
+{"country_code":"DO6","country_name":"Dominican Republic"}
+{"country_code":"DO7","country_name":"Dominican Republic"}
+{"country_code":"DO8","country_name":"Dominican Republic"}
+{"country_code":"DO9","country_name":"Dominican Republic"}
+{"country_code":"DZ0","country_name":"Algeria"}
+{"country_code":"DZ1","country_name":"Algeria"}
+{"country_code":"DZ2","country_name":"Algeria"}
+{"country_code":"DZ3","country_name":"Algeria"}
+{"country_code":"DZ4","country_name":"Algeria"}
+{"country_code":"DZ5","country_name":"Algeria"}
+{"country_code":"DZ6","country_name":"Algeria"}
+{"country_code":"DZ7","country_name":"Algeria"}
+{"country_code":"DZ8","country_name":"Algeria"}
+{"country_code":"DZ9","country_name":"Algeria"}
+{"country_code":"EC0","country_name":"Ecuador"}
+{"country_code":"EC1","country_name":"Ecuador"}
+{"country_code":"EC2","country_name":"Ecuador"}
+{"country_code":"EC3","country_name":"Ecuador"}
+{"country_code":"EC4","country_name":"Ecuador"}
+{"country_code":"EC5","country_name":"Ecuador"}
+{"country_code":"EC6","country_name":"Ecuador"}
+{"country_code":"EC7","country_name":"Ecuador"}
+{"country_code":"EC8","country_name":"Ecuador"}
+{"country_code":"EC9","country_name":"Ecuador"}
+{"country_code":"EE0","country_name":"Estonia"}
+{"country_code":"EE1","country_name":"Estonia"}
+{"country_code":"EE2","country_name":"Estonia"}
+{"country_code":"EE3","country_name":"Estonia"}
+{"country_code":"EE4","country_name":"Estonia"}
+{"country_code":"EE5","country_name":"Estonia"}
+{"country_code":"EE6","country_name":"Estonia"}
+{"country_code":"EE7","country_name":"Estonia"}
+{"country_code":"EE8","country_name":"Estonia"}
+{"country_code":"EE9","country_name":"Estonia"}
+{"country_code":"EG0","country_name":"Egypt"}
+{"country_code":"EG1","country_name":"Egypt"}
+{"country_code":"EG2","country_name":"Egypt"}
+{"country_code":"EG3","country_name":"Egypt"}
+{"country_code":"EG4","country_name":"Egypt"}
+{"country_code":"EG5","country_name":"Egypt"}
+{"country_code":"EG6","country_name":"Egypt"}
+{"country_code":"EG7","country_name":"Egypt"}
+{"country_code":"EG8","country_name":"Egypt"}
+{"country_code":"EG9","country_name":"Egypt"}
+{"country_code":"EH0","country_name":"Western Sahara"}
+{"country_code":"EH1","country_name":"Western Sahara"}
+{"country_code":"EH2","country_name":"Western Sahara"}
+{"country_code":"EH3","country_name":"Western Sahara"}
+{"country_code":"EH4","country_name":"Western Sahara"}
+{"country_code":"EH5","country_name":"Western Sahara"}
+{"country_code":"EH6","country_name":"Western Sahara"}
+{"country_code":"EH7","country_name":"Western Sahara"}
+{"country_code":"EH8","country_name":"Western Sahara"}
+{"country_code":"EH9","country_name":"Western Sahara"}
+{"country_code":"ER0","country_name":"Eritrea"}
+{"country_code":"ER1","country_name":"Eritrea"}
+{"country_code":"ER2","country_name":"Eritrea"}
+{"country_code":"ER3","country_name":"Eritrea"}
+{"country_code":"ER4","country_name":"Eritrea"}
+{"country_code":"ER5","country_name":"Eritrea"}
+{"country_code":"ER6","country_name":"Eritrea"}
+{"country_code":"ER7","country_name":"Eritrea"}
+{"country_code":"ER8","country_name":"Eritrea"}
+{"country_code":"ER9","country_name":"Eritrea"}
+{"country_code":"ES0","country_name":"Spain"}
+{"country_code":"ES1","country_name":"Spain"}
+{"country_code":"ES2","country_name":"Spain"}
+{"country_code":"ES3","country_name":"Spain"}
+{"country_code":"ES4","country_name":"Spain"}
+{"country_code":"ES5","country_name":"Spain"}
+{"country_code":"ES6","country_name":"Spain"}
+{"country_code":"ES7","country_name":"Spain"}
+{"country_code":"ES8","country_name":"Spain"}
+{"country_code":"ES9","country_name":"Spain"}
+{"country_code":"ET0","country_name":"Ethiopia"}
+{"country_code":"ET1","country_name":"Ethiopia"}
+{"country_code":"ET2","country_name":"Ethiopia"}
+{"country_code":"ET3","country_name":"Ethiopia"}
+{"country_code":"ET4","country_name":"Ethiopia"}
+{"country_code":"ET5","country_name":"Ethiopia"}
+{"country_code":"ET6","country_name":"Ethiopia"}
+{"country_code":"ET7","country_name":"Ethiopia"}
+{"country_code":"ET8","country_name":"Ethiopia"}
+{"country_code":"ET9","country_name":"Ethiopia"}
+{"country_code":"FI0","country_name":"Finland"}
+{"country_code":"FI1","country_name":"Finland"}
+{"country_code":"FI2","country_name":"Finland"}
+{"country_code":"FI3","country_name":"Finland"}
+{"country_code":"FI4","country_name":"Finland"}
+{"country_code":"FI5","country_name":"Finland"}
+{"country_code":"FI6","country_name":"Finland"}
+{"country_code":"FI7","country_name":"Finland"}
+{"country_code":"FI8","country_name":"Finland"}
+{"country_code":"FI9","country_name":"Finland"}
+{"country_code":"FJ0","country_name":"Fiji"}
+{"country_code":"FJ1","country_name":"Fiji"}
+{"country_code":"FJ2","country_name":"Fiji"}
+{"country_code":"FJ3","country_name":"Fiji"}
+{"country_code":"FJ4","country_name":"Fiji"}
+{"country_code":"FJ5","country_name":"Fiji"}
+{"country_code":"FJ6","country_name":"Fiji"}
+{"country_code":"FJ7","country_name":"Fiji"}
+{"country_code":"FJ8","country_name":"Fiji"}
+{"country_code":"FJ9","country_name":"Fiji"}
+{"country_code":"FK0","country_name":"Falkland Islands"}
+{"country_code":"FK1","country_name":"Falkland Islands"}
+{"country_code":"FK2","country_name":"Falkland Islands"}
+{"country_code":"FK3","country_name":"Falkland Islands"}
+{"country_code":"FK4","country_name":"Falkland Islands"}
+{"country_code":"FK5","country_name":"Falkland Islands"}
+{"country_code":"FK6","country_name":"Falkland Islands"}
+{"country_code":"FK7","country_name":"Falkland Islands"}
+{"country_code":"FK8","country_name":"Falkland Islands"}
+{"country_code":"FK9","country_name":"Falkland Islands"}
+{"country_code":"FM0","country_name":"Micronesia"}
+{"country_code":"FM1","country_name":"Micronesia"}
+{"country_code":"FM2","country_name":"Micronesia"}
+{"country_code":"FM3","country_name":"Micronesia"}
+{"country_code":"FM4","country_name":"Micronesia"}
+{"country_code":"FM5","country_name":"Micronesia"}
+{"country_code":"FM6","country_name":"Micronesia"}
+{"country_code":"FM7","country_name":"Micronesia"}
+{"country_code":"FM8","country_name":"Micronesia"}
+{"country_code":"FM9","country_name":"Micronesia"}
+{"country_code":"FO0","country_name":"Faroe Islands"}
+{"country_code":"FO1","country_name":"Faroe Islands"}
+{"country_code":"FO2","country_name":"Faroe Islands"}
+{"country_code":"FO3","country_name":"Faroe Islands"}
+{"country_code":"FO4","country_name":"Faroe Islands"}
+{"country_code":"FO5","country_name":"Faroe Islands"}
+{"country_code":"FO6","country_name":"Faroe Islands"}
+{"country_code":"FO7","country_name":"Faroe Islands"}
+{"country_code":"FO8","country_name":"Faroe Islands"}
+{"country_code":"FO9","country_name":"Faroe Islands"}
+{"country_code":"FR0","country_name":"France"}
+{"country_code":"FR1","country_name":"France"}
+{"country_code":"FR2","country_name":"France"}
+{"country_code":"FR3","country_name":"France"}
+{"country_code":"FR4","country_name":"France"}
+{"country_code":"FR5","country_name":"France"}
+{"country_code":"FR6","country_name":"France"}
+{"country_code":"FR7","country_name":"France"}
+{"country_code":"FR8","country_name":"France"}
+{"country_code":"FR9","country_name":"France"}
+{"country_code":"GA0","country_name":"Gabon"}
+{"country_code":"GA1","country_name":"Gabon"}
+{"country_code":"GA2","country_name":"Gabon"}
+{"country_code":"GA3","country_name":"Gabon"}
+{"country_code":"GA4","country_name":"Gabon"}
+{"country_code":"GA5","country_name":"Gabon"}
+{"country_code":"GA6","country_name":"Gabon"}
+{"country_code":"GA7","country_name":"Gabon"}
+{"country_code":"GA8","country_name":"Gabon"}
+{"country_code":"GA9","country_name":"Gabon"}
+{"country_code":"GB0","country_name":"United Kingdom"}
+{"country_code":"GB1","country_name":"United Kingdom"}
+{"country_code":"GB2","country_name":"United Kingdom"}
+{"country_code":"GB3","country_name":"United Kingdom"}
+{"country_code":"GB4","country_name":"United Kingdom"}
+{"country_code":"GB5","country_name":"United Kingdom"}
+{"country_code":"GB6","country_name":"United Kingdom"}
+{"country_code":"GB7","country_name":"United Kingdom"}
+{"country_code":"GB8","country_name":"United Kingdom"}
+{"country_code":"GB9","country_name":"United Kingdom"}
+{"country_code":"GD0","country_name":"Grenada"}
+{"country_code":"GD1","country_name":"Grenada"}
+{"country_code":"GD2","country_name":"Grenada"}
+{"country_code":"GD3","country_name":"Grenada"}
+{"country_code":"GD4","country_name":"Grenada"}
+{"country_code":"GD5","country_name":"Grenada"}
+{"country_code":"GD6","country_name":"Grenada"}
+{"country_code":"GD7","country_name":"Grenada"}
+{"country_code":"GD8","country_name":"Grenada"}
+{"country_code":"GD9","country_name":"Grenada"}
+{"country_code":"GE0","country_name":"Georgia"}
+{"country_code":"GE1","country_name":"Georgia"}
+{"country_code":"GE2","country_name":"Georgia"}
+{"country_code":"GE3","country_name":"Georgia"}
+{"country_code":"GE4","country_name":"Georgia"}
+{"country_code":"GE5","country_name":"Georgia"}
+{"country_code":"GE6","country_name":"Georgia"}
+{"country_code":"GE7","country_name":"Georgia"}
+{"country_code":"GE8","country_name":"Georgia"}
+{"country_code":"GE9","country_name":"Georgia"}
+{"country_code":"GF0","country_name":"French Guiana"}
+{"country_code":"GF1","country_name":"French Guiana"}
+{"country_code":"GF2","country_name":"French Guiana"}
+{"country_code":"GF3","country_name":"French Guiana"}
+{"country_code":"GF4","country_name":"French Guiana"}
+{"country_code":"GF5","country_name":"French Guiana"}
+{"country_code":"GF6","country_name":"French Guiana"}
+{"country_code":"GF7","country_name":"French Guiana"}
+{"country_code":"GF8","country_name":"French Guiana"}
+{"country_code":"GF9","country_name":"French Guiana"}
+{"country_code":"GG0","country_name":"Guernsey"}
+{"country_code":"GG1","country_name":"Guernsey"}
+{"country_code":"GG2","country_name":"Guernsey"}
+{"country_code":"GG3","country_name":"Guernsey"}
+{"country_code":"GG4","country_name":"Guernsey"}
+{"country_code":"GG5","country_name":"Guernsey"}
+{"country_code":"GG6","country_name":"Guernsey"}
+{"country_code":"GG7","country_name":"Guernsey"}
+{"country_code":"GG8","country_name":"Guernsey"}
+{"country_code":"GG9","country_name":"Guernsey"}
+{"country_code":"GH0","country_name":"Ghana"}
+{"country_code":"GH1","country_name":"Ghana"}
+{"country_code":"GH2","country_name":"Ghana"}
+{"country_code":"GH3","country_name":"Ghana"}
+{"country_code":"GH4","country_name":"Ghana"}
+{"country_code":"GH5","country_name":"Ghana"}
+{"country_code":"GH6","country_name":"Ghana"}
+{"country_code":"GH7","country_name":"Ghana"}
+{"country_code":"GH8","country_name":"Ghana"}
+{"country_code":"GH9","country_name":"Ghana"}
+{"country_code":"GI0","country_name":"Gibraltar"}
+{"country_code":"GI1","country_name":"Gibraltar"}
+{"country_code":"GI2","country_name":"Gibraltar"}
+{"country_code":"GI3","country_name":"Gibraltar"}
+{"country_code":"GI4","country_name":"Gibraltar"}
+{"country_code":"GI5","country_name":"Gibraltar"}
+{"country_code":"GI6","country_name":"Gibraltar"}
+{"country_code":"GI7","country_name":"Gibraltar"}
+{"country_code":"GI8","country_name":"Gibraltar"}
+{"country_code":"GI9","country_name":"Gibraltar"}
+{"country_code":"GL0","country_name":"Greenland"}
+{"country_code":"GL1","country_name":"Greenland"}
+{"country_code":"GL2","country_name":"Greenland"}
+{"country_code":"GL3","country_name":"Greenland"}
+{"country_code":"GL4","country_name":"Greenland"}
+{"country_code":"GL5","country_name":"Greenland"}
+{"country_code":"GL6","country_name":"Greenland"}
+{"country_code":"GL7","country_name":"Greenland"}
+{"country_code":"GL8","country_name":"Greenland"}
+{"country_code":"GL9","country_name":"Greenland"}
+{"country_code":"GM0","country_name":"Gambia"}
+{"country_code":"GM1","country_name":"Gambia"}
+{"country_code":"GM2","country_name":"Gambia"}
+{"country_code":"GM3","country_name":"Gambia"}
+{"country_code":"GM4","country_name":"Gambia"}
+{"country_code":"GM5","country_name":"Gambia"}
+{"country_code":"GM6","country_name":"Gambia"}
+{"country_code":"GM7","country_name":"Gambia"}
+{"country_code":"GM8","country_name":"Gambia"}
+{"country_code":"GM9","country_name":"Gambia"}
+{"country_code":"GN0","country_name":"Guinea"}
+{"country_code":"GN1","country_name":"Guinea"}
+{"country_code":"GN2","country_name":"Guinea"}
+{"country_code":"GN3","country_name":"Guinea"}
+{"country_code":"GN4","country_name":"Guinea"}
+{"country_code":"GN5","country_name":"Guinea"}
+{"country_code":"GN6","country_name":"Guinea"}
+{"country_code":"GN7","country_name":"Guinea"}
+{"country_code":"GN8","country_name":"Guinea"}
+{"country_code":"GN9","country_name":"Guinea"}
+{"country_code":"GP0","country_name":"Guadeloupe"}
+{"country_code":"GP1","country_name":"Guadeloupe"}
+{"country_code":"GP2","country_name":"Guadeloupe"}
+{"country_code":"GP3","country_name":"Guadeloupe"}
+{"country_code":"GP4","country_name":"Guadeloupe"}
+{"country_code":"GP5","country_name":"Guadeloupe"}
+{"country_code":"GP6","country_name":"Guadeloupe"}
+{"country_code":"GP7","country_name":"Guadeloupe"}
+{"country_code":"GP8","country_name":"Guadeloupe"}
+{"country_code":"GP9","country_name":"Guadeloupe"}
+{"country_code":"GQ0","country_name":"Equatorial Guinea"}
+{"country_code":"GQ1","country_name":"Equatorial Guinea"}
+{"country_code":"GQ2","country_name":"Equatorial Guinea"}
+{"country_code":"GQ3","country_name":"Equatorial Guinea"}
+{"country_code":"GQ4","country_name":"Equatorial Guinea"}
+{"country_code":"GQ5","country_name":"Equatorial Guinea"}
+{"country_code":"GQ6","country_name":"Equatorial Guinea"}
+{"country_code":"GQ7","country_name":"Equatorial Guinea"}
+{"country_code":"GQ8","country_name":"Equatorial Guinea"}
+{"country_code":"GQ9","country_name":"Equatorial Guinea"}
+{"country_code":"GR0","country_name":"Greece"}
+{"country_code":"GR1","country_name":"Greece"}
+{"country_code":"GR2","country_name":"Greece"}
+{"country_code":"GR3","country_name":"Greece"}
+{"country_code":"GR4","country_name":"Greece"}
+{"country_code":"GR5","country_name":"Greece"}
+{"country_code":"GR6","country_name":"Greece"}
+{"country_code":"GR7","country_name":"Greece"}
+{"country_code":"GR8","country_name":"Greece"}
+{"country_code":"GR9","country_name":"Greece"}
+{"country_code":"GS0","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS1","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS2","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS3","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS4","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS5","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS6","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS7","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS8","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GS9","country_name":"South Georgia And The South Sandwich Islands"}
+{"country_code":"GT0","country_name":"Guatemala"}
+{"country_code":"GT1","country_name":"Guatemala"}
+{"country_code":"GT2","country_name":"Guatemala"}
+{"country_code":"GT3","country_name":"Guatemala"}
+{"country_code":"GT4","country_name":"Guatemala"}
+{"country_code":"GT5","country_name":"Guatemala"}
+{"country_code":"GT6","country_name":"Guatemala"}
+{"country_code":"GT7","country_name":"Guatemala"}
+{"country_code":"GT8","country_name":"Guatemala"}
+{"country_code":"GT9","country_name":"Guatemala"}
+{"country_code":"GU0","country_name":"Guam"}
+{"country_code":"GU1","country_name":"Guam"}
+{"country_code":"GU2","country_name":"Guam"}
+{"country_code":"GU3","country_name":"Guam"}
+{"country_code":"GU4","country_name":"Guam"}
+{"country_code":"GU5","country_name":"Guam"}
+{"country_code":"GU6","country_name":"Guam"}
+{"country_code":"GU7","country_name":"Guam"}
+{"country_code":"GU8","country_name":"Guam"}
+{"country_code":"GU9","country_name":"Guam"}
+{"country_code":"GW0","country_name":"Guinea-Bissau"}
+{"country_code":"GW1","country_name":"Guinea-Bissau"}
+{"country_code":"GW2","country_name":"Guinea-Bissau"}
+{"country_code":"GW3","country_name":"Guinea-Bissau"}
+{"country_code":"GW4","country_name":"Guinea-Bissau"}
+{"country_code":"GW5","country_name":"Guinea-Bissau"}
+{"country_code":"GW6","country_name":"Guinea-Bissau"}
+{"country_code":"GW7","country_name":"Guinea-Bissau"}
+{"country_code":"GW8","country_name":"Guinea-Bissau"}
+{"country_code":"GW9","country_name":"Guinea-Bissau"}
+{"country_code":"GY0","country_name":"Guyana"}
+{"country_code":"GY1","country_name":"Guyana"}
+{"country_code":"GY2","country_name":"Guyana"}
+{"country_code":"GY3","country_name":"Guyana"}
+{"country_code":"GY4","country_name":"Guyana"}
+{"country_code":"GY5","country_name":"Guyana"}
+{"country_code":"GY6","country_name":"Guyana"}
+{"country_code":"GY7","country_name":"Guyana"}
+{"country_code":"GY8","country_name":"Guyana"}
+{"country_code":"GY9","country_name":"Guyana"}
+{"country_code":"HK0","country_name":"Hong Kong"}
+{"country_code":"HK1","country_name":"Hong Kong"}
+{"country_code":"HK2","country_name":"Hong Kong"}
+{"country_code":"HK3","country_name":"Hong Kong"}
+{"country_code":"HK4","country_name":"Hong Kong"}
+{"country_code":"HK5","country_name":"Hong Kong"}
+{"country_code":"HK6","country_name":"Hong Kong"}
+{"country_code":"HK7","country_name":"Hong Kong"}
+{"country_code":"HK8","country_name":"Hong Kong"}
+{"country_code":"HK9","country_name":"Hong Kong"}
+{"country_code":"HM0","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM1","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM2","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM3","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM4","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM5","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM6","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM7","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM8","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HM9","country_name":"Heard Island And McDonald Islands"}
+{"country_code":"HN0","country_name":"Honduras"}
+{"country_code":"HN1","country_name":"Honduras"}
+{"country_code":"HN2","country_name":"Honduras"}
+{"country_code":"HN3","country_name":"Honduras"}
+{"country_code":"HN4","country_name":"Honduras"}
+{"country_code":"HN5","country_name":"Honduras"}
+{"country_code":"HN6","country_name":"Honduras"}
+{"country_code":"HN7","country_name":"Honduras"}
+{"country_code":"HN8","country_name":"Honduras"}
+{"country_code":"HN9","country_name":"Honduras"}
+{"country_code":"HR0","country_name":"Croatia"}
+{"country_code":"HR1","country_name":"Croatia"}
+{"country_code":"HR2","country_name":"Croatia"}
+{"country_code":"HR3","country_name":"Croatia"}
+{"country_code":"HR4","country_name":"Croatia"}
+{"country_code":"HR5","country_name":"Croatia"}
+{"country_code":"HR6","country_name":"Croatia"}
+{"country_code":"HR7","country_name":"Croatia"}
+{"country_code":"HR8","country_name":"Croatia"}
+{"country_code":"HR9","country_name":"Croatia"}
+{"country_code":"HT0","country_name":"Haiti"}
+{"country_code":"HT1","country_name":"Haiti"}
+{"country_code":"HT2","country_name":"Haiti"}
+{"country_code":"HT3","country_name":"Haiti"}
+{"country_code":"HT4","country_name":"Haiti"}
+{"country_code":"HT5","country_name":"Haiti"}
+{"country_code":"HT6","country_name":"Haiti"}
+{"country_code":"HT7","country_name":"Haiti"}
+{"country_code":"HT8","country_name":"Haiti"}
+{"country_code":"HT9","country_name":"Haiti"}
+{"country_code":"HU0","country_name":"Hungary"}
+{"country_code":"HU1","country_name":"Hungary"}
+{"country_code":"HU2","country_name":"Hungary"}
+{"country_code":"HU3","country_name":"Hungary"}
+{"country_code":"HU4","country_name":"Hungary"}
+{"country_code":"HU5","country_name":"Hungary"}
+{"country_code":"HU6","country_name":"Hungary"}
+{"country_code":"HU7","country_name":"Hungary"}
+{"country_code":"HU8","country_name":"Hungary"}
+{"country_code":"HU9","country_name":"Hungary"}
+{"country_code":"ID0","country_name":"Indonesia"}
+{"country_code":"ID1","country_name":"Indonesia"}
+{"country_code":"ID2","country_name":"Indonesia"}
+{"country_code":"ID3","country_name":"Indonesia"}
+{"country_code":"ID4","country_name":"Indonesia"}
+{"country_code":"ID5","country_name":"Indonesia"}
+{"country_code":"ID6","country_name":"Indonesia"}
+{"country_code":"ID7","country_name":"Indonesia"}
+{"country_code":"ID8","country_name":"Indonesia"}
+{"country_code":"ID9","country_name":"Indonesia"}
+{"country_code":"IE0","country_name":"Ireland"}
+{"country_code":"IE1","country_name":"Ireland"}
+{"country_code":"IE2","country_name":"Ireland"}
+{"country_code":"IE3","country_name":"Ireland"}
+{"country_code":"IE4","country_name":"Ireland"}
+{"country_code":"IE5","country_name":"Ireland"}
+{"country_code":"IE6","country_name":"Ireland"}
+{"country_code":"IE7","country_name":"Ireland"}
+{"country_code":"IE8","country_name":"Ireland"}
+{"country_code":"IE9","country_name":"Ireland"}
+{"country_code":"IL0","country_name":"Israel"}
+{"country_code":"IL1","country_name":"Israel"}
+{"country_code":"IL2","country_name":"Israel"}
+{"country_code":"IL3","country_name":"Israel"}
+{"country_code":"IL4","country_name":"Israel"}
+{"country_code":"IL5","country_name":"Israel"}
+{"country_code":"IL6","country_name":"Israel"}
+{"country_code":"IL7","country_name":"Israel"}
+{"country_code":"IL8","country_name":"Israel"}
+{"country_code":"IL9","country_name":"Israel"}
+{"country_code":"IM0","country_name":"Isle Of Man"}
+{"country_code":"IM1","country_name":"Isle Of Man"}
+{"country_code":"IM2","country_name":"Isle Of Man"}
+{"country_code":"IM3","country_name":"Isle Of Man"}
+{"country_code":"IM4","country_name":"Isle Of Man"}
+{"country_code":"IM5","country_name":"Isle Of Man"}
+{"country_code":"IM6","country_name":"Isle Of Man"}
+{"country_code":"IM7","country_name":"Isle Of Man"}
+{"country_code":"IM8","country_name":"Isle Of Man"}
+{"country_code":"IM9","country_name":"Isle Of Man"}
+{"country_code":"IN0","country_name":"India"}
+{"country_code":"IN1","country_name":"India"}
+{"country_code":"IN2","country_name":"India"}
+{"country_code":"IN3","country_name":"India"}
+{"country_code":"IN4","country_name":"India"}
+{"country_code":"IN5","country_name":"India"}
+{"country_code":"IN6","country_name":"India"}
+{"country_code":"IN7","country_name":"India"}
+{"country_code":"IN8","country_name":"India"}
+{"country_code":"IN9","country_name":"India"}
+{"country_code":"IO0","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO1","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO2","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO3","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO4","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO5","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO6","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO7","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO8","country_name":"British Indian Ocean Territory"}
+{"country_code":"IO9","country_name":"British Indian Ocean Territory"}
+{"country_code":"IQ0","country_name":"Iraq"}
+{"country_code":"IQ1","country_name":"Iraq"}
+{"country_code":"IQ2","country_name":"Iraq"}
+{"country_code":"IQ3","country_name":"Iraq"}
+{"country_code":"IQ4","country_name":"Iraq"}
+{"country_code":"IQ5","country_name":"Iraq"}
+{"country_code":"IQ6","country_name":"Iraq"}
+{"country_code":"IQ7","country_name":"Iraq"}
+{"country_code":"IQ8","country_name":"Iraq"}
+{"country_code":"IQ9","country_name":"Iraq"}
+{"country_code":"IR0","country_name":"Iran"}
+{"country_code":"IR1","country_name":"Iran"}
+{"country_code":"IR2","country_name":"Iran"}
+{"country_code":"IR3","country_name":"Iran"}
+{"country_code":"IR4","country_name":"Iran"}
+{"country_code":"IR5","country_name":"Iran"}
+{"country_code":"IR6","country_name":"Iran"}
+{"country_code":"IR7","country_name":"Iran"}
+{"country_code":"IR8","country_name":"Iran"}
+{"country_code":"IR9","country_name":"Iran"}
+{"country_code":"IS0","country_name":"Iceland"}
+{"country_code":"IS1","country_name":"Iceland"}
+{"country_code":"IS2","country_name":"Iceland"}
+{"country_code":"IS3","country_name":"Iceland"}
+{"country_code":"IS4","country_name":"Iceland"}
+{"country_code":"IS5","country_name":"Iceland"}
+{"country_code":"IS6","country_name":"Iceland"}
+{"country_code":"IS7","country_name":"Iceland"}
+{"country_code":"IS8","country_name":"Iceland"}
+{"country_code":"IS9","country_name":"Iceland"}
+{"country_code":"IT0","country_name":"Italy"}
+{"country_code":"IT1","country_name":"Italy"}
+{"country_code":"IT2","country_name":"Italy"}
+{"country_code":"IT3","country_name":"Italy"}
+{"country_code":"IT4","country_name":"Italy"}
+{"country_code":"IT5","country_name":"Italy"}
+{"country_code":"IT6","country_name":"Italy"}
+{"country_code":"IT7","country_name":"Italy"}
+{"country_code":"IT8","country_name":"Italy"}
+{"country_code":"IT9","country_name":"Italy"}
+{"country_code":"JE0","country_name":"Jersey"}
+{"country_code":"JE1","country_name":"Jersey"}
+{"country_code":"JE2","country_name":"Jersey"}
+{"country_code":"JE3","country_name":"Jersey"}
+{"country_code":"JE4","country_name":"Jersey"}
+{"country_code":"JE5","country_name":"Jersey"}
+{"country_code":"JE6","country_name":"Jersey"}
+{"country_code":"JE7","country_name":"Jersey"}
+{"country_code":"JE8","country_name":"Jersey"}
+{"country_code":"JE9","country_name":"Jersey"}
+{"country_code":"JM0","country_name":"Jamaica"}
+{"country_code":"JM1","country_name":"Jamaica"}
+{"country_code":"JM2","country_name":"Jamaica"}
+{"country_code":"JM3","country_name":"Jamaica"}
+{"country_code":"JM4","country_name":"Jamaica"}
+{"country_code":"JM5","country_name":"Jamaica"}
+{"country_code":"JM6","country_name":"Jamaica"}
+{"country_code":"JM7","country_name":"Jamaica"}
+{"country_code":"JM8","country_name":"Jamaica"}
+{"country_code":"JM9","country_name":"Jamaica"}
+{"country_code":"JO0","country_name":"Jordan"}
+{"country_code":"JO1","country_name":"Jordan"}
+{"country_code":"JO2","country_name":"Jordan"}
+{"country_code":"JO3","country_name":"Jordan"}
+{"country_code":"JO4","country_name":"Jordan"}
+{"country_code":"JO5","country_name":"Jordan"}
+{"country_code":"JO6","country_name":"Jordan"}
+{"country_code":"JO7","country_name":"Jordan"}
+{"country_code":"JO8","country_name":"Jordan"}
+{"country_code":"JO9","country_name":"Jordan"}
+{"country_code":"JP0","country_name":"Japan"}
+{"country_code":"JP1","country_name":"Japan"}
+{"country_code":"JP2","country_name":"Japan"}
+{"country_code":"JP3","country_name":"Japan"}
+{"country_code":"JP4","country_name":"Japan"}
+{"country_code":"JP5","country_name":"Japan"}
+{"country_code":"JP6","country_name":"Japan"}
+{"country_code":"JP7","country_name":"Japan"}
+{"country_code":"JP8","country_name":"Japan"}
+{"country_code":"JP9","country_name":"Japan"}
+{"country_code":"KE0","country_name":"Kenya"}
+{"country_code":"KE1","country_name":"Kenya"}
+{"country_code":"KE2","country_name":"Kenya"}
+{"country_code":"KE3","country_name":"Kenya"}
+{"country_code":"KE4","country_name":"Kenya"}
+{"country_code":"KE5","country_name":"Kenya"}
+{"country_code":"KE6","country_name":"Kenya"}
+{"country_code":"KE7","country_name":"Kenya"}
+{"country_code":"KE8","country_name":"Kenya"}
+{"country_code":"KE9","country_name":"Kenya"}
+{"country_code":"KG0","country_name":"Kyrgyzstan"}
+{"country_code":"KG1","country_name":"Kyrgyzstan"}
+{"country_code":"KG2","country_name":"Kyrgyzstan"}
+{"country_code":"KG3","country_name":"Kyrgyzstan"}
+{"country_code":"KG4","country_name":"Kyrgyzstan"}
+{"country_code":"KG5","country_name":"Kyrgyzstan"}
+{"country_code":"KG6","country_name":"Kyrgyzstan"}
+{"country_code":"KG7","country_name":"Kyrgyzstan"}
+{"country_code":"KG8","country_name":"Kyrgyzstan"}
+{"country_code":"KG9","country_name":"Kyrgyzstan"}
+{"country_code":"KH0","country_name":"Cambodia"}
+{"country_code":"KH1","country_name":"Cambodia"}
+{"country_code":"KH2","country_name":"Cambodia"}
+{"country_code":"KH3","country_name":"Cambodia"}
+{"country_code":"KH4","country_name":"Cambodia"}
+{"country_code":"KH5","country_name":"Cambodia"}
+{"country_code":"KH6","country_name":"Cambodia"}
+{"country_code":"KH7","country_name":"Cambodia"}
+{"country_code":"KH8","country_name":"Cambodia"}
+{"country_code":"KH9","country_name":"Cambodia"}
+{"country_code":"KI0","country_name":"Kiribati"}
+{"country_code":"KI1","country_name":"Kiribati"}
+{"country_code":"KI2","country_name":"Kiribati"}
+{"country_code":"KI3","country_name":"Kiribati"}
+{"country_code":"KI4","country_name":"Kiribati"}
+{"country_code":"KI5","country_name":"Kiribati"}
+{"country_code":"KI6","country_name":"Kiribati"}
+{"country_code":"KI7","country_name":"Kiribati"}
+{"country_code":"KI8","country_name":"Kiribati"}
+{"country_code":"KI9","country_name":"Kiribati"}
+{"country_code":"KM0","country_name":"Comoros"}
+{"country_code":"KM1","country_name":"Comoros"}
+{"country_code":"KM2","country_name":"Comoros"}
+{"country_code":"KM3","country_name":"Comoros"}
+{"country_code":"KM4","country_name":"Comoros"}
+{"country_code":"KM5","country_name":"Comoros"}
+{"country_code":"KM6","country_name":"Comoros"}
+{"country_code":"KM7","country_name":"Comoros"}
+{"country_code":"KM8","country_name":"Comoros"}
+{"country_code":"KM9","country_name":"Comoros"}
+{"country_code":"KN0","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN1","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN2","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN3","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN4","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN5","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN6","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN7","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN8","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KN9","country_name":"Saint Kitts And Nevis"}
+{"country_code":"KP0","country_name":"North Korea"}
+{"country_code":"KP1","country_name":"North Korea"}
+{"country_code":"KP2","country_name":"North Korea"}
+{"country_code":"KP3","country_name":"North Korea"}
+{"country_code":"KP4","country_name":"North Korea"}
+{"country_code":"KP5","country_name":"North Korea"}
+{"country_code":"KP6","country_name":"North Korea"}
+{"country_code":"KP7","country_name":"North Korea"}
+{"country_code":"KP8","country_name":"North Korea"}
+{"country_code":"KP9","country_name":"North Korea"}
+{"country_code":"KR0","country_name":"South Korea"}
+{"country_code":"KR1","country_name":"South Korea"}
+{"country_code":"KR2","country_name":"South Korea"}
+{"country_code":"KR3","country_name":"South Korea"}
+{"country_code":"KR4","country_name":"South Korea"}
+{"country_code":"KR5","country_name":"South Korea"}
+{"country_code":"KR6","country_name":"South Korea"}
+{"country_code":"KR7","country_name":"South Korea"}
+{"country_code":"KR8","country_name":"South Korea"}
+{"country_code":"KR9","country_name":"South Korea"}
+{"country_code":"KW0","country_name":"Kuwait"}
+{"country_code":"KW1","country_name":"Kuwait"}
+{"country_code":"KW2","country_name":"Kuwait"}
+{"country_code":"KW3","country_name":"Kuwait"}
+{"country_code":"KW4","country_name":"Kuwait"}
+{"country_code":"KW5","country_name":"Kuwait"}
+{"country_code":"KW6","country_name":"Kuwait"}
+{"country_code":"KW7","country_name":"Kuwait"}
+{"country_code":"KW8","country_name":"Kuwait"}
+{"country_code":"KW9","country_name":"Kuwait"}
+{"country_code":"KY0","country_name":"Cayman Islands"}
+{"country_code":"KY1","country_name":"Cayman Islands"}
+{"country_code":"KY2","country_name":"Cayman Islands"}
+{"country_code":"KY3","country_name":"Cayman Islands"}
+{"country_code":"KY4","country_name":"Cayman Islands"}
+{"country_code":"KY5","country_name":"Cayman Islands"}
+{"country_code":"KY6","country_name":"Cayman Islands"}
+{"country_code":"KY7","country_name":"Cayman Islands"}
+{"country_code":"KY8","country_name":"Cayman Islands"}
+{"country_code":"KY9","country_name":"Cayman Islands"}
+{"country_code":"KZ0","country_name":"Kazakhstan"}
+{"country_code":"KZ1","country_name":"Kazakhstan"}
+{"country_code":"KZ2","country_name":"Kazakhstan"}
+{"country_code":"KZ3","country_name":"Kazakhstan"}
+{"country_code":"KZ4","country_name":"Kazakhstan"}
+{"country_code":"KZ5","country_name":"Kazakhstan"}
+{"country_code":"KZ6","country_name":"Kazakhstan"}
+{"country_code":"KZ7","country_name":"Kazakhstan"}
+{"country_code":"KZ8","country_name":"Kazakhstan"}
+{"country_code":"KZ9","country_name":"Kazakhstan"}
+{"country_code":"LA0","country_name":"Laos"}
+{"country_code":"LA1","country_name":"Laos"}
+{"country_code":"LA2","country_name":"Laos"}
+{"country_code":"LA3","country_name":"Laos"}
+{"country_code":"LA4","country_name":"Laos"}
+{"country_code":"LA5","country_name":"Laos"}
+{"country_code":"LA6","country_name":"Laos"}
+{"country_code":"LA7","country_name":"Laos"}
+{"country_code":"LA8","country_name":"Laos"}
+{"country_code":"LA9","country_name":"Laos"}
+{"country_code":"LB0","country_name":"Lebanon"}
+{"country_code":"LB1","country_name":"Lebanon"}
+{"country_code":"LB2","country_name":"Lebanon"}
+{"country_code":"LB3","country_name":"Lebanon"}
+{"country_code":"LB4","country_name":"Lebanon"}
+{"country_code":"LB5","country_name":"Lebanon"}
+{"country_code":"LB6","country_name":"Lebanon"}
+{"country_code":"LB7","country_name":"Lebanon"}
+{"country_code":"LB8","country_name":"Lebanon"}
+{"country_code":"LB9","country_name":"Lebanon"}
+{"country_code":"LC0","country_name":"Saint Lucia"}
+{"country_code":"LC1","country_name":"Saint Lucia"}
+{"country_code":"LC2","country_name":"Saint Lucia"}
+{"country_code":"LC3","country_name":"Saint Lucia"}
+{"country_code":"LC4","country_name":"Saint Lucia"}
+{"country_code":"LC5","country_name":"Saint Lucia"}
+{"country_code":"LC6","country_name":"Saint Lucia"}
+{"country_code":"LC7","country_name":"Saint Lucia"}
+{"country_code":"LC8","country_name":"Saint Lucia"}
+{"country_code":"LC9","country_name":"Saint Lucia"}
+{"country_code":"LI0","country_name":"Liechtenstein"}
+{"country_code":"LI1","country_name":"Liechtenstein"}
+{"country_code":"LI2","country_name":"Liechtenstein"}
+{"country_code":"LI3","country_name":"Liechtenstein"}
+{"country_code":"LI4","country_name":"Liechtenstein"}
+{"country_code":"LI5","country_name":"Liechtenstein"}
+{"country_code":"LI6","country_name":"Liechtenstein"}
+{"country_code":"LI7","country_name":"Liechtenstein"}
+{"country_code":"LI8","country_name":"Liechtenstein"}
+{"country_code":"LI9","country_name":"Liechtenstein"}
+{"country_code":"LK0","country_name":"Sri Lanka"}
+{"country_code":"LK1","country_name":"Sri Lanka"}
+{"country_code":"LK2","country_name":"Sri Lanka"}
+{"country_code":"LK3","country_name":"Sri Lanka"}
+{"country_code":"LK4","country_name":"Sri Lanka"}
+{"country_code":"LK5","country_name":"Sri Lanka"}
+{"country_code":"LK6","country_name":"Sri Lanka"}
+{"country_code":"LK7","country_name":"Sri Lanka"}
+{"country_code":"LK8","country_name":"Sri Lanka"}
+{"country_code":"LK9","country_name":"Sri Lanka"}
+{"country_code":"LR0","country_name":"Liberia"}
+{"country_code":"LR1","country_name":"Liberia"}
+{"country_code":"LR2","country_name":"Liberia"}
+{"country_code":"LR3","country_name":"Liberia"}
+{"country_code":"LR4","country_name":"Liberia"}
+{"country_code":"LR5","country_name":"Liberia"}
+{"country_code":"LR6","country_name":"Liberia"}
+{"country_code":"LR7","country_name":"Liberia"}
+{"country_code":"LR8","country_name":"Liberia"}
+{"country_code":"LR9","country_name":"Liberia"}
+{"country_code":"LS0","country_name":"Lesotho"}
+{"country_code":"LS1","country_name":"Lesotho"}
+{"country_code":"LS2","country_name":"Lesotho"}
+{"country_code":"LS3","country_name":"Lesotho"}
+{"country_code":"LS4","country_name":"Lesotho"}
+{"country_code":"LS5","country_name":"Lesotho"}
+{"country_code":"LS6","country_name":"Lesotho"}
+{"country_code":"LS7","country_name":"Lesotho"}
+{"country_code":"LS8","country_name":"Lesotho"}
+{"country_code":"LS9","country_name":"Lesotho"}
+{"country_code":"LT0","country_name":"Lithuania"}
+{"country_code":"LT1","country_name":"Lithuania"}
+{"country_code":"LT2","country_name":"Lithuania"}
+{"country_code":"LT3","country_name":"Lithuania"}
+{"country_code":"LT4","country_name":"Lithuania"}
+{"country_code":"LT5","country_name":"Lithuania"}
+{"country_code":"LT6","country_name":"Lithuania"}
+{"country_code":"LT7","country_name":"Lithuania"}
+{"country_code":"LT8","country_name":"Lithuania"}
+{"country_code":"LT9","country_name":"Lithuania"}
+{"country_code":"LU0","country_name":"Luxembourg"}
+{"country_code":"LU1","country_name":"Luxembourg"}
+{"country_code":"LU2","country_name":"Luxembourg"}
+{"country_code":"LU3","country_name":"Luxembourg"}
+{"country_code":"LU4","country_name":"Luxembourg"}
+{"country_code":"LU5","country_name":"Luxembourg"}
+{"country_code":"LU6","country_name":"Luxembourg"}
+{"country_code":"LU7","country_name":"Luxembourg"}
+{"country_code":"LU8","country_name":"Luxembourg"}
+{"country_code":"LU9","country_name":"Luxembourg"}
+{"country_code":"LV0","country_name":"Latvia"}
+{"country_code":"LV1","country_name":"Latvia"}
+{"country_code":"LV2","country_name":"Latvia"}
+{"country_code":"LV3","country_name":"Latvia"}
+{"country_code":"LV4","country_name":"Latvia"}
+{"country_code":"LV5","country_name":"Latvia"}
+{"country_code":"LV6","country_name":"Latvia"}
+{"country_code":"LV7","country_name":"Latvia"}
+{"country_code":"LV8","country_name":"Latvia"}
+{"country_code":"LV9","country_name":"Latvia"}
+{"country_code":"LY0","country_name":"Libya"}
+{"country_code":"LY1","country_name":"Libya"}
+{"country_code":"LY2","country_name":"Libya"}
+{"country_code":"LY3","country_name":"Libya"}
+{"country_code":"LY4","country_name":"Libya"}
+{"country_code":"LY5","country_name":"Libya"}
+{"country_code":"LY6","country_name":"Libya"}
+{"country_code":"LY7","country_name":"Libya"}
+{"country_code":"LY8","country_name":"Libya"}
+{"country_code":"LY9","country_name":"Libya"}
+{"country_code":"MA0","country_name":"Morocco"}
+{"country_code":"MA1","country_name":"Morocco"}
+{"country_code":"MA2","country_name":"Morocco"}
+{"country_code":"MA3","country_name":"Morocco"}
+{"country_code":"MA4","country_name":"Morocco"}
+{"country_code":"MA5","country_name":"Morocco"}
+{"country_code":"MA6","country_name":"Morocco"}
+{"country_code":"MA7","country_name":"Morocco"}
+{"country_code":"MA8","country_name":"Morocco"}
+{"country_code":"MA9","country_name":"Morocco"}
+{"country_code":"MC0","country_name":"Monaco"}
+{"country_code":"MC1","country_name":"Monaco"}
+{"country_code":"MC2","country_name":"Monaco"}
+{"country_code":"MC3","country_name":"Monaco"}
+{"country_code":"MC4","country_name":"Monaco"}
+{"country_code":"MC5","country_name":"Monaco"}
+{"country_code":"MC6","country_name":"Monaco"}
+{"country_code":"MC7","country_name":"Monaco"}
+{"country_code":"MC8","country_name":"Monaco"}
+{"country_code":"MC9","country_name":"Monaco"}
+{"country_code":"MD0","country_name":"Moldova"}
+{"country_code":"MD1","country_name":"Moldova"}
+{"country_code":"MD2","country_name":"Moldova"}
+{"country_code":"MD3","country_name":"Moldova"}
+{"country_code":"MD4","country_name":"Moldova"}
+{"country_code":"MD5","country_name":"Moldova"}
+{"country_code":"MD6","country_name":"Moldova"}
+{"country_code":"MD7","country_name":"Moldova"}
+{"country_code":"MD8","country_name":"Moldova"}
+{"country_code":"MD9","country_name":"Moldova"}
+{"country_code":"ME0","country_name":"Montenegro"}
+{"country_code":"ME1","country_name":"Montenegro"}
+{"country_code":"ME2","country_name":"Montenegro"}
+{"country_code":"ME3","country_name":"Montenegro"}
+{"country_code":"ME4","country_name":"Montenegro"}
+{"country_code":"ME5","country_name":"Montenegro"}
+{"country_code":"ME6","country_name":"Montenegro"}
+{"country_code":"ME7","country_name":"Montenegro"}
+{"country_code":"ME8","country_name":"Montenegro"}
+{"country_code":"ME9","country_name":"Montenegro"}
+{"country_code":"MF0","country_name":"Saint Martin"}
+{"country_code":"MF1","country_name":"Saint Martin"}
+{"country_code":"MF2","country_name":"Saint Martin"}
+{"country_code":"MF3","country_name":"Saint Martin"}
+{"country_code":"MF4","country_name":"Saint Martin"}
+{"country_code":"MF5","country_name":"Saint Martin"}
+{"country_code":"MF6","country_name":"Saint Martin"}
+{"country_code":"MF7","country_name":"Saint Martin"}
+{"country_code":"MF8","country_name":"Saint Martin"}
+{"country_code":"MF9","country_name":"Saint Martin"}
+{"country_code":"MG0","country_name":"Madagascar"}
+{"country_code":"MG1","country_name":"Madagascar"}
+{"country_code":"MG2","country_name":"Madagascar"}
+{"country_code":"MG3","country_name":"Madagascar"}
+{"country_code":"MG4","country_name":"Madagascar"}
+{"country_code":"MG5","country_name":"Madagascar"}
+{"country_code":"MG6","country_name":"Madagascar"}
+{"country_code":"MG7","country_name":"Madagascar"}
+{"country_code":"MG8","country_name":"Madagascar"}
+{"country_code":"MG9","country_name":"Madagascar"}
+{"country_code":"MH0","country_name":"Marshall Islands"}
+{"country_code":"MH1","country_name":"Marshall Islands"}
+{"country_code":"MH2","country_name":"Marshall Islands"}
+{"country_code":"MH3","country_name":"Marshall Islands"}
+{"country_code":"MH4","country_name":"Marshall Islands"}
+{"country_code":"MH5","country_name":"Marshall Islands"}
+{"country_code":"MH6","country_name":"Marshall Islands"}
+{"country_code":"MH7","country_name":"Marshall Islands"}
+{"country_code":"MH8","country_name":"Marshall Islands"}
+{"country_code":"MH9","country_name":"Marshall Islands"}
+{"country_code":"MK0","country_name":"Macedonia"}
+{"country_code":"MK1","country_name":"Macedonia"}
+{"country_code":"MK2","country_name":"Macedonia"}
+{"country_code":"MK3","country_name":"Macedonia"}
+{"country_code":"MK4","country_name":"Macedonia"}
+{"country_code":"MK5","country_name":"Macedonia"}
+{"country_code":"MK6","country_name":"Macedonia"}
+{"country_code":"MK7","country_name":"Macedonia"}
+{"country_code":"MK8","country_name":"Macedonia"}
+{"country_code":"MK9","country_name":"Macedonia"}
+{"country_code":"ML0","country_name":"Mali"}
+{"country_code":"ML1","country_name":"Mali"}
+{"country_code":"ML2","country_name":"Mali"}
+{"country_code":"ML3","country_name":"Mali"}
+{"country_code":"ML4","country_name":"Mali"}
+{"country_code":"ML5","country_name":"Mali"}
+{"country_code":"ML6","country_name":"Mali"}
+{"country_code":"ML7","country_name":"Mali"}
+{"country_code":"ML8","country_name":"Mali"}
+{"country_code":"ML9","country_name":"Mali"}
+{"country_code":"MM0","country_name":"Myanmar"}
+{"country_code":"MM1","country_name":"Myanmar"}
+{"country_code":"MM2","country_name":"Myanmar"}
+{"country_code":"MM3","country_name":"Myanmar"}
+{"country_code":"MM4","country_name":"Myanmar"}
+{"country_code":"MM5","country_name":"Myanmar"}
+{"country_code":"MM6","country_name":"Myanmar"}
+{"country_code":"MM7","country_name":"Myanmar"}
+{"country_code":"MM8","country_name":"Myanmar"}
+{"country_code":"MM9","country_name":"Myanmar"}
+{"country_code":"MN0","country_name":"Mongolia"}
+{"country_code":"MN1","country_name":"Mongolia"}
+{"country_code":"MN2","country_name":"Mongolia"}
+{"country_code":"MN3","country_name":"Mongolia"}
+{"country_code":"MN4","country_name":"Mongolia"}
+{"country_code":"MN5","country_name":"Mongolia"}
+{"country_code":"MN6","country_name":"Mongolia"}
+{"country_code":"MN7","country_name":"Mongolia"}
+{"country_code":"MN8","country_name":"Mongolia"}
+{"country_code":"MN9","country_name":"Mongolia"}
+{"country_code":"MO0","country_name":"Macao"}
+{"country_code":"MO1","country_name":"Macao"}
+{"country_code":"MO2","country_name":"Macao"}
+{"country_code":"MO3","country_name":"Macao"}
+{"country_code":"MO4","country_name":"Macao"}
+{"country_code":"MO5","country_name":"Macao"}
+{"country_code":"MO6","country_name":"Macao"}
+{"country_code":"MO7","country_name":"Macao"}
+{"country_code":"MO8","country_name":"Macao"}
+{"country_code":"MO9","country_name":"Macao"}
+{"country_code":"MP0","country_name":"Northern Mariana Islands"}
+{"country_code":"MP1","country_name":"Northern Mariana Islands"}
+{"country_code":"MP2","country_name":"Northern Mariana Islands"}
+{"country_code":"MP3","country_name":"Northern Mariana Islands"}
+{"country_code":"MP4","country_name":"Northern Mariana Islands"}
+{"country_code":"MP5","country_name":"Northern Mariana Islands"}
+{"country_code":"MP6","country_name":"Northern Mariana Islands"}
+{"country_code":"MP7","country_name":"Northern Mariana Islands"}
+{"country_code":"MP8","country_name":"Northern Mariana Islands"}
+{"country_code":"MP9","country_name":"Northern Mariana Islands"}
+{"country_code":"MQ0","country_name":"Martinique"}
+{"country_code":"MQ1","country_name":"Martinique"}
+{"country_code":"MQ2","country_name":"Martinique"}
+{"country_code":"MQ3","country_name":"Martinique"}
+{"country_code":"MQ4","country_name":"Martinique"}
+{"country_code":"MQ5","country_name":"Martinique"}
+{"country_code":"MQ6","country_name":"Martinique"}
+{"country_code":"MQ7","country_name":"Martinique"}
+{"country_code":"MQ8","country_name":"Martinique"}
+{"country_code":"MQ9","country_name":"Martinique"}
+{"country_code":"MR0","country_name":"Mauritania"}
+{"country_code":"MR1","country_name":"Mauritania"}
+{"country_code":"MR2","country_name":"Mauritania"}
+{"country_code":"MR3","country_name":"Mauritania"}
+{"country_code":"MR4","country_name":"Mauritania"}
+{"country_code":"MR5","country_name":"Mauritania"}
+{"country_code":"MR6","country_name":"Mauritania"}
+{"country_code":"MR7","country_name":"Mauritania"}
+{"country_code":"MR8","country_name":"Mauritania"}
+{"country_code":"MR9","country_name":"Mauritania"}
+{"country_code":"MS0","country_name":"Montserrat"}
+{"country_code":"MS1","country_name":"Montserrat"}
+{"country_code":"MS2","country_name":"Montserrat"}
+{"country_code":"MS3","country_name":"Montserrat"}
+{"country_code":"MS4","country_name":"Montserrat"}
+{"country_code":"MS5","country_name":"Montserrat"}
+{"country_code":"MS6","country_name":"Montserrat"}
+{"country_code":"MS7","country_name":"Montserrat"}
+{"country_code":"MS8","country_name":"Montserrat"}
+{"country_code":"MS9","country_name":"Montserrat"}
+{"country_code":"MT0","country_name":"Malta"}
+{"country_code":"MT1","country_name":"Malta"}
+{"country_code":"MT2","country_name":"Malta"}
+{"country_code":"MT3","country_name":"Malta"}
+{"country_code":"MT4","country_name":"Malta"}
+{"country_code":"MT5","country_name":"Malta"}
+{"country_code":"MT6","country_name":"Malta"}
+{"country_code":"MT7","country_name":"Malta"}
+{"country_code":"MT8","country_name":"Malta"}
+{"country_code":"MT9","country_name":"Malta"}
+{"country_code":"MU0","country_name":"Mauritius"}
+{"country_code":"MU1","country_name":"Mauritius"}
+{"country_code":"MU2","country_name":"Mauritius"}
+{"country_code":"MU3","country_name":"Mauritius"}
+{"country_code":"MU4","country_name":"Mauritius"}
+{"country_code":"MU5","country_name":"Mauritius"}
+{"country_code":"MU6","country_name":"Mauritius"}
+{"country_code":"MU7","country_name":"Mauritius"}
+{"country_code":"MU8","country_name":"Mauritius"}
+{"country_code":"MU9","country_name":"Mauritius"}
+{"country_code":"MV0","country_name":"Maldives"}
+{"country_code":"MV1","country_name":"Maldives"}
+{"country_code":"MV2","country_name":"Maldives"}
+{"country_code":"MV3","country_name":"Maldives"}
+{"country_code":"MV4","country_name":"Maldives"}
+{"country_code":"MV5","country_name":"Maldives"}
+{"country_code":"MV6","country_name":"Maldives"}
+{"country_code":"MV7","country_name":"Maldives"}
+{"country_code":"MV8","country_name":"Maldives"}
+{"country_code":"MV9","country_name":"Maldives"}
+{"country_code":"MW0","country_name":"Malawi"}
+{"country_code":"MW1","country_name":"Malawi"}
+{"country_code":"MW2","country_name":"Malawi"}
+{"country_code":"MW3","country_name":"Malawi"}
+{"country_code":"MW4","country_name":"Malawi"}
+{"country_code":"MW5","country_name":"Malawi"}
+{"country_code":"MW6","country_name":"Malawi"}
+{"country_code":"MW7","country_name":"Malawi"}
+{"country_code":"MW8","country_name":"Malawi"}
+{"country_code":"MW9","country_name":"Malawi"}
+{"country_code":"MX0","country_name":"Mexico"}
+{"country_code":"MX1","country_name":"Mexico"}
+{"country_code":"MX2","country_name":"Mexico"}
+{"country_code":"MX3","country_name":"Mexico"}
+{"country_code":"MX4","country_name":"Mexico"}
+{"country_code":"MX5","country_name":"Mexico"}
+{"country_code":"MX6","country_name":"Mexico"}
+{"country_code":"MX7","country_name":"Mexico"}
+{"country_code":"MX8","country_name":"Mexico"}
+{"country_code":"MX9","country_name":"Mexico"}
+{"country_code":"MY0","country_name":"Malaysia"}
+{"country_code":"MY1","country_name":"Malaysia"}
+{"country_code":"MY2","country_name":"Malaysia"}
+{"country_code":"MY3","country_name":"Malaysia"}
+{"country_code":"MY4","country_name":"Malaysia"}
+{"country_code":"MY5","country_name":"Malaysia"}
+{"country_code":"MY6","country_name":"Malaysia"}
+{"country_code":"MY7","country_name":"Malaysia"}
+{"country_code":"MY8","country_name":"Malaysia"}
+{"country_code":"MY9","country_name":"Malaysia"}
+{"country_code":"MZ0","country_name":"Mozambique"}
+{"country_code":"MZ1","country_name":"Mozambique"}
+{"country_code":"MZ2","country_name":"Mozambique"}
+{"country_code":"MZ3","country_name":"Mozambique"}
+{"country_code":"MZ4","country_name":"Mozambique"}
+{"country_code":"MZ5","country_name":"Mozambique"}
+{"country_code":"MZ6","country_name":"Mozambique"}
+{"country_code":"MZ7","country_name":"Mozambique"}
+{"country_code":"MZ8","country_name":"Mozambique"}
+{"country_code":"MZ9","country_name":"Mozambique"}
+{"country_code":"NA0","country_name":"Namibia"}
+{"country_code":"NA1","country_name":"Namibia"}
+{"country_code":"NA2","country_name":"Namibia"}
+{"country_code":"NA3","country_name":"Namibia"}
+{"country_code":"NA4","country_name":"Namibia"}
+{"country_code":"NA5","country_name":"Namibia"}
+{"country_code":"NA6","country_name":"Namibia"}
+{"country_code":"NA7","country_name":"Namibia"}
+{"country_code":"NA8","country_name":"Namibia"}
+{"country_code":"NA9","country_name":"Namibia"}
+{"country_code":"NC0","country_name":"New Caledonia"}
+{"country_code":"NC1","country_name":"New Caledonia"}
+{"country_code":"NC2","country_name":"New Caledonia"}
+{"country_code":"NC3","country_name":"New Caledonia"}
+{"country_code":"NC4","country_name":"New Caledonia"}
+{"country_code":"NC5","country_name":"New Caledonia"}
+{"country_code":"NC6","country_name":"New Caledonia"}
+{"country_code":"NC7","country_name":"New Caledonia"}
+{"country_code":"NC8","country_name":"New Caledonia"}
+{"country_code":"NC9","country_name":"New Caledonia"}
+{"country_code":"NE0","country_name":"Niger"}
+{"country_code":"NE1","country_name":"Niger"}
+{"country_code":"NE2","country_name":"Niger"}
+{"country_code":"NE3","country_name":"Niger"}
+{"country_code":"NE4","country_name":"Niger"}
+{"country_code":"NE5","country_name":"Niger"}
+{"country_code":"NE6","country_name":"Niger"}
+{"country_code":"NE7","country_name":"Niger"}
+{"country_code":"NE8","country_name":"Niger"}
+{"country_code":"NE9","country_name":"Niger"}
+{"country_code":"NF0","country_name":"Norfolk Island"}
+{"country_code":"NF1","country_name":"Norfolk Island"}
+{"country_code":"NF2","country_name":"Norfolk Island"}
+{"country_code":"NF3","country_name":"Norfolk Island"}
+{"country_code":"NF4","country_name":"Norfolk Island"}
+{"country_code":"NF5","country_name":"Norfolk Island"}
+{"country_code":"NF6","country_name":"Norfolk Island"}
+{"country_code":"NF7","country_name":"Norfolk Island"}
+{"country_code":"NF8","country_name":"Norfolk Island"}
+{"country_code":"NF9","country_name":"Norfolk Island"}
+{"country_code":"NG0","country_name":"Nigeria"}
+{"country_code":"NG1","country_name":"Nigeria"}
+{"country_code":"NG2","country_name":"Nigeria"}
+{"country_code":"NG3","country_name":"Nigeria"}
+{"country_code":"NG4","country_name":"Nigeria"}
+{"country_code":"NG5","country_name":"Nigeria"}
+{"country_code":"NG6","country_name":"Nigeria"}
+{"country_code":"NG7","country_name":"Nigeria"}
+{"country_code":"NG8","country_name":"Nigeria"}
+{"country_code":"NG9","country_name":"Nigeria"}
+{"country_code":"NI0","country_name":"Nicaragua"}
+{"country_code":"NI1","country_name":"Nicaragua"}
+{"country_code":"NI2","country_name":"Nicaragua"}
+{"country_code":"NI3","country_name":"Nicaragua"}
+{"country_code":"NI4","country_name":"Nicaragua"}
+{"country_code":"NI5","country_name":"Nicaragua"}
+{"country_code":"NI6","country_name":"Nicaragua"}
+{"country_code":"NI7","country_name":"Nicaragua"}
+{"country_code":"NI8","country_name":"Nicaragua"}
+{"country_code":"NI9","country_name":"Nicaragua"}
+{"country_code":"NL0","country_name":"Netherlands"}
+{"country_code":"NL1","country_name":"Netherlands"}
+{"country_code":"NL2","country_name":"Netherlands"}
+{"country_code":"NL3","country_name":"Netherlands"}
+{"country_code":"NL4","country_name":"Netherlands"}
+{"country_code":"NL5","country_name":"Netherlands"}
+{"country_code":"NL6","country_name":"Netherlands"}
+{"country_code":"NL7","country_name":"Netherlands"}
+{"country_code":"NL8","country_name":"Netherlands"}
+{"country_code":"NL9","country_name":"Netherlands"}
+{"country_code":"NO0","country_name":"Norway"}
+{"country_code":"NO1","country_name":"Norway"}
+{"country_code":"NO2","country_name":"Norway"}
+{"country_code":"NO3","country_name":"Norway"}
+{"country_code":"NO4","country_name":"Norway"}
+{"country_code":"NO5","country_name":"Norway"}
+{"country_code":"NO6","country_name":"Norway"}
+{"country_code":"NO7","country_name":"Norway"}
+{"country_code":"NO8","country_name":"Norway"}
+{"country_code":"NO9","country_name":"Norway"}
+{"country_code":"NP0","country_name":"Nepal"}
+{"country_code":"NP1","country_name":"Nepal"}
+{"country_code":"NP2","country_name":"Nepal"}
+{"country_code":"NP3","country_name":"Nepal"}
+{"country_code":"NP4","country_name":"Nepal"}
+{"country_code":"NP5","country_name":"Nepal"}
+{"country_code":"NP6","country_name":"Nepal"}
+{"country_code":"NP7","country_name":"Nepal"}
+{"country_code":"NP8","country_name":"Nepal"}
+{"country_code":"NP9","country_name":"Nepal"}
+{"country_code":"NR0","country_name":"Nauru"}
+{"country_code":"NR1","country_name":"Nauru"}
+{"country_code":"NR2","country_name":"Nauru"}
+{"country_code":"NR3","country_name":"Nauru"}
+{"country_code":"NR4","country_name":"Nauru"}
+{"country_code":"NR5","country_name":"Nauru"}
+{"country_code":"NR6","country_name":"Nauru"}
+{"country_code":"NR7","country_name":"Nauru"}
+{"country_code":"NR8","country_name":"Nauru"}
+{"country_code":"NR9","country_name":"Nauru"}
+{"country_code":"NU0","country_name":"Niue"}
+{"country_code":"NU1","country_name":"Niue"}
+{"country_code":"NU2","country_name":"Niue"}
+{"country_code":"NU3","country_name":"Niue"}
+{"country_code":"NU4","country_name":"Niue"}
+{"country_code":"NU5","country_name":"Niue"}
+{"country_code":"NU6","country_name":"Niue"}
+{"country_code":"NU7","country_name":"Niue"}
+{"country_code":"NU8","country_name":"Niue"}
+{"country_code":"NU9","country_name":"Niue"}
+{"country_code":"NZ0","country_name":"New Zealand"}
+{"country_code":"NZ1","country_name":"New Zealand"}
+{"country_code":"NZ2","country_name":"New Zealand"}
+{"country_code":"NZ3","country_name":"New Zealand"}
+{"country_code":"NZ4","country_name":"New Zealand"}
+{"country_code":"NZ5","country_name":"New Zealand"}
+{"country_code":"NZ6","country_name":"New Zealand"}
+{"country_code":"NZ7","country_name":"New Zealand"}
+{"country_code":"NZ8","country_name":"New Zealand"}
+{"country_code":"NZ9","country_name":"New Zealand"}
+{"country_code":"OM0","country_name":"Oman"}
+{"country_code":"OM1","country_name":"Oman"}
+{"country_code":"OM2","country_name":"Oman"}
+{"country_code":"OM3","country_name":"Oman"}
+{"country_code":"OM4","country_name":"Oman"}
+{"country_code":"OM5","country_name":"Oman"}
+{"country_code":"OM6","country_name":"Oman"}
+{"country_code":"OM7","country_name":"Oman"}
+{"country_code":"OM8","country_name":"Oman"}
+{"country_code":"OM9","country_name":"Oman"}
+{"country_code":"PA0","country_name":"Panama"}
+{"country_code":"PA1","country_name":"Panama"}
+{"country_code":"PA2","country_name":"Panama"}
+{"country_code":"PA3","country_name":"Panama"}
+{"country_code":"PA4","country_name":"Panama"}
+{"country_code":"PA5","country_name":"Panama"}
+{"country_code":"PA6","country_name":"Panama"}
+{"country_code":"PA7","country_name":"Panama"}
+{"country_code":"PA8","country_name":"Panama"}
+{"country_code":"PA9","country_name":"Panama"}
+{"country_code":"PE0","country_name":"Peru"}
+{"country_code":"PE1","country_name":"Peru"}
+{"country_code":"PE2","country_name":"Peru"}
+{"country_code":"PE3","country_name":"Peru"}
+{"country_code":"PE4","country_name":"Peru"}
+{"country_code":"PE5","country_name":"Peru"}
+{"country_code":"PE6","country_name":"Peru"}
+{"country_code":"PE7","country_name":"Peru"}
+{"country_code":"PE8","country_name":"Peru"}
+{"country_code":"PE9","country_name":"Peru"}
+{"country_code":"PF0","country_name":"French Polynesia"}
+{"country_code":"PF1","country_name":"French Polynesia"}
+{"country_code":"PF2","country_name":"French Polynesia"}
+{"country_code":"PF3","country_name":"French Polynesia"}
+{"country_code":"PF4","country_name":"French Polynesia"}
+{"country_code":"PF5","country_name":"French Polynesia"}
+{"country_code":"PF6","country_name":"French Polynesia"}
+{"country_code":"PF7","country_name":"French Polynesia"}
+{"country_code":"PF8","country_name":"French Polynesia"}
+{"country_code":"PF9","country_name":"French Polynesia"}
+{"country_code":"PG0","country_name":"Papua New Guinea"}
+{"country_code":"PG1","country_name":"Papua New Guinea"}
+{"country_code":"PG2","country_name":"Papua New Guinea"}
+{"country_code":"PG3","country_name":"Papua New Guinea"}
+{"country_code":"PG4","country_name":"Papua New Guinea"}
+{"country_code":"PG5","country_name":"Papua New Guinea"}
+{"country_code":"PG6","country_name":"Papua New Guinea"}
+{"country_code":"PG7","country_name":"Papua New Guinea"}
+{"country_code":"PG8","country_name":"Papua New Guinea"}
+{"country_code":"PG9","country_name":"Papua New Guinea"}
+{"country_code":"PH0","country_name":"Philippines"}
+{"country_code":"PH1","country_name":"Philippines"}
+{"country_code":"PH2","country_name":"Philippines"}
+{"country_code":"PH3","country_name":"Philippines"}
+{"country_code":"PH4","country_name":"Philippines"}
+{"country_code":"PH5","country_name":"Philippines"}
+{"country_code":"PH6","country_name":"Philippines"}
+{"country_code":"PH7","country_name":"Philippines"}
+{"country_code":"PH8","country_name":"Philippines"}
+{"country_code":"PH9","country_name":"Philippines"}
+{"country_code":"PK0","country_name":"Pakistan"}
+{"country_code":"PK1","country_name":"Pakistan"}
+{"country_code":"PK2","country_name":"Pakistan"}
+{"country_code":"PK3","country_name":"Pakistan"}
+{"country_code":"PK4","country_name":"Pakistan"}
+{"country_code":"PK5","country_name":"Pakistan"}
+{"country_code":"PK6","country_name":"Pakistan"}
+{"country_code":"PK7","country_name":"Pakistan"}
+{"country_code":"PK8","country_name":"Pakistan"}
+{"country_code":"PK9","country_name":"Pakistan"}
+{"country_code":"PL0","country_name":"Poland"}
+{"country_code":"PL1","country_name":"Poland"}
+{"country_code":"PL2","country_name":"Poland"}
+{"country_code":"PL3","country_name":"Poland"}
+{"country_code":"PL4","country_name":"Poland"}
+{"country_code":"PL5","country_name":"Poland"}
+{"country_code":"PL6","country_name":"Poland"}
+{"country_code":"PL7","country_name":"Poland"}
+{"country_code":"PL8","country_name":"Poland"}
+{"country_code":"PL9","country_name":"Poland"}
+{"country_code":"PM0","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM1","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM2","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM3","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM4","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM5","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM6","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM7","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM8","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PM9","country_name":"Saint Pierre And Miquelon"}
+{"country_code":"PN0","country_name":"Pitcairn"}
+{"country_code":"PN1","country_name":"Pitcairn"}
+{"country_code":"PN2","country_name":"Pitcairn"}
+{"country_code":"PN3","country_name":"Pitcairn"}
+{"country_code":"PN4","country_name":"Pitcairn"}
+{"country_code":"PN5","country_name":"Pitcairn"}
+{"country_code":"PN6","country_name":"Pitcairn"}
+{"country_code":"PN7","country_name":"Pitcairn"}
+{"country_code":"PN8","country_name":"Pitcairn"}
+{"country_code":"PN9","country_name":"Pitcairn"}
+{"country_code":"PR0","country_name":"Puerto Rico"}
+{"country_code":"PR1","country_name":"Puerto Rico"}
+{"country_code":"PR2","country_name":"Puerto Rico"}
+{"country_code":"PR3","country_name":"Puerto Rico"}
+{"country_code":"PR4","country_name":"Puerto Rico"}
+{"country_code":"PR5","country_name":"Puerto Rico"}
+{"country_code":"PR6","country_name":"Puerto Rico"}
+{"country_code":"PR7","country_name":"Puerto Rico"}
+{"country_code":"PR8","country_name":"Puerto Rico"}
+{"country_code":"PR9","country_name":"Puerto Rico"}
+{"country_code":"PS0","country_name":"Palestine"}
+{"country_code":"PS1","country_name":"Palestine"}
+{"country_code":"PS2","country_name":"Palestine"}
+{"country_code":"PS3","country_name":"Palestine"}
+{"country_code":"PS4","country_name":"Palestine"}
+{"country_code":"PS5","country_name":"Palestine"}
+{"country_code":"PS6","country_name":"Palestine"}
+{"country_code":"PS7","country_name":"Palestine"}
+{"country_code":"PS8","country_name":"Palestine"}
+{"country_code":"PS9","country_name":"Palestine"}
+{"country_code":"PT0","country_name":"Portugal"}
+{"country_code":"PT1","country_name":"Portugal"}
+{"country_code":"PT2","country_name":"Portugal"}
+{"country_code":"PT3","country_name":"Portugal"}
+{"country_code":"PT4","country_name":"Portugal"}
+{"country_code":"PT5","country_name":"Portugal"}
+{"country_code":"PT6","country_name":"Portugal"}
+{"country_code":"PT7","country_name":"Portugal"}
+{"country_code":"PT8","country_name":"Portugal"}
+{"country_code":"PT9","country_name":"Portugal"}
+{"country_code":"PW0","country_name":"Palau"}
+{"country_code":"PW1","country_name":"Palau"}
+{"country_code":"PW2","country_name":"Palau"}
+{"country_code":"PW3","country_name":"Palau"}
+{"country_code":"PW4","country_name":"Palau"}
+{"country_code":"PW5","country_name":"Palau"}
+{"country_code":"PW6","country_name":"Palau"}
+{"country_code":"PW7","country_name":"Palau"}
+{"country_code":"PW8","country_name":"Palau"}
+{"country_code":"PW9","country_name":"Palau"}
+{"country_code":"PY0","country_name":"Paraguay"}
+{"country_code":"PY1","country_name":"Paraguay"}
+{"country_code":"PY2","country_name":"Paraguay"}
+{"country_code":"PY3","country_name":"Paraguay"}
+{"country_code":"PY4","country_name":"Paraguay"}
+{"country_code":"PY5","country_name":"Paraguay"}
+{"country_code":"PY6","country_name":"Paraguay"}
+{"country_code":"PY7","country_name":"Paraguay"}
+{"country_code":"PY8","country_name":"Paraguay"}
+{"country_code":"PY9","country_name":"Paraguay"}
+{"country_code":"QA0","country_name":"Qatar"}
+{"country_code":"QA1","country_name":"Qatar"}
+{"country_code":"QA2","country_name":"Qatar"}
+{"country_code":"QA3","country_name":"Qatar"}
+{"country_code":"QA4","country_name":"Qatar"}
+{"country_code":"QA5","country_name":"Qatar"}
+{"country_code":"QA6","country_name":"Qatar"}
+{"country_code":"QA7","country_name":"Qatar"}
+{"country_code":"QA8","country_name":"Qatar"}
+{"country_code":"QA9","country_name":"Qatar"}
+{"country_code":"RE0","country_name":"Reunion"}
+{"country_code":"RE1","country_name":"Reunion"}
+{"country_code":"RE2","country_name":"Reunion"}
+{"country_code":"RE3","country_name":"Reunion"}
+{"country_code":"RE4","country_name":"Reunion"}
+{"country_code":"RE5","country_name":"Reunion"}
+{"country_code":"RE6","country_name":"Reunion"}
+{"country_code":"RE7","country_name":"Reunion"}
+{"country_code":"RE8","country_name":"Reunion"}
+{"country_code":"RE9","country_name":"Reunion"}
+{"country_code":"RO0","country_name":"Romania"}
+{"country_code":"RO1","country_name":"Romania"}
+{"country_code":"RO2","country_name":"Romania"}
+{"country_code":"RO3","country_name":"Romania"}
+{"country_code":"RO4","country_name":"Romania"}
+{"country_code":"RO5","country_name":"Romania"}
+{"country_code":"RO6","country_name":"Romania"}
+{"country_code":"RO7","country_name":"Romania"}
+{"country_code":"RO8","country_name":"Romania"}
+{"country_code":"RO9","country_name":"Romania"}
+{"country_code":"RS0","country_name":"Serbia"}
+{"country_code":"RS1","country_name":"Serbia"}
+{"country_code":"RS2","country_name":"Serbia"}
+{"country_code":"RS3","country_name":"Serbia"}
+{"country_code":"RS4","country_name":"Serbia"}
+{"country_code":"RS5","country_name":"Serbia"}
+{"country_code":"RS6","country_name":"Serbia"}
+{"country_code":"RS7","country_name":"Serbia"}
+{"country_code":"RS8","country_name":"Serbia"}
+{"country_code":"RS9","country_name":"Serbia"}
+{"country_code":"RU0","country_name":"Russia"}
+{"country_code":"RU1","country_name":"Russia"}
+{"country_code":"RU2","country_name":"Russia"}
+{"country_code":"RU3","country_name":"Russia"}
+{"country_code":"RU4","country_name":"Russia"}
+{"country_code":"RU5","country_name":"Russia"}
+{"country_code":"RU6","country_name":"Russia"}
+{"country_code":"RU7","country_name":"Russia"}
+{"country_code":"RU8","country_name":"Russia"}
+{"country_code":"RU9","country_name":"Russia"}
+{"country_code":"RW0","country_name":"Rwanda"}
+{"country_code":"RW1","country_name":"Rwanda"}
+{"country_code":"RW2","country_name":"Rwanda"}
+{"country_code":"RW3","country_name":"Rwanda"}
+{"country_code":"RW4","country_name":"Rwanda"}
+{"country_code":"RW5","country_name":"Rwanda"}
+{"country_code":"RW6","country_name":"Rwanda"}
+{"country_code":"RW7","country_name":"Rwanda"}
+{"country_code":"RW8","country_name":"Rwanda"}
+{"country_code":"RW9","country_name":"Rwanda"}
+{"country_code":"SA0","country_name":"Saudi Arabia"}
+{"country_code":"SA1","country_name":"Saudi Arabia"}
+{"country_code":"SA2","country_name":"Saudi Arabia"}
+{"country_code":"SA3","country_name":"Saudi Arabia"}
+{"country_code":"SA4","country_name":"Saudi Arabia"}
+{"country_code":"SA5","country_name":"Saudi Arabia"}
+{"country_code":"SA6","country_name":"Saudi Arabia"}
+{"country_code":"SA7","country_name":"Saudi Arabia"}
+{"country_code":"SA8","country_name":"Saudi Arabia"}
+{"country_code":"SA9","country_name":"Saudi Arabia"}
+{"country_code":"SB0","country_name":"Solomon Islands"}
+{"country_code":"SB1","country_name":"Solomon Islands"}
+{"country_code":"SB2","country_name":"Solomon Islands"}
+{"country_code":"SB3","country_name":"Solomon Islands"}
+{"country_code":"SB4","country_name":"Solomon Islands"}
+{"country_code":"SB5","country_name":"Solomon Islands"}
+{"country_code":"SB6","country_name":"Solomon Islands"}
+{"country_code":"SB7","country_name":"Solomon Islands"}
+{"country_code":"SB8","country_name":"Solomon Islands"}
+{"country_code":"SB9","country_name":"Solomon Islands"}
+{"country_code":"SC0","country_name":"Seychelles"}
+{"country_code":"SC1","country_name":"Seychelles"}
+{"country_code":"SC2","country_name":"Seychelles"}
+{"country_code":"SC3","country_name":"Seychelles"}
+{"country_code":"SC4","country_name":"Seychelles"}
+{"country_code":"SC5","country_name":"Seychelles"}
+{"country_code":"SC6","country_name":"Seychelles"}
+{"country_code":"SC7","country_name":"Seychelles"}
+{"country_code":"SC8","country_name":"Seychelles"}
+{"country_code":"SC9","country_name":"Seychelles"}
+{"country_code":"SD0","country_name":"Sudan"}
+{"country_code":"SD1","country_name":"Sudan"}
+{"country_code":"SD2","country_name":"Sudan"}
+{"country_code":"SD3","country_name":"Sudan"}
+{"country_code":"SD4","country_name":"Sudan"}
+{"country_code":"SD5","country_name":"Sudan"}
+{"country_code":"SD6","country_name":"Sudan"}
+{"country_code":"SD7","country_name":"Sudan"}
+{"country_code":"SD8","country_name":"Sudan"}
+{"country_code":"SD9","country_name":"Sudan"}
+{"country_code":"SE0","country_name":"Sweden"}
+{"country_code":"SE1","country_name":"Sweden"}
+{"country_code":"SE2","country_name":"Sweden"}
+{"country_code":"SE3","country_name":"Sweden"}
+{"country_code":"SE4","country_name":"Sweden"}
+{"country_code":"SE5","country_name":"Sweden"}
+{"country_code":"SE6","country_name":"Sweden"}
+{"country_code":"SE7","country_name":"Sweden"}
+{"country_code":"SE8","country_name":"Sweden"}
+{"country_code":"SE9","country_name":"Sweden"}
+{"country_code":"SG0","country_name":"Singapore"}
+{"country_code":"SG1","country_name":"Singapore"}
+{"country_code":"SG2","country_name":"Singapore"}
+{"country_code":"SG3","country_name":"Singapore"}
+{"country_code":"SG4","country_name":"Singapore"}
+{"country_code":"SG5","country_name":"Singapore"}
+{"country_code":"SG6","country_name":"Singapore"}
+{"country_code":"SG7","country_name":"Singapore"}
+{"country_code":"SG8","country_name":"Singapore"}
+{"country_code":"SG9","country_name":"Singapore"}
+{"country_code":"SH0","country_name":"Saint Helena"}
+{"country_code":"SH1","country_name":"Saint Helena"}
+{"country_code":"SH2","country_name":"Saint Helena"}
+{"country_code":"SH3","country_name":"Saint Helena"}
+{"country_code":"SH4","country_name":"Saint Helena"}
+{"country_code":"SH5","country_name":"Saint Helena"}
+{"country_code":"SH6","country_name":"Saint Helena"}
+{"country_code":"SH7","country_name":"Saint Helena"}
+{"country_code":"SH8","country_name":"Saint Helena"}
+{"country_code":"SH9","country_name":"Saint Helena"}
+{"country_code":"SI0","country_name":"Slovenia"}
+{"country_code":"SI1","country_name":"Slovenia"}
+{"country_code":"SI2","country_name":"Slovenia"}
+{"country_code":"SI3","country_name":"Slovenia"}
+{"country_code":"SI4","country_name":"Slovenia"}
+{"country_code":"SI5","country_name":"Slovenia"}
+{"country_code":"SI6","country_name":"Slovenia"}
+{"country_code":"SI7","country_name":"Slovenia"}
+{"country_code":"SI8","country_name":"Slovenia"}
+{"country_code":"SI9","country_name":"Slovenia"}
+{"country_code":"SJ0","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ1","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ2","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ3","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ4","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ5","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ6","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ7","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ8","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SJ9","country_name":"Svalbard And Jan Mayen"}
+{"country_code":"SK0","country_name":"Slovakia"}
+{"country_code":"SK1","country_name":"Slovakia"}
+{"country_code":"SK2","country_name":"Slovakia"}
+{"country_code":"SK3","country_name":"Slovakia"}
+{"country_code":"SK4","country_name":"Slovakia"}
+{"country_code":"SK5","country_name":"Slovakia"}
+{"country_code":"SK6","country_name":"Slovakia"}
+{"country_code":"SK7","country_name":"Slovakia"}
+{"country_code":"SK8","country_name":"Slovakia"}
+{"country_code":"SK9","country_name":"Slovakia"}
+{"country_code":"SL0","country_name":"Sierra Leone"}
+{"country_code":"SL1","country_name":"Sierra Leone"}
+{"country_code":"SL2","country_name":"Sierra Leone"}
+{"country_code":"SL3","country_name":"Sierra Leone"}
+{"country_code":"SL4","country_name":"Sierra Leone"}
+{"country_code":"SL5","country_name":"Sierra Leone"}
+{"country_code":"SL6","country_name":"Sierra Leone"}
+{"country_code":"SL7","country_name":"Sierra Leone"}
+{"country_code":"SL8","country_name":"Sierra Leone"}
+{"country_code":"SL9","country_name":"Sierra Leone"}
+{"country_code":"SM0","country_name":"San Marino"}
+{"country_code":"SM1","country_name":"San Marino"}
+{"country_code":"SM2","country_name":"San Marino"}
+{"country_code":"SM3","country_name":"San Marino"}
+{"country_code":"SM4","country_name":"San Marino"}
+{"country_code":"SM5","country_name":"San Marino"}
+{"country_code":"SM6","country_name":"San Marino"}
+{"country_code":"SM7","country_name":"San Marino"}
+{"country_code":"SM8","country_name":"San Marino"}
+{"country_code":"SM9","country_name":"San Marino"}
+{"country_code":"SN0","country_name":"Senegal"}
+{"country_code":"SN1","country_name":"Senegal"}
+{"country_code":"SN2","country_name":"Senegal"}
+{"country_code":"SN3","country_name":"Senegal"}
+{"country_code":"SN4","country_name":"Senegal"}
+{"country_code":"SN5","country_name":"Senegal"}
+{"country_code":"SN6","country_name":"Senegal"}
+{"country_code":"SN7","country_name":"Senegal"}
+{"country_code":"SN8","country_name":"Senegal"}
+{"country_code":"SN9","country_name":"Senegal"}
+{"country_code":"SO0","country_name":"Somalia"}
+{"country_code":"SO1","country_name":"Somalia"}
+{"country_code":"SO2","country_name":"Somalia"}
+{"country_code":"SO3","country_name":"Somalia"}
+{"country_code":"SO4","country_name":"Somalia"}
+{"country_code":"SO5","country_name":"Somalia"}
+{"country_code":"SO6","country_name":"Somalia"}
+{"country_code":"SO7","country_name":"Somalia"}
+{"country_code":"SO8","country_name":"Somalia"}
+{"country_code":"SO9","country_name":"Somalia"}
+{"country_code":"SR0","country_name":"Suriname"}
+{"country_code":"SR1","country_name":"Suriname"}
+{"country_code":"SR2","country_name":"Suriname"}
+{"country_code":"SR3","country_name":"Suriname"}
+{"country_code":"SR4","country_name":"Suriname"}
+{"country_code":"SR5","country_name":"Suriname"}
+{"country_code":"SR6","country_name":"Suriname"}
+{"country_code":"SR7","country_name":"Suriname"}
+{"country_code":"SR8","country_name":"Suriname"}
+{"country_code":"SR9","country_name":"Suriname"}
+{"country_code":"SS0","country_name":"South Sudan"}
+{"country_code":"SS1","country_name":"South Sudan"}
+{"country_code":"SS2","country_name":"South Sudan"}
+{"country_code":"SS3","country_name":"South Sudan"}
+{"country_code":"SS4","country_name":"South Sudan"}
+{"country_code":"SS5","country_name":"South Sudan"}
+{"country_code":"SS6","country_name":"South Sudan"}
+{"country_code":"SS7","country_name":"South Sudan"}
+{"country_code":"SS8","country_name":"South Sudan"}
+{"country_code":"SS9","country_name":"South Sudan"}
+{"country_code":"ST0","country_name":"Sao Tome And Principe"}
+{"country_code":"ST1","country_name":"Sao Tome And Principe"}
+{"country_code":"ST2","country_name":"Sao Tome And Principe"}
+{"country_code":"ST3","country_name":"Sao Tome And Principe"}
+{"country_code":"ST4","country_name":"Sao Tome And Principe"}
+{"country_code":"ST5","country_name":"Sao Tome And Principe"}
+{"country_code":"ST6","country_name":"Sao Tome And Principe"}
+{"country_code":"ST7","country_name":"Sao Tome And Principe"}
+{"country_code":"ST8","country_name":"Sao Tome And Principe"}
+{"country_code":"ST9","country_name":"Sao Tome And Principe"}
+{"country_code":"SV0","country_name":"El Salvador"}
+{"country_code":"SV1","country_name":"El Salvador"}
+{"country_code":"SV2","country_name":"El Salvador"}
+{"country_code":"SV3","country_name":"El Salvador"}
+{"country_code":"SV4","country_name":"El Salvador"}
+{"country_code":"SV5","country_name":"El Salvador"}
+{"country_code":"SV6","country_name":"El Salvador"}
+{"country_code":"SV7","country_name":"El Salvador"}
+{"country_code":"SV8","country_name":"El Salvador"}
+{"country_code":"SV9","country_name":"El Salvador"}
+{"country_code":"SX0","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX1","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX2","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX3","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX4","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX5","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX6","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX7","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX8","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SX9","country_name":"Sint Maarten (Dutch part)"}
+{"country_code":"SY0","country_name":"Syria"}
+{"country_code":"SY1","country_name":"Syria"}
+{"country_code":"SY2","country_name":"Syria"}
+{"country_code":"SY3","country_name":"Syria"}
+{"country_code":"SY4","country_name":"Syria"}
+{"country_code":"SY5","country_name":"Syria"}
+{"country_code":"SY6","country_name":"Syria"}
+{"country_code":"SY7","country_name":"Syria"}
+{"country_code":"SY8","country_name":"Syria"}
+{"country_code":"SY9","country_name":"Syria"}
+{"country_code":"SZ0","country_name":"Swaziland"}
+{"country_code":"SZ1","country_name":"Swaziland"}
+{"country_code":"SZ2","country_name":"Swaziland"}
+{"country_code":"SZ3","country_name":"Swaziland"}
+{"country_code":"SZ4","country_name":"Swaziland"}
+{"country_code":"SZ5","country_name":"Swaziland"}
+{"country_code":"SZ6","country_name":"Swaziland"}
+{"country_code":"SZ7","country_name":"Swaziland"}
+{"country_code":"SZ8","country_name":"Swaziland"}
+{"country_code":"SZ9","country_name":"Swaziland"}
+{"country_code":"TC0","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC1","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC2","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC3","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC4","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC5","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC6","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC7","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC8","country_name":"Turks And Caicos Islands"}
+{"country_code":"TC9","country_name":"Turks And Caicos Islands"}
+{"country_code":"TD0","country_name":"Chad"}
+{"country_code":"TD1","country_name":"Chad"}
+{"country_code":"TD2","country_name":"Chad"}
+{"country_code":"TD3","country_name":"Chad"}
+{"country_code":"TD4","country_name":"Chad"}
+{"country_code":"TD5","country_name":"Chad"}
+{"country_code":"TD6","country_name":"Chad"}
+{"country_code":"TD7","country_name":"Chad"}
+{"country_code":"TD8","country_name":"Chad"}
+{"country_code":"TD9","country_name":"Chad"}
+{"country_code":"TF0","country_name":"French Southern Territories"}
+{"country_code":"TF1","country_name":"French Southern Territories"}
+{"country_code":"TF2","country_name":"French Southern Territories"}
+{"country_code":"TF3","country_name":"French Southern Territories"}
+{"country_code":"TF4","country_name":"French Southern Territories"}
+{"country_code":"TF5","country_name":"French Southern Territories"}
+{"country_code":"TF6","country_name":"French Southern Territories"}
+{"country_code":"TF7","country_name":"French Southern Territories"}
+{"country_code":"TF8","country_name":"French Southern Territories"}
+{"country_code":"TF9","country_name":"French Southern Territories"}
+{"country_code":"TG0","country_name":"Togo"}
+{"country_code":"TG1","country_name":"Togo"}
+{"country_code":"TG2","country_name":"Togo"}
+{"country_code":"TG3","country_name":"Togo"}
+{"country_code":"TG4","country_name":"Togo"}
+{"country_code":"TG5","country_name":"Togo"}
+{"country_code":"TG6","country_name":"Togo"}
+{"country_code":"TG7","country_name":"Togo"}
+{"country_code":"TG8","country_name":"Togo"}
+{"country_code":"TG9","country_name":"Togo"}
+{"country_code":"TH0","country_name":"Thailand"}
+{"country_code":"TH1","country_name":"Thailand"}
+{"country_code":"TH2","country_name":"Thailand"}
+{"country_code":"TH3","country_name":"Thailand"}
+{"country_code":"TH4","country_name":"Thailand"}
+{"country_code":"TH5","country_name":"Thailand"}
+{"country_code":"TH6","country_name":"Thailand"}
+{"country_code":"TH7","country_name":"Thailand"}
+{"country_code":"TH8","country_name":"Thailand"}
+{"country_code":"TH9","country_name":"Thailand"}
+{"country_code":"TJ0","country_name":"Tajikistan"}
+{"country_code":"TJ1","country_name":"Tajikistan"}
+{"country_code":"TJ2","country_name":"Tajikistan"}
+{"country_code":"TJ3","country_name":"Tajikistan"}
+{"country_code":"TJ4","country_name":"Tajikistan"}
+{"country_code":"TJ5","country_name":"Tajikistan"}
+{"country_code":"TJ6","country_name":"Tajikistan"}
+{"country_code":"TJ7","country_name":"Tajikistan"}
+{"country_code":"TJ8","country_name":"Tajikistan"}
+{"country_code":"TJ9","country_name":"Tajikistan"}
+{"country_code":"TK0","country_name":"Tokelau"}
+{"country_code":"TK1","country_name":"Tokelau"}
+{"country_code":"TK2","country_name":"Tokelau"}
+{"country_code":"TK3","country_name":"Tokelau"}
+{"country_code":"TK4","country_name":"Tokelau"}
+{"country_code":"TK5","country_name":"Tokelau"}
+{"country_code":"TK6","country_name":"Tokelau"}
+{"country_code":"TK7","country_name":"Tokelau"}
+{"country_code":"TK8","country_name":"Tokelau"}
+{"country_code":"TK9","country_name":"Tokelau"}
+{"country_code":"TL0","country_name":"Timor-Leste"}
+{"country_code":"TL1","country_name":"Timor-Leste"}
+{"country_code":"TL2","country_name":"Timor-Leste"}
+{"country_code":"TL3","country_name":"Timor-Leste"}
+{"country_code":"TL4","country_name":"Timor-Leste"}
+{"country_code":"TL5","country_name":"Timor-Leste"}
+{"country_code":"TL6","country_name":"Timor-Leste"}
+{"country_code":"TL7","country_name":"Timor-Leste"}
+{"country_code":"TL8","country_name":"Timor-Leste"}
+{"country_code":"TL9","country_name":"Timor-Leste"}
+{"country_code":"TM0","country_name":"Turkmenistan"}
+{"country_code":"TM1","country_name":"Turkmenistan"}
+{"country_code":"TM2","country_name":"Turkmenistan"}
+{"country_code":"TM3","country_name":"Turkmenistan"}
+{"country_code":"TM4","country_name":"Turkmenistan"}
+{"country_code":"TM5","country_name":"Turkmenistan"}
+{"country_code":"TM6","country_name":"Turkmenistan"}
+{"country_code":"TM7","country_name":"Turkmenistan"}
+{"country_code":"TM8","country_name":"Turkmenistan"}
+{"country_code":"TM9","country_name":"Turkmenistan"}
+{"country_code":"TN0","country_name":"Tunisia"}
+{"country_code":"TN1","country_name":"Tunisia"}
+{"country_code":"TN2","country_name":"Tunisia"}
+{"country_code":"TN3","country_name":"Tunisia"}
+{"country_code":"TN4","country_name":"Tunisia"}
+{"country_code":"TN5","country_name":"Tunisia"}
+{"country_code":"TN6","country_name":"Tunisia"}
+{"country_code":"TN7","country_name":"Tunisia"}
+{"country_code":"TN8","country_name":"Tunisia"}
+{"country_code":"TN9","country_name":"Tunisia"}
+{"country_code":"TO0","country_name":"Tonga"}
+{"country_code":"TO1","country_name":"Tonga"}
+{"country_code":"TO2","country_name":"Tonga"}
+{"country_code":"TO3","country_name":"Tonga"}
+{"country_code":"TO4","country_name":"Tonga"}
+{"country_code":"TO5","country_name":"Tonga"}
+{"country_code":"TO6","country_name":"Tonga"}
+{"country_code":"TO7","country_name":"Tonga"}
+{"country_code":"TO8","country_name":"Tonga"}
+{"country_code":"TO9","country_name":"Tonga"}
+{"country_code":"TR0","country_name":"Turkey"}
+{"country_code":"TR1","country_name":"Turkey"}
+{"country_code":"TR2","country_name":"Turkey"}
+{"country_code":"TR3","country_name":"Turkey"}
+{"country_code":"TR4","country_name":"Turkey"}
+{"country_code":"TR5","country_name":"Turkey"}
+{"country_code":"TR6","country_name":"Turkey"}
+{"country_code":"TR7","country_name":"Turkey"}
+{"country_code":"TR8","country_name":"Turkey"}
+{"country_code":"TR9","country_name":"Turkey"}
+{"country_code":"TT0","country_name":"Trinidad and Tobago"}
+{"country_code":"TT1","country_name":"Trinidad and Tobago"}
+{"country_code":"TT2","country_name":"Trinidad and Tobago"}
+{"country_code":"TT3","country_name":"Trinidad and Tobago"}
+{"country_code":"TT4","country_name":"Trinidad and Tobago"}
+{"country_code":"TT5","country_name":"Trinidad and Tobago"}
+{"country_code":"TT6","country_name":"Trinidad and Tobago"}
+{"country_code":"TT7","country_name":"Trinidad and Tobago"}
+{"country_code":"TT8","country_name":"Trinidad and Tobago"}
+{"country_code":"TT9","country_name":"Trinidad and Tobago"}
+{"country_code":"TV0","country_name":"Tuvalu"}
+{"country_code":"TV1","country_name":"Tuvalu"}
+{"country_code":"TV2","country_name":"Tuvalu"}
+{"country_code":"TV3","country_name":"Tuvalu"}
+{"country_code":"TV4","country_name":"Tuvalu"}
+{"country_code":"TV5","country_name":"Tuvalu"}
+{"country_code":"TV6","country_name":"Tuvalu"}
+{"country_code":"TV7","country_name":"Tuvalu"}
+{"country_code":"TV8","country_name":"Tuvalu"}
+{"country_code":"TV9","country_name":"Tuvalu"}
+{"country_code":"TW0","country_name":"Taiwan"}
+{"country_code":"TW1","country_name":"Taiwan"}
+{"country_code":"TW2","country_name":"Taiwan"}
+{"country_code":"TW3","country_name":"Taiwan"}
+{"country_code":"TW4","country_name":"Taiwan"}
+{"country_code":"TW5","country_name":"Taiwan"}
+{"country_code":"TW6","country_name":"Taiwan"}
+{"country_code":"TW7","country_name":"Taiwan"}
+{"country_code":"TW8","country_name":"Taiwan"}
+{"country_code":"TW9","country_name":"Taiwan"}
+{"country_code":"TZ0","country_name":"Tanzania"}
+{"country_code":"TZ1","country_name":"Tanzania"}
+{"country_code":"TZ2","country_name":"Tanzania"}
+{"country_code":"TZ3","country_name":"Tanzania"}
+{"country_code":"TZ4","country_name":"Tanzania"}
+{"country_code":"TZ5","country_name":"Tanzania"}
+{"country_code":"TZ6","country_name":"Tanzania"}
+{"country_code":"TZ7","country_name":"Tanzania"}
+{"country_code":"TZ8","country_name":"Tanzania"}
+{"country_code":"TZ9","country_name":"Tanzania"}
+{"country_code":"UA0","country_name":"Ukraine"}
+{"country_code":"UA1","country_name":"Ukraine"}
+{"country_code":"UA2","country_name":"Ukraine"}
+{"country_code":"UA3","country_name":"Ukraine"}
+{"country_code":"UA4","country_name":"Ukraine"}
+{"country_code":"UA5","country_name":"Ukraine"}
+{"country_code":"UA6","country_name":"Ukraine"}
+{"country_code":"UA7","country_name":"Ukraine"}
+{"country_code":"UA8","country_name":"Ukraine"}
+{"country_code":"UA9","country_name":"Ukraine"}
+{"country_code":"UG0","country_name":"Uganda"}
+{"country_code":"UG1","country_name":"Uganda"}
+{"country_code":"UG2","country_name":"Uganda"}
+{"country_code":"UG3","country_name":"Uganda"}
+{"country_code":"UG4","country_name":"Uganda"}
+{"country_code":"UG5","country_name":"Uganda"}
+{"country_code":"UG6","country_name":"Uganda"}
+{"country_code":"UG7","country_name":"Uganda"}
+{"country_code":"UG8","country_name":"Uganda"}
+{"country_code":"UG9","country_name":"Uganda"}
+{"country_code":"UM0","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM1","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM2","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM3","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM4","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM5","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM6","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM7","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM8","country_name":"United States Minor Outlying Islands"}
+{"country_code":"UM9","country_name":"United States Minor Outlying Islands"}
+{"country_code":"US0","country_name":"United States"}
+{"country_code":"US1","country_name":"United States"}
+{"country_code":"US2","country_name":"United States"}
+{"country_code":"US3","country_name":"United States"}
+{"country_code":"US4","country_name":"United States"}
+{"country_code":"US5","country_name":"United States"}
+{"country_code":"US6","country_name":"United States"}
+{"country_code":"US7","country_name":"United States"}
+{"country_code":"US8","country_name":"United States"}
+{"country_code":"US9","country_name":"United States"}
+{"country_code":"UY0","country_name":"Uruguay"}
+{"country_code":"UY1","country_name":"Uruguay"}
+{"country_code":"UY2","country_name":"Uruguay"}
+{"country_code":"UY3","country_name":"Uruguay"}
+{"country_code":"UY4","country_name":"Uruguay"}
+{"country_code":"UY5","country_name":"Uruguay"}
+{"country_code":"UY6","country_name":"Uruguay"}
+{"country_code":"UY7","country_name":"Uruguay"}
+{"country_code":"UY8","country_name":"Uruguay"}
+{"country_code":"UY9","country_name":"Uruguay"}
+{"country_code":"UZ0","country_name":"Uzbekistan"}
+{"country_code":"UZ1","country_name":"Uzbekistan"}
+{"country_code":"UZ2","country_name":"Uzbekistan"}
+{"country_code":"UZ3","country_name":"Uzbekistan"}
+{"country_code":"UZ4","country_name":"Uzbekistan"}
+{"country_code":"UZ5","country_name":"Uzbekistan"}
+{"country_code":"UZ6","country_name":"Uzbekistan"}
+{"country_code":"UZ7","country_name":"Uzbekistan"}
+{"country_code":"UZ8","country_name":"Uzbekistan"}
+{"country_code":"UZ9","country_name":"Uzbekistan"}
+{"country_code":"VA0","country_name":"Vatican"}
+{"country_code":"VA1","country_name":"Vatican"}
+{"country_code":"VA2","country_name":"Vatican"}
+{"country_code":"VA3","country_name":"Vatican"}
+{"country_code":"VA4","country_name":"Vatican"}
+{"country_code":"VA5","country_name":"Vatican"}
+{"country_code":"VA6","country_name":"Vatican"}
+{"country_code":"VA7","country_name":"Vatican"}
+{"country_code":"VA8","country_name":"Vatican"}
+{"country_code":"VA9","country_name":"Vatican"}
+{"country_code":"VC0","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC1","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC2","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC3","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC4","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC5","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC6","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC7","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC8","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VC9","country_name":"Saint Vincent And The Grenadines"}
+{"country_code":"VE0","country_name":"Venezuela"}
+{"country_code":"VE1","country_name":"Venezuela"}
+{"country_code":"VE2","country_name":"Venezuela"}
+{"country_code":"VE3","country_name":"Venezuela"}
+{"country_code":"VE4","country_name":"Venezuela"}
+{"country_code":"VE5","country_name":"Venezuela"}
+{"country_code":"VE6","country_name":"Venezuela"}
+{"country_code":"VE7","country_name":"Venezuela"}
+{"country_code":"VE8","country_name":"Venezuela"}
+{"country_code":"VE9","country_name":"Venezuela"}
+{"country_code":"VG0","country_name":"British Virgin Islands"}
+{"country_code":"VG1","country_name":"British Virgin Islands"}
+{"country_code":"VG2","country_name":"British Virgin Islands"}
+{"country_code":"VG3","country_name":"British Virgin Islands"}
+{"country_code":"VG4","country_name":"British Virgin Islands"}
+{"country_code":"VG5","country_name":"British Virgin Islands"}
+{"country_code":"VG6","country_name":"British Virgin Islands"}
+{"country_code":"VG7","country_name":"British Virgin Islands"}
+{"country_code":"VG8","country_name":"British Virgin Islands"}
+{"country_code":"VG9","country_name":"British Virgin Islands"}
+{"country_code":"VI0","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI1","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI2","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI3","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI4","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI5","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI6","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI7","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI8","country_name":"U.S. Virgin Islands"}
+{"country_code":"VI9","country_name":"U.S. Virgin Islands"}
+{"country_code":"VN0","country_name":"Vietnam"}
+{"country_code":"VN1","country_name":"Vietnam"}
+{"country_code":"VN2","country_name":"Vietnam"}
+{"country_code":"VN3","country_name":"Vietnam"}
+{"country_code":"VN4","country_name":"Vietnam"}
+{"country_code":"VN5","country_name":"Vietnam"}
+{"country_code":"VN6","country_name":"Vietnam"}
+{"country_code":"VN7","country_name":"Vietnam"}
+{"country_code":"VN8","country_name":"Vietnam"}
+{"country_code":"VN9","country_name":"Vietnam"}
+{"country_code":"VU0","country_name":"Vanuatu"}
+{"country_code":"VU1","country_name":"Vanuatu"}
+{"country_code":"VU2","country_name":"Vanuatu"}
+{"country_code":"VU3","country_name":"Vanuatu"}
+{"country_code":"VU4","country_name":"Vanuatu"}
+{"country_code":"VU5","country_name":"Vanuatu"}
+{"country_code":"VU6","country_name":"Vanuatu"}
+{"country_code":"VU7","country_name":"Vanuatu"}
+{"country_code":"VU8","country_name":"Vanuatu"}
+{"country_code":"VU9","country_name":"Vanuatu"}
+{"country_code":"WF0","country_name":"Wallis And Futuna"}
+{"country_code":"WF1","country_name":"Wallis And Futuna"}
+{"country_code":"WF2","country_name":"Wallis And Futuna"}
+{"country_code":"WF3","country_name":"Wallis And Futuna"}
+{"country_code":"WF4","country_name":"Wallis And Futuna"}
+{"country_code":"WF5","country_name":"Wallis And Futuna"}
+{"country_code":"WF6","country_name":"Wallis And Futuna"}
+{"country_code":"WF7","country_name":"Wallis And Futuna"}
+{"country_code":"WF8","country_name":"Wallis And Futuna"}
+{"country_code":"WF9","country_name":"Wallis And Futuna"}
+{"country_code":"WS0","country_name":"Samoa"}
+{"country_code":"WS1","country_name":"Samoa"}
+{"country_code":"WS2","country_name":"Samoa"}
+{"country_code":"WS3","country_name":"Samoa"}
+{"country_code":"WS4","country_name":"Samoa"}
+{"country_code":"WS5","country_name":"Samoa"}
+{"country_code":"WS6","country_name":"Samoa"}
+{"country_code":"WS7","country_name":"Samoa"}
+{"country_code":"WS8","country_name":"Samoa"}
+{"country_code":"WS9","country_name":"Samoa"}
+{"country_code":"YE0","country_name":"Yemen"}
+{"country_code":"YE1","country_name":"Yemen"}
+{"country_code":"YE2","country_name":"Yemen"}
+{"country_code":"YE3","country_name":"Yemen"}
+{"country_code":"YE4","country_name":"Yemen"}
+{"country_code":"YE5","country_name":"Yemen"}
+{"country_code":"YE6","country_name":"Yemen"}
+{"country_code":"YE7","country_name":"Yemen"}
+{"country_code":"YE8","country_name":"Yemen"}
+{"country_code":"YE9","country_name":"Yemen"}
+{"country_code":"YT0","country_name":"Mayotte"}
+{"country_code":"YT1","country_name":"Mayotte"}
+{"country_code":"YT2","country_name":"Mayotte"}
+{"country_code":"YT3","country_name":"Mayotte"}
+{"country_code":"YT4","country_name":"Mayotte"}
+{"country_code":"YT5","country_name":"Mayotte"}
+{"country_code":"YT6","country_name":"Mayotte"}
+{"country_code":"YT7","country_name":"Mayotte"}
+{"country_code":"YT8","country_name":"Mayotte"}
+{"country_code":"YT9","country_name":"Mayotte"}
+{"country_code":"ZA0","country_name":"South Africa"}
+{"country_code":"ZA1","country_name":"South Africa"}
+{"country_code":"ZA2","country_name":"South Africa"}
+{"country_code":"ZA3","country_name":"South Africa"}
+{"country_code":"ZA4","country_name":"South Africa"}
+{"country_code":"ZA5","country_name":"South Africa"}
+{"country_code":"ZA6","country_name":"South Africa"}
+{"country_code":"ZA7","country_name":"South Africa"}
+{"country_code":"ZA8","country_name":"South Africa"}
+{"country_code":"ZA9","country_name":"South Africa"}
+{"country_code":"ZM0","country_name":"Zambia"}
+{"country_code":"ZM1","country_name":"Zambia"}
+{"country_code":"ZM2","country_name":"Zambia"}
+{"country_code":"ZM3","country_name":"Zambia"}
+{"country_code":"ZM4","country_name":"Zambia"}
+{"country_code":"ZM5","country_name":"Zambia"}
+{"country_code":"ZM6","country_name":"Zambia"}
+{"country_code":"ZM7","country_name":"Zambia"}
+{"country_code":"ZM8","country_name":"Zambia"}
+{"country_code":"ZM9","country_name":"Zambia"}
+{"country_code":"ZW0","country_name":"Zimbabwe"}
+{"country_code":"ZW1","country_name":"Zimbabwe"}
+{"country_code":"ZW2","country_name":"Zimbabwe"}
+{"country_code":"ZW3","country_name":"Zimbabwe"}
+{"country_code":"ZW4","country_name":"Zimbabwe"}
+{"country_code":"ZW5","country_name":"Zimbabwe"}
+{"country_code":"ZW6","country_name":"Zimbabwe"}
+{"country_code":"ZW7","country_name":"Zimbabwe"}
+{"country_code":"ZW8","country_name":"Zimbabwe"}
+{"country_code":"ZW9","country_name":"Zimbabwe"}

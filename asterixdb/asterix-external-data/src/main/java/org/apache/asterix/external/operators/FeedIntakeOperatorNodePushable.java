@@ -52,16 +52,18 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private boolean poisoned = false;
     private DeployedJobSpecId connJobId;
     private final int connectedDs;
+    private int bufferSize;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int connectedDs)
-            throws HyracksDataException {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int connectedDs,
+            String bufferSize) throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
         this.connJobId = jobSpecId;
         this.connectedDs = connectedDs;
+        this.bufferSize = Integer.valueOf(bufferSize);
     }
 
     @Override
@@ -69,7 +71,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs, runtimeId);
+            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs, runtimeId, bufferSize);
             writer.open();
             synchronized (this) {
                 if (poisoned) {

@@ -20,15 +20,9 @@ package org.apache.asterix.external.library;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.JObjects.JRecord;
-import org.apache.asterix.external.library.java.JObjects.JString;
-import org.apache.asterix.external.library.java.JObjects.JUnorderedList;
-import org.apache.asterix.external.library.java.JTypeTag;
-import org.apache.asterix.external.util.Datatypes;
+import org.apache.asterix.external.library.java.base.JRecord;
 
 public class HeavyFunction implements IExternalScalarFunction {
-
-    private JUnorderedList list = null;
 
     @Override
     public void initialize(IFunctionHelper functionHelper) throws Exception {

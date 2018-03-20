@@ -90,7 +90,7 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
                     for (TxnId subTxnId : txnIdMap.values()) {
                         ITransactionContext txnContext = txnManager.getTransactionContext(subTxnId);
                         txnContext.setWriteTxn(transactionalWrite);
-                        System.out.println("SubTxn " + subTxnId + " finishing.");
+                        //                        System.out.println("SubTxn " + subTxnId + " finishing.");
                         if (jobStatus != JobStatus.FAILURE) {
                             txnManager.commitTransaction(subTxnId);
                         } else {
@@ -110,7 +110,7 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
                     for (TxnId subTxnId : txnIdMap.values()) {
                         ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
                                 .getTransactionSubsystem().getTransactionManager().beginTransaction(subTxnId, options);
-                        System.out.println("SubTxn " + subTxnId + " started");
+                        //                        System.out.println("SubTxn " + subTxnId + " started");
                     }
                 } catch (ACIDException e) {
                     throw new Error(e);
