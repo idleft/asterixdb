@@ -1980,7 +1980,8 @@ public class QueryTranslator extends AbstractLangTranslator implements IStatemen
                 rewrittenResult.second, stmt == null ? null : stmt.getDatasetName(), sessionOutput, stmt, externalVars);
     }
 
-    private JobSpecification rewriteCompileInsertUpsert(IClusterInfoCollector clusterInfoCollector,
+    @Override
+    public JobSpecification rewriteCompileInsertUpsert(IClusterInfoCollector clusterInfoCollector,
             MetadataProvider metadataProvider, InsertStatement insertUpsert, Map<String, IAObject> stmtParams,
             IStatementRewriter stmtRewriter) throws AlgebricksException, ACIDException {
         SourceLocation sourceLoc = insertUpsert.getSourceLocation();

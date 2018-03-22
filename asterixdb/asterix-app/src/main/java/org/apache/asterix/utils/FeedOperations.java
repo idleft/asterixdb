@@ -99,7 +99,9 @@ import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConst
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Triple;
+import org.apache.hyracks.algebricks.runtime.base.AlgebricksPipeline;
 import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
+import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
 import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
 import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
@@ -114,9 +116,13 @@ import org.apache.hyracks.api.dataflow.ConnectorDescriptorId;
 import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
+import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
+import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
+import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
+import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
@@ -244,21 +250,35 @@ public class FeedOperations {
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
             throws AlgebricksException, RemoteException, ACIDException {
-        metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
-        Query feedConnQuery = makeConnectionQuery(feedConn);
-        CompiledStatements.ICompiledDmlStatement clfrqs;
-        if (insertFeed) {
-            InsertStatement stmtUpsert = new InsertStatement(new Identifier(feedConn.getDataverseName()),
-                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledInsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
-        } else {
-            UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
-                    new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
+        // TODO: change it to statements
+        String dataverse = metadataProvider.getDefaultDataverseName();
+        String dataset = feedConn.getDatasetName();
+        StringBuilder sb = new StringBuilder();
+        sb.append("[{}]");
+        for (FunctionSignature fn : feedConn.getAppliedFunctions()) {
+            sb.insert(0, fn.getNamespace() + "." + fn.getName() + "(");
+            sb.append(")");
         }
-        return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, feedConnQuery, clfrqs, null, null);
+
+        String query = "insert into " + dataverse + "." + dataset + " (" + sb.toString() + ");";
+        IParser sqlParser = new SqlppParserFactory().createParser(query);
+        List<Statement> stmts = sqlParser.parse();
+        InsertStatement stmt = (InsertStatement) stmts.get(0);
+        return statementExecutor.rewriteCompileInsertUpsert(hcc, metadataProvider, stmt, null, null);
+    }
+
+    private static AlgebricksMetaOperatorDescriptor createShadowMetaOp(AlgebricksMetaOperatorDescriptor metaOp,
+            int removal, JobSpecification jobSpec) {
+        AlgebricksPipeline pipeline = metaOp.getPipeline();
+        int newLength = pipeline.getRuntimeFactories().length;
+        IPushRuntimeFactory[] runtimeFactories = Arrays.copyOfRange(pipeline.getRuntimeFactories(), removal, newLength);
+        RecordDescriptor[] recordDesc = Arrays.copyOfRange(pipeline.getRecordDescriptors(), removal, newLength);
+        IPushRuntimeFactory[] outputRuntimeFactories =
+                Arrays.copyOf(pipeline.getOutputRuntimeFactories(), pipeline.getOutputRuntimeFactories().length);
+        int[] outputPos = Arrays.copyOf(pipeline.getOutputPositions(), pipeline.getOutputPositions().length);
+        AlgebricksMetaOperatorDescriptor shadowMetaOp = new AlgebricksMetaOperatorDescriptor(jobSpec, 1, 1,
+                runtimeFactories, recordDesc, outputRuntimeFactories, outputPos);
+        return shadowMetaOp;
     }
 
     private static JobSpecification combineIntakeCollectJobs(MetadataProvider metadataProvider, Feed feed,
@@ -291,24 +311,28 @@ public class FeedOperations {
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
         Map<Integer, TxnId> txnIdMap = new HashMap<>();
-        FeedMetaOperatorDescriptor metaOp;
+        int ASSIGN_PIPELINE_LENGTH = 3;
 
         for (int iter1 = 0; iter1 < jobsList.size(); iter1++) {
             FeedConnection curFeedConnection = feedConnections.get(iter1);
             JobSpecification subJob = jobsList.get(iter1);
             operatorIdMapping.clear();
             Map<OperatorDescriptorId, IOperatorDescriptor> operatorsMap = subJob.getOperatorMap();
-            String datasetName = feedConnections.get(iter1).getDatasetName();
-            FeedConnectionId feedConnectionId = new FeedConnectionId(ingestionOp.getEntityId(), datasetName);
-
-            FeedPolicyEntity feedPolicyEntity =
-                    FeedMetadataUtil.validateIfPolicyExists(curFeedConnection.getDataverseName(),
-                            curFeedConnection.getPolicyName(), metadataProvider.getMetadataTxnContext());
 
             for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : operatorsMap.entrySet()) {
                 IOperatorDescriptor opDesc = entry.getValue();
                 OperatorDescriptorId oldId = opDesc.getOperatorId();
-                OperatorDescriptorId opId = jobSpec.createOperatorDescriptorId(opDesc);
+                OperatorDescriptorId opId;
+                if (opDesc instanceof AlgebricksMetaOperatorDescriptor && ((AlgebricksMetaOperatorDescriptor) opDesc)
+                        .getPipeline().getRuntimeFactories().length == ASSIGN_PIPELINE_LENGTH) {
+                    AlgebricksMetaOperatorDescriptor metaOp = (AlgebricksMetaOperatorDescriptor) opDesc;
+                    AlgebricksMetaOperatorDescriptor shadowMetaOp =
+                            createShadowMetaOp(metaOp, ASSIGN_PIPELINE_LENGTH - 1, jobSpec);
+                    opId = shadowMetaOp.getOperatorId();
+                    metaOp.setOperatorId(shadowMetaOp.getOperatorId());
+                } else {
+                    opId = jobSpec.createOperatorDescriptorId(opDesc);
+                }
                 operatorIdMapping.put(oldId, opId);
             }
 
@@ -328,7 +352,9 @@ public class FeedOperations {
                 Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
                 IOperatorDescriptor leftOpDesc = jobSpec.getOperatorMap().get(leftOp.getLeft().getOperatorId());
                 IOperatorDescriptor rightOpDesc = jobSpec.getOperatorMap().get(rightOp.getLeft().getOperatorId());
-                if (leftOp.getLeft() instanceof FeedCollectOperatorDescriptor) {
+                if (leftOp.getLeft() instanceof AlgebricksMetaOperatorDescriptor
+                        && ((AlgebricksMetaOperatorDescriptor) leftOp.getLeft()).getPipeline()
+                                .getRuntimeFactories().length == ASSIGN_PIPELINE_LENGTH) {
                     jobSpec.connect(new OneToOneConnectorDescriptor(jobSpec), replicateOp, iter1, leftOpDesc,
                             leftOp.getRight());
                 }

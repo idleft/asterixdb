@@ -1,0 +1,7 @@
+In this branch, I cannot find a good way to keep the feed alive, i.e., to keep records 
+flow throw the pipeline.
+There are two possible ways of doing this:
+1. Replace the empty tuple source with feed intake op
+2. Replace the MetaOp with the feed intak op.
+The 2nd one wouldn't work since the project is missing so the record
+doesn't have a proper primary key.

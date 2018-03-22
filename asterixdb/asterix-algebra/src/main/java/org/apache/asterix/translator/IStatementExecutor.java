@@ -27,6 +27,7 @@ import java.util.Map;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.lang.common.base.IStatementRewriter;
+import org.apache.asterix.lang.common.statement.InsertStatement;
 import org.apache.asterix.lang.common.statement.Query;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.om.base.IAObject;
@@ -138,6 +139,10 @@ public interface IStatementExecutor {
     JobSpecification rewriteCompileQuery(IClusterInfoCollector clusterInfoCollector, MetadataProvider metadataProvider,
             Query query, ICompiledDmlStatement dmlStatement, Map<String, IAObject> statementParameters,
             IStatementRewriter statementRewriter) throws RemoteException, AlgebricksException, ACIDException;
+
+    JobSpecification rewriteCompileInsertUpsert(IClusterInfoCollector clusterInfoCollector,
+            MetadataProvider metadataProvider, InsertStatement insertUpsert, Map<String, IAObject> stmtParams,
+            IStatementRewriter stmtRewriter) throws AlgebricksException, ACIDException;
 
     /**
      * returns the active dataverse for an entity or a statement

@@ -26,7 +26,7 @@ public abstract class AbstractOneInputOneOutputRuntimeFactory extends AbstractPu
 
     private static final long serialVersionUID = 1L;
 
-    protected final int[] projectionList;
+    public final int[] projectionList;
 
     public AbstractOneInputOneOutputRuntimeFactory(int[] projectionList) {
         this.projectionList = projectionList;

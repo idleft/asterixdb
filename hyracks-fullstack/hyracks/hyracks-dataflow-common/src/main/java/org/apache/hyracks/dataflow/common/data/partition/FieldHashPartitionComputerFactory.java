@@ -27,8 +27,8 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class FieldHashPartitionComputerFactory implements ITuplePartitionComputerFactory {
     private static final long serialVersionUID = 1L;
-    private final int[] hashFields;
-    private final IBinaryHashFunctionFactory[] hashFunctionFactories;
+    public final int[] hashFields;
+    public final IBinaryHashFunctionFactory[] hashFunctionFactories;
 
     public FieldHashPartitionComputerFactory(int[] hashFields, IBinaryHashFunctionFactory[] hashFunctionFactories) {
         this.hashFields = hashFields;

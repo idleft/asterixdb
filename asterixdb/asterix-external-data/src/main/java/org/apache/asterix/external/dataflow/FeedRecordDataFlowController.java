@@ -23,15 +23,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
+import org.apache.asterix.dataflow.data.nontagged.serde.AInt64SerializerDeserializer;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.FeedLogManager;
+import org.apache.asterix.om.base.AInt64;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.util.CleanupUtils;
+import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -93,6 +96,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             }
         } catch (HyracksDataException e) {
             LOGGER.log(Level.WARN, "Exception during ingestion", e);
+            e.printStackTrace();
             if (e.getComponent() == ErrorCode.ASTERIX
                     && (e.getErrorCode() == ErrorCode.FEED_FAILED_WHILE_GETTING_A_NEW_RECORD)) {
                 // Failure but we know we can for sure push the previously parsed records safely
@@ -186,8 +190,8 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             return false;
         }
         tb.addFieldEndOffset();
-        addMetaPart(tb, record);
-        addPrimaryKeys(tb, record);
+        //        addMetaPart(tb, record);
+        //        addPrimaryKeys(tb, record);
         tupleForwarder.addTuple(tb);
         return true;
     }
@@ -196,6 +200,10 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
+        ArrayBackedValueStorage buffer = new ArrayBackedValueStorage();
+        AInt64 pkey = new AInt64(incomingRecordsCount);
+        AInt64SerializerDeserializer.INSTANCE.serialize(pkey, buffer.getDataOutput());
+        tb.addField(buffer);
     }
 
     private void closeSignal() {

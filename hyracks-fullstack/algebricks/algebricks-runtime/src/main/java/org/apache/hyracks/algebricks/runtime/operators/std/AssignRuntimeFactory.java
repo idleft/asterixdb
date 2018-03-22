@@ -38,9 +38,9 @@ public class AssignRuntimeFactory extends AbstractOneInputOneOutputRuntimeFactor
 
     private static final long serialVersionUID = 1L;
 
-    private int[] outColumns;
-    private IScalarEvaluatorFactory[] evalFactories;
-    private final boolean flushFramesRapidly;
+    public int[] outColumns;
+    public IScalarEvaluatorFactory[] evalFactories;
+    public final boolean flushFramesRapidly;
 
     /**
      * @param outColumns
