@@ -31,8 +31,12 @@ import org.apache.hyracks.api.job.IJobletEventListener;
 import org.apache.hyracks.api.job.IJobletEventListenerFactory;
 import org.apache.hyracks.api.job.JobParameterByteStore;
 import org.apache.hyracks.api.job.JobStatus;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class JobEventListenerFactory implements IJobEventListenerFactory {
+    Logger LOGGER = LogManager.getLogger();
 
     private static final long serialVersionUID = 1L;
 
@@ -74,6 +78,7 @@ public class JobEventListenerFactory implements IJobEventListenerFactory {
             @Override
             public void jobletFinish(JobStatus jobStatus) {
                 try {
+                    LOGGER.log(Level.DEBUG, "Jobid " + jobletContext.getJobId() + " Txn " + txnId + " finished.");
                     ITransactionManager txnManager =
                             ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
                                     .getTransactionSubsystem().getTransactionManager();
@@ -92,6 +97,7 @@ public class JobEventListenerFactory implements IJobEventListenerFactory {
             @Override
             public void jobletStart() {
                 try {
+                    LOGGER.log(Level.DEBUG, "Jobid " + jobletContext.getJobId() + " Txn " + txnId + " started.");
                     TransactionOptions options = new TransactionOptions(AtomicityLevel.ENTITY_LEVEL);
                     ((INcApplicationContext) jobletContext.getServiceContext().getApplicationContext())
                             .getTransactionSubsystem().getTransactionManager().beginTransaction(txnId, options);

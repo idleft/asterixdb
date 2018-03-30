@@ -69,6 +69,7 @@ public class TransactionManager implements ITransactionManager, ILifeCycleCompon
     public ITransactionContext getTransactionContext(TxnId txnId) throws ACIDException {
         ITransactionContext txnCtx = txnCtxRepository.get(txnId);
         if (txnCtx == null) {
+            System.err.println("Txn id not found " + txnId);
             throw new ACIDException("Transaction " + txnId + " doesn't exist.");
         }
         return txnCtx;

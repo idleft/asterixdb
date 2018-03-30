@@ -19,24 +19,18 @@
 package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.logging.Level;
 
-import io.netty.buffer.ByteBuf;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.message.InvokeDeployedMessage;
-import org.apache.asterix.transaction.management.service.logging.LogManager;
+import org.apache.asterix.active.message.StartFeedConnWorkersMsg;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.control.nc.NodeControllerService;
-import org.apache.hyracks.control.nc.application.NCServiceContext;
-import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputUnaryOutputOperatorNodePushable;
 import org.apache.logging.log4j.Logger;
 
@@ -81,7 +75,7 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
                     JavaSerializationUtils.serialize(msg), null);
             frameCounter++;
         } catch (Exception e) {
-            throw new HyracksDataException(e);
+            throw new HyracksDataException(e.getMessage());
         }
     }
 
@@ -100,7 +94,7 @@ public class CallDeployedJobWithDataWriter extends AbstractUnaryInputUnaryOutput
             }
         } catch (InterruptedException e) {
             LOGGER.warn("CallDeployedJobWriter is stopped some data left");
-            throw new HyracksDataException(e);
+            throw new HyracksDataException(e.getMessage());
         }
         writer.close();
     }

@@ -73,7 +73,9 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
 
     int connDs;
 
-    private static final String BUFFER_SIZE_KEY = "intake-buffer";
+    private static final String WORKER_NUM = "worker-num";
+    public static final String BATCH_SIZE = "batch-size";
+    public static final String BUFFER_SIZE = "buffer-size";
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
             ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc, int connDs) {
@@ -108,7 +110,9 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
         return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this,
-                connJobId, connDs, adaptorConfiguration.getOrDefault(BUFFER_SIZE_KEY, "0"));
+                connJobId, connDs, adaptorConfiguration.getOrDefault(WORKER_NUM, "1"),
+                adaptorConfiguration.getOrDefault(BATCH_SIZE, "1"),
+                adaptorConfiguration.getOrDefault(BUFFER_SIZE, "1"));
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {

@@ -19,4 +19,6 @@
 
 use feeds;
 
-select value c from Tweets1 c order by c.id;
+//select value c from Tweets1 c order by c.tid;
+
+select count(*) from Tweets1;

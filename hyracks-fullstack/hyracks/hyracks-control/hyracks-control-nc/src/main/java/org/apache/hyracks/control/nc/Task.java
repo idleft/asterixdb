@@ -295,6 +295,7 @@ public class Task implements IHyracksTaskContext, ICounterContext, Runnable {
             Throwable operatorException = null;
             try {
                 operator.initialize();
+                LOGGER.info("Initialized {} for {}", taskAttemptId, joblet.getJobId());
                 if (collectors.length > 0) {
                     final Semaphore sem = new Semaphore(collectors.length - 1);
                     for (int i = 1; i < collectors.length; ++i) {
@@ -368,6 +369,7 @@ public class Task implements IHyracksTaskContext, ICounterContext, Runnable {
 
     private void pushFrames(IPartitionCollector collector, List<PartitionChannel> inputChannels, IFrameWriter writer)
             throws HyracksDataException {
+        boolean firstFrame = false;
         if (aborted) {
             return;
         }
@@ -387,6 +389,10 @@ public class Task implements IHyracksTaskContext, ICounterContext, Runnable {
                         writer.open();
                         VSizeFrame frame = new VSizeFrame(this);
                         while (reader.nextFrame(frame)) {
+                            if (!firstFrame) {
+                                LOGGER.info("Frame_Flowing {} for {}", taskAttemptId, joblet.getJobId());
+                                firstFrame = true;
+                            }
                             if (aborted) {
                                 return;
                             }

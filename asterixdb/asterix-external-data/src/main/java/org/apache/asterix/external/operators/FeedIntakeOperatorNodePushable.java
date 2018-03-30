@@ -25,14 +25,16 @@ import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.ActiveEntityMessage;
-import org.apache.asterix.common.messaging.api.INcAddressedMessage;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
+import org.apache.asterix.external.feed.dataflow.FeedDataFrameBufferWriter;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.util.CleanupUtils;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.logging.log4j.Level;
@@ -40,6 +42,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * The runtime for @see{FeedIntakeOperationDescriptor}.
@@ -51,43 +56,35 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private final FeedAdapter adapter;
     private boolean poisoned = false;
     private DeployedJobSpecId connJobId;
-    private final int connectedDs;
+    private int workerNum;
+    private int batchSize;
     private int bufferSize;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
             FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int connectedDs,
-            String bufferSize) throws HyracksDataException {
+            String workerNum, String batchSize, String bufferSize) throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
-        this.connJobId = jobSpecId;
-        this.connectedDs = connectedDs;
+        this.workerNum = Integer.valueOf(workerNum);
+        this.batchSize = Integer.valueOf(batchSize);
         this.bufferSize = Integer.valueOf(bufferSize);
+        this.connJobId = jobSpecId;
     }
 
     @Override
-    protected void start() throws HyracksDataException, InterruptedException {
+    protected void start() throws HyracksDataException {
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer = new CallDeployedJobWithDataWriter(ctx, writer, connJobId, connectedDs, runtimeId, bufferSize);
+            writer = new FeedDataFrameBufferWriter(ctx, writer, connJobId, runtimeId, workerNum, batchSize, bufferSize);
             writer.open();
             synchronized (this) {
                 if (poisoned) {
                     return;
                 }
             }
-            /*
-             * Set null feed message. Feed pipeline carries with it a message with each frame
-             * Initially, the message is set to a null message that can be changed by feed adapters.
-             * One use case is adapters which consume data sources that allow restartability. Such adapters
-             * can propagate progress information through the ingestion pipeline to storage nodes
-             */
-            //            IFrame message = new VSizeFrame(ctx);
-            //            TaskUtil.put(HyracksConstants.KEY_MESSAGE, message, ctx);
-            //            message.getBuffer().put(MessagingFrameTupleAppender.NULL_FEED_MESSAGE);
-            //            message.getBuffer().flip();
             run();
         } catch (Throwable e) {
             failure = e;
@@ -167,7 +164,15 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     public void handleMessage(ActiveEntityMessage msg) {
         // can be extended to multiple kinds. only ack frame for now.
         Serializable payload = msg.getPayload();
-        long ackedFrameId = (Long) payload;
-        ((CallDeployedJobWithDataWriter) writer).ackFrame(ackedFrameId);
+        List<Long> frameIds = (ArrayList<Long>) payload;
+        try {
+            ((FeedDataFrameBufferWriter) writer).ackFrames(frameIds);
+        } catch (Exception e) {
+            System.err.println("ACK MSG ERROR");
+        }
+    }
+
+    public Pair<List<Long>, List<ByteBuffer>> getFrames(JobId jobId) throws Exception {
+        return ((FeedDataFrameBufferWriter) writer).obtainFrames(jobId);
     }
 }

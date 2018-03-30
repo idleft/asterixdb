@@ -21,7 +21,6 @@ package org.apache.asterix.utils;
 import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,22 +32,23 @@ import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.app.translator.QueryTranslator;
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
-import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.functions.FunctionSignature;
 import org.apache.asterix.common.transactions.TxnId;
+import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.utils.StoragePathUtil;
 import org.apache.asterix.compiler.provider.SqlppCompilationProvider;
 import org.apache.asterix.external.api.IAdapterFactory;
-import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
 import org.apache.asterix.external.feed.watch.FeedActivityDetails;
 import org.apache.asterix.external.operators.FeedCallableOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
+import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
+import org.apache.asterix.external.operators.FeedConnWorkerOperatorDescriptor;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.external.util.FeedUtils;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
@@ -83,12 +83,9 @@ import org.apache.asterix.lang.sqlpp.util.SqlppVariableUtil;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
-import org.apache.asterix.metadata.entities.FeedPolicyEntity;
-import org.apache.asterix.metadata.feeds.FeedMetadataUtil;
 import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
-import org.apache.asterix.runtime.job.listener.MultiTransactionJobletEventListenerFactory;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.asterix.translator.CompiledStatements;
 import org.apache.asterix.translator.IStatementExecutor;
@@ -100,11 +97,6 @@ import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConst
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConstraintHelper;
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Triple;
-import org.apache.hyracks.algebricks.runtime.base.AlgebricksPipeline;
-import org.apache.hyracks.algebricks.runtime.base.IPushRuntimeFactory;
-import org.apache.hyracks.algebricks.runtime.base.IScalarEvaluatorFactory;
-import org.apache.hyracks.algebricks.runtime.operators.meta.AlgebricksMetaOperatorDescriptor;
-import org.apache.hyracks.algebricks.runtime.operators.std.AssignRuntimeFactory;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
 import org.apache.hyracks.api.constraints.Constraint;
 import org.apache.hyracks.api.constraints.PartitionConstraintHelper;
@@ -117,20 +109,12 @@ import org.apache.hyracks.api.dataflow.ConnectorDescriptorId;
 import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
 import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
-import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
-import org.apache.hyracks.api.dataflow.value.ITuplePartitionComputerFactory;
-import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
-import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
-import org.apache.hyracks.dataflow.common.data.partition.FieldHashPartitionComputerFactory;
-import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
-import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningWithMessageConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 import org.apache.hyracks.dataflow.std.misc.NullSinkOperatorDescriptor;
-import org.apache.hyracks.dataflow.std.misc.ReplicateOperatorDescriptor;
 
 /**
  * Provides helper method(s) for creating JobSpec for operations on a feed.
@@ -250,22 +234,19 @@ public class FeedOperations {
 
     private static JobSpecification getConnectionJob(MetadataProvider metadataProvider, FeedConnection feedConn,
             IStatementExecutor statementExecutor, IHyracksClientConnection hcc, Boolean insertFeed)
-            throws AlgebricksException, RemoteException, ACIDException {
+            throws AlgebricksException, ACIDException {
         metadataProvider.getConfig().put(FeedActivityDetails.FEED_POLICY_NAME, feedConn.getPolicyName());
+        metadataProvider.setWriteTransaction(true);
         Query feedConnQuery = makeConnectionQuery(feedConn);
-        CompiledStatements.ICompiledDmlStatement clfrqs;
+        InsertStatement stmt;
         if (insertFeed) {
-            InsertStatement stmtUpsert = new InsertStatement(new Identifier(feedConn.getDataverseName()),
+            stmt = new InsertStatement(new Identifier(feedConn.getDataverseName()),
                     new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledInsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
         } else {
-            UpsertStatement stmtUpsert = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
+            stmt = new UpsertStatement(new Identifier(feedConn.getDataverseName()),
                     new Identifier(feedConn.getDatasetName()), feedConnQuery, -1, null, null);
-            clfrqs = new CompiledStatements.CompiledUpsertStatement(feedConn.getDataverseName(),
-                    feedConn.getDatasetName(), feedConnQuery, stmtUpsert.getVarCounter(), null, null);
         }
-        return statementExecutor.rewriteCompileQuery(hcc, metadataProvider, feedConnQuery, clfrqs, null, null);
+        return statementExecutor.rewriteCompileInsertUpsert(hcc, metadataProvider, stmt, null, null);
     }
 
     private static JobSpecification simpleModifyConnJob(MetadataProvider metadataProvider, Feed feed,
@@ -274,12 +255,18 @@ public class FeedOperations {
         FeedCollectOperatorDescriptor firstOp =
                 (FeedCollectOperatorDescriptor) connJob.getOperatorMap().get(new OperatorDescriptorId(0));
 
-        FeedCallableOperatorDescriptor callableOpDesc = new FeedCallableOperatorDescriptor(connJob, intakeLocations[0],
-                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
+        //        FeedCallableOperatorDescriptor callableOpDesc = new FeedCallableOperatorDescriptor(connJob, intakeLocations[0],
+        //                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
+
+        FeedConnWorkerOperatorDescriptor callableOpDesc =
+                new FeedConnWorkerOperatorDescriptor(connJob, intakeLocations[0],
+                        new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
 
         // create replicator
         PartitionConstraintHelper.addAbsoluteLocationConstraint(connJob, callableOpDesc, intakeLocations);
         connJob.connect(new OneToOneConnectorDescriptor(connJob), callableOpDesc, 0, firstOp, 0);
+        //        JobEventListenerFactory jobEventListenerFactory = (JobEventListenerFactory) connJob.getJobletEventListenerFactory();
+        //        connJob.setJobletEventListenerFactory(new JobEventListenerFactory(jobEventListenerFactory.getTxnId(-1), true));
         return connJob;
     }
 

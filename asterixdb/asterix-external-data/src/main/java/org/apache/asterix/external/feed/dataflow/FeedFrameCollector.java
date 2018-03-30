@@ -20,29 +20,26 @@ package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
 
-import org.apache.asterix.external.feed.management.FeedConnectionId;
-import org.apache.asterix.external.feed.policy.FeedPolicyAccessor;
+import org.apache.asterix.active.EntityId;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 
 public class FeedFrameCollector implements IFrameWriter {
 
-    private final FeedConnectionId connectionId;
-    private IFrameWriter writer;
+    private final EntityId collectorId;
+    private final IFrameWriter writer;
     private State state;
 
     public enum State {
+        CREATED,
         ACTIVE,
         FINISHED,
-        TRANSITION,
-        HANDOVER
     }
 
-    public FeedFrameCollector(FeedPolicyAccessor feedPolicyAccessor, IFrameWriter writer,
-            FeedConnectionId connectionId) {
-        this.connectionId = connectionId;
+    public FeedFrameCollector(IFrameWriter writer, EntityId collectorId) {
         this.writer = writer;
-        this.state = State.ACTIVE;
+        this.state = State.CREATED;
+        this.collectorId = collectorId;
     }
 
     @Override
@@ -52,8 +49,14 @@ public class FeedFrameCollector implements IFrameWriter {
         notify();
     }
 
-    public synchronized void disconnect() {
-        setState(State.FINISHED);
+    public synchronized void waitForFinish() throws HyracksDataException {
+        while (state != State.FINISHED) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(e.getMessage());
+            }
+        }
     }
 
     @Override
@@ -69,7 +72,6 @@ public class FeedFrameCollector implements IFrameWriter {
         this.state = state;
         switch (state) {
             case FINISHED:
-            case HANDOVER:
                 notifyAll();
                 break;
             default:
@@ -77,17 +79,9 @@ public class FeedFrameCollector implements IFrameWriter {
         }
     }
 
-    public IFrameWriter getFrameWriter() {
-        return writer;
-    }
-
-    public void setFrameWriter(IFrameWriter writer) {
-        this.writer = writer;
-    }
-
     @Override
     public String toString() {
-        return "FrameCollector " + connectionId + "," + state + "]";
+        return "FrameCollector " + collectorId + "," + state + "]";
     }
 
     @Override
@@ -96,14 +90,14 @@ public class FeedFrameCollector implements IFrameWriter {
             return true;
         }
         if (o instanceof FeedFrameCollector) {
-            return connectionId.equals(((FeedFrameCollector) o).connectionId);
+            return collectorId.equals(((FeedFrameCollector) o).collectorId);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return connectionId.toString().hashCode();
+        return collectorId.toString().hashCode();
     }
 
     @Override
@@ -121,7 +115,7 @@ public class FeedFrameCollector implements IFrameWriter {
         writer.fail();
     }
 
-    public FeedConnectionId getConnectionId() {
-        return connectionId;
+    public EntityId getCollectorId() {
+        return collectorId;
     }
 }

@@ -21,10 +21,7 @@ package org.apache.asterix.external.operators;
 import java.nio.ByteBuffer;
 
 import org.apache.asterix.active.ActiveRuntimeId;
-import org.apache.asterix.active.message.ActiveEntityMessage;
 import org.apache.asterix.common.config.GlobalConfig;
-import org.apache.asterix.common.messaging.api.INCMessageBroker;
-import org.apache.hyracks.api.application.INCServiceContext;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -33,8 +30,7 @@ import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
 
-import static org.apache.asterix.active.message.InvokeDeployedMessage.DATA_FRAME_FRAME_ID_NAME;
-import static org.apache.asterix.active.message.InvokeDeployedMessage.DATA_FRAME_PARAMETER_NAME;
+import static org.apache.asterix.active.message.StartFeedConnWorkersMsg.DATA_FRAME_PARAMETER_NAME;
 
 public class FeedCallableOperatorDescriptor extends AbstractSingleActivityOperatorDescriptor {
 

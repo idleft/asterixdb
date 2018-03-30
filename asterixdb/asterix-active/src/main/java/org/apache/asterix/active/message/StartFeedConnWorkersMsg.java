@@ -21,7 +21,6 @@ package org.apache.asterix.active.message;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.DeployedJobLifeCycleListener;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.messaging.api.ICcAddressedMessage;
@@ -29,46 +28,39 @@ import org.apache.asterix.common.transactions.TxnId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.hyracks.api.job.JobId;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
-public class InvokeDeployedMessage implements ICcAddressedMessage {
+public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
+
+    private static Logger LOGGER = LogManager.getLogger();
 
     public static final String TRANSACTION_ID_PARAMETER_NAME = "TxnIdParameter";
     public static final String DATA_FRAME_PARAMETER_NAME = "DataFrameParameter";
     public static final String DATA_FRAME_FRAME_ID_NAME = "DataFrameID";
 
     private static final long serialVersionUID = 1L;
-    private byte[] dataframe;
     private DeployedJobSpecId deployedJobId;
-    private final int connDs;
-    private final long frameId;
-    private final String ncId;
-    private final ActiveRuntimeId runtimeId;
+    private int workerNum;
 
-    public InvokeDeployedMessage(DeployedJobSpecId deployedJobSpecId, byte[] dataframe, int connDs, long frameId,
-            String ncId, ActiveRuntimeId runtimeId) {
-        this.dataframe = dataframe;
+    public StartFeedConnWorkersMsg(DeployedJobSpecId deployedJobSpecId, int workerNum) {
         this.deployedJobId = deployedJobSpecId;
-        this.connDs = connDs;
-        this.frameId = frameId;
-        this.ncId = ncId;
-        this.runtimeId = runtimeId;
+        this.workerNum = workerNum;
     }
 
     @Override
     public void handle(ICcApplicationContext appCtx) throws HyracksDataException {
         try {
             ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
-            Map<byte[], byte[]> jobParameter = new HashMap<>();
-            for (int iter1 = 0; iter1 < connDs; iter1++) {
+            for (int iter1 = 0; iter1 < workerNum; iter1++) {
+                Map<byte[], byte[]> jobParameter = new HashMap<>();
                 TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
-                jobParameter.put((TRANSACTION_ID_PARAMETER_NAME + String.valueOf(iter1)).getBytes(),
+                jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
                         String.valueOf(newDeployedJobTxnId.getId()).getBytes());
+                JobId newConnJobId = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
+                LOGGER.log(Level.DEBUG, "Starting new deployed job " + newConnJobId);
             }
-            jobParameter.put(DATA_FRAME_PARAMETER_NAME.getBytes(), dataframe);
-            jobParameter.put(DATA_FRAME_FRAME_ID_NAME.getBytes(), String.valueOf(frameId).getBytes());
-            ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
-            //            ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener())
-            //                    .registerDeployedJobWithDataFrame(runtimeJobId, runtimeId, frameId, ncId);
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }

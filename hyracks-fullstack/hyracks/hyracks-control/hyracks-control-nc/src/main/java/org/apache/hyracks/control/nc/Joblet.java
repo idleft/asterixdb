@@ -59,6 +59,7 @@ import org.apache.hyracks.control.common.job.profiling.om.TaskProfile;
 import org.apache.hyracks.control.nc.io.WorkspaceFileFactory;
 import org.apache.hyracks.control.nc.resources.DefaultDeallocatableRegistry;
 import org.apache.hyracks.control.nc.resources.memory.FrameManager;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -324,7 +325,9 @@ public class Joblet implements IHyracksJobletContext, ICounterContext {
         nodeController.getJobletMap().remove(jobId);
         IJobletEventListener listener = getJobletEventListener();
         if (listener != null) {
+            LOGGER.log(Level.INFO, "COMMIT LOGGING PRE " + jobId);
             listener.jobletFinish(cleanupStatus);
+            LOGGER.log(Level.INFO, "COMMIT LOGGING POST " + jobId);
         }
         close();
         cleanupPending = false;
