@@ -53,9 +53,9 @@ public class RegisterFrameMessage implements ICcAddressedMessage {
     @Override
     public void handle(ICcApplicationContext appCtx) throws HyracksDataException {
         try {
-            ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
-            ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener())
-                    .registerDeployedJobWithDataFrame(jobId, runtimeId, frameIds, ncId, newJob);
+            //            ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
+            //            ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener())
+            //                    .registerDeployedJobWithDataFrame(jobId, runtimeId, frameIds, ncId, newJob);
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }

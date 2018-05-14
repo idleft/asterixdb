@@ -18,7 +18,8 @@
  */
 
 use feeds;
+set `wait-for-completion-feed` "true";
 
-//select value c from Tweets1 c order by c.tid;
+connect feed TweetFeed to dataset Tweets1 apply function `testlib#heavyFunction`;
 
-select count(*) from Tweets1;
+start feed TweetFeed;

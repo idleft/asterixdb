@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 
 import org.apache.asterix.active.ActiveManager;
+import org.apache.asterix.active.partition.PartitionHolderManager;
 import org.apache.asterix.common.api.ICoordinationService;
 import org.apache.asterix.common.api.IDatasetLifecycleManager;
 import org.apache.asterix.common.api.IDatasetMemoryManager;
@@ -134,6 +135,7 @@ public class NCAppRuntimeContext implements INcApplicationContext {
     private IIOManager ioManager;
     private boolean isShuttingdown;
     private ActiveManager activeManager;
+    private PartitionHolderManager partitionHolderManager;
     private IReplicationChannel replicationChannel;
     private IReplicationManager replicationManager;
     private final ILibraryManager libraryManager;
@@ -210,6 +212,9 @@ public class NCAppRuntimeContext implements INcApplicationContext {
         replicaManager = new ReplicaManager(this, nodePartitionsIds);
         isShuttingdown = false;
         activeManager = new ActiveManager(threadExecutor, getServiceContext().getNodeId(),
+                activeProperties.getMemoryComponentGlobalBudget(), compilerProperties.getFrameSize(),
+                this.ncServiceContext);
+        partitionHolderManager = new PartitionHolderManager(getServiceContext().getNodeId(),
                 activeProperties.getMemoryComponentGlobalBudget(), compilerProperties.getFrameSize(),
                 this.ncServiceContext);
 
@@ -382,6 +387,11 @@ public class NCAppRuntimeContext implements INcApplicationContext {
     @Override
     public ActiveManager getActiveManager() {
         return activeManager;
+    }
+
+    @Override
+    public Object getPartitionHolderMananger() {
+        return partitionHolderManager;
     }
 
     @Override

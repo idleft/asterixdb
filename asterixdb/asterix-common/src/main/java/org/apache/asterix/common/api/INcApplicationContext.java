@@ -76,6 +76,8 @@ public interface INcApplicationContext extends IApplicationContext {
 
     Object getActiveManager();
 
+    Object getPartitionHolderMananger();
+
     IReplicationManager getReplicationManager();
 
     IReplicationChannel getReplicationChannel();

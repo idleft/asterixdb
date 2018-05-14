@@ -29,6 +29,7 @@ import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
 import org.apache.asterix.external.feed.dataflow.FeedDataFrameBufferWriter;
+import org.apache.asterix.external.feed.dataflow.DeployedJobBufferWriter;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -59,11 +60,12 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private int workerNum;
     private int batchSize;
     private int bufferSize;
+    private EntityId feedId;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int connectedDs,
-            String workerNum, String batchSize, String bufferSize) throws HyracksDataException {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, String workerNum,
+            String batchSize, String bufferSize) throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
@@ -71,6 +73,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         this.batchSize = Integer.valueOf(batchSize);
         this.bufferSize = Integer.valueOf(bufferSize);
         this.connJobId = jobSpecId;
+        this.feedId = feedId;
     }
 
     @Override
@@ -78,7 +81,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer = new FeedDataFrameBufferWriter(ctx, writer, connJobId, runtimeId, workerNum, batchSize, bufferSize);
+            writer = new DeployedJobBufferWriter(ctx, writer, connJobId, feedId, workerNum, batchSize, bufferSize, 4);
             writer.open();
             synchronized (this) {
                 if (poisoned) {
@@ -158,21 +161,5 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         } else {
             return "\"Runtime stats is not available.\"";
         }
-    }
-
-    @Override
-    public void handleMessage(ActiveEntityMessage msg) {
-        // can be extended to multiple kinds. only ack frame for now.
-        Serializable payload = msg.getPayload();
-        List<Long> frameIds = (ArrayList<Long>) payload;
-        try {
-            ((FeedDataFrameBufferWriter) writer).ackFrames(frameIds);
-        } catch (Exception e) {
-            System.err.println("ACK MSG ERROR");
-        }
-    }
-
-    public Pair<List<Long>, List<ByteBuffer>> getFrames(JobId jobId) throws Exception {
-        return ((FeedDataFrameBufferWriter) writer).obtainFrames(jobId);
     }
 }

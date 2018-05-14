@@ -19,7 +19,7 @@
 <Configuration status="INFO">
   <Appenders>
     <Console name="Console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>gu
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level - %msg%n"/>gu
     </Console>
     <File name="InfoLog" fileName="target/info.log">
         <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
@@ -43,10 +43,13 @@
     <!--<Logger name="org.apache.hyracks.algebricks" level="DEBUG">-->
       <!--<AppenderRef ref="Console"/>-->
     <!--</Logger>-->
-    <!--<Logger name="org.apache.asterix.active" level="ERROR">-->
-      <!--<AppenderRef ref="Console"/>-->
-    <!--</Logger>-->
-    <!--<Logger name="org.apache.asterix.external" level="ERROR">-->
+    <Logger name="org.apache.asterix.active" level="DEBUG">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <Logger name="org.apache.asterix.external" level="DEBUG">
+      <AppenderRef ref="Console"/>
+    </Logger>
+    <!--<Logger name="org.apache.asterix.external.operators" level="DEBUG">-->
       <!--<AppenderRef ref="Console"/>-->
     <!--</Logger>-->
     <!--<Logger name="org.apache.asterix.runtime.job" level="DEBUG">-->

@@ -19,32 +19,24 @@
 package org.apache.asterix.external.dataflow;
 
 import java.io.IOException;
-import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
-import org.apache.asterix.dataflow.data.nontagged.serde.AInt64SerializerDeserializer;
 import org.apache.asterix.external.api.IRawRecord;
-import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordReader;
-import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.FeedLogManager;
-import org.apache.asterix.om.base.AInt64;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.util.CleanupUtils;
-import org.apache.hyracks.data.std.util.ArrayBackedValueStorage;
-import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowController {
+public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
     public static final String INCOMING_RECORDS_COUNT_FIELD_NAME = "incoming-records-count";
     public static final String FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME = "failed-at-parser-records-count";
-    public static final String READER_STATS_FIELD_NAME = "reader-stats";
 
     public enum State {
         CREATED,
@@ -53,7 +45,6 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     private static final Logger LOGGER = LogManager.getLogger();
-    private final IRecordDataParser<T> dataParser;
     private final IRecordReader<T> recordReader;
     protected final AtomicBoolean closed = new AtomicBoolean(false);
     protected static final long INTERVAL = 1000;
@@ -61,13 +52,9 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     protected long incomingRecordsCount = 0;
     protected long failedRecordsCount = 0;
 
-    //    private long timeOnParsing = 0;
-    //    private long timeOnPassing = 0;
-
-    public FeedRecordDataFlowController(IHyracksTaskContext ctx, FeedLogManager feedLogManager, int numOfOutputFields,
-            IRecordDataParser<T> dataParser, IRecordReader<T> recordReader) throws HyracksDataException {
-        super(ctx, feedLogManager, numOfOutputFields);
-        this.dataParser = dataParser;
+    public FeedDataFlowController(IHyracksTaskContext ctx, FeedLogManager feedLogManager, IRecordReader<T> recordReader)
+            throws HyracksDataException {
+        super(ctx, feedLogManager, 1);
         this.recordReader = recordReader;
         recordReader.setFeedLogManager(feedLogManager);
         recordReader.setController(this);
@@ -103,7 +90,6 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
             e.printStackTrace();
             if (e.getComponent() == ErrorCode.ASTERIX
                     && (e.getErrorCode() == ErrorCode.FEED_FAILED_WHILE_GETTING_A_NEW_RECORD)) {
-                // Failure but we know we can for sure push the previously parsed records safely
                 failure = e;
                 try {
                     flush();
@@ -129,8 +115,6 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     private synchronized void setState(State newState) {
-        //        LOGGER.log(Level.INFO, "State is being set from " + state + " to " + newState + " DEBUG_MARK -- PARSING_TIME "
-        //                + timeOnParsing + "  PASSING_TIME " + timeOnPassing);
         state = newState;
     }
 
@@ -186,32 +170,7 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
     }
 
     private boolean parseAndForward(IRawRecord<? extends T> record) throws IOException {
-        Instant startInstant = Instant.now();
-        try {
-            dataParser.parse(record, tb.getDataOutput());
-            //            timeOnParsing += Instant.now().toEpochMilli() - startInstant.toEpochMilli();
-        } catch (Exception e) {
-            LOGGER.log(Level.WARN, ExternalDataConstants.ERROR_PARSE_RECORD, e);
-            feedLogManager.logRecord(record.toString(), ExternalDataConstants.ERROR_PARSE_RECORD);
-            // continue the outer loop
-            return false;
-        }
-        tb.addFieldEndOffset();
-        //        addMetaPart(tb, record);
-        //        addPrimaryKeys(tb, record);
-        tupleForwarder.addTuple(tb);
-        //        timeOnPassing += Instant.now().toEpochMilli() - startInstant.toEpochMilli();
-        return true;
-    }
-
-    protected void addMetaPart(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
-    }
-
-    protected void addPrimaryKeys(ArrayTupleBuilder tb, IRawRecord<? extends T> record) throws IOException {
-        ArrayBackedValueStorage buffer = new ArrayBackedValueStorage();
-        AInt64 pkey = new AInt64(incomingRecordsCount);
-        AInt64SerializerDeserializer.INSTANCE.serialize(pkey, buffer.getDataOutput());
-        tb.addField(buffer);
+        return tupleForwarder.addTuple(record.getBytes(), 0, record.getBytes().length);
     }
 
     private void closeSignal() {
@@ -268,21 +227,9 @@ public class FeedRecordDataFlowController<T> extends AbstractFeedDataFlowControl
         return recordReader;
     }
 
-    public IRecordDataParser<T> getParser() {
-        return dataParser;
-    }
-
     @Override
     public String getStats() {
-        String readerStats = recordReader.getStats();
-        StringBuilder str = new StringBuilder();
-        str.append("{");
-        if (readerStats != null) {
-            str.append("\"").append(READER_STATS_FIELD_NAME).append("\":").append(readerStats).append(", ");
-        }
-        str.append("\"").append(INCOMING_RECORDS_COUNT_FIELD_NAME).append("\": ").append(incomingRecordsCount)
-                .append(", \"").append(FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME).append("\": ")
-                .append(failedRecordsCount).append("}");
-        return str.toString();
+        return "{\"" + INCOMING_RECORDS_COUNT_FIELD_NAME + "\": " + incomingRecordsCount + ", \""
+                + FAILED_AT_PARSER_RECORDS_COUNT_FIELD_NAME + "\": " + failedRecordsCount + "}";
     }
 }

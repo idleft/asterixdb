@@ -40,6 +40,10 @@ public class FrameTupleAppenderAccessor extends FrameTupleAppender implements IF
         this.recordDescriptor = recordDescriptor;
     }
 
+    public FrameTupleAppenderAccessor() {
+        this(null);
+    }
+
     @Override
     public void reset(ByteBuffer buffer) {
         throw new IllegalAccessError("should not call this function");
@@ -106,7 +110,7 @@ public class FrameTupleAppenderAccessor extends FrameTupleAppender implements IF
             bbis.setByteBuffer(getBuffer(),
                     getTupleStartOffset(tid) + getFieldSlotsLength() + getFieldStartOffset(tid, j));
             try {
-                System.err.print(recordDescriptor.getFields()[j].deserialize(dis));
+                System.err.print(recordDescriptor == null ? null : recordDescriptor.getFields()[j].deserialize(dis));
             } catch (HyracksDataException e) {
                 e.printStackTrace();
             }
@@ -123,7 +127,7 @@ public class FrameTupleAppenderAccessor extends FrameTupleAppender implements IF
 
     @Override
     public int getFieldCount() {
-        return recordDescriptor.getFieldCount();
+        return recordDescriptor == null ? 0 : recordDescriptor.getFieldCount();
     }
 
     @Override

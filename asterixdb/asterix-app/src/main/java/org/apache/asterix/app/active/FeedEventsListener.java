@@ -102,7 +102,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     protected JobId compileAndStartJob(MetadataProvider mdProvider) throws HyracksDataException {
         try {
             Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> intakeJobInfo =
-                    FeedOperations.buildStartFeedJob(mdProvider, feed, feedConnections.size());
+                    FeedOperations.buildStartFeedJob(mdProvider, feed);
             JobSpecification intakeJob = intakeJobInfo.getLeft();
             intakeJob.setProperty(ActiveNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
             // TODO(Yingyi): currently we do not check IFrameWriter protocol violations for Feed jobs.

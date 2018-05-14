@@ -16,5 +16,26 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.asterix.active.partition;
 
-0
+import org.apache.asterix.active.ActiveRuntimeId;
+import org.apache.asterix.active.message.ActiveEntityMessage;
+import org.apache.hyracks.api.exceptions.HyracksDataException;
+import org.apache.hyracks.api.job.JobId;
+
+import java.nio.ByteBuffer;
+
+public interface IPartitionHolderRuntime {
+
+    /**
+     * @return the unique runtime id associated with the active runtime
+     */
+    PartitionHolderId getPartitionHolderId();
+
+    /**
+     * @return the job id associated with this active runtime
+     */
+    JobId getJobId();
+
+    ByteBuffer getHoldFrame() throws InterruptedException;
+}

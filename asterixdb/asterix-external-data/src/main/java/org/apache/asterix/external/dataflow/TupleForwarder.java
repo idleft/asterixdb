@@ -18,6 +18,8 @@
  */
 package org.apache.asterix.external.dataflow;
 
+import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.util.DataflowUtils;
 import org.apache.hyracks.api.comm.IFrame;
 import org.apache.hyracks.api.comm.IFrameWriter;
@@ -37,6 +39,16 @@ public class TupleForwarder {
         this.frame = new VSizeFrame(ctx);
         this.writer = writer;
         this.appender = new FrameTupleAppender(frame);
+    }
+
+    public boolean addTuple(byte[] array, int start, int length) throws HyracksDataException {
+        if (!appender.append(array, start, length)) {
+            appender.write(writer, true);
+            if (!appender.append(array, start, length)) {
+                throw new RuntimeDataException(ErrorCode.UTIL_DATAFLOW_UTILS_TUPLE_TOO_LARGE);
+            }
+        }
+        return true;
     }
 
     public void addTuple(ArrayTupleBuilder tb) throws HyracksDataException {

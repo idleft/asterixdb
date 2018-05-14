@@ -476,7 +476,7 @@ public class APIFramework {
     }
 
     // Gets the parallelism parameter.
-    private static int getParallelism(String parameter, int parallelismInConfiguration) {
+    public int getParallelism(String parameter, int parallelismInConfiguration) {
         IOptionType<Integer> integerIPropertyInterpreter = OptionTypes.INTEGER;
         return parameter == null ? parallelismInConfiguration : integerIPropertyInterpreter.parse(parameter);
     }

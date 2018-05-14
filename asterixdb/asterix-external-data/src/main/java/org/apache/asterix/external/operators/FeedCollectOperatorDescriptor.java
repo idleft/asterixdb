@@ -20,6 +20,8 @@ package org.apache.asterix.external.operators;
 
 import java.util.Map;
 
+import org.apache.asterix.external.api.IDataParserFactory;
+import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.om.types.ARecordType;
@@ -53,21 +55,25 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     /** The subscription location at which the recipient feed receives tuples from the source feed {SOURCE_FEED_INTAKE_STAGE , SOURCE_FEED_COMPUTE_STAGE} **/
     private final FeedRuntimeType subscriptionLocation;
 
+    private final IRecordDataParserFactory<?> parserFactory;
+
     public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId, ARecordType atype,
-            RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation) {
-        super(spec, 1, 1);
+            RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation,
+            IRecordDataParserFactory<?> parserFactory) {
+        super(spec, 0, 1);
         this.outRecDescs[0] = rDesc;
         this.outputType = atype;
         this.connectionId = feedConnectionId;
         this.feedPolicyProperties = feedPolicyProperties;
         this.subscriptionLocation = subscriptionLocation;
+        this.parserFactory = parserFactory;
     }
 
     @Override
     public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
             IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
             throws HyracksDataException {
-        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition);
+        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory);
     }
 
     public FeedConnectionId getFeedConnectionId() {

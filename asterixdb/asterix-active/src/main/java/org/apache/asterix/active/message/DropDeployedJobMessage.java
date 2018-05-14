@@ -20,6 +20,7 @@ package org.apache.asterix.active.message;
 
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.DeployedJobLifeCycleListener;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.messaging.api.ICcAddressedMessage;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -32,17 +33,17 @@ public class DropDeployedJobMessage implements ICcAddressedMessage {
     private static Logger LOGGER = LogManager.getLogger();
 
     private static final long serialVersionUID = 1L;
-    private ActiveRuntimeId runtimeId;
+    private EntityId entityId;
 
-    public DropDeployedJobMessage(ActiveRuntimeId runtimeId) {
-        this.runtimeId = runtimeId;
+    public DropDeployedJobMessage(EntityId runtimeId) {
+        this.entityId = runtimeId;
     }
 
     @Override
     public void handle(ICcApplicationContext appCtx) throws HyracksDataException {
         try {
             ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
-            ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener()).dropDeployedJob(runtimeId);
+            ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener()).dropDeployedJob(entityId);
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }

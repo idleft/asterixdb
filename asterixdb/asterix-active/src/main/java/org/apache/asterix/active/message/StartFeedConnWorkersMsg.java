@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.asterix.active.DeployedJobLifeCycleListener;
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.messaging.api.ICcAddressedMessage;
 import org.apache.asterix.common.transactions.TxnId;
@@ -43,24 +44,34 @@ public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
     private static final long serialVersionUID = 1L;
     private DeployedJobSpecId deployedJobId;
     private int workerNum;
+    private EntityId feedId;
+    private int livePartitionN;
 
-    public StartFeedConnWorkersMsg(DeployedJobSpecId deployedJobSpecId, int workerNum) {
+    public StartFeedConnWorkersMsg(DeployedJobSpecId deployedJobSpecId, int workerNum, EntityId feedId,
+            int livePartitionN) {
         this.deployedJobId = deployedJobSpecId;
         this.workerNum = workerNum;
+        this.feedId = feedId;
+        this.livePartitionN = livePartitionN;
     }
 
     @Override
     public void handle(ICcApplicationContext appCtx) throws HyracksDataException {
         try {
             ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
+            DeployedJobLifeCycleListener lifeCycleListener =
+                    ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener());
+            lifeCycleListener.keepDeployedJob(feedId, deployedJobId, livePartitionN);
             for (int iter1 = 0; iter1 < workerNum; iter1++) {
                 Map<byte[], byte[]> jobParameter = new HashMap<>();
                 TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
                 jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
                         String.valueOf(newDeployedJobTxnId.getId()).getBytes());
                 JobId newConnJobId = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
-                LOGGER.log(Level.DEBUG, "Starting new deployed job " + newConnJobId);
+                lifeCycleListener.registerDeployedJob(newConnJobId, feedId);
+                LOGGER.log(Level.DEBUG, "Start and keep alive " + newConnJobId);
             }
+
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }

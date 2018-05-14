@@ -405,7 +405,7 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
     }
 
     public Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> buildFeedIntakeRuntime(
-            JobSpecification jobSpec, Feed feed, FeedPolicyAccessor policyAccessor, int connDs) throws Exception {
+            JobSpecification jobSpec, Feed feed, FeedPolicyAccessor policyAccessor) throws Exception {
         Triple<IAdapterFactory, RecordDescriptor, IDataSourceAdapter.AdapterType> factoryOutput;
         factoryOutput =
                 FeedMetadataUtil.getFeedFactoryAndOutput(feed, policyAccessor, mdTxnCtx, getApplicationContext());
@@ -416,13 +416,13 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
         switch (factoryOutput.third) {
             case INTERNAL:
                 feedIngestor = new FeedIntakeOperatorDescriptor(jobSpec, feed, adapterFactory, recordType,
-                        policyAccessor, factoryOutput.second, connDs);
+                        policyAccessor, factoryOutput.second);
                 break;
             case EXTERNAL:
                 String libraryName = feed.getConfiguration().get(ExternalDataConstants.KEY_ADAPTER_NAME).trim()
                         .split(FeedConstants.NamingConstants.LIBRARY_NAME_SEPARATOR)[0];
                 feedIngestor = new FeedIntakeOperatorDescriptor(jobSpec, feed, libraryName,
-                        adapterFactory.getClass().getName(), recordType, policyAccessor, factoryOutput.second, connDs);
+                        adapterFactory.getClass().getName(), recordType, policyAccessor, factoryOutput.second);
                 break;
             default:
                 break;

@@ -20,6 +20,7 @@ package org.apache.asterix.external.input.record;
 
 import java.io.IOException;
 import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import org.apache.asterix.common.exceptions.ErrorCode;
@@ -44,7 +45,10 @@ public class CharArrayRecord implements IRawRecord<char[]> {
 
     @Override
     public byte[] getBytes() {
-        return new String(value).getBytes();
+        // TODO: we can try to chop the char into two bytes manually to see possible improvement by skipping toString
+        // conversion in parsing too.
+        byte[] bytes = new String(value).getBytes(StandardCharsets.UTF_8);
+        return bytes;
     }
 
     @Override

@@ -24,8 +24,10 @@ import java.util.List;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.exceptions.CompilationException;
 import org.apache.asterix.common.exceptions.ErrorCode;
+import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.operators.FeedCollectOperatorDescriptor;
+import org.apache.asterix.external.provider.ParserFactoryProvider;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.formats.nontagged.SerializerDeserializerProvider;
 import org.apache.asterix.metadata.entities.Feed;
@@ -192,8 +194,13 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
             feedPolicy.getProperties().put(BuiltinFeedPolicies.CONFIG_FEED_POLICY_KEY, feedPolicy.getPolicyName());
             FeedConnectionId feedConnectionId =
                     new FeedConnectionId(getId().getDataverseName(), getId().getDatasourceName(), getTargetDataset());
+            IRecordDataParserFactory<?> dataParserFactory =
+                    (IRecordDataParserFactory<?>) ParserFactoryProvider.getDataParserFactory(
+                            metadataProvider.getApplicationContext().getLibraryManager(), feed.getConfiguration());
+            dataParserFactory.configure(feed.getConfiguration());
+            dataParserFactory.setRecordType(feedOutputType);
             FeedCollectOperatorDescriptor feedCollector = new FeedCollectOperatorDescriptor(jobSpec, feedConnectionId,
-                    feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation());
+                    feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation(), dataParserFactory);
 
             return new Pair<>(feedCollector, new AlgebricksAbsolutePartitionConstraint(getLocations()));
 

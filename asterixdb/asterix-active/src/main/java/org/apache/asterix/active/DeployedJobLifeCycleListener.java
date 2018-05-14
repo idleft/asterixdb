@@ -18,11 +18,8 @@
  */
 package org.apache.asterix.active;
 
-import org.apache.asterix.active.message.ActiveEntityMessage;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
-import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.TxnId;
-import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.api.application.ICCServiceContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.exceptions.HyracksException;
@@ -35,8 +32,6 @@ import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.lang.reflect.Array;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,28 +45,37 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     // get service context to send message to nc
     ICCServiceContext ccServiceCtx;
     // this stores the mapping from jobid to the information of running deployed job (a hyracks job)
-    Map<JobId, DeployedJobInstanceInfo> jobToDeployedInfo;
-    Map<ActiveRuntimeId, DeployedJobSpecId> keepDeployedJobMap;
+    Map<JobId, EntityId> jobToEntityIdMap;
+    Map<EntityId, DeployedJobSpecId> keepDeployedJobMap;
+    Map<EntityId, Integer> entityToLivePartitionCount;
 
     public DeployedJobLifeCycleListener(ICCServiceContext ccServiceCtx) {
         this.ccServiceCtx = ccServiceCtx;
-        this.jobToDeployedInfo = new HashMap<>();
+        this.jobToEntityIdMap = new HashMap<>();
         this.keepDeployedJobMap = new HashMap<>();
+        this.entityToLivePartitionCount = new HashMap<>();
     }
 
-    public void registerDeployedJobWithDataFrame(JobId jobId, ActiveRuntimeId runtimeId, ArrayList<Long> dataFrameIds,
-            String ncId, boolean newJob) {
-        LOGGER.log(logLevel, "Job " + jobId + " registered with frameid " + dataFrameIds + " NC " + ncId);
-        DeployedJobInstanceInfo info = new DeployedJobInstanceInfo(ncId, dataFrameIds, runtimeId, newJob);
-        jobToDeployedInfo.put(jobId, info);
+    public synchronized void registerDeployedJob(JobId jobId, EntityId entityId) {
+        LOGGER.log(logLevel, "Job " + jobId + " registered to " + entityId);
+        jobToEntityIdMap.put(jobId, entityId);
     }
 
-    public synchronized void keepDeployedJob(ActiveRuntimeId runtimeId, DeployedJobSpecId deployedJobSpecId) {
-        keepDeployedJobMap.put(runtimeId, deployedJobSpecId);
+    public synchronized void keepDeployedJob(EntityId entityId, DeployedJobSpecId deployedJobSpecId,
+            int livePartitionCount) {
+        LOGGER.log(logLevel, "Keep " + entityId + " with " + livePartitionCount + "partitions.");
+        keepDeployedJobMap.put(entityId, deployedJobSpecId);
+        entityToLivePartitionCount.put(entityId, livePartitionCount);
     }
 
-    public synchronized void dropDeployedJob(ActiveRuntimeId runtimeId) {
-        keepDeployedJobMap.remove(runtimeId);
+    public synchronized void dropDeployedJob(EntityId entityId) {
+        int newCount = entityToLivePartitionCount.get(entityId) - 1;
+        LOGGER.log(logLevel, "Drop " + entityId + " to " + newCount + " partitions.");
+        if (newCount == 0) {
+            keepDeployedJobMap.remove(entityId);
+        } else {
+            entityToLivePartitionCount.put(entityId, newCount);
+        }
     }
 
     @Override
@@ -85,6 +89,9 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     }
 
     private JobId startNewDeployedJob(DeployedJobSpecId deployedJobId) throws Exception {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Start a new job for deployed job " + deployedJobId);
+        }
         ICcApplicationContext ccAppCtx = ((ICcApplicationContext) ccServiceCtx.getApplicationContext());
         Map<byte[], byte[]> jobParameter = new HashMap<>();
         TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
@@ -100,47 +107,23 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         // currently, we ignore all the exceptions and failures
         // this method is synchronized at outside
         try {
-            if (jobToDeployedInfo.containsKey(jobId)) {
-                DeployedJobInstanceInfo info = jobToDeployedInfo.get(jobId);
-                ActiveEntityMessage ackMsg = new ActiveEntityMessage(info.runtimeId, info.frameIds);
-                ICCMessageBroker messageBroker = (ICCMessageBroker) ccServiceCtx.getMessageBroker();
-                LOGGER.log(logLevel, "Sending ack for " + jobId);
-                messageBroker.sendApplicationMessageToNC(ackMsg, info.ncId);
-                jobToDeployedInfo.remove(jobId);
-                Thread startT = new Thread(() -> {
-                    try {
-                        if (info.newJob) {
-                            startNewDeployedJob(keepDeployedJobMap.get(info.runtimeId));
-                        } else {
-                            keepDeployedJobMap.remove(info.runtimeId);
+            if (jobToEntityIdMap.containsKey(jobId)) {
+                EntityId entityId = jobToEntityIdMap.get(jobId);
+                jobToEntityIdMap.remove(jobId);
+                if (keepDeployedJobMap.containsKey(entityId)) {
+                    Thread startT = new Thread(() -> {
+                        try {
+                            jobToEntityIdMap.put(startNewDeployedJob(keepDeployedJobMap.get(entityId)), entityId);
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                });
-                startT.start();
-                //                if (keepDeployedJobMap.containsKey(info.runtimeId)) {
-                //                    startNewDeployedJob(keepDeployedJobMap.get(info.runtimeId));
-                //                }
+                    });
+                    startT.start();
+                }
+
             }
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }
     }
-
-    private class DeployedJobInstanceInfo {
-        private final String ncId;
-        private final ArrayList<Long> frameIds;
-        private final ActiveRuntimeId runtimeId;
-        private final boolean newJob;
-
-        public DeployedJobInstanceInfo(String ncid, ArrayList<Long> frameIds, ActiveRuntimeId runtimeId,
-                boolean newJob) {
-            this.ncId = ncid;
-            this.frameIds = frameIds;
-            this.runtimeId = runtimeId;
-            this.newJob = newJob;
-        }
-    }
-
 }
