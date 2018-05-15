@@ -18,25 +18,16 @@
  */
 package org.apache.asterix.active.partition;
 
-import org.apache.asterix.active.ActiveManager;
-import org.apache.asterix.active.ActiveRuntimeId;
-import org.apache.asterix.active.IActiveRuntime;
-import org.apache.asterix.active.message.ActivePartitionMessage;
-import org.apache.asterix.active.message.ActivePartitionMessage.Event;
 import org.apache.asterix.common.api.INcApplicationContext;
-import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
-import org.apache.hyracks.control.nc.partitions.PartitionManager;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
-import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
-import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-public abstract class PartitionHolderPushable extends AbstractUnaryInputSinkOperatorNodePushable
-        implements IPartitionHolderRuntime {
+public abstract class PullablePartitionHolderPushable extends AbstractUnaryInputSinkOperatorNodePushable
+        implements IPullablePartitionHolderRuntime {
 
     private static final Logger LOGGER = LogManager.getLogger();
     protected final IHyracksTaskContext ctx;
@@ -45,7 +36,7 @@ public abstract class PartitionHolderPushable extends AbstractUnaryInputSinkOper
     protected Thread taskThread;
     protected final PartitionHolderId phid;
 
-    public PartitionHolderPushable(IHyracksTaskContext ctx, PartitionHolderId phid) {
+    public PullablePartitionHolderPushable(IHyracksTaskContext ctx, PartitionHolderId phid) {
         this.ctx = ctx;
         partitionHolderMananger = (PartitionHolderManager) ((INcApplicationContext) ctx.getJobletContext()
                 .getServiceContext().getApplicationContext()).getPartitionHolderMananger();

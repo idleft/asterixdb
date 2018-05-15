@@ -101,6 +101,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     @Override
     protected JobId compileAndStartJob(MetadataProvider mdProvider) throws HyracksDataException {
         try {
+            boolean decouple = true;
             Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> intakeJobInfo =
                     FeedOperations.buildStartFeedJob(mdProvider, feed);
             JobSpecification intakeJob = intakeJobInfo.getLeft();
@@ -111,12 +112,21 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
             boolean wait = Boolean.parseBoolean(mdProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION));
             JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections, intakeJob,
                     hcc, statementExecutor, feed, intakeJobInfo.getRight());
-            // Deploy conn job
-            this.feedConnJobId = hcc.deployJobSpec(connectJob);
-            ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
-                    .setConnJobId(feedConnJobId);
-            // Run intake job
-            JobUtils.runJob(hcc, intakeJob, false);
+            if (decouple) {
+                Pair<JobSpecification, JobSpecification> feedJob = FeedOperations.decoupleStorageJob(connectJob, feed);
+                this.feedConnJobId = hcc.deployJobSpec(feedJob.getLeft());
+                ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
+                        .setConnJobId(feedConnJobId);
+                JobUtils.runJob(hcc, feedJob.getRight(), false);
+                JobUtils.runJob(hcc, intakeJob, false);
+            } else {
+                // Deploy conn job
+                this.feedConnJobId = hcc.deployJobSpec(connectJob);
+                ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
+                        .setConnJobId(feedConnJobId);
+                // Run intake job
+                JobUtils.runJob(hcc, intakeJob, false);
+            }
         } catch (Exception e) {
             e.printStackTrace();
             throw HyracksDataException.create(e);

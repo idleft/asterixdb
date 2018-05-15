@@ -26,6 +26,7 @@ public class FeedConstants {
     public final static String FAILED_TUPLE_DATASET_KEY = "id";
 
     public static final String FEED_INTAKE_PARTITION_HOLDER = "intake_partition_holder";
+    public static final String FEED_STORAGE_PARTITION_HOLDER = "storage_partition_holder";
     public static final String WORKER_NUM = "worker-num";
     public static final String BATCH_SIZE = "batch-size";
     public static final String BUFFER_SIZE = "buffer-size";

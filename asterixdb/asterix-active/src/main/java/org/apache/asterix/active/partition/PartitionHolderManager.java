@@ -19,11 +19,12 @@
 package org.apache.asterix.active.partition;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
 
+import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.memory.ConcurrentFramePool;
 import org.apache.hyracks.api.application.INCServiceContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
@@ -70,6 +71,14 @@ public class PartitionHolderManager {
 
     public IPartitionHolderRuntime getPartitionHolderRuntime(PartitionHolderId runtimeId) {
         return runtimes.get(runtimeId);
+    }
+
+    public void shutdownByEntity(EntityId entityId) throws HyracksDataException {
+        for (Map.Entry<PartitionHolderId, IPartitionHolderRuntime> entry : runtimes.entrySet()) {
+            if (entry.getKey().getEntityId().equals(entityId)) {
+                entry.getValue().shutdown();
+            }
+        }
     }
 
     @Override

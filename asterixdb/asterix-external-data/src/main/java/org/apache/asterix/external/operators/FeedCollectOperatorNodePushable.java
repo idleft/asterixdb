@@ -25,7 +25,7 @@ import java.util.Map;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.DropDeployedJobMessage;
-import org.apache.asterix.active.partition.IPartitionHolderRuntime;
+import org.apache.asterix.active.partition.IPullablePartitionHolderRuntime;
 import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PartitionHolderManager;
 import org.apache.asterix.common.api.INcApplicationContext;
@@ -62,7 +62,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final EntityId feedId;
     private final PartitionHolderManager phm;
 
-    private IPartitionHolderRuntime partitionHolderRuntime;
+    private IPullablePartitionHolderRuntime partitionHolderRuntime;
     private final PartitionHolderId phid;
     private final int batchSize = Integer.MAX_VALUE;
     private NodeControllerService ncs;
@@ -98,7 +98,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
             tf = new TupleForwarder(ctx, writer);
-            partitionHolderRuntime = phm.getPartitionHolderRuntime(phid);
+            partitionHolderRuntime = (IPullablePartitionHolderRuntime)phm.getPartitionHolderRuntime(phid);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " connected to " + phid);
             }

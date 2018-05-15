@@ -20,25 +20,7 @@ package org.apache.asterix.active.partition;
 
 import java.nio.ByteBuffer;
 
-import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.job.JobId;
+public interface IPushablePartitionHolderRuntime extends IPartitionHolderRuntime {
 
-public interface IPartitionHolderRuntime {
-
-    enum type {
-        PUSH,
-        PULL
-    }
-
-    /**
-     * @return the unique runtime id associated with the active runtime
-     */
-    PartitionHolderId getPartitionHolderId();
-
-    /**
-     * @return the job id associated with this active runtime
-     */
-    JobId getJobId();
-
-    void shutdown() throws HyracksDataException;
+    public boolean deposit(ByteBuffer frame);
 }

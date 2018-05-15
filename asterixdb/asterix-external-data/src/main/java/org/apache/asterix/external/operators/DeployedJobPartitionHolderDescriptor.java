@@ -20,18 +20,16 @@ package org.apache.asterix.external.operators;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.partition.PartitionHolderId;
-import org.apache.asterix.active.partition.PartitionHolderPushable;
+import org.apache.asterix.active.partition.PullablePartitionHolderPushable;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
-import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -62,7 +60,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
             IRecordDescriptorProvider recordDescProvider, int partition, int nPartitions) throws HyracksDataException {
         PartitionHolderId phid = new PartitionHolderId(enid, runtimeName, partition);
 
-        return new PartitionHolderPushable(ctx, phid) {
+        return new PullablePartitionHolderPushable(ctx, phid) {
 
             private ArrayBlockingQueue<ByteBuffer> bufferPool;
             private int recordCtr = 0;
@@ -108,6 +106,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                     LOGGER.log(Level.DEBUG, phid + " is closing.");
                 }
                 try {
+                    // POISON all feed collectors
                     for (int iter1 = 0; iter1 < deployedJobs; iter1++) {
                         bufferPool.put(poisonFrame);
                     }
@@ -120,6 +119,8 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                             this.wait();
                         }
                     }
+                    // shutdown all local stg partition holders
+                    partitionHolderMananger.shutdownByEntity(enid);
                 } catch (InterruptedException e) {
                     LOGGER.debug("Closing interrupted");
                     throw new HyracksDataException(e.getMessage());

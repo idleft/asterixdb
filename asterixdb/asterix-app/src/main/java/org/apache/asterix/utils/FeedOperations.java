@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -29,6 +30,7 @@ import org.apache.asterix.app.translator.DefaultStatementExecutorFactory;
 import org.apache.asterix.app.translator.QueryTranslator;
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
+import org.apache.asterix.common.dataflow.LSMTreeInsertDeleteOperatorDescriptor;
 import org.apache.asterix.common.exceptions.ACIDException;
 import org.apache.asterix.common.exceptions.AsterixException;
 import org.apache.asterix.common.exceptions.CompilationException;
@@ -46,6 +48,8 @@ import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedMetaOperatorDescriptor;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.DeployedJobPartitionHolderDescriptor;
+import org.apache.asterix.external.operators.FeedPipelineSinkDescriptor;
+import org.apache.asterix.external.operators.StoragePartitionHolderDescriptor;
 import org.apache.asterix.external.util.ExternalDataUtils;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils;
@@ -81,6 +85,7 @@ import org.apache.asterix.lang.sqlpp.util.SqlppVariableUtil;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.asterix.translator.IStatementExecutor;
@@ -93,12 +98,22 @@ import org.apache.hyracks.algebricks.common.constraints.AlgebricksPartitionConst
 import org.apache.hyracks.algebricks.common.exceptions.AlgebricksException;
 import org.apache.hyracks.algebricks.common.utils.Triple;
 import org.apache.hyracks.api.client.IHyracksClientConnection;
+import org.apache.hyracks.api.constraints.Constraint;
 import org.apache.hyracks.api.constraints.PartitionConstraintHelper;
+import org.apache.hyracks.api.constraints.expressions.ConstantExpression;
+import org.apache.hyracks.api.constraints.expressions.ConstraintExpression;
+import org.apache.hyracks.api.constraints.expressions.LValueConstraintExpression;
+import org.apache.hyracks.api.constraints.expressions.PartitionCountExpression;
+import org.apache.hyracks.api.constraints.expressions.PartitionLocationExpression;
+import org.apache.hyracks.api.dataflow.ConnectorDescriptorId;
+import org.apache.hyracks.api.dataflow.IConnectorDescriptor;
 import org.apache.hyracks.api.dataflow.IOperatorDescriptor;
+import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.common.data.partition.RandomPartitionComputerFactory;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
+import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.file.IFileSplitProvider;
 
@@ -121,17 +136,17 @@ public class FeedOperations {
         IAdapterFactory adapterFactory;
         IOperatorDescriptor intakeOperator;
         AlgebricksPartitionConstraint ingesterPc;
-        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t =
-                metadataProvider.buildFeedIntakeRuntime(spec, feed, policyAccessor);
+        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t = metadataProvider
+                .buildFeedIntakeRuntime(spec, feed, policyAccessor);
         intakeOperator = t.first;
         ingesterPc = t.second;
         adapterFactory = t.third;
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, intakeOperator, ingesterPc);
-        MToNPartitioningConnectorDescriptor randomPartitioner =
-                new MToNPartitioningConnectorDescriptor(spec, new RandomPartitionComputerFactory());
-        DeployedJobPartitionHolderDescriptor intakePartitionHolder =
-                new DeployedJobPartitionHolderDescriptor(spec, 1, feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER,
-                        Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.WORKER_NUM, "1")));
+        MToNPartitioningConnectorDescriptor randomPartitioner = new MToNPartitioningConnectorDescriptor(spec,
+                new RandomPartitionComputerFactory());
+        DeployedJobPartitionHolderDescriptor intakePartitionHolder = new DeployedJobPartitionHolderDescriptor(spec, 1,
+                feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER,
+                Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.WORKER_NUM, "1")));
         spec.connect(randomPartitioner, intakeOperator, 0, intakePartitionHolder, 0);
         //TODO: the partition constraint in intake is set to cluster location now.
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, intakePartitionHolder,
@@ -150,12 +165,12 @@ public class FeedOperations {
         for (String node : allCluster.getLocations()) {
             nodes.add(node);
         }
-        AlgebricksAbsolutePartitionConstraint locations =
-                new AlgebricksAbsolutePartitionConstraint(nodes.toArray(new String[nodes.size()]));
-        FileSplit[] feedLogFileSplits =
-                FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(), locations);
-        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC =
-                StoragePathUtil.splitProviderAndPartitionConstraints(feedLogFileSplits);
+        AlgebricksAbsolutePartitionConstraint locations = new AlgebricksAbsolutePartitionConstraint(
+                nodes.toArray(new String[nodes.size()]));
+        FileSplit[] feedLogFileSplits = FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(),
+                locations);
+        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC = StoragePathUtil
+                .splitProviderAndPartitionConstraints(feedLogFileSplits);
         FileRemoveOperatorDescriptor frod = new FileRemoveOperatorDescriptor(spec, spC.first, true);
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, frod, spC.second);
         spec.addRoot(frod);
@@ -286,12 +301,189 @@ public class FeedOperations {
         metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
                 StringUtils.join(metadataProvider.getClusterLocations().getLocations(), ','));
         // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
-        IStatementExecutor translator =
-                getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
+        IStatementExecutor translator = getSQLPPTranslator(metadataProvider,
+                ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
         Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getConfiguration());
-        JobSpecification connJob =
-                getConnectionJob(metadataProvider, feedConnections.get(0), translator, hcc, insertFeed);
+        JobSpecification connJob = getConnectionJob(metadataProvider, feedConnections.get(0), translator, hcc,
+                insertFeed);
         return connJob;
+    }
+
+    private static void findOpsAfterOp(JobSpecification connJob, IOperatorDescriptor op, List<IOperatorDescriptor> afterOpOps) {
+        List<IConnectorDescriptor> afterConns = connJob.getOperatorOutputMap().get(op.getOperatorId());
+        if (afterConns == null) {
+            return;
+        }
+        for (IConnectorDescriptor branch : afterConns) {
+            IOperatorDescriptor branchTopOp = connJob.getConnectorOperatorMap().get(branch.getConnectorId()).getRight().getKey();
+            afterOpOps.add(branchTopOp);
+            findOpsAfterOp(connJob, branchTopOp, afterOpOps);
+        }
+    }
+
+    public static Pair<JobSpecification, JobSpecification> decoupleStorageJob(JobSpecification connJob, Feed feed) {
+        JobSpecification pipeLineJob = new JobSpecification();
+        JobSpecification storageJob = new JobSpecification();
+        // TODO: can we combine these two?
+        Map<OperatorDescriptorId, OperatorDescriptorId> pipeLineOpMapping = new HashMap<>();
+        Map<OperatorDescriptorId, OperatorDescriptorId> storageOpMapping = new HashMap<>();
+        Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
+        // constraints of old job
+        Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
+        Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
+        List<IOperatorDescriptor> stgOps = new ArrayList<>();
+        IOperatorDescriptor stgRoot = null;
+        IOperatorDescriptor pstgOp = null;
+
+        // inject Pipeline sink and StoragePH into jobs
+        // create the sphd in place to maek the output record desc right
+        StoragePartitionHolderDescriptor sphd = null;
+        FeedPipelineSinkDescriptor fpsd = new FeedPipelineSinkDescriptor(pipeLineJob, feed.getFeedId(),
+                FeedConstants.FEED_STORAGE_PARTITION_HOLDER);
+
+        // find the break point
+        for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : connJob.getOperatorMap().entrySet()) {
+            if (entry.getValue() instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                pstgOp = entry.getValue();
+                break;
+            }
+        }
+        stgOps.add(pstgOp);
+        findOpsAfterOp(connJob, pstgOp, stgOps);
+        // copy operators
+        for (Map.Entry<OperatorDescriptorId, IOperatorDescriptor> entry : connJob.getOperatorMap().entrySet()) {
+            IOperatorDescriptor opDesc = entry.getValue();
+            OperatorDescriptorId oldOpId = entry.getKey();
+            OperatorDescriptorId newOpId;
+            if (stgOps.contains(opDesc)) {
+                if (connJob.getRoots().contains(oldOpId)) {
+                    stgRoot = opDesc;
+                }
+                // including primary and secondary
+                newOpId = storageJob.createOperatorDescriptorId(opDesc);
+                storageOpMapping.put(oldOpId, newOpId);
+            } else {
+                newOpId = pipeLineJob.createOperatorDescriptorId(opDesc);
+                pipeLineOpMapping.put(oldOpId, newOpId);
+            }
+        }
+
+        // make connections
+        for (Map.Entry<ConnectorDescriptorId, Pair<Pair<IOperatorDescriptor, Integer>, Pair<IOperatorDescriptor, Integer>>> entry : connJob
+                .getConnectorOperatorMap().entrySet()) {
+            Pair<IOperatorDescriptor, Integer> leftOp = entry.getValue().getLeft();
+            Pair<IOperatorDescriptor, Integer> rightOp = entry.getValue().getRight();
+            IOperatorDescriptor leftOpDesc = leftOp.getLeft();
+            IOperatorDescriptor rightOpDesc = rightOp.getLeft();
+            IConnectorDescriptor connDesc = connJob.getConnectorMap().get(entry.getKey());
+
+            if (rightOpDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
+                    && ((LSMTreeInsertDeleteOperatorDescriptor) rightOpDesc).isPrimary()) {
+                // plug in pipeline sink for pipeline job
+                pipeLineJob.createConnectorDescriptor(connDesc);
+                pipeLineJob.connect(connDesc, leftOpDesc, leftOp.getValue(), fpsd, 0);
+                // plugin partition holder for storage job
+                sphd = new StoragePartitionHolderDescriptor(storageJob, 1, feed.getFeedId(),
+                        FeedConstants.FEED_STORAGE_PARTITION_HOLDER, leftOpDesc.getOutputRecordDescriptors()[0]);
+                storageJob.connect(new OneToOneConnectorDescriptor(storageJob), sphd, 0, rightOpDesc,
+                        rightOp.getValue());
+            } else {
+                // for other connections that's not on the boundary
+                if (stgOps.contains(leftOp.getKey())) {
+                    // falls into stg job
+                    storageJob.createConnectorDescriptor(connDesc);
+                    storageJob.connect(connDesc, leftOpDesc, leftOp.getValue(), rightOpDesc, rightOp.getValue());
+                } else {
+                    // falls into pipeline job
+                    pipeLineJob.createConnectorDescriptor(connDesc);
+                    pipeLineJob.connect(connDesc, leftOpDesc, leftOp.getValue(), rightOpDesc, rightOp.getValue());
+                }
+            }
+        }
+
+        // update location constraints
+        for (Constraint constraint : connJob.getUserConstraints()) {
+            LValueConstraintExpression lexpr = constraint.getLValue();
+            ConstraintExpression cexpr = constraint.getRValue();
+            OperatorDescriptorId opId;
+            switch (lexpr.getTag()) {
+                case PARTITION_COUNT:
+                    opId = ((PartitionCountExpression) lexpr).getOperatorDescriptorId();
+                    operatorCounts.put(opId, (int) ((ConstantExpression) cexpr).getValue());
+                    break;
+                case PARTITION_LOCATION:
+                    opId = ((PartitionLocationExpression) lexpr).getOperatorDescriptorId();
+                    List<LocationConstraint> locations = operatorLocations.get(opId);
+                    if (locations == null) {
+                        locations = new ArrayList<>();
+                        operatorLocations.put(opId, locations);
+                    }
+                    String location = (String) ((ConstantExpression) cexpr).getValue();
+                    LocationConstraint lc = new LocationConstraint(location,
+                            ((PartitionLocationExpression) lexpr).getPartition());
+                    locations.add(lc);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        // set absolute location constraints
+        for (Map.Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
+            String[] locations = new String[entry.getValue().size()];
+            IOperatorDescriptor opDesc;
+            for (int j = 0; j < locations.length; ++j) {
+                locations[j] = entry.getValue().get(j).location;
+            }
+            if (pipeLineOpMapping.containsKey(entry.getKey())) {
+                opDesc = pipeLineJob.getOperatorMap().get(pipeLineOpMapping.get(entry.getKey()));
+                PartitionConstraintHelper.addAbsoluteLocationConstraint(pipeLineJob, opDesc, locations);
+            } else {
+                opDesc = storageJob.getOperatorMap().get(storageOpMapping.get(entry.getKey()));
+                PartitionConstraintHelper.addAbsoluteLocationConstraint(storageJob, opDesc, locations);
+            }
+            if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                PartitionConstraintHelper.addAbsoluteLocationConstraint(pipeLineJob, fpsd, locations);
+                PartitionConstraintHelper.addAbsoluteLocationConstraint(storageJob, sphd, locations);
+            }
+        }
+
+        // set count constraints
+        for (Map.Entry<OperatorDescriptorId, Integer> entry : operatorCounts.entrySet()) {
+            IOperatorDescriptor opDesc;
+            if (pipeLineOpMapping.containsKey(entry.getKey())) {
+                opDesc = pipeLineJob.getOperatorMap().get(pipeLineOpMapping.get(entry.getKey()));
+                PartitionConstraintHelper.addPartitionCountConstraint(pipeLineJob, opDesc, entry.getValue());
+            } else {
+                opDesc = storageJob.getOperatorMap().get(storageOpMapping.get(entry.getKey()));
+                PartitionConstraintHelper.addPartitionCountConstraint(storageJob, opDesc, entry.getValue());
+            }
+            if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+                PartitionConstraintHelper.addPartitionCountConstraint(pipeLineJob, fpsd, entry.getValue());
+                PartitionConstraintHelper.addPartitionCountConstraint(storageJob, sphd, entry.getValue());
+            }
+        }
+
+        // misc
+        pipeLineJob.addRoot(fpsd);
+        storageJob.addRoot(stgRoot);
+
+        pipeLineJob.setJobletEventListenerFactory(connJob.getJobletEventListenerFactory());
+        storageJob.setJobletEventListenerFactory(connJob.getJobletEventListenerFactory());
+
+        pipeLineJob.setConnectorPolicyAssignmentPolicy(connJob.getConnectorPolicyAssignmentPolicy());
+        storageJob.setConnectorPolicyAssignmentPolicy(connJob.getConnectorPolicyAssignmentPolicy());
+
+        pipeLineJob.setUseConnectorPolicyForScheduling(connJob.isUseConnectorPolicyForScheduling());
+        storageJob.setUseConnectorPolicyForScheduling(connJob.isUseConnectorPolicyForScheduling());
+
+        return Pair.of(pipeLineJob, storageJob);
+    }
+
+    private static void SendActiveMessage(ICcApplicationContext appCtx, ActiveManagerMessage activeManagerMessage,
+            String nodeId) throws Exception {
+        ICCMessageBroker messageBroker = (ICCMessageBroker) appCtx.getServiceContext().getMessageBroker();
+        messageBroker.sendApplicationMessageToNC(activeManagerMessage, nodeId);
     }
 }
