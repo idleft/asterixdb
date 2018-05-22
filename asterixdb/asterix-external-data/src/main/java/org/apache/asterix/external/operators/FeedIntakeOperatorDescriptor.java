@@ -19,6 +19,7 @@
 package org.apache.asterix.external.operators;
 
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.api.INcApplicationContext;
@@ -69,11 +70,15 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
     private String adaptorFactoryClassName;
     /** The configuration parameters associated with the adapter. **/
     private Map<String, String> adaptorConfiguration;
+    private int collLocationNum;
+    private Set<String> stgNodes;
+    private final int workerNum;
 
     private DeployedJobSpecId connJobId;
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed primaryFeed, IAdapterFactory adapterFactory,
-            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc) {
+            ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor, RecordDescriptor rDesc,
+            int collLocationNum, Set<String> stgNodes) {
         super(spec, 0, 1);
         this.feedId = new EntityId(FEED_EXTENSION_NAME, primaryFeed.getDataverseName(), primaryFeed.getFeedName());
         this.adaptorFactory = adapterFactory;
@@ -81,11 +86,14 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
         this.adaptorConfiguration = primaryFeed.getConfiguration();
+        this.collLocationNum = collLocationNum;
+        this.stgNodes = stgNodes;
+        this.workerNum = Integer.valueOf(adaptorConfiguration.getOrDefault(FeedConstants.WORKER_NUM, "1"));
     }
 
     public FeedIntakeOperatorDescriptor(JobSpecification spec, IFeed feed, String adapterLibraryName,
             String adapterFactoryClassName, ARecordType adapterOutputType, FeedPolicyAccessor policyAccessor,
-            RecordDescriptor rDesc) {
+            RecordDescriptor rDesc, int collLocationNum, Set<String> stgNodes) {
         super(spec, 0, 1);
         this.feedId = new EntityId(FEED_EXTENSION_NAME, feed.getDataverseName(), feed.getFeedName());
         this.adaptorFactoryClassName = adapterFactoryClassName;
@@ -94,6 +102,9 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
         this.adapterOutputType = adapterOutputType;
         this.policyAccessor = policyAccessor;
         this.outRecDescs[0] = rDesc;
+        this.collLocationNum = collLocationNum;
+        this.stgNodes = stgNodes;
+        this.workerNum = Integer.valueOf(adaptorConfiguration.getOrDefault(FeedConstants.WORKER_NUM, "1"));
     }
 
     @Override
@@ -103,9 +114,7 @@ public class FeedIntakeOperatorDescriptor extends AbstractSingleActivityOperator
             adaptorFactory = createExternalAdapterFactory(ctx);
         }
         return new FeedIntakeOperatorNodePushable(ctx, feedId, adaptorFactory, partition, recordDescProvider, this,
-                connJobId, adaptorConfiguration.getOrDefault(FeedConstants.WORKER_NUM, "1"),
-                adaptorConfiguration.getOrDefault(FeedConstants.BATCH_SIZE, "1"),
-                adaptorConfiguration.getOrDefault(FeedConstants.BUFFER_SIZE, "1"));
+                connJobId, workerNum, collLocationNum, stgNodes);
     }
 
     private IAdapterFactory createExternalAdapterFactory(IHyracksTaskContext ctx) throws HyracksDataException {

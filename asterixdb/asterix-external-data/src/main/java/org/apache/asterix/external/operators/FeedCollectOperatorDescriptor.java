@@ -23,6 +23,7 @@ import java.util.Map;
 import org.apache.asterix.external.api.IDataParserFactory;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedUtils.FeedRuntimeType;
 import org.apache.asterix.om.types.ARecordType;
 import org.apache.asterix.om.types.IAType;
@@ -57,9 +58,11 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
 
     private final IRecordDataParserFactory<?> parserFactory;
 
+    private final int batchSize;
+
     public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId, ARecordType atype,
             RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation,
-            IRecordDataParserFactory<?> parserFactory) {
+            IRecordDataParserFactory<?> parserFactory, Map<String, String> feedConfiguration) {
         super(spec, 0, 1);
         this.outRecDescs[0] = rDesc;
         this.outputType = atype;
@@ -67,13 +70,15 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         this.feedPolicyProperties = feedPolicyProperties;
         this.subscriptionLocation = subscriptionLocation;
         this.parserFactory = parserFactory;
+        this.batchSize = Integer.valueOf(feedConfiguration.getOrDefault(FeedConstants.BATCH_SIZE, "1"));
     }
 
     @Override
     public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
             IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
             throws HyracksDataException {
-        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory);
+        return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory,
+                batchSize);
     }
 
     public FeedConnectionId getFeedConnectionId() {

@@ -24,28 +24,22 @@ import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.active.message.ActiveEntityMessage;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
 import org.apache.asterix.external.feed.dataflow.FeedDataFrameBufferWriter;
 import org.apache.asterix.external.feed.dataflow.DeployedJobBufferWriter;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.util.CleanupUtils;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 /**
  * The runtime for @see{FeedIntakeOperationDescriptor}.
@@ -55,25 +49,26 @@ import java.util.List;
 public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePushable {
     private static final Logger LOGGER = LogManager.getLogger();
     private final FeedAdapter adapter;
+    private final DeployedJobSpecId connJobId;
+    private final int workerNum;
+    private final int liveCollPartitions;
+    private final Set<String> involedNodes;
+    private final EntityId feedId;
+
     private boolean poisoned = false;
-    private DeployedJobSpecId connJobId;
-    private int workerNum;
-    private int batchSize;
-    private int bufferSize;
-    private EntityId feedId;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
-            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, String workerNum,
-            String batchSize, String bufferSize) throws HyracksDataException {
+            FeedIntakeOperatorDescriptor feedIntakeOperatorDescriptor, DeployedJobSpecId jobSpecId, int workerNum,
+            int liveCollPartitions, Set<String> involedNodes) throws HyracksDataException {
         super(ctx, new ActiveRuntimeId(feedId, FeedIntakeOperatorNodePushable.class.getSimpleName(), partition));
         this.recordDesc = recordDescProvider.getOutputRecordDescriptor(feedIntakeOperatorDescriptor.getActivityId(), 0);
         adapter = (FeedAdapter) adapterFactory.createAdapter(ctx, runtimeId.getPartition());
-        this.workerNum = Integer.valueOf(workerNum);
-        this.batchSize = Integer.valueOf(batchSize);
-        this.bufferSize = Integer.valueOf(bufferSize);
+        this.workerNum = workerNum;
         this.connJobId = jobSpecId;
         this.feedId = feedId;
+        this.liveCollPartitions = liveCollPartitions;
+        this.involedNodes = involedNodes;
     }
 
     @Override
@@ -81,7 +76,8 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         Throwable failure = null;
         Thread.currentThread().setName("Intake Thread");
         try {
-            writer = new DeployedJobBufferWriter(ctx, writer, connJobId, feedId, workerNum, batchSize, bufferSize, 4);
+            writer = new DeployedJobBufferWriter(ctx, writer, connJobId, feedId, workerNum, liveCollPartitions,
+                    involedNodes);
             writer.open();
             synchronized (this) {
                 if (poisoned) {

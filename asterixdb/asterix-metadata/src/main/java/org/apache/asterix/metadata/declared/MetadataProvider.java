@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.asterix.common.cluster.IClusterStateManager;
 import org.apache.asterix.common.config.DatasetConfig.DatasetType;
@@ -405,7 +406,8 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
     }
 
     public Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> buildFeedIntakeRuntime(
-            JobSpecification jobSpec, Feed feed, FeedPolicyAccessor policyAccessor) throws Exception {
+            JobSpecification jobSpec, Feed feed, FeedPolicyAccessor policyAccessor, int collLocationNum,
+            Set<String> stgNodes) throws Exception {
         Triple<IAdapterFactory, RecordDescriptor, IDataSourceAdapter.AdapterType> factoryOutput;
         factoryOutput =
                 FeedMetadataUtil.getFeedFactoryAndOutput(feed, policyAccessor, mdTxnCtx, getApplicationContext());
@@ -416,13 +418,14 @@ public class MetadataProvider implements IMetadataProvider<DataSourceId, String>
         switch (factoryOutput.third) {
             case INTERNAL:
                 feedIngestor = new FeedIntakeOperatorDescriptor(jobSpec, feed, adapterFactory, recordType,
-                        policyAccessor, factoryOutput.second);
+                        policyAccessor, factoryOutput.second, collLocationNum, stgNodes);
                 break;
             case EXTERNAL:
                 String libraryName = feed.getConfiguration().get(ExternalDataConstants.KEY_ADAPTER_NAME).trim()
                         .split(FeedConstants.NamingConstants.LIBRARY_NAME_SEPARATOR)[0];
                 feedIngestor = new FeedIntakeOperatorDescriptor(jobSpec, feed, libraryName,
-                        adapterFactory.getClass().getName(), recordType, policyAccessor, factoryOutput.second);
+                        adapterFactory.getClass().getName(), recordType, policyAccessor, factoryOutput.second,
+                        collLocationNum, stgNodes);
                 break;
             default:
                 break;

@@ -199,8 +199,9 @@ public class FeedDataSource extends DataSource implements IMutationDataSource {
                             metadataProvider.getApplicationContext().getLibraryManager(), feed.getConfiguration());
             dataParserFactory.configure(feed.getConfiguration());
             dataParserFactory.setRecordType(feedOutputType);
-            FeedCollectOperatorDescriptor feedCollector = new FeedCollectOperatorDescriptor(jobSpec, feedConnectionId,
-                    feedOutputType, feedDesc, feedPolicy.getProperties(), getLocation(), dataParserFactory);
+            FeedCollectOperatorDescriptor feedCollector =
+                    new FeedCollectOperatorDescriptor(jobSpec, feedConnectionId, feedOutputType, feedDesc,
+                            feedPolicy.getProperties(), getLocation(), dataParserFactory, feed.getConfiguration());
 
             return new Pair<>(feedCollector, new AlgebricksAbsolutePartitionConstraint(getLocations()));
 

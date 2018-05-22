@@ -23,9 +23,11 @@ import java.util.List;
 
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActivityState;
+import org.apache.asterix.active.DeployedJobLifeCycleListener;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.IActiveEntityEventSubscriber;
 import org.apache.asterix.active.IRetryPolicyFactory;
+import org.apache.asterix.active.partition.DeployedJobUntrackSubscriber;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
@@ -33,6 +35,7 @@ import org.apache.asterix.common.utils.JobUtils;
 import org.apache.asterix.external.feed.watch.WaitForStateSubscriber;
 import org.apache.asterix.external.operators.FeedIntakeOperatorNodePushable;
 import org.apache.asterix.external.operators.FeedIntakeOperatorDescriptor;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.lang.common.statement.StartFeedStatement;
 import org.apache.asterix.metadata.declared.MetadataProvider;
 import org.apache.asterix.metadata.entities.Dataset;
@@ -47,6 +50,7 @@ import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
+import org.apache.hyracks.api.job.JobId;
 import org.apache.hyracks.api.job.JobSpecification;
 
 public class FeedEventsListener extends ActiveEntityEventsListener {
@@ -54,6 +58,7 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
     private final Feed feed;
     private final List<FeedConnection> feedConnections;
     private DeployedJobSpecId feedConnJobId;
+    private final boolean decouple;
 
     public FeedEventsListener(IStatementExecutor statementExecutor, ICcApplicationContext appCtx,
             IHyracksClientConnection hcc, EntityId entityId, List<Dataset> datasets,
@@ -62,6 +67,8 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         super(statementExecutor, appCtx, hcc, entityId, datasets, locations, runtimeName, retryPolicyFactory);
         this.feed = feed;
         this.feedConnections = feedConnections;
+        this.decouple =
+                Boolean.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.FEED_PIPELINE_DECOUPLE, "true"));
     }
 
     @Override
@@ -83,6 +90,13 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
         return feedConnJobId;
     }
 
+    private void updateStgJobId(EntityId entityId, JobId jobId) {
+        ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
+        DeployedJobLifeCycleListener lifeCycleListener =
+                ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener());
+        lifeCycleListener.registerStgJobId(entityId, jobId);
+    }
+
     @Override
     public synchronized void start(MetadataProvider metadataProvider)
             throws HyracksDataException, InterruptedException {
@@ -100,37 +114,45 @@ public class FeedEventsListener extends ActiveEntityEventsListener {
 
     @Override
     protected JobId compileAndStartJob(MetadataProvider mdProvider) throws HyracksDataException {
+        JobId feedJobId;
         try {
-            boolean decouple = true;
+            String[] collectLocations = mdProvider.getClusterLocations().getLocations();
+            // Prepare intake job
             Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> intakeJobInfo =
-                    FeedOperations.buildStartFeedJob(mdProvider, feed);
+                    FeedOperations.buildStartFeedJob(mdProvider, feed, feedConnections, collectLocations);
             JobSpecification intakeJob = intakeJobInfo.getLeft();
+            DeployedJobUntrackSubscriber deployedJobSubscriber = new DeployedJobUntrackSubscriber(entityId,
+                    (DeployedJobLifeCycleListener) appCtx.getDeployedJobLifeCycleListener());
             intakeJob.setProperty(ActiveNotificationHandler.ACTIVE_ENTITY_PROPERTY_NAME, entityId);
             // TODO(Yingyi): currently we do not check IFrameWriter protocol violations for Feed jobs.
-            // We will need to design general exception handling mechanism for feeds.
             setLocations(intakeJobInfo.getRight());
             boolean wait = Boolean.parseBoolean(mdProvider.getConfig().get(StartFeedStatement.WAIT_FOR_COMPLETION));
-            JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections, intakeJob,
-                    hcc, statementExecutor, feed, intakeJobInfo.getRight());
+            // Prepare connJob
+            JobSpecification connectJob = FeedOperations.buildFeedConnectionJob(mdProvider, feedConnections, hcc,
+                    statementExecutor, feed, metadataProvider.getClusterLocations().getLocations());
+
             if (decouple) {
                 Pair<JobSpecification, JobSpecification> feedJob = FeedOperations.decoupleStorageJob(connectJob, feed);
                 this.feedConnJobId = hcc.deployJobSpec(feedJob.getLeft());
                 ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
                         .setConnJobId(feedConnJobId);
-                JobUtils.runJob(hcc, feedJob.getRight(), false);
-                JobUtils.runJob(hcc, intakeJob, false);
+                JobId stgJobId = JobUtils.runJob(hcc, feedJob.getRight(), false);
+                feedJobId = JobUtils.runJob(hcc, intakeJob, false);
+                updateStgJobId(entityId, stgJobId);
             } else {
                 // Deploy conn job
                 this.feedConnJobId = hcc.deployJobSpec(connectJob);
                 ((FeedIntakeOperatorDescriptor) intakeJob.getOperatorMap().get(new OperatorDescriptorId(0)))
                         .setConnJobId(feedConnJobId);
                 // Run intake job
-                JobUtils.runJob(hcc, intakeJob, false);
+                feedJobId = JobUtils.runJob(hcc, intakeJob, false);
             }
+            deployedJobSubscriber.waitForUntrack();
         } catch (Exception e) {
             e.printStackTrace();
             throw HyracksDataException.create(e);
         }
+        return feedJobId;
     }
 
     @Override

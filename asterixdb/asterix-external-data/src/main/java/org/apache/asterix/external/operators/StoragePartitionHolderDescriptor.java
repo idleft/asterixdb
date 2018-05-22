@@ -45,7 +45,7 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
     private final String runtimeName;
 
     public StoragePartitionHolderDescriptor(IOperatorDescriptorRegistry spec, int poolSize, EntityId entityId,
-                                            String runtimeName, RecordDescriptor recordDescriptor) {
+            String runtimeName, RecordDescriptor recordDescriptor) {
         super(spec, 0, 1);
         this.poolSize = poolSize;
         this.enid = entityId;
@@ -64,7 +64,7 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
             private volatile boolean closed;
 
             @Override
-            public void start() throws HyracksDataException{
+            public void start() throws HyracksDataException {
                 closed = false;
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.log(Level.DEBUG, phid + " started");
@@ -76,7 +76,8 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
                         if (frame.capacity() > 0) {
                             writer.nextFrame(frame);
                             if (LOGGER.isDebugEnabled()) {
-                                LOGGER.log(Level.DEBUG, phid + " frame pushed");
+                                LOGGER.log(Level.DEBUG, phid + " frame pushed " + String.valueOf(frame.array()) + " "
+                                        + frame.capacity());
                             }
                         } else {
                             closed = true;
@@ -91,11 +92,16 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
             }
 
             @Override
-            public boolean deposit(ByteBuffer frame) {
+            public synchronized boolean deposit(ByteBuffer buffer) {
                 try {
-                    bufferPool.put(frame);
+                    ByteBuffer cloneFrame = ByteBuffer.allocate(buffer.capacity());
+                    buffer.rewind();//copy from the beginning
+                    cloneFrame.put(buffer);
+                    cloneFrame.flip();
+                    bufferPool.put(cloneFrame);
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.log(Level.DEBUG, phid + " frame received");
+                        LOGGER.log(Level.DEBUG, phid + " frame received " + String.valueOf(buffer.array()) + " add "
+                                + String.valueOf(cloneFrame.array()));
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

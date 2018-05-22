@@ -52,7 +52,7 @@ import org.apache.logging.log4j.Logger;
  */
 public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOperatorNodePushable {
 
-    Logger LOGGER = LogManager.getLogger();
+    public static final Logger LOGGER = LogManager.getLogger();
 
     private final IHyracksTaskContext ctx;
     private final IRecordDataParser<char[]> parser;
@@ -64,13 +64,13 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
 
     private IPullablePartitionHolderRuntime partitionHolderRuntime;
     private final PartitionHolderId phid;
-    private final int batchSize = Integer.MAX_VALUE;
-    private NodeControllerService ncs;
+    private final int batchSize;
+    private final NodeControllerService ncs;
 
     private CharArrayRecord record;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
-            Map<String, String> feedPolicy, int partition, IRecordDataParserFactory<?> parserFactory)
+            Map<String, String> feedPolicy, int partition, IRecordDataParserFactory<?> parserFactory, int batchSize)
             throws HyracksDataException {
         this.ctx = ctx;
         this.feedId = feedConnectionId.getFeedId();
@@ -82,12 +82,13 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         phm = (PartitionHolderManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getPartitionHolderMananger();
         this.phid = new PartitionHolderId(feedId, FeedConstants.FEED_INTAKE_PARTITION_HOLDER, partition);
-        ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
+        this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
+        this.batchSize = batchSize;
     }
 
     @Override
     public String toString() {
-        return "Collector " + phid;
+        return "Collector " + phid.getPartition();
     }
 
     @Override
@@ -95,46 +96,52 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         String threadName = Thread.currentThread().getName();
         try {
             Thread.currentThread().setName("Collector Thread");
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(this + " is initializing");
+            }
             FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
             writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
             tf = new TupleForwarder(ctx, writer);
-            partitionHolderRuntime = (IPullablePartitionHolderRuntime)phm.getPartitionHolderRuntime(phid);
+            partitionHolderRuntime = (IPullablePartitionHolderRuntime) phm.getPartitionHolderRuntime(phid);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " connected to " + phid);
             }
             writer.open();
             if (partitionHolderRuntime != null) {
-                for (int iter1 = 0; iter1 < batchSize; iter1++) {
+                for (int iter1 = 0; batchSize == -1 || iter1 < batchSize; iter1++) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(this + " ready to get a frame");
+                    }
                     ByteBuffer dataframe = partitionHolderRuntime.getHoldFrame();
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(this + " gets frame with size " + dataframe.capacity());
                     }
                     if (dataframe.capacity() == 0) {
-                        untrackDeployedJob();
                         break;
                     } else {
                         doPushFrame(dataframe);
                     }
                 }
                 tf.flush();
+            } else {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(this + " cannot find " + phid + ". Work is done.");
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw HyracksDataException.create(e);
         } finally {
             tf.complete();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(this + " is closing.");
+            }
             writer.close();
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(this + " is closed.");
+            }
             Thread.currentThread().setName(threadName);
         }
-    }
-
-    private void untrackDeployedJob() throws Exception {
-        if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(this + " poisoned.");
-        }
-        DropDeployedJobMessage msg = new DropDeployedJobMessage(feedId);
-        ncs.sendApplicationMessageToCC(ctx.getJobletContext().getJobId().getCcId(),
-                JavaSerializationUtils.serialize(msg), null);
     }
 
     private void doPushFrame(ByteBuffer buffer) throws HyracksDataException {

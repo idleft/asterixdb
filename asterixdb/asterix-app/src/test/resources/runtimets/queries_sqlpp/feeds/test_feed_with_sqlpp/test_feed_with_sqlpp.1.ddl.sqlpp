@@ -43,7 +43,5 @@ create feed TweetFeed with {
 };
 
 create function annotateCountry(x) {
-    (
-      select x, countryDetails from x left outer join countryDataset countryDetails on countryDetails.country_code = x.country
-    )
+    object_merge(x, {"q" : (select c from countryDataset c where c.country_code = x.country)})
 };

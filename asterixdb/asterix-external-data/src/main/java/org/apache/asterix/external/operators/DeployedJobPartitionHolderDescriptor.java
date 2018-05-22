@@ -19,6 +19,7 @@
 package org.apache.asterix.external.operators;
 
 import org.apache.asterix.active.EntityId;
+import org.apache.asterix.active.message.DropDeployedJobMessage;
 import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PullablePartitionHolderPushable;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
@@ -26,10 +27,15 @@ import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
+import org.apache.hyracks.api.util.JavaSerializationUtils;
+import org.apache.hyracks.control.nc.NodeControllerService;
+import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -39,20 +45,22 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
 
     private static final Logger LOGGER = LogManager.getLogger();
 
-    private static ByteBuffer poisonFrame = ByteBuffer.allocate(0);
+    private static ByteBuffer POISON_PILL = ByteBuffer.allocate(0);
 
     private final EntityId enid;
     private final int poolSize;
     private final String runtimeName;
-    private final int deployedJobs;
+    private final int workerN;
+    private AtomicBoolean readyToStop;
 
     public DeployedJobPartitionHolderDescriptor(IOperatorDescriptorRegistry spec, int poolSize, EntityId entityId,
-            String runtimeName, int deployedJobs) {
+            String runtimeName, int workerN) {
         super(spec, 1, 0);
         this.poolSize = poolSize;
         this.enid = entityId;
         this.runtimeName = runtimeName;
-        this.deployedJobs = deployedJobs;
+        this.workerN = workerN;
+        this.readyToStop = new AtomicBoolean(false);
     }
 
     @Override
@@ -63,13 +71,17 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
         return new PullablePartitionHolderPushable(ctx, phid) {
 
             private ArrayBlockingQueue<ByteBuffer> bufferPool;
+            private ReentrantLock arrayLock;
             private int recordCtr = 0;
-            //            private FrameTupleAccessor fta;
+            private NodeControllerService ncs;
+            private FrameTupleAccessor fta;
 
             @Override
             public void open() throws HyracksDataException {
-                bufferPool = new ArrayBlockingQueue<>(poolSize);
-                //                fta = new FrameTupleAccessor(null);
+                this.bufferPool = new ArrayBlockingQueue<>(poolSize);
+                this.arrayLock = new ReentrantLock();
+                this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
+                fta = new FrameTupleAccessor(null);
             }
 
             @Override
@@ -80,11 +92,11 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                     cloneFrame.put(buffer);
                     cloneFrame.flip();
                     bufferPool.put(cloneFrame);
-                    //                    fta.reset(cloneFrame);
-                    //                    recordCtr += fta.getTupleCount();
-                    //                    if (LOGGER.isDebugEnabled()) {
-                    //                        LOGGER.log(Level.DEBUG, phid + " gets a frame " + fta.getTupleCount());
-                    //                    }
+                    fta.reset(cloneFrame);
+                    recordCtr += fta.getTupleCount();
+                    //                                        if (LOGGER.isDebugEnabled()) {
+                    //                                            LOGGER.log(Level.DEBUG, phid + " gets a frame " + fta.getTupleCount());
+                    //                                        }
                 } catch (InterruptedException e) {
                     LOGGER.log(Level.FATAL, "Partition holder is interrupted.");
                     throw new HyracksDataException(e.getMessage());
@@ -94,10 +106,21 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
             @Override
             public void fail() throws HyracksDataException {
                 if (bufferPool.size() != 0) {
-                    String msg = phid + "failed when pool is not empty";
+                    String msg = phid + "failed when pool is not empty " + bufferPool.size();
                     LOGGER.log(Level.FATAL, msg);
                     throw new HyracksDataException(msg);
                 }
+            }
+
+            private void untrackDeployedJob() throws Exception {
+                // The untrack deploy can be done either on the collector side or intake buffer side.
+                // Either way the collector has to check whether holder is null or not.
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(this + " poisoned to untrack deployed job.");
+                }
+                DropDeployedJobMessage msg = new DropDeployedJobMessage(enid);
+                ncs.sendApplicationMessageToCC(ctx.getJobletContext().getJobId().getCcId(),
+                        JavaSerializationUtils.serialize(msg), null);
             }
 
             @Override
@@ -106,41 +129,78 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                     LOGGER.log(Level.DEBUG, phid + " is closing.");
                 }
                 try {
-                    // POISON all feed collectors
-                    for (int iter1 = 0; iter1 < deployedJobs; iter1++) {
-                        bufferPool.put(poisonFrame);
-                    }
+                    //                    if (LOGGER.isDebugEnabled()) {
+                    //                        LOGGER.log(Level.DEBUG, phid + " " + recordCtr + " processed. Wait for empty.");
+                    //                    }
+                    // Send poison
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.log(Level.DEBUG, phid + " is poisoned.");
-                        LOGGER.log(Level.DEBUG, phid + " " + recordCtr + " processed.");
+                        LOGGER.log(Level.DEBUG, phid + " sends poisons ");
                     }
-                    while (!bufferPool.isEmpty()) {
-                        synchronized (this) {
-                            this.wait();
+                    bufferPool.put(POISON_PILL);
+                    synchronized (bufferPool) {
+                        while (bufferPool.size() > 1) {
+                            bufferPool.wait();
                         }
                     }
+                    untrackDeployedJob();
+                    // Makes sure it's ok to send poison now so that no worker takes poison and be restarted.
+                    //                    synchronized (readyToStop) {
+                    //                        while (readyToStop.get() != true) {
+                    //                            readyToStop.wait();
+                    //                        }
+                    //                    }
                     // shutdown all local stg partition holders
-                    partitionHolderMananger.shutdownByEntity(enid);
-                } catch (InterruptedException e) {
-                    LOGGER.debug("Closing interrupted");
+                } catch (Exception e) {
+                    LOGGER.debug(phid + " is closing interrupted " + bufferPool.size());
                     throw new HyracksDataException(e.getMessage());
                 }
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.log(Level.DEBUG, phid + " closed.");
+                    LOGGER.log(Level.DEBUG, phid + " closed. " + bufferPool.size());
                 }
             }
 
+            //            @Override
+            //            public void shutdown() {
+            //                synchronized (readyToStop) {
+            //                    if (LOGGER.isDebugEnabled()) {
+            //                        LOGGER.log(Level.DEBUG, phid + " ready to stop ");
+            //                    }
+            //                    readyToStop = true;
+            //                    readyToStop.notifyAll();
+            //                }
+            //            }
+
             @Override
-            public synchronized ByteBuffer getHoldFrame() throws InterruptedException {
+            public ByteBuffer getHoldFrame() throws InterruptedException {
                 ByteBuffer frame;
-                synchronized (this) {
+                synchronized (bufferPool) {
                     frame = bufferPool.take();
-                    this.notifyAll();
+                    bufferPool.notify();
                 }
+                // if get a poison, put it back so others can see it too
+                if (frame.capacity() == 0) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.log(Level.DEBUG, phid + " poisoned, put the frame back.");
+                    }
+                    bufferPool.put(frame);
+                }
+                //                    bufferPool.notifyAll();
+                //                }
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.log(Level.DEBUG, phid + " delivered one frame.");
                 }
                 return frame;
+            }
+
+            @Override
+            public void shutdown() {
+                synchronized (readyToStop) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.log(Level.DEBUG, phid + " ready to stop ");
+                    }
+                    readyToStop.set(true);
+                    readyToStop.notify();
+                }
             }
         };
     }

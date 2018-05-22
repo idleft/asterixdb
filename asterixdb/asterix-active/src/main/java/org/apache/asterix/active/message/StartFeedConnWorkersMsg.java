@@ -20,6 +20,7 @@ package org.apache.asterix.active.message;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.asterix.active.DeployedJobLifeCycleListener;
 import org.apache.asterix.active.EntityId;
@@ -45,14 +46,16 @@ public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
     private DeployedJobSpecId deployedJobId;
     private int workerNum;
     private EntityId feedId;
-    private int livePartitionN;
+    private int liveCollPartition;
+    private Set<String> stgNodes;
 
     public StartFeedConnWorkersMsg(DeployedJobSpecId deployedJobSpecId, int workerNum, EntityId feedId,
-            int livePartitionN) {
+            int liveCollPartition, Set<String> stgNodes) {
         this.deployedJobId = deployedJobSpecId;
         this.workerNum = workerNum;
         this.feedId = feedId;
-        this.livePartitionN = livePartitionN;
+        this.liveCollPartition = liveCollPartition;
+        this.stgNodes = stgNodes;
     }
 
     @Override
@@ -61,8 +64,9 @@ public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
             ICcApplicationContext ccAppCtx = (ICcApplicationContext) appCtx.getServiceContext().getApplicationContext();
             DeployedJobLifeCycleListener lifeCycleListener =
                     ((DeployedJobLifeCycleListener) ccAppCtx.getDeployedJobLifeCycleListener());
-            lifeCycleListener.keepDeployedJob(feedId, deployedJobId, livePartitionN);
+            lifeCycleListener.keepDeployedJob(feedId, deployedJobId, liveCollPartition, stgNodes, workerNum);
             for (int iter1 = 0; iter1 < workerNum; iter1++) {
+                // register deployed job instance so when it finishes, new instance can be started.
                 Map<byte[], byte[]> jobParameter = new HashMap<>();
                 TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
                 jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),

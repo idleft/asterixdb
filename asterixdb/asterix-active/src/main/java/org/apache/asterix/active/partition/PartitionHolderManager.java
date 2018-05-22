@@ -76,6 +76,22 @@ public class PartitionHolderManager {
     public void shutdownByEntity(EntityId entityId) throws HyracksDataException {
         for (Map.Entry<PartitionHolderId, IPartitionHolderRuntime> entry : runtimes.entrySet()) {
             if (entry.getKey().getEntityId().equals(entityId)) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(entry.getKey() + " is requested to shutdown.");
+                }
+                entry.getValue().shutdown();
+            }
+        }
+    }
+
+    public void shutdownByPartionHolderId(PartitionHolderId phid) throws HyracksDataException {
+        for (Map.Entry<PartitionHolderId, IPartitionHolderRuntime> entry : runtimes.entrySet()) {
+            PartitionHolderId targetPhid = entry.getKey();
+            if (targetPhid == phid || (phid.getPartition() == -1 && targetPhid.getEntityId().equals(phid.getEntityId())
+                    && targetPhid.getRuntimeName().equals(phid.getRuntimeName()))) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(phid + " is requested to shutdown.");
+                }
                 entry.getValue().shutdown();
             }
         }

@@ -71,10 +71,11 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
 
             @Override
             public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
-                stgPartitionHolder.deposit(buffer);
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.log(Level.DEBUG, this + " deposits frame");
+                    LOGGER.log(Level.DEBUG, this + " deposits frame " + String.valueOf(buffer.array()) + " "
+                            + buffer.capacity() + " to " + stgPhId);
                 }
+                stgPartitionHolder.deposit(buffer);
             }
 
             @Override
@@ -95,5 +96,4 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
             }
         };
     }
-
 }

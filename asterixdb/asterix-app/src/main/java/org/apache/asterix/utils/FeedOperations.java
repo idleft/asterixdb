@@ -20,7 +20,10 @@ package org.apache.asterix.utils;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -83,8 +86,10 @@ import org.apache.asterix.lang.sqlpp.parser.SqlppParserFactory;
 import org.apache.asterix.lang.sqlpp.struct.SetOperationInput;
 import org.apache.asterix.lang.sqlpp.util.SqlppVariableUtil;
 import org.apache.asterix.metadata.declared.MetadataProvider;
+import org.apache.asterix.metadata.entities.Dataset;
 import org.apache.asterix.metadata.entities.Feed;
 import org.apache.asterix.metadata.entities.FeedConnection;
+import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.asterix.om.functions.BuiltinFunctions;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
@@ -112,6 +117,7 @@ import org.apache.hyracks.api.dataflow.OperatorDescriptorId;
 import org.apache.hyracks.api.io.FileSplit;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.common.data.partition.RandomPartitionComputerFactory;
+import org.apache.hyracks.dataflow.common.data.partition.RoundrobinPartitionComputerFactory;
 import org.apache.hyracks.dataflow.std.connectors.MToNPartitioningConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.connectors.OneToOneConnectorDescriptor;
 import org.apache.hyracks.dataflow.std.file.FileRemoveOperatorDescriptor;
@@ -129,28 +135,40 @@ public class FeedOperations {
     private FeedOperations() {
     }
 
+    private static Set<String> getStgNodes(MetadataProvider metadataProvider, List<FeedConnection> feedConns)
+            throws AlgebricksException {
+        Set<String> stgNodes = new HashSet<>();
+        for (FeedConnection feedConn : feedConns) {
+            Dataset ds = metadataProvider.findDataset(feedConn.getDataverseName(), feedConn.getDatasetName());
+            stgNodes.addAll(metadataProvider.findNodes(ds.getNodeGroupName()));
+        }
+        return stgNodes;
+    }
+
     private static Pair<JobSpecification, IAdapterFactory> buildFeedIntakeJobSpec(Feed feed,
-            MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor) throws Exception {
+            MetadataProvider metadataProvider, FeedPolicyAccessor policyAccessor, List<FeedConnection> feedConns,
+            String[] collectLocations) throws Exception {
         JobSpecification spec = RuntimeUtils.createJobSpecification(metadataProvider.getApplicationContext());
         spec.setFrameSize(metadataProvider.getApplicationContext().getCompilerProperties().getFrameSize());
         IAdapterFactory adapterFactory;
         IOperatorDescriptor intakeOperator;
         AlgebricksPartitionConstraint ingesterPc;
-        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t = metadataProvider
-                .buildFeedIntakeRuntime(spec, feed, policyAccessor);
+        Triple<IOperatorDescriptor, AlgebricksPartitionConstraint, IAdapterFactory> t =
+                metadataProvider.buildFeedIntakeRuntime(spec, feed, policyAccessor, collectLocations.length,
+                        getStgNodes(metadataProvider, feedConns));
         intakeOperator = t.first;
         ingesterPc = t.second;
         adapterFactory = t.third;
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, intakeOperator, ingesterPc);
-        MToNPartitioningConnectorDescriptor randomPartitioner = new MToNPartitioningConnectorDescriptor(spec,
-                new RandomPartitionComputerFactory());
-        DeployedJobPartitionHolderDescriptor intakePartitionHolder = new DeployedJobPartitionHolderDescriptor(spec, 1,
-                feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER,
-                Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.WORKER_NUM, "1")));
+        MToNPartitioningConnectorDescriptor randomPartitioner =
+                new MToNPartitioningConnectorDescriptor(spec, new RoundrobinPartitionComputerFactory());
+        int workerNum = Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.WORKER_NUM, "1"));
+        int intakePoolSize = Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.INTAKE_POOL_SIZE, "1"));
+        DeployedJobPartitionHolderDescriptor intakePartitionHolder = new DeployedJobPartitionHolderDescriptor(spec,
+                intakePoolSize, feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER, workerNum);
         spec.connect(randomPartitioner, intakeOperator, 0, intakePartitionHolder, 0);
-        //TODO: the partition constraint in intake is set to cluster location now.
-        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, intakePartitionHolder,
-                metadataProvider.getClusterLocations().getLocations());
+        //TODO: the partition constraint of intake partition holder is set to cluster location now.
+        PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, intakePartitionHolder, collectLocations);
         spec.addRoot(intakePartitionHolder);
         return Pair.of(spec, adapterFactory);
     }
@@ -165,12 +183,12 @@ public class FeedOperations {
         for (String node : allCluster.getLocations()) {
             nodes.add(node);
         }
-        AlgebricksAbsolutePartitionConstraint locations = new AlgebricksAbsolutePartitionConstraint(
-                nodes.toArray(new String[nodes.size()]));
-        FileSplit[] feedLogFileSplits = FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(),
-                locations);
-        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC = StoragePathUtil
-                .splitProviderAndPartitionConstraints(feedLogFileSplits);
+        AlgebricksAbsolutePartitionConstraint locations =
+                new AlgebricksAbsolutePartitionConstraint(nodes.toArray(new String[nodes.size()]));
+        FileSplit[] feedLogFileSplits =
+                FeedUtils.splitsForAdapter(appCtx, feed.getDataverseName(), feed.getFeedName(), locations);
+        org.apache.hyracks.algebricks.common.utils.Pair<IFileSplitProvider, AlgebricksPartitionConstraint> spC =
+                StoragePathUtil.splitProviderAndPartitionConstraints(feedLogFileSplits);
         FileRemoveOperatorDescriptor frod = new FileRemoveOperatorDescriptor(spec, spC.first, true);
         AlgebricksPartitionConstraintHelper.setPartitionConstraintInJobSpec(spec, frod, spC.second);
         spec.addRoot(frod);
@@ -258,22 +276,6 @@ public class FeedOperations {
         return statementExecutor.rewriteCompileInsertUpsert(hcc, metadataProvider, stmt, null, null);
     }
 
-    //    private static JobSpecification simpleModifyConnJob(MetadataProvider metadataProvider, Feed feed,
-    //            JobSpecification intakeJob, JobSpecification connJob, FeedConnection currentConnection) {
-    //        FeedCollectOperatorDescriptor firstOp = (FeedCollectOperatorDescriptor) connJob.getOperatorMap()
-    //                .get(new OperatorDescriptorId(0));
-    //
-    //        //        FeedCallableOperatorDescriptor callableOpDesc = new FeedCallableOperatorDescriptor(connJob, intakeLocations[0],
-    //        //                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
-    //        FeedConnWorkerOperatorDescriptor callableOpDesc = new FeedConnWorkerOperatorDescriptor(connJob,
-    //                intakeLocations[0],
-    //                new ActiveRuntimeId(feed.getFeedId(), FeedIntakeOperatorNodePushable.class.getSimpleName(), 0));
-    //
-    //        PartitionConstraintHelper.addAbsoluteLocationConstraint(connJob, callableOpDesc, metadataProvider.getClusterLocations().getLocations());
-    //        connJob.connect(new OneToOneConnectorDescriptor(connJob), callableOpDesc, 0, firstOp, 0);
-    //        return connJob;
-    //    }
-
     private static IStatementExecutor getSQLPPTranslator(MetadataProvider metadataProvider,
             SessionOutput sessionOutput) {
         List<Statement> stmts = new ArrayList<>();
@@ -284,39 +286,42 @@ public class FeedOperations {
     }
 
     public static Pair<JobSpecification, AlgebricksAbsolutePartitionConstraint> buildStartFeedJob(
-            MetadataProvider metadataProvider, Feed feed) throws Exception {
+            MetadataProvider metadataProvider, Feed feed, List<FeedConnection> feedConns, String[] collectLocations)
+            throws Exception {
         FeedPolicyAccessor fpa = new FeedPolicyAccessor(new HashMap<>());
-        Pair<JobSpecification, IAdapterFactory> intakeInfo = buildFeedIntakeJobSpec(feed, metadataProvider, fpa);
+        Pair<JobSpecification, IAdapterFactory> intakeInfo =
+                buildFeedIntakeJobSpec(feed, metadataProvider, fpa, feedConns, collectLocations);
         // Construct the ingestion Job
         JobSpecification intakeJob = intakeInfo.getLeft();
         return Pair.of(intakeJob, intakeInfo.getRight().getPartitionConstraint());
     }
 
     public static JobSpecification buildFeedConnectionJob(MetadataProvider metadataProvider,
-            List<FeedConnection> feedConnections, JobSpecification intakeJob, IHyracksClientConnection hcc,
-            IStatementExecutor statementExecutor, Feed feed, AlgebricksAbsolutePartitionConstraint ingestionLocations)
-            throws Exception {
+            List<FeedConnection> feedConnections, IHyracksClientConnection hcc, IStatementExecutor statementExecutor,
+            Feed feed, String[] collectLocations) throws Exception {
         // Add metadata configs
         metadataProvider.getConfig().put(FunctionUtil.IMPORT_PRIVATE_FUNCTIONS, Boolean.TRUE.toString());
         metadataProvider.getConfig().put(FeedActivityDetails.COLLECT_LOCATIONS,
-                StringUtils.join(metadataProvider.getClusterLocations().getLocations(), ','));
+                StringUtils.join(collectLocations, ','));
         // TODO: Once we deprecated AQL, this extra queryTranslator can be removed.
-        IStatementExecutor translator = getSQLPPTranslator(metadataProvider,
-                ((QueryTranslator) statementExecutor).getSessionOutput());
+        IStatementExecutor translator =
+                getSQLPPTranslator(metadataProvider, ((QueryTranslator) statementExecutor).getSessionOutput());
         // Add connection job
         Boolean insertFeed = ExternalDataUtils.isInsertFeed(feed.getConfiguration());
-        JobSpecification connJob = getConnectionJob(metadataProvider, feedConnections.get(0), translator, hcc,
-                insertFeed);
+        JobSpecification connJob =
+                getConnectionJob(metadataProvider, feedConnections.get(0), translator, hcc, insertFeed);
         return connJob;
     }
 
-    private static void findOpsAfterOp(JobSpecification connJob, IOperatorDescriptor op, List<IOperatorDescriptor> afterOpOps) {
+    private static void findOpsAfterOp(JobSpecification connJob, IOperatorDescriptor op,
+            List<IOperatorDescriptor> afterOpOps) {
         List<IConnectorDescriptor> afterConns = connJob.getOperatorOutputMap().get(op.getOperatorId());
         if (afterConns == null) {
             return;
         }
         for (IConnectorDescriptor branch : afterConns) {
-            IOperatorDescriptor branchTopOp = connJob.getConnectorOperatorMap().get(branch.getConnectorId()).getRight().getKey();
+            IOperatorDescriptor branchTopOp =
+                    connJob.getConnectorOperatorMap().get(branch.getConnectorId()).getRight().getKey();
             afterOpOps.add(branchTopOp);
             findOpsAfterOp(connJob, branchTopOp, afterOpOps);
         }
@@ -328,7 +333,6 @@ public class FeedOperations {
         // TODO: can we combine these two?
         Map<OperatorDescriptorId, OperatorDescriptorId> pipeLineOpMapping = new HashMap<>();
         Map<OperatorDescriptorId, OperatorDescriptorId> storageOpMapping = new HashMap<>();
-        Map<ConnectorDescriptorId, ConnectorDescriptorId> connectorIdMapping = new HashMap<>();
         // constraints of old job
         Map<OperatorDescriptorId, List<LocationConstraint>> operatorLocations = new HashMap<>();
         Map<OperatorDescriptorId, Integer> operatorCounts = new HashMap<>();
@@ -338,6 +342,7 @@ public class FeedOperations {
 
         // inject Pipeline sink and StoragePH into jobs
         // create the sphd in place to maek the output record desc right
+        int storagePoolSize = Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.STG_POOL_SIZE, "1"));
         StoragePartitionHolderDescriptor sphd = null;
         FeedPipelineSinkDescriptor fpsd = new FeedPipelineSinkDescriptor(pipeLineJob, feed.getFeedId(),
                 FeedConstants.FEED_STORAGE_PARTITION_HOLDER);
@@ -384,7 +389,7 @@ public class FeedOperations {
                 pipeLineJob.createConnectorDescriptor(connDesc);
                 pipeLineJob.connect(connDesc, leftOpDesc, leftOp.getValue(), fpsd, 0);
                 // plugin partition holder for storage job
-                sphd = new StoragePartitionHolderDescriptor(storageJob, 1, feed.getFeedId(),
+                sphd = new StoragePartitionHolderDescriptor(storageJob, storagePoolSize, feed.getFeedId(),
                         FeedConstants.FEED_STORAGE_PARTITION_HOLDER, leftOpDesc.getOutputRecordDescriptors()[0]);
                 storageJob.connect(new OneToOneConnectorDescriptor(storageJob), sphd, 0, rightOpDesc,
                         rightOp.getValue());
@@ -420,8 +425,8 @@ public class FeedOperations {
                         operatorLocations.put(opId, locations);
                     }
                     String location = (String) ((ConstantExpression) cexpr).getValue();
-                    LocationConstraint lc = new LocationConstraint(location,
-                            ((PartitionLocationExpression) lexpr).getPartition());
+                    LocationConstraint lc =
+                            new LocationConstraint(location, ((PartitionLocationExpression) lexpr).getPartition());
                     locations.add(lc);
                     break;
                 default:
@@ -433,6 +438,8 @@ public class FeedOperations {
         for (Map.Entry<OperatorDescriptorId, List<LocationConstraint>> entry : operatorLocations.entrySet()) {
             String[] locations = new String[entry.getValue().size()];
             IOperatorDescriptor opDesc;
+            // This sort is needed to make sure the partitions are consistent
+            Collections.sort(entry.getValue(), Comparator.comparingInt((LocationConstraint o) -> o.partition));
             for (int j = 0; j < locations.length; ++j) {
                 locations[j] = entry.getValue().get(j).location;
             }

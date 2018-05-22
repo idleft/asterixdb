@@ -29,6 +29,9 @@ public class FeedConstants {
     public static final String FEED_STORAGE_PARTITION_HOLDER = "storage_partition_holder";
     public static final String WORKER_NUM = "worker-num";
     public static final String BATCH_SIZE = "batch-size";
+    public static final String INTAKE_POOL_SIZE = "intake-pool-size";
+    public static final String STG_POOL_SIZE = "storage-pool-size";
+    public static final String FEED_PIPELINE_DECOUPLE = "decouple";
     public static final String BUFFER_SIZE = "buffer-size";
 
     public static final class StatisticsConstants {

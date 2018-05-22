@@ -20,6 +20,7 @@ package org.apache.asterix.external.feed.dataflow;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,17 +56,19 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
     private AtomicInteger ackCounter;
     private AtomicBoolean preClose;
     private EntityId entityId;
-    private int livePartitionN;
+    private int liveCollPartitionN;
+    private Set<String> stgNodes;
 
     public DeployedJobBufferWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId,
-            EntityId entityId, int workerNum, int batchSize, int bufferSize, int livePartitionN) {
+            EntityId entityId, int workerNum, int liveCollPartitionN, Set<String> stgNodes) {
         this.writer = writer;
         this.ctx = ctx;
         this.deployedJobSpecId = jobSpecId;
         this.workerNum = workerNum;
         this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
         this.entityId = entityId;
-        this.livePartitionN = livePartitionN;
+        this.liveCollPartitionN = liveCollPartitionN;
+        this.stgNodes = stgNodes;
     }
 
     private void sendMsgToCC(ICcAddressedMessage msg) throws Exception {
@@ -78,7 +81,7 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
         writer.open();
         try {
             StartFeedConnWorkersMsg msg =
-                    new StartFeedConnWorkersMsg(deployedJobSpecId, workerNum, entityId, livePartitionN);
+                    new StartFeedConnWorkersMsg(deployedJobSpecId, workerNum, entityId, liveCollPartitionN, stgNodes);
             sendMsgToCC(msg);
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
@@ -90,7 +93,7 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
         try {
             writer.nextFrame(frame);
         } catch (Exception e) {
-            throw new HyracksDataException(e.getMessage());
+            throw new HyracksDataException(e.getMessage(), e.getCause());
         }
     }
 
