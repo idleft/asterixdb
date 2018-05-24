@@ -58,9 +58,10 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
     private EntityId entityId;
     private int liveCollPartitionN;
     private Set<String> stgNodes;
+    int pid;
 
     public DeployedJobBufferWriter(IHyracksTaskContext ctx, IFrameWriter writer, DeployedJobSpecId jobSpecId,
-            EntityId entityId, int workerNum, int liveCollPartitionN, Set<String> stgNodes) {
+            EntityId entityId, int workerNum, int liveCollPartitionN, Set<String> stgNodes, int pid) {
         this.writer = writer;
         this.ctx = ctx;
         this.deployedJobSpecId = jobSpecId;
@@ -69,6 +70,7 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
         this.entityId = entityId;
         this.liveCollPartitionN = liveCollPartitionN;
         this.stgNodes = stgNodes;
+        this.pid = pid;
     }
 
     private void sendMsgToCC(ICcAddressedMessage msg) throws Exception {
@@ -80,9 +82,11 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
     public void open() throws HyracksDataException {
         writer.open();
         try {
-            StartFeedConnWorkersMsg msg =
-                    new StartFeedConnWorkersMsg(deployedJobSpecId, workerNum, entityId, liveCollPartitionN, stgNodes);
-            sendMsgToCC(msg);
+            if (pid == 0) {
+                StartFeedConnWorkersMsg msg = new StartFeedConnWorkersMsg(deployedJobSpecId, workerNum, entityId,
+                        liveCollPartitionN, stgNodes);
+                sendMsgToCC(msg);
+            }
         } catch (Exception e) {
             throw new HyracksDataException(e.getMessage());
         }

@@ -67,6 +67,7 @@ public class TraceTest {
 
         List<String> lines = Log4j2Monitor.getLogs();
         for (String line : lines) {
+            System.out.println(line);
             final JsonNode traceRecord = validate(line);
             Assert.assertEquals("i", traceRecord.get("ph").asText());
             Assert.assertNotEquals("CAT3", traceRecord.get("cat").asText());
@@ -82,6 +83,7 @@ public class TraceTest {
 
         lines = Log4j2Monitor.getLogs();
         for (String line : lines) {
+            System.out.println(line);
             final JsonNode traceRecord = validate(line);
             Assert.assertEquals("i", traceRecord.get("ph").asText());
             Assert.assertNotEquals("CAT2", validate(line).get("cat").asText());

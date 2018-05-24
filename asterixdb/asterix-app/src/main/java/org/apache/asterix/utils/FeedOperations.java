@@ -92,6 +92,7 @@ import org.apache.asterix.metadata.entities.FeedConnection;
 import org.apache.asterix.metadata.entities.NodeGroup;
 import org.apache.asterix.metadata.feeds.LocationConstraint;
 import org.apache.asterix.om.functions.BuiltinFunctions;
+import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.SessionOutput;
@@ -476,7 +477,7 @@ public class FeedOperations {
         pipeLineJob.addRoot(fpsd);
         storageJob.addRoot(stgRoot);
 
-        pipeLineJob.setJobletEventListenerFactory(connJob.getJobletEventListenerFactory());
+        pipeLineJob.setJobletEventListenerFactory(new JobEventListenerFactory(null, false));
         storageJob.setJobletEventListenerFactory(connJob.getJobletEventListenerFactory());
 
         pipeLineJob.setConnectorPolicyAssignmentPolicy(connJob.getConnectorPolicyAssignmentPolicy());

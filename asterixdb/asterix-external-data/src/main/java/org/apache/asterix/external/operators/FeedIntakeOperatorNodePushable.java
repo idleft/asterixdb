@@ -29,12 +29,14 @@ import org.apache.asterix.external.dataset.adapter.FeedAdapter;
 import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
 import org.apache.asterix.external.feed.dataflow.FeedDataFrameBufferWriter;
 import org.apache.asterix.external.feed.dataflow.DeployedJobBufferWriter;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.util.CleanupUtils;
 import org.apache.hyracks.api.job.DeployedJobSpecId;
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -56,6 +58,9 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
     private final EntityId feedId;
 
     private boolean poisoned = false;
+    private int pid;
+    private final ITracer tracer;
+    private final long registry;
 
     public FeedIntakeOperatorNodePushable(IHyracksTaskContext ctx, EntityId feedId, IAdapterFactory adapterFactory,
             int partition, IRecordDescriptorProvider recordDescProvider,
@@ -69,16 +74,22 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         this.feedId = feedId;
         this.liveCollPartitions = liveCollPartitions;
         this.involedNodes = involedNodes;
+        this.pid = partition;
+        this.tracer = ctx.getJobletContext().getServiceContext().getTracer();
+        this.registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
     }
 
     @Override
     protected void start() throws HyracksDataException {
         Throwable failure = null;
-        Thread.currentThread().setName("Intake Thread");
+        Thread.currentThread().setName("Intake Thread " + pid);
+        long atid = tracer.durationB("Intake Running", registry, null);
         try {
             writer = new DeployedJobBufferWriter(ctx, writer, connJobId, feedId, workerNum, liveCollPartitions,
-                    involedNodes);
+                    involedNodes, pid);
+            long wotid = tracer.durationB("Writer Opening", registry, null);
             writer.open();
+            tracer.durationE(wotid, registry, null);
             synchronized (this) {
                 if (poisoned) {
                     return;
@@ -92,6 +103,7 @@ public class FeedIntakeOperatorNodePushable extends ActiveSourceOperatorNodePush
         } finally {
             failure = CleanupUtils.close(adapter, failure);
             failure = CleanupUtils.close(writer, failure);
+            tracer.durationE(atid, registry, null);
         }
         if (failure != null) {
             throw HyracksDataException.create(failure);

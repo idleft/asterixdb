@@ -27,6 +27,7 @@ import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PartitionHolderManager;
 import org.apache.asterix.active.partition.PushablePartitionHolderPushable;
 import org.apache.asterix.common.api.INcApplicationContext;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -34,6 +35,7 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryInputSinkOperatorNodePushable;
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,6 +61,9 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
             PartitionHolderId stgPhId = new PartitionHolderId(enid, runtimeName, partition);
             PartitionHolderManager phm = (PartitionHolderManager) ((INcApplicationContext) ctx.getJobletContext()
                     .getServiceContext().getApplicationContext()).getPartitionHolderMananger();
+            private final ITracer tracer = ctx.getJobletContext().getServiceContext().getTracer();
+            private final long registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
+            private long stid;
             IPushablePartitionHolderRuntime stgPartitionHolder;
 
             @Override
@@ -67,6 +72,7 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
                     LOGGER.log(Level.DEBUG, this + " looks for " + stgPhId);
                 }
                 stgPartitionHolder = (IPushablePartitionHolderRuntime) phm.getPartitionHolderRuntime(stgPhId);
+                stid = tracer.durationB("Feed Sink", registry, null);
             }
 
             @Override
@@ -75,7 +81,9 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
                     LOGGER.log(Level.DEBUG, this + " deposits frame " + String.valueOf(buffer.array()) + " "
                             + buffer.capacity() + " to " + stgPhId);
                 }
+                long ntid = tracer.durationB("Feed Sink next frame", registry, String.valueOf(buffer.capacity()));
                 stgPartitionHolder.deposit(buffer);
+                tracer.durationE(ntid, registry, null);
             }
 
             @Override
@@ -88,6 +96,7 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.log(Level.DEBUG, this + " closed.");
                 }
+                tracer.durationE(stid, registry, null);
             }
 
             @Override

@@ -44,6 +44,7 @@ import org.apache.hyracks.control.nc.NodeControllerService;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -68,6 +69,8 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final NodeControllerService ncs;
 
     private CharArrayRecord record;
+    private final ITracer tracer;
+    private final long registry;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition, IRecordDataParserFactory<?> parserFactory, int batchSize)
@@ -84,6 +87,8 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         this.phid = new PartitionHolderId(feedId, FeedConstants.FEED_INTAKE_PARTITION_HOLDER, partition);
         this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
         this.batchSize = batchSize;
+        this.tracer = ctx.getJobletContext().getServiceContext().getTracer();
+        this.registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
     }
 
     @Override
@@ -94,6 +99,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     @Override
     public void initialize() throws HyracksDataException {
         String threadName = Thread.currentThread().getName();
+        long atid = tracer.durationB("Collector Running", registry, null);
         try {
             Thread.currentThread().setName("Collector Thread");
             if (LOGGER.isDebugEnabled()) {
@@ -106,28 +112,35 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " connected to " + phid);
             }
+            tracer.instant("Collector connected to ph", registry, ITracer.Scope.t, null);
             writer.open();
+            long ctid = tracer.durationB("Collector getting frames", registry, null);
             if (partitionHolderRuntime != null) {
                 for (int iter1 = 0; batchSize == -1 || iter1 < batchSize; iter1++) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(this + " ready to get a frame");
                     }
+                    long gtid = tracer.durationB("Collector's getting a frame", registry, null);
                     ByteBuffer dataframe = partitionHolderRuntime.getHoldFrame();
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(this + " gets frame with size " + dataframe.capacity());
                     }
+                    tracer.durationE(gtid, registry, String.valueOf(dataframe.capacity()));
                     if (dataframe.capacity() == 0) {
                         break;
                     } else {
                         doPushFrame(dataframe);
                     }
                 }
+                long ftid = tracer.durationB("Collector's last flush", registry, String.valueOf(tf.getTupleCount()));
                 tf.flush();
+                tracer.durationE(ftid, registry, null);
             } else {
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(this + " cannot find " + phid + ". Work is done.");
                 }
             }
+            tracer.durationE(ctid, registry, null);
         } catch (Exception e) {
             e.printStackTrace();
             throw HyracksDataException.create(e);
@@ -136,16 +149,20 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " is closing.");
             }
+            tracer.instant("Collector closes", registry, ITracer.Scope.t, null);
             writer.close();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " is closed.");
             }
+            tracer.instant("Collector closed", registry, ITracer.Scope.t, null);
             Thread.currentThread().setName(threadName);
+            tracer.durationE(atid, registry, null);
         }
     }
 
     private void doPushFrame(ByteBuffer buffer) throws HyracksDataException {
         fta.reset(buffer);
+        long ptid = tracer.durationB("Collector's pushing a frame", registry, String.valueOf(fta.getTupleCount()));
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug(this + " gets frame with size " + fta.getTupleCount());
         }
@@ -161,5 +178,6 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             //TODO: maybe get rid of tf?
             tf.addTuple(tb);
         }
+        tracer.durationE(ptid, registry, null);
     }
 }

@@ -24,6 +24,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.partition.PushablePartitionHolderPushable;
 import org.apache.asterix.active.partition.PartitionHolderId;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -31,6 +32,7 @@ import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -60,11 +62,16 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
 
         return new PushablePartitionHolderPushable(ctx, phid) {
 
+            private final ITracer tracer = ctx.getJobletContext().getServiceContext().getTracer();
+            private final long registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
+
             private ArrayBlockingQueue<ByteBuffer> bufferPool = new ArrayBlockingQueue<>(poolSize);
             private volatile boolean closed;
 
             @Override
             public void start() throws HyracksDataException {
+                long storage_partition_holder_running =
+                        tracer.durationB("Storage Partition Holder Running", registry, null);
                 closed = false;
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.log(Level.DEBUG, phid + " started");
@@ -72,7 +79,11 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
                 writer.open();
                 while (!closed) {
                     try {
+                        long get_frame_tid = tracer.durationB("Storage Partition Holdler gets frames", registry, null);
                         ByteBuffer frame = bufferPool.take();
+                        tracer.durationE(get_frame_tid, registry, null);
+                        long push_frame_tid =
+                                tracer.durationB("Storage Partition Holder pushes frames", registry, null);
                         if (frame.capacity() > 0) {
                             writer.nextFrame(frame);
                             if (LOGGER.isDebugEnabled()) {
@@ -82,6 +93,7 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
                         } else {
                             closed = true;
                         }
+                        tracer.durationE(push_frame_tid, registry, null);
                     } catch (Exception e) {
                         e.printStackTrace();
                         throw new HyracksDataException(e.getMessage());
@@ -89,6 +101,7 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
                 }
                 writer.flush();
                 writer.close();
+                tracer.durationE(storage_partition_holder_running, registry, null);
             }
 
             @Override

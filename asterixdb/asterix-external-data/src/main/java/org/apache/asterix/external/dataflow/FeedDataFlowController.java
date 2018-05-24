@@ -25,11 +25,13 @@ import org.apache.asterix.common.exceptions.ErrorCode;
 import org.apache.asterix.common.exceptions.RuntimeDataException;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordReader;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.asterix.external.util.FeedLogManager;
 import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.util.CleanupUtils;
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,6 +53,8 @@ public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
     protected State state = State.CREATED;
     protected long incomingRecordsCount = 0;
     protected long failedRecordsCount = 0;
+    private final ITracer tracer;
+    private final long registry;
 
     public FeedDataFlowController(IHyracksTaskContext ctx, FeedLogManager feedLogManager, IRecordReader<T> recordReader)
             throws HyracksDataException {
@@ -58,10 +62,13 @@ public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
         this.recordReader = recordReader;
         recordReader.setFeedLogManager(feedLogManager);
         recordReader.setController(this);
+        this.tracer = ctx.getJobletContext().getServiceContext().getTracer();
+        this.registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
     }
 
     @Override
     public void start(IFrameWriter writer) throws HyracksDataException, InterruptedException {
+        long stid = tracer.durationB("Feed Record Dataflow Controller", registry, null);
         synchronized (this) {
             if (state == State.STOPPED) {
                 return;
@@ -73,7 +80,9 @@ public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
         try {
             this.tupleForwarder = new TupleForwarder(ctx, writer);
             while (hasNext()) {
+                long gtid = tracer.durationB("Get records", registry, null);
                 IRawRecord<? extends T> record = next();
+                tracer.durationE(gtid, registry, null);
                 if (record == null) {
                     flush();
                     Thread.sleep(INTERVAL); // NOSONAR: No one notifies the sleeping thread
@@ -81,9 +90,11 @@ public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
                 }
                 tb.reset();
                 incomingRecordsCount++;
+                long ftid = tracer.durationB("Push records", registry, null);
                 if (!parseAndForward(record)) {
                     failedRecordsCount++;
                 }
+                tracer.durationE(ftid, registry, null);
             }
         } catch (HyracksDataException e) {
             LOGGER.log(Level.WARN, "Exception during ingestion", e);
@@ -105,6 +116,7 @@ public class FeedDataFlowController<T> extends AbstractFeedDataFlowController {
             LOGGER.log(Level.WARN, "Failure while operating a feed source", e);
         } finally {
             failure = finish(failure);
+            tracer.durationE(stid, registry, null);
         }
         if (failure != null) {
             if (failure instanceof InterruptedException) {

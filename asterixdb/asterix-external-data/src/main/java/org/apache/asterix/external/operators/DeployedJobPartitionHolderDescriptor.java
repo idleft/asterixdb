@@ -22,6 +22,7 @@ import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.DropDeployedJobMessage;
 import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PullablePartitionHolderPushable;
+import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
 import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
@@ -37,6 +38,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
+import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -50,8 +52,6 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
     private final EntityId enid;
     private final int poolSize;
     private final String runtimeName;
-    private final int workerN;
-    private AtomicBoolean readyToStop;
 
     public DeployedJobPartitionHolderDescriptor(IOperatorDescriptorRegistry spec, int poolSize, EntityId entityId,
             String runtimeName, int workerN) {
@@ -59,8 +59,6 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
         this.poolSize = poolSize;
         this.enid = entityId;
         this.runtimeName = runtimeName;
-        this.workerN = workerN;
-        this.readyToStop = new AtomicBoolean(false);
     }
 
     @Override
@@ -75,6 +73,9 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
             private int recordCtr = 0;
             private NodeControllerService ncs;
             private FrameTupleAccessor fta;
+            private final ITracer tracer = ctx.getJobletContext().getServiceContext().getTracer();
+            private final long registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
+            private long ltid;
 
             @Override
             public void open() throws HyracksDataException {
@@ -82,18 +83,23 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 this.arrayLock = new ReentrantLock();
                 this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
                 fta = new FrameTupleAccessor(null);
+                ltid = tracer.durationB("Deployed Job Partition Holder", registry, null);
+
             }
 
             @Override
             public void nextFrame(ByteBuffer buffer) throws HyracksDataException {
                 try {
+                    long ntid = tracer.durationB("Deployed Job Next Frame", registry, null);
                     ByteBuffer cloneFrame = ByteBuffer.allocate(buffer.capacity());
                     buffer.rewind();//copy from the beginning
                     cloneFrame.put(buffer);
                     cloneFrame.flip();
+                    tracer.instant("Deployed Job copied frame", registry, ITracer.Scope.t, null);
                     bufferPool.put(cloneFrame);
                     fta.reset(cloneFrame);
                     recordCtr += fta.getTupleCount();
+                    tracer.durationE(ntid, registry, null);
                     //                                        if (LOGGER.isDebugEnabled()) {
                     //                                            LOGGER.log(Level.DEBUG, phid + " gets a frame " + fta.getTupleCount());
                     //                                        }
@@ -157,6 +163,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.log(Level.DEBUG, phid + " closed. " + bufferPool.size());
                 }
+                tracer.durationE(ltid, registry, null);
             }
 
             //            @Override
@@ -192,16 +199,6 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 return frame;
             }
 
-            @Override
-            public void shutdown() {
-                synchronized (readyToStop) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.log(Level.DEBUG, phid + " ready to stop ");
-                    }
-                    readyToStop.set(true);
-                    readyToStop.notify();
-                }
-            }
         };
     }
 }

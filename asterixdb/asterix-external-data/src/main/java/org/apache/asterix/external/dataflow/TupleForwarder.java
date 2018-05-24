@@ -62,4 +62,8 @@ public class TupleForwarder {
     public void complete() throws HyracksDataException {
         appender.write(writer, false);
     }
+
+    public int getTupleCount() {
+        return appender.getTupleCount();
+    }
 }

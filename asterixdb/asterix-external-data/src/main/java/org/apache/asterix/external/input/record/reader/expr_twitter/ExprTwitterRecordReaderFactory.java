@@ -43,7 +43,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
     private static final List<String> recordReaderNames = Collections.singletonList("expr_twitter");
 
     private long requriedAmount;
-    private String ingestionLocation;
+    private String[] ingestionLocation;
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -57,17 +57,23 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public AlgebricksAbsolutePartitionConstraint getPartitionConstraint() {
-        return new AlgebricksAbsolutePartitionConstraint(new String[] { ingestionLocation });
+        return new AlgebricksAbsolutePartitionConstraint(ingestionLocation);
     }
 
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
         this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
-        this.ingestionLocation = configuration.get("ingestion-location");
-        List<String> ncs =
-                RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
-        if (!ncs.contains(ingestionLocation)) {
-            throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+        String assignedIntakeLocation = configuration.get("ingestion-location");
+        if (ingestionLocation == null) {
+            ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
+            ingestionLocation = appCtx.getClusterStateManager().getClusterLocations().getLocations();
+        } else {
+            List<String> ncs =
+                    RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
+            if (!ncs.contains(ingestionLocation)) {
+                throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+            }
+            ingestionLocation = new String[] { assignedIntakeLocation };
         }
         LOGGER.log(Level.INFO, "Expr twitter generator requested " + requriedAmount);
     }

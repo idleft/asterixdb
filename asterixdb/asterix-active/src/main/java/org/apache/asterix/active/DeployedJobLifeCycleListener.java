@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
@@ -67,41 +68,42 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     public DeployedJobLifeCycleListener(ICCServiceContext ccServiceCtx) {
         this.ccServiceCtx = ccServiceCtx;
         this.jobToEntityIdMap = new ConcurrentHashMap<>();
-        this.keepDeployedJobMap = new HashMap<>();
-        this.entityToLivePartitionCount = new HashMap<>();
-        this.entityToNodeIds = new HashMap<>();
-        this.entityIdToInstanceN = new HashMap<>();
+        this.keepDeployedJobMap = new ConcurrentHashMap<>();
+        this.entityToLivePartitionCount = new ConcurrentHashMap<>();
+        this.entityToNodeIds = new ConcurrentHashMap<>();
+        this.entityIdToInstanceN = new ConcurrentHashMap<>();
         this.messageBroker = (ICCMessageBroker) ccServiceCtx.getMessageBroker();
         this.entityIdToSubscribedListener = new HashMap<>();
-        this.entityIdToJobIdMap = new HashMap<>();
+        this.entityIdToJobIdMap = new ConcurrentHashMap<>();
     }
 
-    public synchronized void registerDeployedJob(JobId jobId, EntityId entityId) {
+    public void registerDeployedJob(JobId jobId, EntityId entityId) {
         LOGGER.log(logLevel, "Job " + jobId + " registered to " + entityId);
         jobToEntityIdMap.put(jobId, entityId);
     }
 
-    public synchronized void registerStgJobId(EntityId entityId, JobId jobId) {
+    public void registerStgJobId(EntityId entityId, JobId jobId) {
         entityIdToJobIdMap.put(jobId, entityId);
     }
 
-    public synchronized void keepDeployedJob(EntityId entityId, DeployedJobSpecId deployedJobSpecId,
-            int liveCollectorPartitionN, Set<String> stgNodes, int instanceNum) {
-        LOGGER.log(logLevel, "Keep " + entityId + " with " + liveCollectorPartitionN + " partitions.");
+    public void keepDeployedJob(EntityId entityId, DeployedJobSpecId deployedJobSpecId, int liveCollectorPartitionN,
+            Set<String> stgNodes, int instanceNum) {
+        LOGGER.log(logLevel, entityId + " keep deploy job with " + liveCollectorPartitionN + " partitions "
+                + instanceNum + " workers.");
         keepDeployedJobMap.put(entityId, deployedJobSpecId);
         entityToLivePartitionCount.put(entityId, liveCollectorPartitionN);
         entityToNodeIds.put(entityId, stgNodes);
         entityIdToInstanceN.put(entityId, instanceNum);
     }
 
-    public synchronized void subscribe(EntityId entityId, DeployedJobUntrackSubscriber untrackSubscriber) {
+    public void subscribe(EntityId entityId, DeployedJobUntrackSubscriber untrackSubscriber) {
         if (entityIdToSubscribedListener.get(entityId) == null) {
             entityIdToSubscribedListener.put(entityId, new ArrayList<>());
         }
         entityIdToSubscribedListener.get(entityId).add(untrackSubscriber);
     }
 
-    public synchronized void shutdownPartitionHolderByPartitionHolderId(PartitionHolderId phId) throws Exception {
+    public void shutdownPartitionHolderByPartitionHolderId(PartitionHolderId phId) throws Exception {
         ShutdownPartitionHandlerMessage msg = new ShutdownPartitionHandlerMessage(phId);
         Set<String> nodeIds = entityToNodeIds.get(phId.getEntityId());
         if (nodeIds != null) {
@@ -114,14 +116,16 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         }
     }
 
-    public synchronized void dropDeployedJob(EntityId entityId) throws Exception {
-        int newCount = entityToLivePartitionCount.get(entityId) - 1;
-        LOGGER.log(Level.INFO, "Drop " + entityId + " to " + newCount + " partitions.");
-        if (newCount == 0) {
-            keepDeployedJobMap.remove(entityId);
-            //            shutdownPartitionHolderByPartitionHolderId(new PartitionHolderId(entityId, FEED_INTAKE_PARTITION_HOLDER, -1));
-        } else {
-            entityToLivePartitionCount.put(entityId, newCount);
+    public void dropDeployedJob(EntityId entityId) throws Exception {
+        synchronized (entityToLivePartitionCount) {
+            int newCount = entityToLivePartitionCount.get(entityId) - 1;
+            LOGGER.log(Level.INFO, "Drop " + entityId + " to " + newCount + " partitions.");
+            if (newCount == 0) {
+                keepDeployedJobMap.remove(entityId);
+                //            shutdownPartitionHolderByPartitionHolderId(new PartitionHolderId(entityId, FEED_INTAKE_PARTITION_HOLDER, -1));
+            } else {
+                entityToLivePartitionCount.put(entityId, newCount);
+            }
         }
     }
 
@@ -142,29 +146,30 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     }
 
     private void untrackDeployedJobForEntity(EntityId entityId) throws Exception {
-        Integer currentInstanceId = entityIdToInstanceN.get(entityId);
-        if (currentInstanceId == null) {
-            throw new HyracksDataException(entityId + " is not being tracked.");
-        } else {
-            currentInstanceId = currentInstanceId - 1;
-            if (currentInstanceId == 0) {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(entityId + " stg closing");
-                }
-                shutdownPartitionHolderByPartitionHolderId(
-                        new PartitionHolderId(entityId, FEED_STORAGE_PARTITION_HOLDER, -1));
-                if (!entityIdToJobIdMap.containsValue(entityId)) {
-                    notifySubscriber(entityId);
-                }
+        synchronized (entityIdToInstanceN) {
+            Integer currentInstanceN = entityIdToInstanceN.get(entityId);
+            if (currentInstanceN == null) {
+                throw new HyracksDataException(entityId + " is not being tracked.");
             } else {
-                entityIdToInstanceN.put(entityId, currentInstanceId);
+                currentInstanceN = currentInstanceN - 1;
+                if (currentInstanceN == 0) {
+                    if (LOGGER.isDebugEnabled()) {
+                        LOGGER.debug(entityId + " has no more live instances. Poisoning stg.");
+                    }
+                    shutdownPartitionHolderByPartitionHolderId(
+                            new PartitionHolderId(entityId, FEED_STORAGE_PARTITION_HOLDER, -1));
+                    if (!entityIdToJobIdMap.containsValue(entityId)) {
+                        notifySubscriber(entityId);
+                    }
+                } else {
+                    entityIdToInstanceN.put(entityId, currentInstanceN);
+                }
             }
         }
     }
 
     @Override
-    public synchronized void notifyJobFinish(JobId jobId, JobStatus jobStatus, List<Exception> exceptions)
-            throws HyracksException {
+    public void notifyJobFinish(JobId jobId, JobStatus jobStatus, List<Exception> exceptions) throws HyracksException {
         // notify the nc that hosts the feed
         // currently, we ignore all the exceptions and failures
         // this method is synchronized at outside
@@ -201,7 +206,7 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
                     }
                 } else {
                     if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(jobId + " is no longer interesting. Stop keep " + entityId + " alive.");
+                        LOGGER.debug(jobId + " is no longer interesting. Decrease live count for " + entityId);
                     }
                     untrackDeployedJobForEntity(entityId);
                 }
