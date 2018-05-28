@@ -24,7 +24,6 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.active.message.DropDeployedJobMessage;
 import org.apache.asterix.active.partition.IPullablePartitionHolderRuntime;
 import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PartitionHolderManager;
@@ -39,7 +38,6 @@ import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
-import org.apache.hyracks.api.util.JavaSerializationUtils;
 import org.apache.hyracks.control.nc.NodeControllerService;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
@@ -145,7 +143,6 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             e.printStackTrace();
             throw HyracksDataException.create(e);
         } finally {
-            tf.complete();
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " is closing.");
             }

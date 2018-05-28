@@ -105,7 +105,7 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
             }
 
             @Override
-            public synchronized boolean deposit(ByteBuffer buffer) {
+            public boolean deposit(ByteBuffer buffer) {
                 try {
                     ByteBuffer cloneFrame = ByteBuffer.allocate(buffer.capacity());
                     buffer.rewind();//copy from the beginning

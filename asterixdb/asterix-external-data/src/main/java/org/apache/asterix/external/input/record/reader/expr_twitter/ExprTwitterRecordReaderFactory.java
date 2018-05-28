@@ -64,13 +64,13 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
         this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
         String assignedIntakeLocation = configuration.get("ingestion-location");
-        if (ingestionLocation == null) {
+        if (assignedIntakeLocation == null) {
             ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
             ingestionLocation = appCtx.getClusterStateManager().getClusterLocations().getLocations();
         } else {
             List<String> ncs =
                     RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
-            if (!ncs.contains(ingestionLocation)) {
+            if (!ncs.contains(assignedIntakeLocation)) {
                 throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
             }
             ingestionLocation = new String[] { assignedIntakeLocation };

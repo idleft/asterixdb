@@ -38,12 +38,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
 
@@ -59,9 +61,9 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     // this stores the mapping from jobid to the information of running deployed job (a hyracks job)
     private final Map<JobId, EntityId> jobToEntityIdMap;
     private final Map<EntityId, DeployedJobSpecId> keepDeployedJobMap;
-    private final Map<EntityId, Integer> entityToLivePartitionCount;
+    private final Map<EntityId, AtomicInteger> entityToLivePartitionCount;
     private final Map<EntityId, Set<String>> entityToNodeIds;
-    private final Map<EntityId, Integer> entityIdToInstanceN;
+    private final Map<EntityId, AtomicInteger> entityIdToInstanceN;
     private final Map<EntityId, List<DeployedJobUntrackSubscriber>> entityIdToSubscribedListener;
     private final Map<JobId, EntityId> entityIdToJobIdMap;
 
@@ -90,16 +92,17 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
             Set<String> stgNodes, int instanceNum) {
         LOGGER.log(logLevel, entityId + " keep deploy job with " + liveCollectorPartitionN + " partitions "
                 + instanceNum + " workers.");
+        // Keep track of deployed job id
         keepDeployedJobMap.put(entityId, deployedJobSpecId);
-        entityToLivePartitionCount.put(entityId, liveCollectorPartitionN);
+        // Storage nodes
         entityToNodeIds.put(entityId, stgNodes);
-        entityIdToInstanceN.put(entityId, instanceNum);
+        // Keep track of intake partition holder and deployed job instances
+        entityToLivePartitionCount.put(entityId, new AtomicInteger(liveCollectorPartitionN));
+        entityIdToInstanceN.put(entityId, new AtomicInteger(instanceNum));
     }
 
     public void subscribe(EntityId entityId, DeployedJobUntrackSubscriber untrackSubscriber) {
-        if (entityIdToSubscribedListener.get(entityId) == null) {
-            entityIdToSubscribedListener.put(entityId, new ArrayList<>());
-        }
+        entityIdToSubscribedListener.putIfAbsent(entityId, new ArrayList<>());
         entityIdToSubscribedListener.get(entityId).add(untrackSubscriber);
     }
 
@@ -116,15 +119,13 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         }
     }
 
-    public void dropDeployedJob(EntityId entityId) throws Exception {
+    public void untrackIntakePartitionHolder(EntityId entityId) throws Exception {
         synchronized (entityToLivePartitionCount) {
-            int newCount = entityToLivePartitionCount.get(entityId) - 1;
+            int newCount = entityToLivePartitionCount.get(entityId).decrementAndGet();
             LOGGER.log(Level.INFO, "Drop " + entityId + " to " + newCount + " partitions.");
             if (newCount == 0) {
                 keepDeployedJobMap.remove(entityId);
                 //            shutdownPartitionHolderByPartitionHolderId(new PartitionHolderId(entityId, FEED_INTAKE_PARTITION_HOLDER, -1));
-            } else {
-                entityToLivePartitionCount.put(entityId, newCount);
             }
         }
     }
@@ -140,19 +141,23 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     }
 
     private void notifySubscriber(EntityId entityId) {
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Notify subscribers of " + entityId + " for untrack. "
+                    + entityIdToSubscribedListener.getOrDefault(entityId, Collections.EMPTY_LIST).size());
+        }
         for (DeployedJobUntrackSubscriber sub : entityIdToSubscribedListener.get(entityId)) {
             sub.notifyUntrack();
         }
+        entityIdToSubscribedListener.remove(entityId);
     }
 
     private void untrackDeployedJobForEntity(EntityId entityId) throws Exception {
         synchronized (entityIdToInstanceN) {
-            Integer currentInstanceN = entityIdToInstanceN.get(entityId);
+            AtomicInteger currentInstanceN = entityIdToInstanceN.get(entityId);
             if (currentInstanceN == null) {
                 throw new HyracksDataException(entityId + " is not being tracked.");
             } else {
-                currentInstanceN = currentInstanceN - 1;
-                if (currentInstanceN == 0) {
+                if (currentInstanceN.decrementAndGet() == 0) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(entityId + " has no more live instances. Poisoning stg.");
                     }
@@ -161,8 +166,6 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
                     if (!entityIdToJobIdMap.containsValue(entityId)) {
                         notifySubscriber(entityId);
                     }
-                } else {
-                    entityIdToInstanceN.put(entityId, currentInstanceN);
                 }
             }
         }
@@ -174,44 +177,50 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         // currently, we ignore all the exceptions and failures
         // this method is synchronized at outside
         try {
-            if (jobToEntityIdMap.containsKey(jobId)) {
+            // make sure newStartT is not deadlock with finish when put new id
+            synchronized (jobToEntityIdMap) {
                 EntityId entityId = jobToEntityIdMap.get(jobId);
-                jobToEntityIdMap.remove(jobId);
-                if (keepDeployedJobMap.containsKey(entityId)) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(jobId + " is interesting. Keep " + entityId + " alive.");
-                    }
-                    Thread startT = new Thread(() -> {
-                        try {
-                            DeployedJobSpecId deployedJobId = keepDeployedJobMap.get(entityId);
-                            // this cannot be moved as the ccAppCtx is only available at runtime.
-                            ICcApplicationContext ccAppCtx =
-                                    ((ICcApplicationContext) ccServiceCtx.getApplicationContext());
-                            Map<byte[], byte[]> jobParameter = new HashMap<>();
-                            TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
-                            jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
-                                    String.valueOf(newDeployedJobTxnId.getId()).getBytes());
-                            JobId newJobID = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
-                            if (LOGGER.isDebugEnabled()) {
-                                LOGGER.debug("Started a new job " + newJobID + " for deployed job " + deployedJobId);
-                            }
-                            jobToEntityIdMap.put(newJobID, entityId);
-                        } catch (Exception e) {
-                            e.printStackTrace();
+                if (entityId != null) {
+                    jobToEntityIdMap.remove(jobId);
+                    DeployedJobSpecId deployedJobId = keepDeployedJobMap.get(entityId);
+                    if (deployedJobId != null) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(jobId + " is interesting. Keep " + entityId + " alive.");
                         }
-                    });
-                    startT.start();
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(jobId + " triggered new job.");
+                        Thread startT = new Thread(() -> {
+                            try {
+                                // this cannot be moved as the ccAppCtx is only available at runtime.
+                                ICcApplicationContext ccAppCtx =
+                                        ((ICcApplicationContext) ccServiceCtx.getApplicationContext());
+                                Map<byte[], byte[]> jobParameter = new HashMap<>();
+                                TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
+                                jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
+                                        String.valueOf(newDeployedJobTxnId.getId()).getBytes());
+                                synchronized (jobToEntityIdMap) {
+                                    JobId newJobID = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
+                                    if (LOGGER.isDebugEnabled()) {
+                                        LOGGER.debug(
+                                                "Started a new job " + newJobID + " for deployed job " + deployedJobId);
+                                    }
+                                    jobToEntityIdMap.put(newJobID, entityId);
+                                }
+                            } catch (Exception e) {
+                                e.printStackTrace();
+                            }
+                        });
+                        startT.start();
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(jobId + " triggered new job.");
+                        }
+                    } else {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(jobId + " is no longer interesting. Decrease live count for " + entityId);
+                        }
+                        untrackDeployedJobForEntity(entityId);
                     }
-                } else {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(jobId + " is no longer interesting. Decrease live count for " + entityId);
-                    }
-                    untrackDeployedJobForEntity(entityId);
+                } else if (entityIdToJobIdMap.containsKey(jobId)) {
+                    notifySubscriber(entityIdToJobIdMap.get(jobId));
                 }
-            } else if (entityIdToJobIdMap.containsKey(jobId)) {
-                notifySubscriber(entityIdToJobIdMap.get(jobId));
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -26,6 +26,7 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.common.memory.ConcurrentFramePool;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.hyracks.api.application.INCServiceContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.logging.log4j.LogManager;
@@ -69,8 +70,15 @@ public class PartitionHolderManager {
         return Collections.unmodifiableSet(runtimes.keySet());
     }
 
-    public IPartitionHolderRuntime getPartitionHolderRuntime(PartitionHolderId runtimeId) {
-        return runtimes.get(runtimeId);
+    public IPartitionHolderRuntime getPartitionHolderRuntime(PartitionHolderId runtimeId) throws HyracksDataException {
+        IPartitionHolderRuntime partitionHolderRuntime = runtimes.get(runtimeId);
+        if (partitionHolderRuntime == null) {
+            if (LOGGER.isInfoEnabled()) {
+                LOGGER.info("Partition Holder for " + runtimeId + " returned NULL. Available choices are "
+                        + StringUtils.join(runtimes.keySet()));
+            }
+        }
+        return partitionHolderRuntime;
     }
 
     public void shutdownByEntity(EntityId entityId) throws HyracksDataException {

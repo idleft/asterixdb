@@ -42,6 +42,6 @@ create feed TweetFeed with {
   "batch-size" : 1,
   "intake-pool-size" : 1,
   "storage-pool-size" : 1,
-  "expr_amount" : 10000,
+  "expr_amount" : 30000,
   "decouple" : true
 };

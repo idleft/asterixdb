@@ -82,7 +82,9 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
                             + buffer.capacity() + " to " + stgPhId);
                 }
                 long ntid = tracer.durationB("Feed Sink next frame", registry, String.valueOf(buffer.capacity()));
-                stgPartitionHolder.deposit(buffer);
+                if (stgPartitionHolder != null) {
+                    stgPartitionHolder.deposit(buffer);
+                }
                 tracer.durationE(ntid, registry, null);
             }
 

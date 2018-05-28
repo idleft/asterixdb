@@ -19,7 +19,7 @@
 package org.apache.asterix.external.operators;
 
 import org.apache.asterix.active.EntityId;
-import org.apache.asterix.active.message.DropDeployedJobMessage;
+import org.apache.asterix.active.message.UntrackIntakePartitionHolderMessage;
 import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.active.partition.PullablePartitionHolderPushable;
 import org.apache.asterix.external.util.FeedConstants;
@@ -35,7 +35,6 @@ import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescri
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
 import org.apache.hyracks.util.trace.ITracer;
@@ -124,7 +123,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(this + " poisoned to untrack deployed job.");
                 }
-                DropDeployedJobMessage msg = new DropDeployedJobMessage(enid);
+                UntrackIntakePartitionHolderMessage msg = new UntrackIntakePartitionHolderMessage(enid);
                 ncs.sendApplicationMessageToCC(ctx.getJobletContext().getJobId().getCcId(),
                         JavaSerializationUtils.serialize(msg), null);
             }

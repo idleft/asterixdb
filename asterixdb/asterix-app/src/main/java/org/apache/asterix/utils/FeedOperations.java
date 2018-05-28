@@ -96,6 +96,7 @@ import org.apache.asterix.runtime.job.listener.JobEventListenerFactory;
 import org.apache.asterix.runtime.utils.RuntimeUtils;
 import org.apache.asterix.translator.IStatementExecutor;
 import org.apache.asterix.translator.SessionOutput;
+import org.apache.commons.collections4.ComparatorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.hyracks.algebricks.common.constraints.AlgebricksAbsolutePartitionConstraint;
@@ -340,6 +341,7 @@ public class FeedOperations {
         List<IOperatorDescriptor> stgOps = new ArrayList<>();
         IOperatorDescriptor stgRoot = null;
         IOperatorDescriptor pstgOp = null;
+        IOperatorDescriptor opBeforePstg = null;
 
         // inject Pipeline sink and StoragePH into jobs
         // create the sphd in place to maek the output record desc right
@@ -387,13 +389,14 @@ public class FeedOperations {
             if (rightOpDesc instanceof LSMTreeInsertDeleteOperatorDescriptor
                     && ((LSMTreeInsertDeleteOperatorDescriptor) rightOpDesc).isPrimary()) {
                 // plug in pipeline sink for pipeline job
-                pipeLineJob.createConnectorDescriptor(connDesc);
-                pipeLineJob.connect(connDesc, leftOpDesc, leftOp.getValue(), fpsd, 0);
+                opBeforePstg = leftOpDesc;
+                pipeLineJob.connect(new OneToOneConnectorDescriptor(pipeLineJob), leftOpDesc, leftOp.getValue(), fpsd,
+                        0);
                 // plugin partition holder for storage job
+                storageJob.createConnectorDescriptor(connDesc);
                 sphd = new StoragePartitionHolderDescriptor(storageJob, storagePoolSize, feed.getFeedId(),
                         FeedConstants.FEED_STORAGE_PARTITION_HOLDER, leftOpDesc.getOutputRecordDescriptors()[0]);
-                storageJob.connect(new OneToOneConnectorDescriptor(storageJob), sphd, 0, rightOpDesc,
-                        rightOp.getValue());
+                storageJob.connect(connDesc, sphd, 0, rightOpDesc, rightOp.getValue());
             } else {
                 // for other connections that's not on the boundary
                 if (stgOps.contains(leftOp.getKey())) {
@@ -440,7 +443,7 @@ public class FeedOperations {
             String[] locations = new String[entry.getValue().size()];
             IOperatorDescriptor opDesc;
             // This sort is needed to make sure the partitions are consistent
-            Collections.sort(entry.getValue(), Comparator.comparingInt((LocationConstraint o) -> o.partition));
+            entry.getValue().sort(Comparator.comparing(o -> o.partition));
             for (int j = 0; j < locations.length; ++j) {
                 locations[j] = entry.getValue().get(j).location;
             }
@@ -451,7 +454,7 @@ public class FeedOperations {
                 opDesc = storageJob.getOperatorMap().get(storageOpMapping.get(entry.getKey()));
                 PartitionConstraintHelper.addAbsoluteLocationConstraint(storageJob, opDesc, locations);
             }
-            if (opDesc instanceof LSMTreeInsertDeleteOperatorDescriptor) {
+            if (opDesc == opBeforePstg) {
                 PartitionConstraintHelper.addAbsoluteLocationConstraint(pipeLineJob, fpsd, locations);
                 PartitionConstraintHelper.addAbsoluteLocationConstraint(storageJob, sphd, locations);
             }
