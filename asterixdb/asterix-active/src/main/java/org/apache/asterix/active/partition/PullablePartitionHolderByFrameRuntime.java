@@ -20,18 +20,17 @@ package org.apache.asterix.active.partition;
 
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.message.ActiveEntityMessage;
+import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobId;
 
 import java.nio.ByteBuffer;
 
-public interface IPullablePartitionHolderRuntime extends IPartitionHolderRuntime {
+public abstract class PullablePartitionHolderByFrameRuntime extends PullablePartitionHolderPushable {
 
-    ByteBuffer getHoldFrame() throws InterruptedException;
-
-    @Override
-    default void shutdown() {
-        // the pullable partition holder shutdowns when closed is called.
-        // so here we do nothing.
+    public PullablePartitionHolderByFrameRuntime(IHyracksTaskContext ctx, PartitionHolderId phid) {
+        super(ctx, phid);
     }
+
+    public abstract ByteBuffer getHoldFrame() throws InterruptedException;
 }

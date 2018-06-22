@@ -78,7 +78,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
             IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
             throws HyracksDataException {
         return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory,
-                batchSize);
+                batchSize, nPartitions);
     }
 
     public FeedConnectionId getFeedConnectionId() {

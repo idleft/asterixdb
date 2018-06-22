@@ -27,7 +27,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public abstract class PullablePartitionHolderPushable extends AbstractUnaryInputSinkOperatorNodePushable
-        implements IPullablePartitionHolderRuntime {
+        implements IPartitionHolderRuntime {
 
     private static final Logger LOGGER = LogManager.getLogger();
     protected final IHyracksTaskContext ctx;
@@ -70,5 +70,11 @@ public abstract class PullablePartitionHolderPushable extends AbstractUnaryInput
     @Override
     public JobId getJobId() {
         return ctx.getJobletContext().getJobId();
+    }
+
+    @Override
+    public void shutdown() {
+        // the pullable partition holder shutdowns when closed is called.
+        // so here we do nothing.
     }
 }

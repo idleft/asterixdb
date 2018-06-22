@@ -19,4 +19,4 @@
 
 use test;
 
-select * from Tweets1;
+select count(*) from Tweets1;

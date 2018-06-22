@@ -498,8 +498,8 @@ public class JObjectAccessors {
         public JRecordAccessor(ARecordType recordType, IObjectPool<IJObject, IAType> objectPool) {
             this.typeInfo = new TypeInfo(objectPool, null, null);
             this.jObjects = new IJObject[recordType.getFieldNames().length];
-            this.jRecord = new JRecord(recordType, jObjects);
             this.openFields = new LinkedHashMap<>();
+            this.jRecord = new JRecord(recordType, jObjects, openFields);
         }
 
         @Override

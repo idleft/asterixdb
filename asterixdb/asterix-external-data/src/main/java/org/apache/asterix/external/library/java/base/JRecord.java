@@ -71,6 +71,10 @@ public final class JRecord implements IJObject {
         openFields.put(fieldName, fieldValue);
     }
 
+    public void setOpenFields(Map<String, IJObject> openFields) {
+        this.openFields = openFields;
+    }
+
     public IJObject getValueByName(String fieldName) throws HyracksDataException {
         // check closed part
         int fieldPos = getFieldPosByName(fieldName);

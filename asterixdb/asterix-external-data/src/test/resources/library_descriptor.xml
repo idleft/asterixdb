@@ -63,12 +63,22 @@
       </definition>
     </libraryFunction>
     <libraryFunction>
-      <name>heavyFunction</name>
+      <name>annotateCountry</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>
       <return_type>TweetType</return_type>
-      <definition>org.apache.asterix.external.library.HeavyFunctionFactory
-      </definition>
+      <definition>org.apache.asterix.external.library.CountryAnnotationFactory</definition>
+      <parameters>/Users/xikuiw/IdeaProjects/TestProject/countryList</parameters>
+      <parameters>20000</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>clusterAnnotateCountry</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.CountryAnnotationFactory</definition>
+      <parameters>/home/xikuiw/countryList</parameters>
+      <parameters>100</parameters>
     </libraryFunction>
     <libraryFunction>
       <name>mysum</name>

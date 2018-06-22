@@ -43,6 +43,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
     private static final List<String> recordReaderNames = Collections.singletonList("expr_twitter");
 
     private long requriedAmount;
+    private int coff;
     private String[] ingestionLocation;
 
     @Override
@@ -63,6 +64,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
         this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
+        this.coff = Integer.valueOf(configuration.getOrDefault("coff", "0"));
         String assignedIntakeLocation = configuration.get("ingestion-location");
         if (assignedIntakeLocation == null) {
             ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
@@ -85,7 +87,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition) {
-        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(requriedAmount);
+        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(requriedAmount, coff);
         return exprTwttierRecordReader;
     }
 

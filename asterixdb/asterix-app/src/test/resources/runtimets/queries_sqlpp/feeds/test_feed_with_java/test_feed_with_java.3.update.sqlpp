@@ -1,4 +1,4 @@
-/*  1
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -16,26 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.base.JRecord;
+use feeds;
+set `wait-for-completion-feed` "true";
 
-public class HeavyFunction implements IExternalScalarFunction {
+connect feed TweetFeed to dataset Tweets1 apply function `testlib#annotateCountry`;
 
-    @Override
-    public void initialize(IFunctionHelper functionHelper) throws Exception {
-    }
-
-    @Override
-    public void deinitialize() {
-    }
-
-    @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception {
-        JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
-        Thread.sleep(1000);
-        functionHelper.setResult(inputRecord);
-    }
-}
+start feed TweetFeed;

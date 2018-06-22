@@ -21,11 +21,11 @@ package org.apache.asterix.external.library;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionFactory;
 
-public class HeavyFunctionFactory implements IFunctionFactory {
+public class CountryAnnotationFactory implements IFunctionFactory {
 
     @Override
     public IExternalScalarFunction getExternalFunction() {
-        return new HeavyFunction();
+        return new CountryAnnotation();
     }
 
 }

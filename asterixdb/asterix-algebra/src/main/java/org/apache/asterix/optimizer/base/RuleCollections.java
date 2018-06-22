@@ -357,7 +357,7 @@ public final class RuleCollections {
         physicalRewritesTopLevel.add(new SetAlgebricksPhysicalOperatorsRule());
         physicalRewritesTopLevel.add(new IntroduceRapidFrameFlushProjectAssignRule());
         physicalRewritesTopLevel.add(new SetExecutionModeRule());
-        physicalRewritesTopLevel.add(new IntroduceRandomPartitioningFeedComputationRule());
+        //        physicalRewritesTopLevel.add(new IntroduceRandomPartitioningFeedComputationRule());
         return physicalRewritesTopLevel;
     }
 

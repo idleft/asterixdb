@@ -47,14 +47,7 @@ public class DeployedJobBufferWriter extends AbstractUnaryInputUnaryOutputOperat
     private final NodeControllerService ncs;
     private final IHyracksTaskContext ctx;
     private final DeployedJobSpecId deployedJobSpecId;
-    private ByteBuffer poisonFrame = ByteBuffer.allocate(0);
-    long frameIdx = 0;
-    private ArrayBlockingQueue<Long> frameIdQueue;
-    private Map<Long, ByteBuffer> frameMap;
-    private int batchSize;
     private int workerNum;
-    private AtomicInteger ackCounter;
-    private AtomicBoolean preClose;
     private EntityId entityId;
     private int liveCollPartitionN;
     private Set<String> stgNodes;

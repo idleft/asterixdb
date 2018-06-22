@@ -46,11 +46,13 @@ public class DataGenerator {
     public class TweetMessageIterator implements Iterator<TweetMessage> {
 
         private final int duration;
+        private final int coff;
         private long startTime = 0;
         private int tweetId;
 
-        public TweetMessageIterator(int duration) {
+        public TweetMessageIterator(int duration, int coff) {
             this.duration = duration;
+            this.coff = coff;
             this.startTime = System.currentTimeMillis();
         }
 
@@ -72,7 +74,7 @@ public class DataGenerator {
             Point location = randLocationGen.getRandomPoint();
             DateTime sendTime = randDateGen.getNextRandomDatetime();
             twMessage.reset(tweetId, twUser, location.getLatitude(), location.getLongitude(), sendTime.toString(),
-                    message, country_list[country_idx] + String.valueOf(random.nextInt(10)));
+                    message, country_list[country_idx] + String.valueOf(random.nextInt(coff)));
             msg = twMessage;
             return msg;
         }

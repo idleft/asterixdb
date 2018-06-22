@@ -21,7 +21,8 @@ package org.apache.asterix.external.operators;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.message.UntrackIntakePartitionHolderMessage;
 import org.apache.asterix.active.partition.PartitionHolderId;
-import org.apache.asterix.active.partition.PullablePartitionHolderPushable;
+import org.apache.asterix.active.partition.PullablePartitionHolderByRecordRuntime;
+import org.apache.asterix.external.util.ExternalDataConstants;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.dataflow.IOperatorNodePushable;
@@ -34,13 +35,17 @@ import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.util.Strings;
 
 public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivityOperatorDescriptor {
 
@@ -51,6 +56,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
     private final EntityId enid;
     private final int poolSize;
     private final String runtimeName;
+    private AtomicBoolean closed;
 
     public DeployedJobPartitionHolderDescriptor(IOperatorDescriptorRegistry spec, int poolSize, EntityId entityId,
             String runtimeName, int workerN) {
@@ -58,6 +64,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
         this.poolSize = poolSize;
         this.enid = entityId;
         this.runtimeName = runtimeName;
+        closed = new AtomicBoolean(false);
     }
 
     @Override
@@ -65,25 +72,23 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
             IRecordDescriptorProvider recordDescProvider, int partition, int nPartitions) throws HyracksDataException {
         PartitionHolderId phid = new PartitionHolderId(enid, runtimeName, partition);
 
-        return new PullablePartitionHolderPushable(ctx, phid) {
+        return new PullablePartitionHolderByRecordRuntime(ctx, phid) {
 
             private ArrayBlockingQueue<ByteBuffer> bufferPool;
-            private ReentrantLock arrayLock;
-            private int recordCtr = 0;
             private NodeControllerService ncs;
-            private FrameTupleAccessor fta;
+            private FrameTupleAccessor curAcc;
             private final ITracer tracer = ctx.getJobletContext().getServiceContext().getTracer();
             private final long registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
+            private AtomicInteger rloc;
             private long ltid;
 
             @Override
-            public void open() throws HyracksDataException {
+            public void open() {
                 this.bufferPool = new ArrayBlockingQueue<>(poolSize);
-                this.arrayLock = new ReentrantLock();
                 this.ncs = (NodeControllerService) ctx.getJobletContext().getServiceContext().getControllerService();
-                fta = new FrameTupleAccessor(null);
+                curAcc = new FrameTupleAccessor(null);
+                rloc = new AtomicInteger(0);
                 ltid = tracer.durationB("Deployed Job Partition Holder", registry, null);
-
             }
 
             @Override
@@ -96,8 +101,6 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                     cloneFrame.flip();
                     tracer.instant("Deployed Job copied frame", registry, ITracer.Scope.t, null);
                     bufferPool.put(cloneFrame);
-                    fta.reset(cloneFrame);
-                    recordCtr += fta.getTupleCount();
                     tracer.durationE(ntid, registry, null);
                     //                                        if (LOGGER.isDebugEnabled()) {
                     //                                            LOGGER.log(Level.DEBUG, phid + " gets a frame " + fta.getTupleCount());
@@ -134,26 +137,17 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                     LOGGER.log(Level.DEBUG, phid + " is closing.");
                 }
                 try {
-                    //                    if (LOGGER.isDebugEnabled()) {
-                    //                        LOGGER.log(Level.DEBUG, phid + " " + recordCtr + " processed. Wait for empty.");
-                    //                    }
                     // Send poison
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.log(Level.DEBUG, phid + " sends poisons ");
                     }
                     bufferPool.put(POISON_PILL);
-                    synchronized (bufferPool) {
-                        while (bufferPool.size() > 1) {
-                            bufferPool.wait();
+                    synchronized (closed) {
+                        while (!closed.get()) {
+                            closed.wait();
                         }
                     }
                     untrackDeployedJob();
-                    // Makes sure it's ok to send poison now so that no worker takes poison and be restarted.
-                    //                    synchronized (readyToStop) {
-                    //                        while (readyToStop.get() != true) {
-                    //                            readyToStop.wait();
-                    //                        }
-                    //                    }
                     // shutdown all local stg partition holders
                 } catch (Exception e) {
                     LOGGER.debug(phid + " is closing interrupted " + bufferPool.size());
@@ -165,39 +159,30 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 tracer.durationE(ltid, registry, null);
             }
 
-            //            @Override
-            //            public void shutdown() {
-            //                synchronized (readyToStop) {
-            //                    if (LOGGER.isDebugEnabled()) {
-            //                        LOGGER.log(Level.DEBUG, phid + " ready to stop ");
-            //                    }
-            //                    readyToStop = true;
-            //                    readyToStop.notifyAll();
-            //                }
-            //            }
-
             @Override
-            public ByteBuffer getHoldFrame() throws InterruptedException {
-                ByteBuffer frame;
-                synchronized (bufferPool) {
-                    frame = bufferPool.take();
-                    bufferPool.notify();
-                }
-                // if get a poison, put it back so others can see it too
-                if (frame.capacity() == 0) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.log(Level.DEBUG, phid + " poisoned, put the frame back.");
+            public synchronized String nextRecord() throws InterruptedException {
+                if (curAcc.getBuffer() == null
+                        || (curAcc.getBuffer().capacity() > 0 && rloc.get() >= curAcc.getTupleCount())) {
+                    ByteBuffer frame = bufferPool.take();
+                    curAcc.reset(frame);
+                    rloc.set(0);
+                    if (frame.capacity() == 0) {
+                        synchronized (closed) {
+                            closed.set(true);
+                            closed.notify();
+                        }
                     }
-                    bufferPool.put(frame);
                 }
-                //                    bufferPool.notifyAll();
-                //                }
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.log(Level.DEBUG, phid + " delivered one frame.");
+                if (closed.get()) {
+                    return Strings.EMPTY;
                 }
-                return frame;
+                int returnRecordIdx = rloc.getAndIncrement();
+                String record = new String(
+                        Arrays.copyOfRange(curAcc.getBuffer().array(), curAcc.getTupleStartOffset(returnRecordIdx),
+                                curAcc.getTupleStartOffset(returnRecordIdx) + curAcc.getTupleLength(returnRecordIdx)),
+                        StandardCharsets.UTF_8).trim() + ExternalDataConstants.LF;
+                return record;
             }
-
         };
     }
 }

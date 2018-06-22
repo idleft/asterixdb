@@ -47,13 +47,13 @@ public class ExprTwitterRecordReader implements IRecordReader<char[]> {
     private DataGenerator.TweetMessageIterator tweetIterator;
     private char[] inputBuffer;
 
-    public ExprTwitterRecordReader(long targetAmount) {
+    public ExprTwitterRecordReader(long targetAmount, int coff) {
         this.record = new CharArrayRecord();
         this.targetAmount = targetAmount;
         this.recordCounter = 0;
         inputBuffer = new char[ExternalDataConstants.DEFAULT_BUFFER_SIZE];
         dataGenerator = new DataGenerator();
-        tweetIterator = dataGenerator.new TweetMessageIterator(0);
+        tweetIterator = dataGenerator.new TweetMessageIterator(0, coff);
     }
 
     @Override

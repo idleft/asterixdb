@@ -59,7 +59,7 @@ public class TweetGenerator {
         String value = configuration.get(KEY_DURATION);
         this.duration = value != null ? Integer.parseInt(value) : DEFAULT_DURATION;
         dataGenerator = new DataGenerator();
-        tweetIterator = dataGenerator.new TweetMessageIterator(duration);
+        tweetIterator = dataGenerator.new TweetMessageIterator(duration, 10);
         this.fields = configuration.get(KEY_FIELDS) != null ? configuration.get(KEY_FIELDS).split(",") : null;
         this.subscribers = new ArrayList<OutputStream>();
     }
