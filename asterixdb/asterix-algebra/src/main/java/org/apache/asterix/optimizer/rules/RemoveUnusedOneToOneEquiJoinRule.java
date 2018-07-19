@@ -218,6 +218,9 @@ public class RemoveUnusedOneToOneEquiJoinRule implements IAlgebraicRewriteRule {
             return;
         }
         DataSourceScanOperator dataScan = (DataSourceScanOperator) op;
+        if (!(dataScan.getDataSource() instanceof DatasetDataSource)) {
+            return;
+        }
         fillPKVars(dataScan, pkVars);
         // Check if join uses all PK vars.
         if (joinUsedVars.containsAll(pkVars)) {
@@ -226,7 +229,6 @@ public class RemoveUnusedOneToOneEquiJoinRule implements IAlgebraicRewriteRule {
     }
 
     private void fillPKVars(DataSourceScanOperator dataScan, List<LogicalVariable> pkVars) {
-        pkVars.clear();
         DatasetDataSource datasetDataSource = (DatasetDataSource) dataScan.getDataSource();
         pkVars.clear();
         if (datasetDataSource.getDataset().getDatasetDetails() instanceof InternalDatasetDetails) {

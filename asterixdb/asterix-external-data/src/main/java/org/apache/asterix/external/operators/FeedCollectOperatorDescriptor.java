@@ -35,6 +35,8 @@ import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.JobSpecification;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 
+import static org.apache.asterix.active.message.StartFeedConnWorkersMsg.INVOCATION_COUNT_PARAMETER_NAME;
+
 /**
  * FeedCollectOperatorDescriptor is responsible for ingesting data from an external source. This
  * operator uses a user specified for a built-in adaptor for retrieving data from the external
@@ -77,8 +79,10 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
     public IOperatorNodePushable createPushRuntime(IHyracksTaskContext ctx,
             IRecordDescriptorProvider recordDescProvider, final int partition, int nPartitions)
             throws HyracksDataException {
+        String invocationCounter = new String(ctx.getJobParameter(INVOCATION_COUNT_PARAMETER_NAME.getBytes(), 0,
+                INVOCATION_COUNT_PARAMETER_NAME.length()));
         return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory,
-                batchSize, nPartitions);
+                batchSize, nPartitions, Integer.valueOf(invocationCounter));
     }
 
     public FeedConnectionId getFeedConnectionId() {

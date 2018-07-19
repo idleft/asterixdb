@@ -34,13 +34,17 @@ public class DataGenerator {
     private RandomNameGenerator randNameGen;
     private RandomMessageGenerator randMessageGen;
     private RandomLocationGenerator randLocationGen;
-    private Random random = new Random(0);
+    private DataGeneratorInfo info;
     private TwitterUser twUser = new TwitterUser();
     private TweetMessage twMessage = new TweetMessage();
-    private static final String DEFAULT_COUNTRY = "US";
+    private Random random = new Random(0);
 
-    public DataGenerator() {
-        initialize(new DefaultInitializationInfo());
+    public DataGenerator(DataGeneratorInfo info) {
+        this.info = info;
+        this.randDateGen = new RandomDateGenerator(info.startDate, info.endDate);
+        this.randNameGen = new RandomNameGenerator(info.firstNames, info.lastNames);
+        this.randLocationGen = new RandomLocationGenerator(info.slat, info.elat, info.slong, info.elong);
+        this.randMessageGen = new RandomMessageGenerator(info.vendors, info.jargon);
     }
 
     public class TweetMessageIterator implements Iterator<TweetMessage> {
@@ -86,27 +90,6 @@ public class DataGenerator {
 
     }
 
-    public class DefaultInitializationInfo {
-        private DefaultInitializationInfo() {
-            // do nothing
-        }
-
-        public final Date startDate = new Date(1, 1, 2005);
-        public final Date endDate = new Date(8, 20, 2012);
-        public final String[] lastNames = DataGenerator.lastNames;
-        public final String[] firstNames = DataGenerator.firstNames;
-        public final String[] vendors = DataGenerator.vendors;
-        public final String[] jargon = DataGenerator.jargon;
-        public final String[] org_list = DataGenerator.org_list;
-    }
-
-    public void initialize(DefaultInitializationInfo info) {
-        randDateGen = new RandomDateGenerator(info.startDate, info.endDate);
-        randNameGen = new RandomNameGenerator(info.firstNames, info.lastNames);
-        randLocationGen = new RandomLocationGenerator(24, 49, 66, 98);
-        randMessageGen = new RandomMessageGenerator(info.vendors, info.jargon);
-    }
-
     public void getTwitterUser(String usernameSuffix) {
         String suggestedName = randNameGen.getRandomName();
         String[] nameComponents = suggestedName.split(" ");
@@ -115,9 +98,9 @@ public class DataGenerator {
         if (usernameSuffix != null) {
             name = name + usernameSuffix;
         }
-        int numFriends = random.nextInt(100); // draw from Zipfian
-        int statusesCount = random.nextInt(500); // draw from Zipfian
-        int followersCount = random.nextInt(200);
+        int numFriends = random.nextInt(info.numFriends);
+        int statusesCount = random.nextInt(info.statusesCount);
+        int followersCount = random.nextInt(info.followersCount);
         twUser.reset(screenName, numFriends, statusesCount, name, followersCount);
     }
 
@@ -138,14 +121,6 @@ public class DataGenerator {
             this.workingDate = new Date();
             this.recentDate = new Date();
             this.dateTime = new DateTime();
-        }
-
-        public Date getStartDate() {
-            return startDate;
-        }
-
-        public Date getEndDate() {
-            return endDate;
         }
 
         public Date getNextRandomDate() {
@@ -527,17 +502,6 @@ public class DataGenerator {
 
         private TweetMessage() {
             // do nothing
-        }
-
-        public TweetMessage(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,
-                Message messageText, String country) {
-            this.id = tweetid;
-            this.user = user;
-            this.latitude = latitude;
-            this.longitude = longitude;
-            this.created_at = created_at;
-            this.messageText = messageText;
-            this.country = country;
         }
 
         public void reset(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,

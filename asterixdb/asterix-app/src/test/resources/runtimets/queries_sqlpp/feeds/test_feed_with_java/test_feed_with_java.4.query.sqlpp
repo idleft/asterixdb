@@ -19,4 +19,4 @@
 
 use feeds;
 
-select count(*) from Tweets1;
+select * from Tweets1;

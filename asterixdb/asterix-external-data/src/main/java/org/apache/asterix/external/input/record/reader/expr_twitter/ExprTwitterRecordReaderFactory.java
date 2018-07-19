@@ -38,13 +38,11 @@ import org.apache.logging.log4j.Logger;
 public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final List<String> recordReaderNames = Collections.singletonList("expr_twitter");
 
-    private long requriedAmount;
-    private int coff;
     private String[] ingestionLocation;
+    private Map<String, String> configs;
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -63,8 +61,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
-        this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
-        this.coff = Integer.valueOf(configuration.getOrDefault("coff", "0"));
+        this.configs = configuration;
         String assignedIntakeLocation = configuration.get("ingestion-location");
         if (assignedIntakeLocation == null) {
             ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
@@ -77,7 +74,6 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
             }
             ingestionLocation = new String[] { assignedIntakeLocation };
         }
-        LOGGER.log(Level.INFO, "Expr twitter generator requested " + requriedAmount);
     }
 
     @Override
@@ -87,7 +83,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition) {
-        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(requriedAmount, coff);
+        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(configs);
         return exprTwttierRecordReader;
     }
 

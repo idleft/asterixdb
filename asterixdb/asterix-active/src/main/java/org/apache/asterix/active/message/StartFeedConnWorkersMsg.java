@@ -40,6 +40,7 @@ public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
 
     public static final String TRANSACTION_ID_PARAMETER_NAME = "TxnIdParameter";
     public static final String DATA_FRAME_PARAMETER_NAME = "DataFrameParameter";
+    public static final String INVOCATION_COUNT_PARAMETER_NAME = "InvocationCount";
     public static final String DATA_FRAME_FRAME_ID_NAME = "DataFrameID";
 
     private static final long serialVersionUID = 1L;
@@ -71,6 +72,7 @@ public class StartFeedConnWorkersMsg implements ICcAddressedMessage {
                 TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
                 jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
                         String.valueOf(newDeployedJobTxnId.getId()).getBytes());
+                jobParameter.put((INVOCATION_COUNT_PARAMETER_NAME).getBytes(), String.valueOf(0).getBytes());
                 JobId newConnJobId = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
                 lifeCycleListener.registerDeployedJob(newConnJobId, feedId);
                 LOGGER.log(Level.DEBUG, "Start and keep alive " + newConnJobId);

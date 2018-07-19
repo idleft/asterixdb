@@ -38,12 +38,11 @@ import java.util.Map;
 public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final List<String> recordReaderNames = Collections.singletonList("expr_kv");
 
-    private long requriedAmount;
     private String[] ingestionLocation;
+    private Map<String, String> configs;
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -62,7 +61,7 @@ public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
-        this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
+        this.configs = configuration;
         String assignedIntakeLocation = configuration.get("ingestion-location");
         if (assignedIntakeLocation == null) {
             ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
@@ -75,7 +74,6 @@ public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
             }
             ingestionLocation = new String[] { assignedIntakeLocation };
         }
-        LOGGER.log(Level.INFO, "Expr KV generator requested " + requriedAmount);
     }
 
     @Override
@@ -85,7 +83,7 @@ public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     @Override
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition) {
-        IRecordReader<char[]> exprKVRecordReader = new ExprKVRecordReader(requriedAmount);
+        IRecordReader<char[]> exprKVRecordReader = new ExprKVRecordReader(configs);
         return exprKVRecordReader;
     }
 

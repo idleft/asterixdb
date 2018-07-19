@@ -18,4 +18,5 @@
  */
 use test;
 
-load dataset countryDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/countryList_1.txt`),(`format`=`delimited-text`),(`delimiter`=`|`))
+load dataset countryDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/countryThreatLvl.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
+load dataset followersCountDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/followersCount.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));

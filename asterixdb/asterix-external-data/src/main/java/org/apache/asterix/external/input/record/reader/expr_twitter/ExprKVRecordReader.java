@@ -22,23 +22,23 @@ import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.generator.DataGenerator;
+import org.apache.asterix.external.generator.DataGeneratorInfo;
 import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.util.FeedLogManager;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class ExprKVRecordReader implements IRecordReader<char[]> {
 
     private CharArrayRecord record;
     private Long targetAmount;
     private long recordCounter;
-    private DataGenerator dataGenerator;
 
-    public ExprKVRecordReader(long targetAmount) {
+    public ExprKVRecordReader(Map<String, String> configs) {
+        this.targetAmount = Long.valueOf(configs.getOrDefault("expr_amount", "0"));
         this.record = new CharArrayRecord();
-        this.targetAmount = targetAmount;
         this.recordCounter = 0;
-        dataGenerator = new DataGenerator();
     }
 
     @Override

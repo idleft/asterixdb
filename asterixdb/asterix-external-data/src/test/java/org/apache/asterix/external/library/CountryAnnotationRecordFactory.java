@@ -16,10 +16,16 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+package org.apache.asterix.external.library;
 
-use feeds;
-set `wait-for-completion-feed` "true";
+import org.apache.asterix.external.api.IExternalScalarFunction;
+import org.apache.asterix.external.api.IFunctionFactory;
 
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#annotateCountryRecord`;
+public class CountryAnnotationRecordFactory implements IFunctionFactory {
 
-start feed TweetFeed;
+    @Override
+    public IExternalScalarFunction getExternalFunction() {
+        return new CountryAnnotationRecord();
+    }
+
+}

@@ -18,6 +18,12 @@
  */
 package org.apache.asterix.external.library;
 
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.List;
+
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JBuiltinType;
@@ -25,16 +31,8 @@ import org.apache.asterix.external.library.java.JTypeTag;
 import org.apache.asterix.external.library.java.base.JOrderedList;
 import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.external.library.java.base.JString;
-import org.apache.asterix.external.library.java.base.JUnorderedList;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
-
-public class CountryAnnotation implements IExternalScalarFunction {
+public class CountryAnnotationRecord implements IExternalScalarFunction {
 
     private HashMap<String, String> countryList;
     private String dictPath;
@@ -47,11 +45,6 @@ public class CountryAnnotation implements IExternalScalarFunction {
         countryList = new HashMap<>();
         functionParameters = functionHelper.getParameters();
         dictPath = functionParameters.get(0);
-        BufferedReader fr = Files.newBufferedReader(Paths.get(dictPath));
-        fr.lines().forEach(line -> {
-            String[] items = line.split("\\|");
-            countryList.put(items[0], items[1]);
-        });
     }
 
     @Override
@@ -60,9 +53,16 @@ public class CountryAnnotation implements IExternalScalarFunction {
 
     @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
+        // Update dictionary
+        BufferedReader fr = Files.newBufferedReader(Paths.get(dictPath));
+        fr.lines().forEach(line -> {
+            String[] items = line.split("\\|");
+            countryList.put(items[0], items[1]);
+        });
+
+        // Annotate
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString countryCode = (JString) inputRecord.getValueByName("country");
-
         JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
         newField.setValue(countryList.getOrDefault(countryCode.getValue(), "Not Found"));
         list.reset();

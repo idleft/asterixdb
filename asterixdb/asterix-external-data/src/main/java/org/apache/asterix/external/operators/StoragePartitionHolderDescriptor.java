@@ -31,6 +31,7 @@ import org.apache.hyracks.api.dataflow.value.IRecordDescriptorProvider;
 import org.apache.hyracks.api.dataflow.value.RecordDescriptor;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.job.IOperatorDescriptorRegistry;
+import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.std.base.AbstractSingleActivityOperatorDescriptor;
 import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.Level;
@@ -113,8 +114,10 @@ public class StoragePartitionHolderDescriptor extends AbstractSingleActivityOper
                     cloneFrame.flip();
                     bufferPool.put(cloneFrame);
                     if (LOGGER.isDebugEnabled()) {
+                        FrameTupleAccessor fta = new FrameTupleAccessor(null);
+                        fta.reset(cloneFrame);
                         LOGGER.log(Level.DEBUG, phid + " frame received " + String.valueOf(buffer.array()) + " add "
-                                + String.valueOf(cloneFrame.array()));
+                                + fta.getTupleCount());
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();

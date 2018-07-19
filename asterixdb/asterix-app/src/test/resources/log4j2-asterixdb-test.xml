@@ -49,9 +49,9 @@
     <Logger name="org.apache.asterix.external" level="DEBUG">
       <AppenderRef ref="Console"/>
     </Logger>
-    <!--<Logger name="org.apache.asterix.external.operators" level="DEBUG">-->
-      <!--<AppenderRef ref="Console"/>-->
-    <!--</Logger>-->
+    <Logger name="org.apache.hyracks.dataflow.std.join" level="DEBUG">
+      <AppenderRef ref="Console"/>
+    </Logger>
     <!--<Logger name="org.apache.asterix.runtime.job" level="DEBUG">-->
       <!--<AppenderRef ref="Console"/>-->
     <!--</Logger>-->

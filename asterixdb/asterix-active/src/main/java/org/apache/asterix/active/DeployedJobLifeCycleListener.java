@@ -24,7 +24,6 @@ import org.apache.asterix.active.partition.PartitionHolderId;
 import org.apache.asterix.common.dataflow.ICcApplicationContext;
 import org.apache.asterix.common.messaging.api.ICCMessageBroker;
 import org.apache.asterix.common.transactions.TxnId;
-import org.apache.asterix.common.utils.Job;
 import org.apache.hyracks.api.application.ICCServiceContext;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.api.exceptions.HyracksException;
@@ -43,14 +42,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
 
     public static final String TRANSACTION_ID_PARAMETER_NAME = "TxnIdParameter";
-    public static final String FEED_INTAKE_PARTITION_HOLDER = "intake_partition_holder";
+    public static final String INVOCATION_COUNT_PARAMETER_NAME = "InvocationCount";
     public static final String FEED_STORAGE_PARTITION_HOLDER = "storage_partition_holder";
     private static final Logger LOGGER = LogManager.getLogger();
     private final Level logLevel = Level.DEBUG;
@@ -59,33 +57,35 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     // get service context to send message to nc
     ICCServiceContext ccServiceCtx;
     // this stores the mapping from jobid to the information of running deployed job (a hyracks job)
-    private final Map<JobId, EntityId> jobToEntityIdMap;
-    private final Map<EntityId, DeployedJobSpecId> keepDeployedJobMap;
+    private final Map<JobId, EntityId> keepAliveJobIds;
+    private final Map<EntityId, DeployedJobSpecId> entityIdToDeployedJobId;
     private final Map<EntityId, AtomicInteger> entityToLivePartitionCount;
     private final Map<EntityId, Set<String>> entityToNodeIds;
     private final Map<EntityId, AtomicInteger> entityIdToInstanceN;
     private final Map<EntityId, List<DeployedJobUntrackSubscriber>> entityIdToSubscribedListener;
-    private final Map<JobId, EntityId> entityIdToJobIdMap;
+    private final Map<JobId, EntityId> monitoredJobIds;
+    private final Map<DeployedJobSpecId, AtomicInteger> invocationCounterMap;
 
     public DeployedJobLifeCycleListener(ICCServiceContext ccServiceCtx) {
         this.ccServiceCtx = ccServiceCtx;
-        this.jobToEntityIdMap = new ConcurrentHashMap<>();
-        this.keepDeployedJobMap = new ConcurrentHashMap<>();
+        this.keepAliveJobIds = new ConcurrentHashMap<>();
+        this.entityIdToDeployedJobId = new ConcurrentHashMap<>();
         this.entityToLivePartitionCount = new ConcurrentHashMap<>();
         this.entityToNodeIds = new ConcurrentHashMap<>();
         this.entityIdToInstanceN = new ConcurrentHashMap<>();
         this.messageBroker = (ICCMessageBroker) ccServiceCtx.getMessageBroker();
         this.entityIdToSubscribedListener = new HashMap<>();
-        this.entityIdToJobIdMap = new ConcurrentHashMap<>();
+        this.monitoredJobIds = new ConcurrentHashMap<>();
+        this.invocationCounterMap = new ConcurrentHashMap<>();
     }
 
     public void registerDeployedJob(JobId jobId, EntityId entityId) {
         LOGGER.log(logLevel, "Job " + jobId + " registered to " + entityId);
-        jobToEntityIdMap.put(jobId, entityId);
+        keepAliveJobIds.put(jobId, entityId);
     }
 
     public void registerStgJobId(EntityId entityId, JobId jobId) {
-        entityIdToJobIdMap.put(jobId, entityId);
+        monitoredJobIds.put(jobId, entityId);
     }
 
     public void keepDeployedJob(EntityId entityId, DeployedJobSpecId deployedJobSpecId, int liveCollectorPartitionN,
@@ -93,12 +93,13 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         LOGGER.log(logLevel, entityId + " keep deploy job with " + liveCollectorPartitionN + " partitions "
                 + instanceNum + " workers.");
         // Keep track of deployed job id
-        keepDeployedJobMap.put(entityId, deployedJobSpecId);
+        entityIdToDeployedJobId.put(entityId, deployedJobSpecId);
         // Storage nodes
         entityToNodeIds.put(entityId, stgNodes);
         // Keep track of intake partition holder and deployed job instances
         entityToLivePartitionCount.put(entityId, new AtomicInteger(liveCollectorPartitionN));
         entityIdToInstanceN.put(entityId, new AtomicInteger(instanceNum));
+        invocationCounterMap.put(deployedJobSpecId, new AtomicInteger(0));
     }
 
     public void subscribe(EntityId entityId, DeployedJobUntrackSubscriber untrackSubscriber) {
@@ -124,7 +125,7 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
             int newCount = entityToLivePartitionCount.get(entityId).decrementAndGet();
             LOGGER.log(Level.INFO, "Drop " + entityId + " to " + newCount + " partitions.");
             if (newCount == 0) {
-                keepDeployedJobMap.remove(entityId);
+                entityIdToDeployedJobId.remove(entityId);
                 //            shutdownPartitionHolderByPartitionHolderId(new PartitionHolderId(entityId, FEED_INTAKE_PARTITION_HOLDER, -1));
             }
         }
@@ -152,23 +153,23 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
     }
 
     private void untrackDeployedJobForEntity(EntityId entityId) throws Exception {
-        synchronized (entityIdToInstanceN) {
-            AtomicInteger currentInstanceN = entityIdToInstanceN.get(entityId);
-            if (currentInstanceN == null) {
-                throw new HyracksDataException(entityId + " is not being tracked.");
-            } else {
-                if (currentInstanceN.decrementAndGet() == 0) {
-                    if (LOGGER.isDebugEnabled()) {
-                        LOGGER.debug(entityId + " has no more live instances. Poisoning stg.");
-                    }
-                    shutdownPartitionHolderByPartitionHolderId(
-                            new PartitionHolderId(entityId, FEED_STORAGE_PARTITION_HOLDER, -1));
-                    if (!entityIdToJobIdMap.containsValue(entityId)) {
-                        notifySubscriber(entityId);
-                    }
+        //        synchronized (entityIdToInstanceN) {
+        AtomicInteger currentInstanceN = entityIdToInstanceN.get(entityId);
+        if (currentInstanceN == null) {
+            throw new HyracksDataException(entityId + " is not being tracked.");
+        } else {
+            if (currentInstanceN.decrementAndGet() == 0) {
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(entityId + " has no more live instances. Poisoning stg.");
+                }
+                shutdownPartitionHolderByPartitionHolderId(
+                        new PartitionHolderId(entityId, FEED_STORAGE_PARTITION_HOLDER, -1));
+                if (!monitoredJobIds.containsValue(entityId)) {
+                    notifySubscriber(entityId);
                 }
             }
         }
+        //        }
     }
 
     @Override
@@ -178,11 +179,11 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
         // this method is synchronized at outside
         try {
             // make sure newStartT is not deadlock with finish when put new id
-            synchronized (jobToEntityIdMap) {
-                EntityId entityId = jobToEntityIdMap.get(jobId);
+            synchronized (keepAliveJobIds) {
+                EntityId entityId = keepAliveJobIds.get(jobId);
                 if (entityId != null) {
-                    jobToEntityIdMap.remove(jobId);
-                    DeployedJobSpecId deployedJobId = keepDeployedJobMap.get(entityId);
+                    keepAliveJobIds.remove(jobId);
+                    DeployedJobSpecId deployedJobId = entityIdToDeployedJobId.get(entityId);
                     if (deployedJobId != null) {
                         if (LOGGER.isDebugEnabled()) {
                             LOGGER.debug(jobId + " is interesting. Keep " + entityId + " alive.");
@@ -196,13 +197,15 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
                                 TxnId newDeployedJobTxnId = ccAppCtx.getTxnIdFactory().create();
                                 jobParameter.put((TRANSACTION_ID_PARAMETER_NAME).getBytes(),
                                         String.valueOf(newDeployedJobTxnId.getId()).getBytes());
-                                synchronized (jobToEntityIdMap) {
+                                jobParameter.put((INVOCATION_COUNT_PARAMETER_NAME).getBytes(), String
+                                        .valueOf(invocationCounterMap.get(deployedJobId).incrementAndGet()).getBytes());
+                                synchronized (keepAliveJobIds) {
                                     JobId newJobID = ccAppCtx.getHcc().startJob(deployedJobId, jobParameter);
                                     if (LOGGER.isDebugEnabled()) {
                                         LOGGER.debug(
                                                 "Started a new job " + newJobID + " for deployed job " + deployedJobId);
                                     }
-                                    jobToEntityIdMap.put(newJobID, entityId);
+                                    keepAliveJobIds.put(newJobID, entityId);
                                 }
                             } catch (Exception e) {
                                 e.printStackTrace();
@@ -218,8 +221,9 @@ public class DeployedJobLifeCycleListener implements IJobLifecycleListener {
                         }
                         untrackDeployedJobForEntity(entityId);
                     }
-                } else if (entityIdToJobIdMap.containsKey(jobId)) {
-                    notifySubscriber(entityIdToJobIdMap.get(jobId));
+                } else if (monitoredJobIds.containsKey(jobId)) {
+                    // for stg jobs monitoring
+                    notifySubscriber(monitoredJobIds.get(jobId));
                 }
             }
         } catch (Exception e) {

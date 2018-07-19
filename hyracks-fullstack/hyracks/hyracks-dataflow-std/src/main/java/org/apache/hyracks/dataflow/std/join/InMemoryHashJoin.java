@@ -168,12 +168,14 @@ public class InMemoryHashJoin {
                     boolean predEval = evaluatePredicate(tid, tIndex);
                     if (predEval) {
                         matchFound = true;
+                        System.out.println("IN MEM FOUND MATCH add");
                         appendToResult(tid, tIndex, writer);
                     }
                 }
             }
         }
         if (!matchFound && isLeftOuter) {
+            System.out.println("IN MEM NO MATCH add");
             FrameUtils.appendConcatToWriter(writer, appender, accessorProbe, tid,
                     missingTupleBuild.getFieldEndOffsets(), missingTupleBuild.getByteArray(), 0,
                     missingTupleBuild.getSize());
