@@ -16,9 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use test;
 
-use feeds;
-
-select * from Tweets1 c limit 1000;
-
-//select count(*) from Tweets1;
+load dataset countryDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/countryThreatLvl.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
+load dataset followersCountDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/followersCount.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));

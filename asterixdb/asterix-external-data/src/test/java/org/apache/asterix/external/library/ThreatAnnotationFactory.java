@@ -19,29 +19,13 @@
 package org.apache.asterix.external.library;
 
 import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionHelper;
-import org.apache.asterix.external.library.java.base.JInt;
+import org.apache.asterix.external.api.IFunctionFactory;
 
-public class SumFunction implements IExternalScalarFunction {
-
-    private JInt result;
+public class ThreatAnnotationFactory implements IFunctionFactory {
 
     @Override
-    public void deinitialize() {
-        // nothing to do here
-    }
-
-    @Override
-    public void evaluate(IFunctionHelper functionHelper) throws Exception {
-        int arg0 = ((JInt) functionHelper.getArgument(0)).getValue();
-        int arg1 = ((JInt) functionHelper.getArgument(1)).getValue();
-        result.setValue(arg0 + arg1);
-        functionHelper.setResult(result);
-    }
-
-    @Override
-    public void initialize(IFunctionHelper functionHelper) {
-        result = (JInt) functionHelper.getResultObject();
+    public IExternalScalarFunction getExternalFunction() {
+        return new ThreatAnnotation();
     }
 
 }

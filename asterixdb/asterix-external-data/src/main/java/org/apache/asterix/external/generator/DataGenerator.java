@@ -19,6 +19,8 @@
 package org.apache.asterix.external.generator;
 
 import java.nio.CharBuffer;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -34,23 +36,29 @@ public class DataGenerator {
     private RandomNameGenerator randNameGen;
     private RandomMessageGenerator randMessageGen;
     private RandomLocationGenerator randLocationGen;
-    private Random random = new Random(0);
+    private DataGeneratorInfo info;
     private TwitterUser twUser = new TwitterUser();
     private TweetMessage twMessage = new TweetMessage();
-    private static final String DEFAULT_COUNTRY = "US";
+    private Random random = new Random(0);
 
-    public DataGenerator() {
-        initialize(new DefaultInitializationInfo());
+    public DataGenerator(DataGeneratorInfo info) {
+        this.info = info;
+        this.randDateGen = new RandomDateGenerator(info.startDate, info.endDate);
+        this.randNameGen = new RandomNameGenerator(info.firstNames, info.lastNames);
+        this.randLocationGen = new RandomLocationGenerator(info.slat, info.elat, info.slong, info.elong);
+        this.randMessageGen = new RandomMessageGenerator(info.vendors, info.jargon);
     }
 
     public class TweetMessageIterator implements Iterator<TweetMessage> {
 
         private final int duration;
+        private final int coff;
         private long startTime = 0;
         private int tweetId;
 
-        public TweetMessageIterator(int duration) {
+        public TweetMessageIterator(int duration, int coff) {
             this.duration = duration;
+            this.coff = coff;
             this.startTime = System.currentTimeMillis();
         }
 
@@ -72,7 +80,7 @@ public class DataGenerator {
             Point location = randLocationGen.getRandomPoint();
             DateTime sendTime = randDateGen.getNextRandomDatetime();
             twMessage.reset(tweetId, twUser, location.getLatitude(), location.getLongitude(), sendTime.toString(),
-                    message, country_list[country_idx] + String.valueOf(random.nextInt(10)));
+                    message, country_list[country_idx] + String.valueOf(random.nextInt(coff)));
             msg = twMessage;
             return msg;
         }
@@ -84,27 +92,6 @@ public class DataGenerator {
 
     }
 
-    public class DefaultInitializationInfo {
-        private DefaultInitializationInfo() {
-            // do nothing
-        }
-
-        public final Date startDate = new Date(1, 1, 2005);
-        public final Date endDate = new Date(8, 20, 2012);
-        public final String[] lastNames = DataGenerator.lastNames;
-        public final String[] firstNames = DataGenerator.firstNames;
-        public final String[] vendors = DataGenerator.vendors;
-        public final String[] jargon = DataGenerator.jargon;
-        public final String[] org_list = DataGenerator.org_list;
-    }
-
-    public void initialize(DefaultInitializationInfo info) {
-        randDateGen = new RandomDateGenerator(info.startDate, info.endDate);
-        randNameGen = new RandomNameGenerator(info.firstNames, info.lastNames);
-        randLocationGen = new RandomLocationGenerator(24, 49, 66, 98);
-        randMessageGen = new RandomMessageGenerator(info.vendors, info.jargon);
-    }
-
     public void getTwitterUser(String usernameSuffix) {
         String suggestedName = randNameGen.getRandomName();
         String[] nameComponents = suggestedName.split(" ");
@@ -113,102 +100,44 @@ public class DataGenerator {
         if (usernameSuffix != null) {
             name = name + usernameSuffix;
         }
-        int numFriends = random.nextInt(100); // draw from Zipfian
-        int statusesCount = random.nextInt(500); // draw from Zipfian
-        int followersCount = random.nextInt(200);
+        int numFriends = random.nextInt(info.numFriends);
+        int statusesCount = random.nextInt(info.statusesCount);
+        int followersCount = random.nextInt(info.followersCount);
         twUser.reset(screenName, numFriends, statusesCount, name, followersCount);
     }
 
     public static class RandomDateGenerator {
 
-        private final Date startDate;
-        private final Date endDate;
-        private final Random random = new Random();
-        private final int yearDifference;
-        private Date workingDate;
-        private Date recentDate;
+        private final LocalDateTime sdate, edate;
+        private final Random random = new Random(0);
         private DateTime dateTime;
 
-        public RandomDateGenerator(Date startDate, Date endDate) {
-            this.startDate = startDate;
-            this.endDate = endDate;
-            this.yearDifference = endDate.getYear() - startDate.getYear() + 1;
-            this.workingDate = new Date();
-            this.recentDate = new Date();
+        public RandomDateGenerator(LocalDateTime sdate, LocalDateTime edate) {
+            this.sdate = sdate;
+            this.edate = edate;
             this.dateTime = new DateTime();
         }
 
-        public Date getStartDate() {
-            return startDate;
-        }
-
-        public Date getEndDate() {
-            return endDate;
-        }
-
-        public Date getNextRandomDate() {
-            int year = random.nextInt(yearDifference) + startDate.getYear();
-            int month;
-            int day;
-            if (year == endDate.getYear()) {
-                month = random.nextInt(endDate.getMonth()) + 1;
-                if (month == endDate.getMonth()) {
-                    day = random.nextInt(endDate.getDay()) + 1;
-                } else {
-                    day = random.nextInt(28) + 1;
-                }
-            } else {
-                month = random.nextInt(12) + 1;
-                day = random.nextInt(28) + 1;
-            }
-            workingDate.reset(month, day, year);
-            return workingDate;
-        }
-
         public DateTime getNextRandomDatetime() {
-            Date randomDate = getNextRandomDate();
-            dateTime.reset(randomDate);
+            long range = (edate.toEpochSecond(ZoneOffset.UTC) - sdate.toEpochSecond(ZoneOffset.UTC));
+            long newDate = random.nextInt((int) range) + sdate.toEpochSecond(ZoneOffset.UTC);
+            LocalDateTime randomDateTime = LocalDateTime.ofEpochSecond(newDate, 0, ZoneOffset.UTC);
+            dateTime.reset(randomDateTime.getMonthValue(), randomDateTime.getDayOfMonth(), randomDateTime.getYear(),
+                    randomDateTime.getHour(), randomDateTime.getMinute(), randomDateTime.getSecond());
             return dateTime;
         }
-
-        public Date getNextRecentDate(Date date) {
-            int year = date.getYear()
-                    + (date.getYear() == endDate.getYear() ? 0 : random.nextInt(endDate.getYear() - date.getYear()));
-            int month = (year == endDate.getYear())
-                    ? date.getMonth() == endDate.getMonth() ? endDate.getMonth()
-                            : (date.getMonth() + random.nextInt(endDate.getMonth() - date.getMonth()))
-                    : random.nextInt(12) + 1;
-
-            int day =
-                    (year == endDate.getYear()) ? month == endDate.getMonth()
-                            ? date.getDay() == endDate.getDay() ? endDate.getDay()
-                                    : date.getDay() + random.nextInt(endDate.getDay() - date.getDay())
-                            : random.nextInt(28) + 1 : random.nextInt(28) + 1;
-            recentDate.reset(month, day, year);
-            return recentDate;
-        }
-
     }
 
     public static class DateTime extends Date {
 
-        private String hour = "10";
-        private String min = "10";
-        private String sec = "00";
-
-        public DateTime(int month, int day, int year, String hour, String min, String sec) {
-            super(month, day, year);
-            this.hour = hour;
-            this.min = min;
-            this.sec = sec;
-        }
+        int hour, min, sec;
 
         public DateTime() {
             // do nothing
         }
 
-        public void reset(int month, int day, int year, String hour, String min, String sec) {
-            super.setDay(month);
+        public void reset(int month, int day, int year, int hour, int min, int sec) {
+            super.setMonth(month);
             super.setDay(day);
             super.setYear(year);
             this.hour = hour;
@@ -216,32 +145,12 @@ public class DataGenerator {
             this.sec = sec;
         }
 
-        public DateTime(Date date) {
-            super(date.getMonth(), date.getDay(), date.getYear());
-        }
-
-        public void reset(Date date) {
-            reset(date.getMonth(), date.getDay(), date.getYear());
-        }
-
-        public DateTime(Date date, int hour, int min, int sec) {
-            super(date.getMonth(), date.getDay(), date.getYear());
-            this.hour = (hour < 10) ? "0" : Integer.toString(hour);
-            this.min = (min < 10) ? "0" : Integer.toString(min);
-            this.sec = (sec < 10) ? "0" : Integer.toString(sec);
-        }
-
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("\"");
-            builder.append(super.getYear());
-            builder.append("-");
-            builder.append(super.getMonth() < 10 ? "0" + super.getMonth() : super.getMonth());
-            builder.append("-");
-            builder.append(super.getDay() < 10 ? "0" + super.getDay() : super.getDay());
-            builder.append("T");
-            builder.append(hour + ":" + min + ":" + sec);
+            builder.append(
+                    String.format("%d-%02d-%02dT%02d:%02d:%02d", getYear(), getMonth(), getDay(), hour, min, sec));
             builder.append("\"");
             return builder.toString();
         }
@@ -324,7 +233,7 @@ public class DataGenerator {
         private String[] firstNames;
         private String[] lastNames;
 
-        private final Random random = new Random();
+        private final Random random = new Random(0);
 
         private final String[] connectors = new String[] { "_", "#", "$", "@" };
 
@@ -375,7 +284,7 @@ public class DataGenerator {
 
     public static class AbstractMessageTemplate {
 
-        protected final Random random = new Random();
+        protected final Random random = new Random(0);
 
         protected String[] positiveVerbs = new String[] { "like", "love" };
         protected String[] negativeVerbs = new String[] { "dislike", "hate", "can't stand" };
@@ -441,7 +350,7 @@ public class DataGenerator {
             // do nothing
         }
 
-        public static final Random random = new Random();
+        public static final Random random = new Random(0);
 
         public static int[] getKFromN(int k, int n) {
             int[] result = new int[k];
@@ -462,7 +371,7 @@ public class DataGenerator {
 
     public static class RandomLocationGenerator {
 
-        private Random random = new Random();
+        private Random random = new Random(0);
 
         private final int beginLat;
         private final int endLat;
@@ -527,17 +436,6 @@ public class DataGenerator {
             // do nothing
         }
 
-        public TweetMessage(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,
-                Message messageText, String country) {
-            this.id = tweetid;
-            this.user = user;
-            this.latitude = latitude;
-            this.longitude = longitude;
-            this.created_at = created_at;
-            this.messageText = messageText;
-            this.country = country;
-        }
-
         public void reset(int tweetid, TwitterUser user, double latitude, double longitude, String created_at,
                 Message messageText, String country) {
             this.id = tweetid;
@@ -584,7 +482,7 @@ public class DataGenerator {
                         break;
                     case Datatypes.Tweet.CREATED_AT:
                         appendFieldName(builder, Datatypes.Tweet.CREATED_AT);
-                        builder.append(created_at);
+                        builder.append("datetime(" + created_at + ")");
                         break;
                     case Datatypes.Tweet.COUNTRY:
                         appendFieldName(builder, Datatypes.Tweet.COUNTRY);

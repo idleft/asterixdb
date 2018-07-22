@@ -19,6 +19,4 @@
 
 use feeds;
 
-select * from Tweets1 c limit 1000;
-
-//select count(*) from Tweets1;
+select * from Tweets1;

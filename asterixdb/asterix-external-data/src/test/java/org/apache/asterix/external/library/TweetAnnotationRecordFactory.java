@@ -21,11 +21,11 @@ package org.apache.asterix.external.library;
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionFactory;
 
-public class AddHashTagsInPlaceFactory implements IFunctionFactory {
+public class TweetAnnotationRecordFactory implements IFunctionFactory {
 
     @Override
     public IExternalScalarFunction getExternalFunction() {
-        return new AddHashTagsInPlaceFunction();
+        return new TweetAnnotationRecord();
     }
 
 }

@@ -38,12 +38,11 @@ import org.apache.logging.log4j.Logger;
 public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final List<String> recordReaderNames = Collections.singletonList("expr_twitter");
 
-    private long requriedAmount;
-    private String ingestionLocation;
+    private String[] ingestionLocation;
+    private Map<String, String> configs;
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -57,19 +56,24 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public AlgebricksAbsolutePartitionConstraint getPartitionConstraint() {
-        return new AlgebricksAbsolutePartitionConstraint(new String[] { ingestionLocation });
+        return new AlgebricksAbsolutePartitionConstraint(ingestionLocation);
     }
 
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
-        this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
-        this.ingestionLocation = configuration.get("ingestion-location");
-        List<String> ncs =
-                RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
-        if (!ncs.contains(ingestionLocation)) {
-            throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+        this.configs = configuration;
+        String assignedIntakeLocation = configuration.get("ingestion-location");
+        if (assignedIntakeLocation == null) {
+            ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
+            ingestionLocation = appCtx.getClusterStateManager().getClusterLocations().getLocations();
+        } else {
+            List<String> ncs =
+                    RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
+            if (!ncs.contains(assignedIntakeLocation)) {
+                throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+            }
+            ingestionLocation = new String[] { assignedIntakeLocation };
         }
-        LOGGER.log(Level.INFO, "Expr twitter generator requested " + requriedAmount);
     }
 
     @Override
@@ -79,7 +83,7 @@ public class ExprTwitterRecordReaderFactory implements IRecordReaderFactory<char
 
     @Override
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition) {
-        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(requriedAmount);
+        IRecordReader<char[]> exprTwttierRecordReader = new ExprTwitterRecordReader(configs);
         return exprTwttierRecordReader;
     }
 

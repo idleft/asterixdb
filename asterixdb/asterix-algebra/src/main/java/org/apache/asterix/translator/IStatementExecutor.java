@@ -141,7 +141,8 @@ public interface IStatementExecutor {
             IStatementRewriter statementRewriter) throws RemoteException, AlgebricksException, ACIDException;
 
     JobSpecification rewriteCompileInsertUpsert(IClusterInfoCollector clusterInfoCollector,
-            MetadataProvider metadataProvider, InsertStatement insertUpsert) throws AlgebricksException, ACIDException;
+            MetadataProvider metadataProvider, InsertStatement insertUpsert, Map<String, IAObject> statementParameters,
+            IStatementRewriter statementRewriter) throws AlgebricksException, ACIDException;
 
     /**
      * returns the active dataverse for an entity or a statement

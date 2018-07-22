@@ -16,16 +16,4 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library;
-
-import org.apache.asterix.external.api.IExternalFunction;
-import org.apache.asterix.external.api.IFunctionFactory;
-
-public class AllTypesFactory implements IFunctionFactory {
-
-    @Override
-    public IExternalFunction getExternalFunction() {
-        return new AllTypesFunction();
-    }
-
-}
+install feeds testlib target/data/externallib/asterix-external-data-testlib.zip

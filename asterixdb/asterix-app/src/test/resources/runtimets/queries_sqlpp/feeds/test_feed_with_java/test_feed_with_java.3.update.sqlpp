@@ -16,16 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionFactory;
+use feeds;
+set `wait-for-completion-feed` "true";
 
-public class ParseTweetFactory implements IFunctionFactory {
+connect feed TweetFeed to dataset Tweets1 apply function `testlib#annotateTweet5R`;
 
-    @Override
-    public IExternalScalarFunction getExternalFunction() {
-        return new ParseTweetFunction();
-    }
-
-}
+start feed TweetFeed;

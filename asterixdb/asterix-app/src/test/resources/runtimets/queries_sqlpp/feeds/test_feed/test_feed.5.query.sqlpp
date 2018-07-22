@@ -17,15 +17,11 @@
  * under the License.
  */
 
-package org.apache.asterix.external.library;
+use feeds;
 
-import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionFactory;
+//select value c from Tweets1 c order by c.tid;
 
-public class KeywordsDetectorFactory implements IFunctionFactory {
-
-    @Override
-    public IExternalScalarFunction getExternalFunction() {
-        return new KeywordsDetectorFunction();
-    }
-}
+//select distinct t.country from Tweets2 t;
+//select t from Tweets2 t order by t.id;
+select count(*) from Tweets2;
+//select * from Tweets2 t1, Tweets2 t2 where t1.id = t2.id and t1.tid != t2.tid limit 10;

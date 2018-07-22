@@ -16,16 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.api.IExternalFunction;
-import org.apache.asterix.external.api.IFunctionFactory;
+use test;
 
-public class UpperCaseFactory implements IFunctionFactory {
-
-    @Override
-    public IExternalFunction getExternalFunction() {
-        return new UpperCaseFunction();
-    }
-
-}
+select count(*) from Tweets1;

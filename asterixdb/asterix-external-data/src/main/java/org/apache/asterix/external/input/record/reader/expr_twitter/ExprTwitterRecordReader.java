@@ -20,11 +20,14 @@ package org.apache.asterix.external.input.record.reader.expr_twitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.asterix.common.context.DatasetInfo;
 import org.apache.asterix.external.api.IRawRecord;
 import org.apache.asterix.external.api.IRecordReader;
 import org.apache.asterix.external.dataflow.AbstractFeedDataFlowController;
 import org.apache.asterix.external.generator.DataGenerator;
+import org.apache.asterix.external.generator.DataGeneratorInfo;
 import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.input.record.GenericRecord;
 import org.apache.asterix.external.util.ExternalDataConstants;
@@ -45,15 +48,15 @@ public class ExprTwitterRecordReader implements IRecordReader<char[]> {
     private long recordCounter;
     private DataGenerator dataGenerator;
     private DataGenerator.TweetMessageIterator tweetIterator;
-    private char[] inputBuffer;
+    private int coff;
 
-    public ExprTwitterRecordReader(long targetAmount) {
+    public ExprTwitterRecordReader(Map<String, String> configs) {
+        this.targetAmount = Long.valueOf(configs.getOrDefault("expr_amount", "0"));
+        this.coff = Integer.valueOf(configs.getOrDefault("country_coeff", "0"));
         this.record = new CharArrayRecord();
-        this.targetAmount = targetAmount;
         this.recordCounter = 0;
-        inputBuffer = new char[ExternalDataConstants.DEFAULT_BUFFER_SIZE];
-        dataGenerator = new DataGenerator();
-        tweetIterator = dataGenerator.new TweetMessageIterator(0);
+        dataGenerator = new DataGenerator(DataGeneratorInfo.getDataGeneratorInfoFromConfigs(configs));
+        tweetIterator = dataGenerator.new TweetMessageIterator(0, coff);
     }
 
     @Override

@@ -17,8 +17,9 @@
  * under the License.
  */
 
-use feeds;
+use test;
+set `wait-for-completion-feed` "true";
 
-select * from Tweets1 c limit 1000;
+connect feed TweetFeed to dataset Tweets1 apply function annotateTweet;
 
-//select count(*) from Tweets1;
+start feed TweetFeed;

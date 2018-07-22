@@ -16,16 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.asterix.external.library;
 
-import org.apache.asterix.external.api.IExternalScalarFunction;
-import org.apache.asterix.external.api.IFunctionFactory;
+use feeds;
 
-public class SumFactory implements IFunctionFactory {
+set `wait-for-completion-feed` `true`;
+connect feed TweetFeed to dataset Tweets2;
+//connect feed TweetFeed to dataset Tweets1 apply function `func10`;
 
-    @Override
-    public IExternalScalarFunction getExternalFunction() {
-        return new SumFunction();
-    }
-
-}
+start feed TweetFeed;

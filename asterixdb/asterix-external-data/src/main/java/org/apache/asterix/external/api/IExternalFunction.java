@@ -20,7 +20,7 @@ package org.apache.asterix.external.api;
 
 public interface IExternalFunction {
 
-    public void initialize(IFunctionHelper functionHelper) throws Exception;
+    public void initialize(IFunctionHelper functionHelper, String nodeInfo) throws Exception;
 
     public void deinitialize();
 

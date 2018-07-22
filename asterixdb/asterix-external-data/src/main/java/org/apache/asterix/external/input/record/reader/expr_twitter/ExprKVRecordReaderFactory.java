@@ -38,12 +38,11 @@ import java.util.Map;
 public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     private static final long serialVersionUID = 1L;
-    private static final Logger LOGGER = LogManager.getLogger();
 
     private static final List<String> recordReaderNames = Collections.singletonList("expr_kv");
 
-    private long requriedAmount;
-    private String ingestionLocation;
+    private String[] ingestionLocation;
+    private Map<String, String> configs;
 
     @Override
     public DataSourceType getDataSourceType() {
@@ -57,19 +56,24 @@ public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     @Override
     public AlgebricksAbsolutePartitionConstraint getPartitionConstraint() {
-        return new AlgebricksAbsolutePartitionConstraint(new String[] { ingestionLocation });
+        return new AlgebricksAbsolutePartitionConstraint(ingestionLocation);
     }
 
     @Override
     public void configure(IServiceContext serviceCtx, Map<String, String> configuration) throws HyracksDataException {
-        this.requriedAmount = Long.valueOf(configuration.getOrDefault("expr_amount", "0"));
-        this.ingestionLocation = configuration.get("ingestion-location");
-        List<String> ncs =
-                RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
-        if (!ncs.contains(ingestionLocation)) {
-            throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+        this.configs = configuration;
+        String assignedIntakeLocation = configuration.get("ingestion-location");
+        if (assignedIntakeLocation == null) {
+            ICcApplicationContext appCtx = (ICcApplicationContext) serviceCtx.getApplicationContext();
+            ingestionLocation = appCtx.getClusterStateManager().getClusterLocations().getLocations();
+        } else {
+            List<String> ncs =
+                    RuntimeUtils.getAllNodeControllers((ICcApplicationContext) serviceCtx.getApplicationContext());
+            if (!ncs.contains(assignedIntakeLocation)) {
+                throw new HyracksDataException("host" + ingestionLocation + StringUtils.join(ncs, ", "));
+            }
+            ingestionLocation = new String[] { assignedIntakeLocation };
         }
-        LOGGER.log(Level.INFO, "Expr KV generator requested " + requriedAmount);
     }
 
     @Override
@@ -79,7 +83,7 @@ public class ExprKVRecordReaderFactory implements IRecordReaderFactory<char[]> {
 
     @Override
     public IRecordReader<? extends char[]> createRecordReader(IHyracksTaskContext ctx, int partition) {
-        IRecordReader<char[]> exprKVRecordReader = new ExprKVRecordReader(requriedAmount);
+        IRecordReader<char[]> exprKVRecordReader = new ExprKVRecordReader(configs);
         return exprKVRecordReader;
     }
 

@@ -20,7 +20,7 @@
 use feeds;
 
 set `wait-for-completion-feed` `true`;
-connect feed TweetFeed to dataset Tweets1;
-//connect feed TweetFeed to dataset Tweets1 apply function `func10`;
+//connect feed TweetFeed to dataset Tweets1;
+connect feed TweetFeed to dataset Tweets1 apply function `func10`;
 
 start feed TweetFeed;

@@ -50,7 +50,11 @@ public class MultiTransactionJobletEventListenerFactory implements IJobEventList
 
     @Override
     public TxnId getTxnId(int datasetId) {
-        return txnIdMap.get(datasetId);
+        if (txnIdMap.size() == 1) {
+            return txnIdMap.values().iterator().next();
+        } else {
+            return txnIdMap.get(datasetId);
+        }
     }
 
     @Override
