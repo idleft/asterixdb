@@ -19,6 +19,8 @@
 package org.apache.asterix.external.generator;
 
 import java.nio.CharBuffer;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -106,86 +108,36 @@ public class DataGenerator {
 
     public static class RandomDateGenerator {
 
-        private final Date startDate;
-        private final Date endDate;
-        private final Random random = new Random();
-        private final int yearDifference;
-        private Date workingDate;
-        private Date recentDate;
+        private final LocalDateTime sdate, edate;
+        private final Random random = new Random(0);
         private DateTime dateTime;
 
-        public RandomDateGenerator(Date startDate, Date endDate) {
-            this.startDate = startDate;
-            this.endDate = endDate;
-            this.yearDifference = endDate.getYear() - startDate.getYear() + 1;
-            this.workingDate = new Date();
-            this.recentDate = new Date();
+        public RandomDateGenerator(LocalDateTime sdate, LocalDateTime edate) {
+            this.sdate = sdate;
+            this.edate = edate;
             this.dateTime = new DateTime();
         }
 
-        public Date getNextRandomDate() {
-            int year = random.nextInt(yearDifference) + startDate.getYear();
-            int month;
-            int day;
-            if (year == endDate.getYear()) {
-                month = random.nextInt(endDate.getMonth()) + 1;
-                if (month == endDate.getMonth()) {
-                    day = random.nextInt(endDate.getDay()) + 1;
-                } else {
-                    day = random.nextInt(28) + 1;
-                }
-            } else {
-                month = random.nextInt(12) + 1;
-                day = random.nextInt(28) + 1;
-            }
-            workingDate.reset(month, day, year);
-            return workingDate;
-        }
-
         public DateTime getNextRandomDatetime() {
-            Date randomDate = getNextRandomDate();
-            dateTime.reset(randomDate);
+            long range = (edate.toEpochSecond(ZoneOffset.UTC) - sdate.toEpochSecond(ZoneOffset.UTC));
+            long newDate = random.nextInt((int) range) + sdate.toEpochSecond(ZoneOffset.UTC);
+            LocalDateTime randomDateTime = LocalDateTime.ofEpochSecond(newDate, 0, ZoneOffset.UTC);
+            dateTime.reset(randomDateTime.getMonthValue(), randomDateTime.getDayOfMonth(), randomDateTime.getYear(),
+                    randomDateTime.getHour(), randomDateTime.getMinute(), randomDateTime.getSecond());
             return dateTime;
         }
-
-        public Date getNextRecentDate(Date date) {
-            int year = date.getYear()
-                    + (date.getYear() == endDate.getYear() ? 0 : random.nextInt(endDate.getYear() - date.getYear()));
-            int month = (year == endDate.getYear())
-                    ? date.getMonth() == endDate.getMonth() ? endDate.getMonth()
-                            : (date.getMonth() + random.nextInt(endDate.getMonth() - date.getMonth()))
-                    : random.nextInt(12) + 1;
-
-            int day =
-                    (year == endDate.getYear()) ? month == endDate.getMonth()
-                            ? date.getDay() == endDate.getDay() ? endDate.getDay()
-                                    : date.getDay() + random.nextInt(endDate.getDay() - date.getDay())
-                            : random.nextInt(28) + 1 : random.nextInt(28) + 1;
-            recentDate.reset(month, day, year);
-            return recentDate;
-        }
-
     }
 
     public static class DateTime extends Date {
 
-        private String hour = "10";
-        private String min = "10";
-        private String sec = "00";
-
-        public DateTime(int month, int day, int year, String hour, String min, String sec) {
-            super(month, day, year);
-            this.hour = hour;
-            this.min = min;
-            this.sec = sec;
-        }
+        int hour, min, sec;
 
         public DateTime() {
             // do nothing
         }
 
-        public void reset(int month, int day, int year, String hour, String min, String sec) {
-            super.setDay(month);
+        public void reset(int month, int day, int year, int hour, int min, int sec) {
+            super.setMonth(month);
             super.setDay(day);
             super.setYear(year);
             this.hour = hour;
@@ -193,32 +145,12 @@ public class DataGenerator {
             this.sec = sec;
         }
 
-        public DateTime(Date date) {
-            super(date.getMonth(), date.getDay(), date.getYear());
-        }
-
-        public void reset(Date date) {
-            reset(date.getMonth(), date.getDay(), date.getYear());
-        }
-
-        public DateTime(Date date, int hour, int min, int sec) {
-            super(date.getMonth(), date.getDay(), date.getYear());
-            this.hour = (hour < 10) ? "0" : Integer.toString(hour);
-            this.min = (min < 10) ? "0" : Integer.toString(min);
-            this.sec = (sec < 10) ? "0" : Integer.toString(sec);
-        }
-
         @Override
         public String toString() {
             StringBuilder builder = new StringBuilder();
             builder.append("\"");
-            builder.append(super.getYear());
-            builder.append("-");
-            builder.append(super.getMonth() < 10 ? "0" + super.getMonth() : super.getMonth());
-            builder.append("-");
-            builder.append(super.getDay() < 10 ? "0" + super.getDay() : super.getDay());
-            builder.append("T");
-            builder.append(hour + ":" + min + ":" + sec);
+            builder.append(
+                    String.format("%d-%02d-%02dT%02d:%02d:%02d", getYear(), getMonth(), getDay(), hour, min, sec));
             builder.append("\"");
             return builder.toString();
         }
@@ -301,7 +233,7 @@ public class DataGenerator {
         private String[] firstNames;
         private String[] lastNames;
 
-        private final Random random = new Random();
+        private final Random random = new Random(0);
 
         private final String[] connectors = new String[] { "_", "#", "$", "@" };
 
@@ -352,7 +284,7 @@ public class DataGenerator {
 
     public static class AbstractMessageTemplate {
 
-        protected final Random random = new Random();
+        protected final Random random = new Random(0);
 
         protected String[] positiveVerbs = new String[] { "like", "love" };
         protected String[] negativeVerbs = new String[] { "dislike", "hate", "can't stand" };
@@ -418,7 +350,7 @@ public class DataGenerator {
             // do nothing
         }
 
-        public static final Random random = new Random();
+        public static final Random random = new Random(0);
 
         public static int[] getKFromN(int k, int n) {
             int[] result = new int[k];
@@ -439,7 +371,7 @@ public class DataGenerator {
 
     public static class RandomLocationGenerator {
 
-        private Random random = new Random();
+        private Random random = new Random(0);
 
         private final int beginLat;
         private final int endLat;
@@ -550,7 +482,7 @@ public class DataGenerator {
                         break;
                     case Datatypes.Tweet.CREATED_AT:
                         appendFieldName(builder, Datatypes.Tweet.CREATED_AT);
-                        builder.append(created_at);
+                        builder.append("datetime(" + created_at + ")");
                         break;
                     case Datatypes.Tweet.COUNTRY:
                         appendFieldName(builder, Datatypes.Tweet.COUNTRY);

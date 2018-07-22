@@ -20,6 +20,6 @@
 use feeds;
 set `wait-for-completion-feed` "true";
 
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#annotateCountryRecord`;
+connect feed TweetFeed to dataset Tweets1 apply function `testlib#annotateTweet5R`;
 
 start feed TweetFeed;

@@ -34,19 +34,37 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
-public class CountryAnnotation implements IExternalScalarFunction {
+public class ThreatAnnotation implements IExternalScalarFunction {
 
     private HashMap<String, String> countryList;
     private String dictPath;
     private List<String> functionParameters;
     private JOrderedList list = null;
+    private int refreshRate;
+    private int refreshCount;
+    private String pathPrefix;
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws Exception {
+    public void initialize(IFunctionHelper functionHelper, String nodeInfo) throws Exception {
+        if (nodeInfo.startsWith("asterix")) {
+            pathPrefix = "/Users/xikuiw/IdeaProjects/TestProject/";
+        } else {
+            pathPrefix = "/home/xikuiw/decoupled/";
+        }
         list = new JOrderedList(JBuiltinType.JSTRING);
         countryList = new HashMap<>();
         functionParameters = functionHelper.getParameters();
-        dictPath = functionParameters.get(0);
+        dictPath = pathPrefix + "/" + functionParameters.get(0);
+        refreshRate = Integer.valueOf(functionParameters.get(1));
+        refreshCount = 0;
+        loadList();
+    }
+
+    @Override
+    public void deinitialize() {
+    }
+
+    private void loadList() throws Exception {
         BufferedReader fr = Files.newBufferedReader(Paths.get(dictPath));
         fr.lines().forEach(line -> {
             String[] items = line.split("\\|");
@@ -55,11 +73,15 @@ public class CountryAnnotation implements IExternalScalarFunction {
     }
 
     @Override
-    public void deinitialize() {
-    }
-
-    @Override
     public void evaluate(IFunctionHelper functionHelper) throws Exception {
+
+        if (refreshRate > 0) {
+            refreshCount = (refreshCount + 1) % refreshRate;
+            if (refreshCount == 0) {
+                loadList();
+            }
+        }
+
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString countryCode = (JString) inputRecord.getValueByName("country");
 

@@ -34,6 +34,7 @@ public class FeedConstants {
     public static final String FEED_PIPELINE_DECOUPLE = "decouple";
     public static final String BUFFER_SIZE = "buffer-size";
     public static final String FEED_TRACER_CATEGORY = "NEWFEED";
+    public static final String MATERIALIZE = "materialize";
 
     public static final class StatisticsConstants {
         public static final String INTAKE_TUPLEID = "intake-tupleid";

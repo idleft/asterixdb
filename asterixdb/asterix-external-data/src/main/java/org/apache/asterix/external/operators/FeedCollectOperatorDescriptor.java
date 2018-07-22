@@ -62,6 +62,8 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
 
     private final int batchSize;
 
+    private final boolean materialize;
+
     public FeedCollectOperatorDescriptor(JobSpecification spec, FeedConnectionId feedConnectionId, ARecordType atype,
             RecordDescriptor rDesc, Map<String, String> feedPolicyProperties, FeedRuntimeType subscriptionLocation,
             IRecordDataParserFactory<?> parserFactory, Map<String, String> feedConfiguration) {
@@ -73,6 +75,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         this.subscriptionLocation = subscriptionLocation;
         this.parserFactory = parserFactory;
         this.batchSize = Integer.valueOf(feedConfiguration.getOrDefault(FeedConstants.BATCH_SIZE, "1"));
+        this.materialize = Boolean.valueOf(feedConfiguration.getOrDefault(FeedConstants.MATERIALIZE, "false"));
     }
 
     @Override
@@ -82,7 +85,7 @@ public class FeedCollectOperatorDescriptor extends AbstractSingleActivityOperato
         String invocationCounter = new String(ctx.getJobParameter(INVOCATION_COUNT_PARAMETER_NAME.getBytes(), 0,
                 INVOCATION_COUNT_PARAMETER_NAME.length()));
         return new FeedCollectOperatorNodePushable(ctx, connectionId, feedPolicyProperties, partition, parserFactory,
-                batchSize, nPartitions, Integer.valueOf(invocationCounter));
+                batchSize, nPartitions, materialize, Integer.valueOf(invocationCounter));
     }
 
     public FeedConnectionId getFeedConnectionId() {

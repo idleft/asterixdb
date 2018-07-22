@@ -18,5 +18,8 @@
  */
 use test;
 
-load dataset countryDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/countryThreatLvl.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
 load dataset followersCountDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/followersCount.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
+load dataset statusesCountDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/statusesCount.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
+load dataset friendsCountDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/friendsCount.txt`),(`format`=`delimited-text`),(`delimiter`=`|`));
+load dataset timeRangeDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/timeRange.txt`),(`format`=`adm`));
+load dataset spaceRangeDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/spaceRange.txt`),(`format`=`adm`));

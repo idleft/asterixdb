@@ -56,15 +56,13 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
     private final EntityId enid;
     private final int poolSize;
     private final String runtimeName;
-    private AtomicBoolean closed;
 
     public DeployedJobPartitionHolderDescriptor(IOperatorDescriptorRegistry spec, int poolSize, EntityId entityId,
-            String runtimeName, int workerN) {
+            String runtimeName) {
         super(spec, 1, 0);
         this.poolSize = poolSize;
         this.enid = entityId;
         this.runtimeName = runtimeName;
-        closed = new AtomicBoolean(false);
     }
 
     @Override
@@ -81,6 +79,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
             private final long registry = tracer.getRegistry().get(FeedConstants.FEED_TRACER_CATEGORY);
             private AtomicInteger rloc;
             private long ltid;
+            private AtomicBoolean closed;
 
             @Override
             public void open() {
@@ -89,6 +88,7 @@ public class DeployedJobPartitionHolderDescriptor extends AbstractSingleActivity
                 curAcc = new FrameTupleAccessor(null);
                 rloc = new AtomicInteger(0);
                 ltid = tracer.durationB("Deployed Job Partition Holder", registry, null);
+                closed = new AtomicBoolean(false);
             }
 
             @Override

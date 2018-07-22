@@ -33,8 +33,8 @@
       <AppenderRef ref="InfoLog"/>
     </Root>
     <!--<Logger name="org.apache.hyracks.control.nc.service" level="ALL"/>-->
-    <!--<Logger name="org.apache.hyracks.control" level="ALL">-->
-    <!--<AppenderRef ref="InfoLog"/>-->
+    <!--<Logger name="org.apache.hyracks.control" level="INFO">-->
+    <!--<AppenderRef ref="Console"/>-->
     <!--</Logger>-->
 
     <!--<Logger name="org.apache.asterix.runtime.job" level="ERROR">-->
@@ -49,9 +49,9 @@
     <Logger name="org.apache.asterix.external" level="DEBUG">
       <AppenderRef ref="Console"/>
     </Logger>
-    <Logger name="org.apache.hyracks.dataflow.std.join" level="DEBUG">
-      <AppenderRef ref="Console"/>
-    </Logger>
+    <!--<Logger name="org.apache.hyracks.dataflow.std.join" level="DEBUG">-->
+      <!--<AppenderRef ref="Console"/>-->
+    <!--</Logger>-->
     <!--<Logger name="org.apache.asterix.runtime.job" level="DEBUG">-->
       <!--<AppenderRef ref="Console"/>-->
     <!--</Logger>-->

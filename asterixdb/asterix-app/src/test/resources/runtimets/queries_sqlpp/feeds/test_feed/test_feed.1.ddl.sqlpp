@@ -22,7 +22,8 @@ create  dataverse feeds;
 use feeds;
 
 create type TweetType as open {
-  id : int64
+  id : int64,
+  created_at: datetime
 };
 
 create type StoredTweetType as open {
@@ -39,11 +40,11 @@ create feed TweetFeed with {
     "format" : "adm",
     "ingestion-location" : "asterix_nc1",
     "insert-feed" : true,
-    "batch-size" : "3",
-    "expr_amount" : 100,
+    "batch-size" : 60,
+    "expr_amount" : 10000,
     "country_coeff" : 1,
     "sdate" : "2008-01-01",
-    "edate" : "2018-01-01",
+    "edate" : "2017-12-31",
     "slat" : "-180",
     "slong" : "-180",
     "elat" : "180",
@@ -51,5 +52,6 @@ create feed TweetFeed with {
     "numFriends" : "10000000",
     "statusesCount" : "10000000",
     "followersCount" : "10000000",
+ //   "materialize" : true,
     "decouple" : true
 };

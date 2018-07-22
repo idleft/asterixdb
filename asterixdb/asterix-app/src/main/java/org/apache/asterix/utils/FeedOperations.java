@@ -167,7 +167,7 @@ public class FeedOperations {
         int workerNum = Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.WORKER_NUM, "1"));
         int intakePoolSize = Integer.valueOf(feed.getConfiguration().getOrDefault(FeedConstants.INTAKE_POOL_SIZE, "1"));
         DeployedJobPartitionHolderDescriptor intakePartitionHolder = new DeployedJobPartitionHolderDescriptor(spec,
-                intakePoolSize, feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER, workerNum);
+                intakePoolSize, feed.getFeedId(), FEED_INTAKE_PARTITION_HOLDER);
         spec.connect(randomPartitioner, intakeOperator, 0, intakePartitionHolder, 0);
         //TODO: the partition constraint of intake partition holder is set to cluster location now.
         PartitionConstraintHelper.addAbsoluteLocationConstraint(spec, intakePartitionHolder, collectLocations);

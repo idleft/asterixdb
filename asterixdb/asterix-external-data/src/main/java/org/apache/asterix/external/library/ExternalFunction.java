@@ -106,8 +106,8 @@ public abstract class ExternalFunction implements IExternalFunction {
     }
 
     @Override
-    public void initialize(IFunctionHelper functionHelper) throws Exception {
-        externalFunction.initialize(functionHelper);
+    public void initialize(IFunctionHelper functionHelper, String nodeInfo) throws Exception {
+        externalFunction.initialize(functionHelper, nodeInfo);
     }
 
 }

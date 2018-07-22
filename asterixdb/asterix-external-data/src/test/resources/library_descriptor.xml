@@ -21,125 +21,241 @@
   <language>JAVA</language>
   <libraryFunctions>
     <libraryFunction>
-      <name>fnameDetector</name>
-      <function_type>SCALAR</function_type>
-      <argument_type>InputRecordType</argument_type>
-      <return_type>DetectResultType</return_type>
-      <definition>org.apache.asterix.external.library.KeywordsDetectorFactory</definition>
-      <parameters>data/external_function/KeywordsDetector_List1.txt</parameters>
-      <parameters>fname</parameters>
-    </libraryFunction>
-    <libraryFunction>
-      <name>lnameDetector</name>
-      <function_type>SCALAR</function_type>
-      <argument_type>InputRecordType</argument_type>
-      <return_type>DetectResultType</return_type>
-      <definition>org.apache.asterix.external.library.KeywordsDetectorFactory</definition>
-      <parameters>data/external_function/KeywordsDetector_List2.txt</parameters>
-      <parameters>lname</parameters>
-    </libraryFunction>
-    <libraryFunction>
-      <name>parseTweet</name>
-      <function_type>SCALAR</function_type>
-      <argument_type>TweetInputType</argument_type>
-      <return_type>TweetOutputType</return_type>
-      <definition>org.apache.asterix.external.library.ParseTweetFactory
-      </definition>
-    </libraryFunction>
-    <libraryFunction>
-      <name>addHashTags</name>
-      <function_type>SCALAR</function_type>
-      <argument_type>Tweet</argument_type>
-      <return_type>ProcessedTweet</return_type>
-      <definition>org.apache.asterix.external.library.AddHashTagsFactory
-      </definition>
-    </libraryFunction>
-    <libraryFunction>
-      <name>addHashTagsInPlace</name>
-      <function_type>SCALAR</function_type>
-      <argument_type>Tweet</argument_type>
-      <return_type>ProcessedTweet</return_type>
-      <definition>org.apache.asterix.external.library.AddHashTagsInPlaceFactory
-      </definition>
-    </libraryFunction>
-    <libraryFunction>
-      <name>annotateCountry</name>
+      <name>annotateTweet1A</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>
       <return_type>TweetType</return_type>
-      <definition>org.apache.asterix.external.library.CountryAnnotationFactory</definition>
-      <parameters>/Users/xikuiw/IdeaProjects/TestProject/countryThreatLvl.txt</parameters>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>1</parameters>
+      <parameters>-1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>annotateCountryRecord</name>
+      <name>annotateTweet2A</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>
       <return_type>TweetType</return_type>
-      <definition>org.apache.asterix.external.library.CountryAnnotationRecordFactory</definition>
-      <parameters>/Users/xikuiw/IdeaProjects/TestProject/countryThreatLvl.txt</parameters>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>2</parameters>
+      <parameters>-1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>clusterAnnotateCountry</name>
+      <name>annotateTweet3A</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>
       <return_type>TweetType</return_type>
-      <definition>org.apache.asterix.external.library.CountryAnnotationFactory</definition>
-      <parameters>/home/xikuiw/decoupled/countryThreatLvl.txt</parameters>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>3</parameters>
+      <parameters>-1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>clusterAnnotateCountryRecord</name>
+      <name>annotateTweet4A</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>
       <return_type>TweetType</return_type>
-      <definition>org.apache.asterix.external.library.CountryAnnotationRecordFactory</definition>
-      <parameters>/home/xikuiw/decoupled/countryThreatLvl.txt</parameters>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>4</parameters>
+      <parameters>-1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>mysum</name>
+      <name>annotateTweet5A</name>
       <function_type>SCALAR</function_type>
-      <argument_type>AINT32,AINT32</argument_type>
-      <return_type>AINT32</return_type>
-      <definition>org.apache.asterix.external.library.SumFactory
-      </definition>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>5</parameters>
+      <parameters>-1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>getCapital</name>
+      <name>annotateTweet1R</name>
       <function_type>SCALAR</function_type>
-      <argument_type>ASTRING</argument_type>
-      <return_type>CountryCapitalType</return_type>
-      <definition>org.apache.asterix.external.library.CapitalFinderFactory
-      </definition>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>1</parameters>
+      <parameters>1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>toUpper</name>
+      <name>annotateTweet2R</name>
       <function_type>SCALAR</function_type>
-      <argument_type>TextType</argument_type>
-      <return_type>TextType</return_type>
-      <definition>org.apache.asterix.external.library.UpperCaseFactory
-      </definition>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>2</parameters>
+      <parameters>1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>allTypes</name>
+      <name>annotateTweet3R</name>
       <function_type>SCALAR</function_type>
-      <argument_type>AllType</argument_type>
-      <return_type>AllType</return_type>
-      <definition>org.apache.asterix.external.library.AllTypesFactory
-      </definition>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>3</parameters>
+      <parameters>1</parameters>
     </libraryFunction>
     <libraryFunction>
-      <name>echoDelay</name>
+      <name>annotateTweet4R</name>
       <function_type>SCALAR</function_type>
-      <argument_type>TweetMessageType</argument_type>
-      <return_type>TweetMessageType</return_type>
-      <definition>org.apache.asterix.external.library.EchoDelayFactory
-      </definition>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>4</parameters>
+      <parameters>1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet5R</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>5</parameters>
+      <parameters>1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet1S</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>1</parameters>
+      <parameters>420</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet2S</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>2</parameters>
+      <parameters>420</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet3S</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>3</parameters>
+      <parameters>420</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet4S</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>4</parameters>
+      <parameters>420</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateTweet5S</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.TweetAnnotationRecordFactory</definition>
+      <parameters>followersCount.txt</parameters>
+      <parameters>statusesCount.txt</parameters>
+      <parameters>friendsCount.txt</parameters>
+      <parameters>java_timeRange.txt</parameters>
+      <parameters>java_spaceRange.txt</parameters>
+      <parameters>5</parameters>
+      <parameters>420</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateThreatR1</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.ThreatAnnotationFactory</definition>
+      <parameters>countryThreatLvl.txt</parameters>
+      <parameters>1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateThreatRA</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.ThreatAnnotationFactory</definition>
+      <parameters>countryThreatLvl.txt</parameters>
+      <parameters>-1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>annotateThreatRS</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.ThreatAnnotationFactory</definition>
+      <parameters>countryThreatLvl.txt</parameters>
+      <parameters>420</parameters>
     </libraryFunction>
   </libraryFunctions>
-  <libraryAdapters>
-    <libraryAdapter>
-      <name>test_typed_adapter</name>
-      <factory_class>org.apache.asterix.external.library.adapter.TestTypedAdapterFactory
-      </factory_class>
-    </libraryAdapter>
-  </libraryAdapters>
 </externalLibrary>

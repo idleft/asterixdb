@@ -27,19 +27,19 @@ import org.apache.asterix.active.partition.PullablePartitionHolderByRecordRuntim
 import org.apache.asterix.common.api.INcApplicationContext;
 import org.apache.asterix.external.api.IRecordDataParser;
 import org.apache.asterix.external.api.IRecordDataParserFactory;
-import org.apache.asterix.external.dataflow.TupleForwarder;
-import org.apache.asterix.external.feed.dataflow.SyncFeedRuntimeInputHandler;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
+import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
-import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAccessor;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAppender;
-import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
+import org.apache.hyracks.dataflow.std.misc.FeedWritableState;
+import org.apache.hyracks.dataflow.std.misc.FileBackedState;
+import org.apache.hyracks.dataflow.std.misc.MemoryBackedState;
 import org.apache.hyracks.util.trace.ITracer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -59,7 +59,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final PartitionHolderManager phm;
 
     private PullablePartitionHolderByRecordRuntime partitionHolderRuntime;
-    private final PartitionHolderId phid;
+    private final PartitionHolderId intakePhID;
     private final int localBatchSize;
 
     private CharArrayRecord charArrayRecord;
@@ -67,10 +67,11 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private final long registry;
     private int sPartitionNum;
     private int ePartitionNum;
+    private final boolean materialize;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition, IRecordDataParserFactory<?> parserFactory,
-            int globalBatchSize, int nParititons, int invocationCtr) throws HyracksDataException {
+            int globalBatchSize, int nParititons, boolean materialize, int invocationCtr) throws HyracksDataException {
         this.ctx = ctx;
         this.feedId = feedConnectionId.getFeedId();
         // TODO: now we treat all records as bytearray before it arrives collector
@@ -78,9 +79,10 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         this.charArrayRecord = new CharArrayRecord();
         this.tb = new ArrayTupleBuilder(1);
         this.fta = new FrameTupleAppender(new VSizeFrame(ctx), true);
+        this.materialize = materialize;
         phm = (PartitionHolderManager) ((INcApplicationContext) ctx.getJobletContext().getServiceContext()
                 .getApplicationContext()).getPartitionHolderMananger();
-        this.phid = new PartitionHolderId(feedId, FeedConstants.FEED_INTAKE_PARTITION_HOLDER, partition);
+        this.intakePhID = new PartitionHolderId(feedId, FeedConstants.FEED_INTAKE_PARTITION_HOLDER, partition);
         sPartitionNum = (invocationCtr * (globalBatchSize % nParititons)) % nParititons;
         ePartitionNum = (invocationCtr * (globalBatchSize % nParititons) + globalBatchSize) % nParititons;
 
@@ -103,29 +105,31 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
 
     @Override
     public String toString() {
-        return "Collector " + phid.getPartition();
+        return "Collector " + intakePhID.getPartition();
     }
 
-    @Override
-    public void initialize() throws HyracksDataException {
-        String threadName = Thread.currentThread().getName();
-        long atid = tracer.durationB("Collector Running", registry, null);
+    private void doAddRecord(String strRecord, FeedWritableState state) throws HyracksDataException {
+        // TODO: trim get rid of trailing spaces. LF add to mark the boundary of records.
+        // parse the incoming record
+        charArrayRecord.set(strRecord.toCharArray());
+        tb.reset();
+        parser.parse(charArrayRecord, tb.getDataOutput());
+        tb.addFieldEndOffset();
+        // append to fta or state buffer
+        if (!fta.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
+            state.appendFrame(fta.getBuffer());
+            fta.reset(new VSizeFrame(ctx), true);
+            if (!fta.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
+                throw HyracksDataException.create(ErrorCode.TUPLE_CANNOT_FIT_INTO_EMPTY_FRAME, tb.getSize());
+            }
+        }
+    }
+
+    private void loadBatch(FeedWritableState state) throws Exception {
         try {
-            Thread.currentThread().setName("Collector Thread");
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(this + " is initializing");
-            }
-            FrameTupleAccessor tAccessor = new FrameTupleAccessor(recordDesc);
-            writer = new SyncFeedRuntimeInputHandler(ctx, writer, tAccessor);
-            partitionHolderRuntime = (PullablePartitionHolderByRecordRuntime) phm.getPartitionHolderRuntime(phid);
-            if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(this + " connected to " + phid);
-            }
-            tracer.instant("Collector connected to ph", registry, ITracer.Scope.t, null);
-            writer.open();
             long ctid = tracer.durationB("Collector getting frames", registry, null);
             if (partitionHolderRuntime != null) {
-                for (int iter1 = 0; localBatchSize == -1 || iter1 < localBatchSize; iter1++) {
+                for (int iter1 = 0; iter1 < localBatchSize; iter1++) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(this + " ready to get a record");
                     }
@@ -136,17 +140,17 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
                     }
                     tracer.durationE(gtid, registry, String.valueOf(record.length()));
                     if (record.length() == 0) {
+                        if (LOGGER.isDebugEnabled()) {
+                            LOGGER.debug(this + " stopped with " + iter1);
+                        }
                         break;
                     } else {
-                        doAddRecord(record);
+                        doAddRecord(record, state);
                     }
                 }
-                long ftid = tracer.durationB("Collector's last flush", registry, null);
-//                tf.flush();
-                tracer.durationE(ftid, registry, null);
             } else {
                 if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(this + " cannot find " + phid + ". Work is done.");
+                    LOGGER.debug(this + " cannot find " + intakePhID + ". Work is done.");
                 }
             }
             tracer.durationE(ctid, registry, null);
@@ -154,28 +158,53 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             e.printStackTrace();
             throw HyracksDataException.create(e);
         } finally {
+            // add leftover records into buffer
+            if (fta.getTupleCount() > 0) {
+                state.appendFrame(fta.getBuffer());
+            }
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " is closing.");
             }
-            tracer.instant("Collector closes", registry, ITracer.Scope.t, null);
-            fta.flush(writer);
-            writer.close();
+            tracer.instant("Load batch finishes", registry, ITracer.Scope.t, null);
+        }
+    }
+
+    @Override
+    public void initialize() throws HyracksDataException {
+        String threadName = Thread.currentThread().getName();
+        long atid = tracer.durationB("Collector Running", registry, null);
+        try {
+            Thread.currentThread().setName("Collector Thread");
+            partitionHolderRuntime = (PullablePartitionHolderByRecordRuntime) phm.getPartitionHolderRuntime(intakePhID);
+            if (LOGGER.isDebugEnabled()) {
+                LOGGER.debug(this + " connected to " + intakePhID);
+            }
+            FeedWritableState collectorState = (FeedWritableState) ctx.getStateObject(intakePhID);
+            // inject failure handler
+            // writer = new SyncFeedRuntimeInputHandler(ctx, writer, new FrameTupleAccessor(recordDesc));
+            if (collectorState == null) {
+                //                collectorState = new MemoryBackedState(ctx.getJobletContext().getJobId(), intakePhID);
+                if (materialize) {
+                    collectorState = new FileBackedState(ctx.getJobletContext().getJobId(), intakePhID);
+                } else {
+                    collectorState = new MemoryBackedState(ctx.getJobletContext().getJobId(), intakePhID);
+                }
+                collectorState.open(ctx);
+                ctx.setStateObject(collectorState);
+                // do some data gathering work here
+                loadBatch(collectorState);
+            }
+            collectorState.writeOut(writer, new VSizeFrame(ctx));
+            collectorState.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            Thread.currentThread().setName(threadName);
+            tracer.durationE(atid, registry, null);
             if (LOGGER.isDebugEnabled()) {
                 LOGGER.debug(this + " is closed.");
             }
             tracer.instant("Collector closed", registry, ITracer.Scope.t, null);
-            Thread.currentThread().setName(threadName);
-            tracer.durationE(atid, registry, null);
         }
-    }
-
-    private void doAddRecord(String strRecord) throws HyracksDataException {
-        // TODO: trim get rid of trailing spaces. LF add to mark the boundary of records.
-        charArrayRecord.set(strRecord.toCharArray());
-        tb.reset();
-        parser.parse(charArrayRecord, tb.getDataOutput());
-        tb.addFieldEndOffset();
-        //TODO: maybe get rid of tf?
-        FrameUtils.appendToWriter(writer, fta, tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize());
     }
 }
