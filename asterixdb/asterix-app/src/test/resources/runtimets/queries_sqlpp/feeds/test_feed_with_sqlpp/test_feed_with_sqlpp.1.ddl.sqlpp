@@ -38,6 +38,9 @@ create type followersCountType as open {
   fcend: int
 };
 create dataset followersCountDataset(followersCountType) primary key fcid;
+//create index fcstartidx on followersCountDataset(fcstart);
+//create index fcendidx on followersCountDataset(fcend);
+
 
 drop dataset statusesCountDataset if exists;
 drop type statusesCountType if exists;

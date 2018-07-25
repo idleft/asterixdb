@@ -18,7 +18,10 @@
  */
 package org.apache.asterix.external.operators;
 
+import java.nio.ByteBuffer;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.active.partition.PartitionHolderId;
@@ -30,12 +33,16 @@ import org.apache.asterix.external.api.IRecordDataParserFactory;
 import org.apache.asterix.external.feed.management.FeedConnectionId;
 import org.apache.asterix.external.input.record.CharArrayRecord;
 import org.apache.asterix.external.util.FeedConstants;
+import org.apache.hyracks.api.comm.IFrame;
+import org.apache.hyracks.api.comm.IFrameWriter;
 import org.apache.hyracks.api.comm.VSizeFrame;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
 import org.apache.hyracks.api.exceptions.ErrorCode;
 import org.apache.hyracks.api.exceptions.HyracksDataException;
 import org.apache.hyracks.dataflow.common.comm.io.ArrayTupleBuilder;
 import org.apache.hyracks.dataflow.common.comm.io.FrameTupleAppender;
+import org.apache.hyracks.dataflow.common.comm.util.ByteBufferInputStream;
+import org.apache.hyracks.dataflow.common.comm.util.FrameUtils;
 import org.apache.hyracks.dataflow.std.base.AbstractUnaryOutputSourceOperatorNodePushable;
 import org.apache.hyracks.dataflow.std.misc.FeedWritableState;
 import org.apache.hyracks.dataflow.std.misc.FileBackedState;
@@ -68,6 +75,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
     private int sPartitionNum;
     private int ePartitionNum;
     private final boolean materialize;
+    private FrameSweeper frameSweeper;
 
     public FeedCollectOperatorNodePushable(IHyracksTaskContext ctx, FeedConnectionId feedConnectionId,
             Map<String, String> feedPolicy, int partition, IRecordDataParserFactory<?> parserFactory,
@@ -117,7 +125,15 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         tb.addFieldEndOffset();
         // append to fta or state buffer
         if (!fta.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
+            // the original copy is kept in state. create 2 new copies, one for downstream, the other for fta.
             state.appendFrame(fta.getBuffer());
+            IFrame writerFrame = new VSizeFrame(ctx);
+            FrameUtils.copyAndFlip(fta.getBuffer(), writerFrame.getBuffer());
+            try {
+                frameSweeper.framePool.put(writerFrame.getBuffer());
+            } catch (InterruptedException e) {
+                throw new HyracksDataException(e.getMessage());
+            }
             fta.reset(new VSizeFrame(ctx), true);
             if (!fta.append(tb.getFieldEndOffsets(), tb.getByteArray(), 0, tb.getSize())) {
                 throw HyracksDataException.create(ErrorCode.TUPLE_CANNOT_FIT_INTO_EMPTY_FRAME, tb.getSize());
@@ -125,10 +141,15 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
         }
     }
 
-    private void loadBatch(FeedWritableState state) throws Exception {
-        try {
-            long ctid = tracer.durationB("Collector getting frames", registry, null);
-            if (partitionHolderRuntime != null) {
+    private void loadBatch(FeedWritableState state, IFrameWriter writer) throws Exception {
+        long ctid = tracer.durationB("Collector getting frames", registry, null);
+
+        if (partitionHolderRuntime != null) {
+            frameSweeper = new FrameSweeper(writer);
+            writer.open();
+            Thread sweeperThread = new Thread(frameSweeper);
+            sweeperThread.start();
+            try {
                 for (int iter1 = 0; iter1 < localBatchSize; iter1++) {
                     if (LOGGER.isDebugEnabled()) {
                         LOGGER.debug(this + " ready to get a record");
@@ -148,25 +169,32 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
                         doAddRecord(record, state);
                     }
                 }
-            } else {
-                if (LOGGER.isDebugEnabled()) {
-                    LOGGER.debug(this + " cannot find " + intakePhID + ". Work is done.");
+                // add leftover records into buffer
+                if (fta.getTupleCount() > 0) {
+                    state.appendFrame(fta.getBuffer());
+                    IFrame writerFrame = new VSizeFrame(ctx);
+                    FrameUtils.copyAndFlip(fta.getBuffer(), writerFrame.getBuffer());
+                    frameSweeper.framePool.put(writerFrame.getBuffer());
                 }
+            } catch (Exception e) {
+                e.printStackTrace();
+                throw HyracksDataException.create(e);
+            } finally {
+                frameSweeper.framePool.put(ByteBuffer.allocate(0));
+                sweeperThread.join();
+                writer.close();
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.debug(this + " is closing.");
+                }
+                tracer.instant("Load batch finishes", registry, ITracer.Scope.t, null);
             }
-            tracer.durationE(ctid, registry, null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw HyracksDataException.create(e);
-        } finally {
-            // add leftover records into buffer
-            if (fta.getTupleCount() > 0) {
-                state.appendFrame(fta.getBuffer());
-            }
+        } else {
             if (LOGGER.isDebugEnabled()) {
-                LOGGER.debug(this + " is closing.");
+                LOGGER.debug(this + " cannot find " + intakePhID + ". Work is done.");
             }
-            tracer.instant("Load batch finishes", registry, ITracer.Scope.t, null);
         }
+        tracer.durationE(ctid, registry, null);
+
     }
 
     @Override
@@ -180,6 +208,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 LOGGER.debug(this + " connected to " + intakePhID);
             }
             FeedWritableState collectorState = (FeedWritableState) ctx.getStateObject(intakePhID);
+            IFrame writerBuffer = new VSizeFrame(ctx);
             // inject failure handler
             // writer = new SyncFeedRuntimeInputHandler(ctx, writer, new FrameTupleAccessor(recordDesc));
             if (collectorState == null) {
@@ -192,10 +221,11 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 collectorState.open(ctx);
                 ctx.setStateObject(collectorState);
                 // do some data gathering work here
-                loadBatch(collectorState);
+                loadBatch(collectorState, writer);
+                collectorState.close();
+            } else {
+                collectorState.writeOut(writer, writerBuffer);
             }
-            collectorState.writeOut(writer, new VSizeFrame(ctx));
-            collectorState.close();
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -205,6 +235,32 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
                 LOGGER.debug(this + " is closed.");
             }
             tracer.instant("Collector closed", registry, ITracer.Scope.t, null);
+        }
+    }
+
+    private class FrameSweeper implements Runnable {
+
+        protected BlockingQueue<ByteBuffer> framePool;
+        protected final IFrameWriter writer;
+
+        public FrameSweeper(IFrameWriter writer) {
+            framePool = new LinkedBlockingQueue<>();
+            this.writer = writer;
+        }
+
+        @Override
+        public void run() {
+            while (true) {
+                try {
+                    ByteBuffer frame = framePool.take();
+                    if (frame.capacity() == 0) {
+                        break;
+                    }
+                    writer.nextFrame(frame);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
