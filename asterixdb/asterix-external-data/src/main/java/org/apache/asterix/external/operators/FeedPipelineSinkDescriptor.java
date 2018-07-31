@@ -72,6 +72,9 @@ public class FeedPipelineSinkDescriptor extends AbstractSingleActivityOperatorDe
                     LOGGER.log(Level.DEBUG, this + " looks for " + stgPhId);
                 }
                 stgPartitionHolder = (IPushablePartitionHolderRuntime) phm.getPartitionHolderRuntime(stgPhId);
+                if (LOGGER.isDebugEnabled()) {
+                    LOGGER.log(Level.DEBUG, this + " found " + stgPhId);
+                }
                 stid = tracer.durationB("Feed Sink", registry, null);
             }
 

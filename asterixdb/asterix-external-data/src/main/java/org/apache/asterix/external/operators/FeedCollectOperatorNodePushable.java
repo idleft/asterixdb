@@ -143,10 +143,9 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
 
     private void loadBatch(FeedWritableState state, IFrameWriter writer) throws Exception {
         long ctid = tracer.durationB("Collector getting frames", registry, null);
-
+        writer.open();
         if (partitionHolderRuntime != null) {
             frameSweeper = new FrameSweeper(writer);
-            writer.open();
             Thread sweeperThread = new Thread(frameSweeper);
             sweeperThread.start();
             try {
@@ -182,7 +181,6 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             } finally {
                 frameSweeper.framePool.put(ByteBuffer.allocate(0));
                 sweeperThread.join();
-                writer.close();
                 if (LOGGER.isDebugEnabled()) {
                     LOGGER.debug(this + " is closing.");
                 }
@@ -194,7 +192,7 @@ public class FeedCollectOperatorNodePushable extends AbstractUnaryOutputSourceOp
             }
         }
         tracer.durationE(ctid, registry, null);
-
+        writer.close();
     }
 
     @Override

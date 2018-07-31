@@ -491,10 +491,4 @@ public class FeedOperations {
 
         return Pair.of(pipeLineJob, storageJob);
     }
-
-    private static void SendActiveMessage(ICcApplicationContext appCtx, ActiveManagerMessage activeManagerMessage,
-            String nodeId) throws Exception {
-        ICCMessageBroker messageBroker = (ICCMessageBroker) appCtx.getServiceContext().getMessageBroker();
-        messageBroker.sendApplicationMessageToNC(activeManagerMessage, nodeId);
-    }
 }

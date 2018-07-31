@@ -427,6 +427,7 @@ public class OptimizedHybridHashJoinOperatorDescriptor extends AbstractOperatorD
                     }
                     try {
                         try {
+                            System.out.println("p complete probe");
                             state.hybridHJ.completeProbe(writer);
                         } finally {
                             state.hybridHJ.releaseResource();

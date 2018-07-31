@@ -17,9 +17,6 @@
  * under the License.
  */
 
-use feeds;
-set `wait-for-completion-feed` "true";
+use test;
 
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#NObserved5S`;
-
-start feed TweetFeed;
+select * from Tweets1;

@@ -18,28 +18,40 @@
  */
 package org.apache.asterix.external.library;
 
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
+import org.apache.asterix.external.api.IJObject;
 import org.apache.asterix.external.library.java.JBuiltinType;
 import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.asterix.external.library.java.base.JInt;
+import org.apache.asterix.external.library.java.base.JObject;
 import org.apache.asterix.external.library.java.base.JOrderedList;
 import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.external.library.java.base.JString;
-import org.apache.asterix.external.library.java.base.JUnorderedList;
+import org.apache.asterix.om.types.ARecordType;
+import org.apache.asterix.om.utils.RecordUtil;
+import org.apache.commons.lang3.tuple.Pair;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
+public class TopObserverAnnotation implements IExternalScalarFunction {
 
-public class ThreatAnnotation implements IExternalScalarFunction {
-
-    private HashMap<String, String> countryList;
+    private List<Pair<String, Set<String>>> observedCountries;
+    private Map<String, Integer> countryIdx;
     private String dictPath;
     private List<String> functionParameters;
     private JOrderedList list = null;
+    private JInt obN = null;
     private int refreshRate;
     private int refreshCount;
     private String pathPrefix;
@@ -52,7 +64,9 @@ public class ThreatAnnotation implements IExternalScalarFunction {
             pathPrefix = "/home/xikuiw/decoupled/";
         }
         list = new JOrderedList(JBuiltinType.JSTRING);
-        countryList = new HashMap<>();
+        obN = new JInt(0);
+        observedCountries = new LinkedList<>();
+        countryIdx = new HashMap<>();
         functionParameters = functionHelper.getParameters();
         dictPath = pathPrefix + "/" + functionParameters.get(0);
         refreshRate = Integer.valueOf(functionParameters.get(1));
@@ -68,8 +82,13 @@ public class ThreatAnnotation implements IExternalScalarFunction {
         BufferedReader fr = Files.newBufferedReader(Paths.get(dictPath));
         fr.lines().forEach(line -> {
             String[] items = line.split("\\|");
-            countryList.put(items[0], items[1]);
+            if (!countryIdx.containsKey(items[1])) {
+                countryIdx.put(items[1], observedCountries.size());
+                observedCountries.add(Pair.of(items[1], new HashSet<>()));
+            }
+            observedCountries.get(countryIdx.get(items[1])).getRight().add(items[2]);
         });
+        Collections.sort(observedCountries, ((o1, o2) -> o2.getRight().size() - o1.getRight().size()));
         fr.close();
     }
 
@@ -85,12 +104,28 @@ public class ThreatAnnotation implements IExternalScalarFunction {
 
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString countryCode = (JString) inputRecord.getValueByName("country");
+        int ctr = 0;
 
-        JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
-        newField.setValue(countryList.getOrDefault(countryCode.getValue(), "Not Found"));
         list.reset();
-        list.add(newField);
-        inputRecord.addField("ThreatLvl", list);
+        for (Pair<String, Set<String>> clientPair : observedCountries) {
+            if (ctr >= 10) {
+                break;
+            }
+            if (clientPair.getRight().contains(countryCode.getValue())) {
+                list.add(new JString(clientPair.getLeft()));
+                //                JOrderedList obCountries = new JOrderedList(JBuiltinType.JSTRING);
+                //                JRecord newClient = new JRecord(RecordUtil.FULLY_OPEN_RECORD_TYPE, new IJObject[0]);
+                //                newClient.addField("clientId", new JString(clientPair.getKey()));
+                //                newClient.addField("observedN", new JInt(clientPair.getValue().size()));
+                //                for (String c : clientPair.getRight()) {
+                //                    obCountries.add(new JString(c));
+                //                }
+                //                newClient.addField("observedCountries", obCountries);
+                //                list.add(newClient);
+                //                ctr++;
+            }
+        }
+        inputRecord.addField("tops", list);
         functionHelper.setResult(inputRecord);
     }
 }

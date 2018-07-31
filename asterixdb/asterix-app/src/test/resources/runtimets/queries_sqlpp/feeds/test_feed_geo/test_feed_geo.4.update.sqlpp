@@ -17,9 +17,11 @@
  * under the License.
  */
 
-use feeds;
-set `wait-for-completion-feed` "true";
+use test;
 
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#NObserved5S`;
-
-start feed TweetFeed;
+insert into Tweets2
+(From Tweets1 x
+select x, (
+let temp = create_circle(create_point(x.latitude, x.longitude), 3.0)
+select value ml.mid from monumentList ml
+  where /*+ indexnl */ spatial_intersect(temp, ml.mloc)));

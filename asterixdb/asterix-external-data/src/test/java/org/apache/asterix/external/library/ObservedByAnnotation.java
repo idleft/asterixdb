@@ -18,28 +18,30 @@
  */
 package org.apache.asterix.external.library;
 
+import java.io.BufferedReader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import org.apache.asterix.external.api.IExternalScalarFunction;
 import org.apache.asterix.external.api.IFunctionHelper;
 import org.apache.asterix.external.library.java.JBuiltinType;
 import org.apache.asterix.external.library.java.JTypeTag;
+import org.apache.asterix.external.library.java.base.JInt;
 import org.apache.asterix.external.library.java.base.JOrderedList;
 import org.apache.asterix.external.library.java.base.JRecord;
 import org.apache.asterix.external.library.java.base.JString;
-import org.apache.asterix.external.library.java.base.JUnorderedList;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.List;
+public class ObservedByAnnotation implements IExternalScalarFunction {
 
-public class ThreatAnnotation implements IExternalScalarFunction {
-
-    private HashMap<String, String> countryList;
+    private HashMap<String, Set<String>> countryList;
     private String dictPath;
     private List<String> functionParameters;
     private JOrderedList list = null;
+    private JInt obN = null;
     private int refreshRate;
     private int refreshCount;
     private String pathPrefix;
@@ -52,6 +54,7 @@ public class ThreatAnnotation implements IExternalScalarFunction {
             pathPrefix = "/home/xikuiw/decoupled/";
         }
         list = new JOrderedList(JBuiltinType.JSTRING);
+        obN = new JInt(0);
         countryList = new HashMap<>();
         functionParameters = functionHelper.getParameters();
         dictPath = pathPrefix + "/" + functionParameters.get(0);
@@ -68,7 +71,10 @@ public class ThreatAnnotation implements IExternalScalarFunction {
         BufferedReader fr = Files.newBufferedReader(Paths.get(dictPath));
         fr.lines().forEach(line -> {
             String[] items = line.split("\\|");
-            countryList.put(items[0], items[1]);
+            if (!countryList.containsKey(items[2])) {
+                countryList.put(items[2], new HashSet<>());
+            }
+            countryList.get(items[2]).add(items[1]);
         });
         fr.close();
     }
@@ -86,11 +92,15 @@ public class ThreatAnnotation implements IExternalScalarFunction {
         JRecord inputRecord = (JRecord) functionHelper.getArgument(0);
         JString countryCode = (JString) inputRecord.getValueByName("country");
 
-        JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
-        newField.setValue(countryList.getOrDefault(countryCode.getValue(), "Not Found"));
         list.reset();
-        list.add(newField);
-        inputRecord.addField("ThreatLvl", list);
+        for (String client : countryList.get(countryCode.getValue())) {
+            JString newField = (JString) functionHelper.getObject(JTypeTag.STRING);
+            newField.setValue(client);
+            list.add(newField);
+        }
+        inputRecord.addField("observedByClients", list);
+        obN.setValue(list.size());
+        inputRecord.addField("observedByN", obN);
         functionHelper.setResult(inputRecord);
     }
 }

@@ -16,10 +16,6 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use test;
 
-use feeds;
-set `wait-for-completion-feed` "true";
-
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#NObserved5S`;
-
-start feed TweetFeed;
+load dataset monumentList using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/monumentList.txt`),(`format`=`adm`));

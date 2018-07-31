@@ -20,14 +20,11 @@ package org.apache.asterix.external.operators;
 
 import java.util.concurrent.TimeUnit;
 
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.apache.asterix.active.ActiveRuntimeId;
 import org.apache.asterix.active.ActiveSourceOperatorNodePushable;
 import org.apache.asterix.active.EntityId;
 import org.apache.asterix.external.api.IAdapterFactory;
 import org.apache.asterix.external.dataset.adapter.FeedAdapter;
-import org.apache.asterix.external.feed.dataflow.CallDeployedJobWithDataWriter;
-import org.apache.asterix.external.feed.dataflow.FeedDataFrameBufferWriter;
 import org.apache.asterix.external.feed.dataflow.DeployedJobBufferWriter;
 import org.apache.asterix.external.util.FeedConstants;
 import org.apache.hyracks.api.context.IHyracksTaskContext;
