@@ -18,7 +18,8 @@
  */
 package org.apache.asterix.optimizer.rules;
 
-import org.apache.asterix.om.functions.BuiltinFunctions;
+import org.apache.asterix.lang.sqlpp.util.FunctionMapUtil;
+import org.apache.hyracks.algebricks.core.algebra.functions.FunctionIdentifier;
 import org.apache.hyracks.algebricks.rewriter.rules.InlineVariablesRule;
 
 public class AsterixInlineVariablesRule extends InlineVariablesRule {
@@ -27,16 +28,8 @@ public class AsterixInlineVariablesRule extends InlineVariablesRule {
         // Do not inline field accesses and spatial functions because doing so would interfere with our access method rewrites.
         // TODO: For now we must also exclude record constructor functions to avoid breaking our type casting rules
         // IntroduceStaticTypeCastRule and IntroduceDynamicTypeCastRule.
-        doNotInlineFuncs.add(BuiltinFunctions.FIELD_ACCESS_BY_NAME);
-        doNotInlineFuncs.add(BuiltinFunctions.FIELD_ACCESS_BY_INDEX);
-        doNotInlineFuncs.add(BuiltinFunctions.CLOSED_RECORD_CONSTRUCTOR);
-        doNotInlineFuncs.add(BuiltinFunctions.OPEN_RECORD_CONSTRUCTOR);
-        doNotInlineFuncs.add(BuiltinFunctions.CAST_TYPE);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_CIRCLE);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_LINE);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_MBR);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_POINT);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_POLYGON);
-        doNotInlineFuncs.add(BuiltinFunctions.CREATE_RECTANGLE);
+        for (FunctionIdentifier fi : FunctionMapUtil.asterixDoNotInlineFuncs) {
+            doNotInlineFuncs.add(fi);
+        }
     }
 }

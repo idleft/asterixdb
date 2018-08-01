@@ -19,8 +19,10 @@
 package org.apache.asterix.lang.sqlpp.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.asterix.common.exceptions.CompilationException;
@@ -53,6 +55,13 @@ public class FunctionMapUtil {
         LIST_INPUT_FUNCTION_MAP.put("greatest", CORE_SQL_AGGREGATE_PREFIX + "max");
         LIST_INPUT_FUNCTION_MAP.put("least", CORE_SQL_AGGREGATE_PREFIX + "min");
     }
+
+    public static final List<FunctionIdentifier> asterixDoNotInlineFuncs =
+            Collections.unmodifiableList(Arrays.asList(BuiltinFunctions.FIELD_ACCESS_BY_NAME,
+                    BuiltinFunctions.FIELD_ACCESS_BY_INDEX, BuiltinFunctions.CLOSED_RECORD_CONSTRUCTOR,
+                    BuiltinFunctions.OPEN_RECORD_CONSTRUCTOR, BuiltinFunctions.CAST_TYPE,
+                    BuiltinFunctions.CREATE_CIRCLE, BuiltinFunctions.CREATE_LINE, BuiltinFunctions.CREATE_MBR,
+                    BuiltinFunctions.CREATE_POINT, BuiltinFunctions.CREATE_POLYGON, BuiltinFunctions.CREATE_RECTANGLE));
 
     /**
      * Whether a function signature is a SQL-92 core aggregate function.
