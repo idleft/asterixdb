@@ -16,10 +16,8 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+use test;
 
-use feeds;
-set `wait-for-completion-feed` "true";
-
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#ReligiousPopulationRA`;
-
-start feed TweetFeed;
+load dataset FacilityDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/facilitiesList.txt`),(`format`=`adm`));
+load dataset ReligiousBuildingDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/religiousBuildingList.txt`),(`format`=`adm`));
+load dataset DistrictAreaDataset using localfs ((`path`=`asterix_nc1:///Users/xikuiw/IdeaProjects/TestProject/districtsArea.txt`),(`format`=`adm`));

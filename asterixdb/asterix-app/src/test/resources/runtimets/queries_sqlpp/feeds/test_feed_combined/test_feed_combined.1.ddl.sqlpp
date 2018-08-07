@@ -65,7 +65,7 @@ create type spaceRangeType as open {
   spend: point
 };
 
-create type combinedClientType {
+create type combinedClientType as open {
     clientId: int64,
     clientName: string,
     followersRange: followersCountType,

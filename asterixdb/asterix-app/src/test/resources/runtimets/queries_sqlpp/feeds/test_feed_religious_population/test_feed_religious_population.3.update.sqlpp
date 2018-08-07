@@ -17,9 +17,10 @@
  * under the License.
  */
 
-use feeds;
+use test;
 set `wait-for-completion-feed` "true";
 
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#ReligiousPopulationRA`;
+connect feed TweetFeed to dataset Tweets1 apply function annotateTweet;
+//connect feed TweetFeed to dataset Tweets1;
 
 start feed TweetFeed;

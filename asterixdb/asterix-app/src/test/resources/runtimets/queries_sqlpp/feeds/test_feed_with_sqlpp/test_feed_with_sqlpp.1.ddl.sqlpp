@@ -49,6 +49,7 @@ create type statusesCountType as open {
   scstart: int,
   scend: int
 };
+create dataset statusesCountDataset(statusesCountType) primary key scid;
 
 drop type friendsCountType if exists;
 create type friendsCountType as open {

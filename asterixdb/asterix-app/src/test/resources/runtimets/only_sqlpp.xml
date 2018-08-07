@@ -20,7 +20,7 @@
 <test-suite xmlns="urn:xml.testframework.asterix.apache.org" ResultOffsetPath="results" QueryOffsetPath="queries_sqlpp" QueryFileExtension=".sqlpp">
   <test-group name="failed">
     <test-case FilePath="feeds">
-      <compilation-unit name="test_feed_geo">
+      <compilation-unit name="test_feed_religious_population">
         <output-dir compare="Text">feeds_13</output-dir>
       </compilation-unit>
     </test-case>

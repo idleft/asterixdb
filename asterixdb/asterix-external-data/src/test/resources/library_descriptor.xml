@@ -276,6 +276,64 @@
       <parameters>1</parameters>
     </libraryFunction>
     <libraryFunction>
+      <name>ReligiousPopulationRA</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.ReligiousPopulationAnnotationFactory</definition>
+      <parameters>religionsList.txt</parameters>
+      <parameters>-1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>ReligiousPopulationR1</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.ReligiousPopulationAnnotationFactory</definition>
+      <parameters>religionsList.txt</parameters>
+      <parameters>1</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>LargestReligionRA</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.LargestReligionAnnotationFactory</definition>
+      <parameters>religionsList.txt</parameters>
+      <parameters>-1</parameters>
+      <parameters>3</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>LargestReligionR1</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.LargestReligionAnnotationFactory</definition>
+      <parameters>religionsList.txt</parameters>
+      <parameters>1</parameters>
+      <parameters>3</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>NearbyMonumentsRA</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.NearbyMonumentsAnnotationFactory</definition>
+      <parameters>java_monumentsList.txt</parameters>
+      <parameters>-1</parameters>
+      <parameters>1.5</parameters>
+    </libraryFunction>
+    <libraryFunction>
+      <name>NearbyMonumentsR1</name>
+      <function_type>SCALAR</function_type>
+      <argument_type>TweetType</argument_type>
+      <return_type>TweetType</return_type>
+      <definition>org.apache.asterix.external.library.NearbyMonumentsAnnotationFactory</definition>
+      <parameters>java_monumentsList.txt</parameters>
+      <parameters>1</parameters>
+      <parameters>1.5</parameters>
+    </libraryFunction>
+    <libraryFunction>
       <name>topObserverRA</name>
       <function_type>SCALAR</function_type>
       <argument_type>TweetType</argument_type>

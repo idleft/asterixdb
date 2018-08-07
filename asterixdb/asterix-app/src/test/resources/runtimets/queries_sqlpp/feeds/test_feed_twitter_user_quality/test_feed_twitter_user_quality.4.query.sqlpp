@@ -17,9 +17,9 @@
  * under the License.
  */
 
-use feeds;
-set `wait-for-completion-feed` "true";
-
-connect feed TweetFeed to dataset Tweets1 apply function `testlib#ReligiousPopulationRA`;
-
-start feed TweetFeed;
+use test;
+//select countryCode, count(*) as cnt
+//from CountryObservedDataset ob
+//group by ob.obcode as countryCode
+//order by cnt DESC limit 10;
+select * from Tweets1;
