@@ -88,6 +88,7 @@ public abstract class AbstractIntroduceGroupByCombinerRule extends AbstractIntro
                 // Let the left-hand side of gbyOp's decoration expressions populated through the combiner group-by without
                 // any intermediate assignment.
                 newGbyOp.addDecorExpression(null, p.second.getValue());
+                newGbyLiveVars.add(usedDecorVars.get(0));
             }
         }
         newGbyOp.setExecutionMode(ExecutionMode.LOCAL);
@@ -104,7 +105,7 @@ public abstract class AbstractIntroduceGroupByCombinerRule extends AbstractIntro
         OperatorPropertiesUtil.getFreeVariablesInSubplans(gbyOp, freeVars);
 
         for (LogicalVariable var : freeVars) {
-            if (!propagatedVars.contains(var)) {
+            if (!propagatedVars.contains(var) && !newGbyLiveVars.contains(var)) {
                 LogicalVariable newDecorVar = context.newVar();
                 VariableReferenceExpression varRef = new VariableReferenceExpression(var);
                 varRef.setSourceLocation(gbyOp.getSourceLocation());
